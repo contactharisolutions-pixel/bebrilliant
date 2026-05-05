@@ -1,0 +1,6 @@
+﻿tenants columns: id, name, type, email, is_active, subscription_status, created_at, domain, branding, subscription_plan, subscription_expires_at, is_trial, owner_id, logo, primary_color, secondary_color, max_students, max_teachers, is_white_label, tenant_type
+FK constraints: [{"column_name":"tenant_id","ref_table":"tenants","ref_col":"id"}]
+Admin user ID: 978d57dd-ccf3-434e-828b-c9b6d534d869
+Join result: {"role":"tenant_admin","first_name":"Priya","tenant_id":"11111111-0000-0000-0000-000000000001","tenant_name":"Brilliant Academy"}
+Owner user ID: 47ac2af4-93b1-4299-b359-c43534e9a021
+Owner join result: {"role":"owner","first_name":"Platform","tenant_id":null,"tenant_name":null}

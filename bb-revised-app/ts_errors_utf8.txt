@@ -1,0 +1,42 @@
+﻿.next/dev/types/validator.ts(1134,31): error TS2344: Type 'typeof import("D:/antigravity/BB-Revised/bb-revised-app/src/app/api/dashboard/exams/offline/[id]/print/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/dashboard/exams/offline/[id]/print">'.
+  Types of property 'GET' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/dev/types/validator.ts(1152,31): error TS2344: Type 'typeof import("D:/antigravity/BB-Revised/bb-revised-app/src/app/api/dashboard/exams/omr/[id]/print/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/dashboard/exams/omr/[id]/print">'.
+  Types of property 'GET' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/dev/types/validator.ts(1179,31): error TS2344: Type 'typeof import("D:/antigravity/BB-Revised/bb-revised-app/src/app/api/dashboard/exams/online/[id]/analytics/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/dashboard/exams/online/[id]/analytics">'.
+  Types of property 'GET' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<{ metrics: { rank: number; total: number; percentile: string; score: any; }; topicBreakdown: Record<string, any>; }> | NextResponse<...> | NextResponse<...>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(1134,31): error TS2344: Type 'typeof import("D:/antigravity/BB-Revised/bb-revised-app/src/app/api/dashboard/exams/offline/[id]/print/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/dashboard/exams/offline/[id]/print">'.
+  Types of property 'GET' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(1152,31): error TS2344: Type 'typeof import("D:/antigravity/BB-Revised/bb-revised-app/src/app/api/dashboard/exams/omr/[id]/print/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/dashboard/exams/omr/[id]/print">'.
+  Types of property 'GET' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(1179,31): error TS2344: Type 'typeof import("D:/antigravity/BB-Revised/bb-revised-app/src/app/api/dashboard/exams/online/[id]/analytics/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/dashboard/exams/online/[id]/analytics">'.
+  Types of property 'GET' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<{ metrics: { rank: number; total: number; percentile: string; score: any; }; topicBreakdown: Record<string, any>; }> | NextResponse<...> | NextResponse<...>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
