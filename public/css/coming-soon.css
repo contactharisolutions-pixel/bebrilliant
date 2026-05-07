@@ -1,0 +1,153 @@
+#coming-soon-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000000;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-family: 'Inter', 'Outfit', sans-serif;
+    overflow: hidden;
+}
+
+.cs-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('/public/img/coming-soon-bg.png') center/cover no-repeat;
+    filter: brightness(0.4) blur(3px);
+    transform: scale(1.1);
+    animation: slowZoom 20s infinite alternate ease-in-out;
+}
+
+@keyframes slowZoom {
+    0% { transform: scale(1); filter: brightness(0.4) blur(2px); }
+    100% { transform: scale(1.1); filter: brightness(0.3) blur(4px); }
+}
+
+.cs-content {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    max-width: 800px;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: fadeInUp 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.cs-logo {
+    height: 60px;
+    margin-bottom: 40px;
+    filter: brightness(0) invert(1);
+    animation: logoReveal 1.5s ease-out;
+}
+
+@keyframes logoReveal {
+    0% { opacity: 0; letter-spacing: 10px; filter: blur(10px) brightness(0) invert(1); }
+    100% { opacity: 1; letter-spacing: normal; filter: blur(0) brightness(0) invert(1); }
+}
+
+.cs-title {
+    font-size: 4rem;
+    font-weight: 800;
+    letter-spacing: -2px;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+}
+
+.cs-subtitle {
+    font-size: 1.25rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 40px;
+    font-weight: 300;
+    letter-spacing: 1px;
+}
+
+.cs-form {
+    display: flex;
+    gap: 10px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.cs-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 18px 25px;
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+    transition: 0.3s;
+}
+
+.cs-input:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #fff;
+}
+
+.cs-btn {
+    background: #fff;
+    color: #000;
+    border: none;
+    padding: 0 30px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+.cs-btn:hover {
+    background: #ccc;
+    transform: translateY(-2px);
+}
+
+.cs-footer {
+    position: absolute;
+    bottom: 40px;
+    width: 100%;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.vision-flare {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+    border-radius: 50%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+@media (max-width: 768px) {
+    .cs-title { font-size: 2.5rem; }
+    .cs-content { width: 90%; padding: 30px 20px; }
+    .cs-form { flex-direction: column; }
+    .cs-btn { padding: 18px; }
+}

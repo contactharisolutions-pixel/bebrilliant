@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlinkOpticals | Premium E-Commerce Storefront</title>
+    <link rel="icon" type="image/png" href="/public/favicon.png">
+    <link rel="stylesheet" href="/public/css/storefront.css?v=1.9">
+    <link rel="stylesheet" href="/public/css/vto.css?v=1.9">
+    <link rel="stylesheet" href="/public/css/coming-soon.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js"></script>
+</head>
+<body>
+    <!-- BEAUTIFUL COMING SOON PAGE -->
+    <div id="coming-soon-page">
+        <div class="cs-background"></div>
+        <div class="vision-flare" style="top: -100px; left: -100px;"></div>
+        <div class="vision-flare" style="bottom: -100px; right: -100px;"></div>
+        
+        <div class="cs-content">
+            <img src="/admin/img/logo.png" alt="Blink Opticals" class="cs-logo">
+            <h1 class="cs-title">Visionary Clarity <br>Coming Soon</h1>
+            <p class="cs-subtitle">We are crafting a new perspective in premium eyewear. <br>Our digital boutique is opening its doors very soon.</p>
+            
+            <div class="cs-form">
+                <input type="email" placeholder="Enter your email for early access" class="cs-input">
+                <button class="cs-btn">Notify Me</button>
+            </div>
+            
+            <div style="margin-top: 40px; display: flex; justify-content: center; gap: 30px; opacity: 0.6;">
+                <i class="fas fa-glasses fa-2x"></i>
+                <i class="fas fa-eye fa-2x"></i>
+                <i class="fas fa-microscope fa-2x"></i>
+            </div>
+        </div>
+        
+        <div class="cs-footer">
+            &copy; 2026 Blink Opticals &bull; Defined by Precision &bull; Surat
+        </div>
+        
+        <!-- DISMISS FOR DEVELOPMENT (Remove for production) -->
+        <button onclick="document.getElementById('coming-soon-page').style.display='none'" 
+                style="position:fixed; bottom:20px; right:20px; background:none; border:none; color:rgba(255,255,255,0.2); cursor:pointer; font-size:0.7rem; z-index:100;">
+            [ Dismiss Preview ]
+        </button>
+    </div>
+
+    <div class="top-bar">
+        <span><i class="fas fa-truck"></i> FREE PAN-INDIA DELIVERY ON ALL ORDERS</span>
+        <div class="top-bar-links">
+            <a href="tel:+918908999099"><i class="fas fa-phone"></i> +91 89089 99099</a>
+            <a href="#/account"><i class="fas fa-map-marker-alt"></i> Store Locator</a>
+        </div>
+    </div>
+    <div id="cookie-banner" class="cookie-banner">
+        <h4>We value your privacy</h4>
+        <p>We use cookies to enhance your try-on experience, analyze site usage, and assist in our marketing efforts.</p>
+        <div class="cookie-btns">
+            <button class="btn-lux" style="padding:10px 20px; font-size:0.8rem;" onclick="acceptCookies()">Accept All</button>
+            <button class="btn-lux btn-outline" style="padding:10px 20px; font-size:0.8rem;" onclick="acceptCookies()">Essential Only</button>
+        </div>
+    </div>
+    
+    <nav class="store-nav">
+        <div class="nav-container">
+            <div class="nav-logo" onclick="window.location.hash='#/'">
+                <img src="/admin/img/logo.png" alt="Blink Opticals">
+            </div>
+            <div class="nav-links">
+                <div class="nav-item"><a href="#/shop">Best Selling</a></div>
+                <div class="nav-item"><a href="#/shop">New Arrivals</a></div>
+                
+                <!-- SHOP BY BRAND MEGA MENU -->
+                <div class="nav-item">
+                    <a href="#/shop">Shop By Brand <i class="fas fa-chevron-down" style="font-size:0.7rem; opacity:0.5;"></i></a>
+                    <div class="mega-menu" id="mega-brands-container">
+                        <div class="mega-content" style="grid-template-columns: 1fr 1fr 2fr; gap: 60px; padding: 50px 4%;">
+                            <div class="mega-col">
+                                <h4>Luxury Labels</h4>
+                                <ul class="mega-menu-brands-list"></ul>
+                            </div>
+                            <div class="mega-col">
+                                <h4>Premium Brands</h4>
+                                <ul class="mega-menu-brands-list-2"></ul>
+                            </div>
+                            <div class="mega-banner">
+                                <img src="https://mtoslybnnywmsmpwjphv.supabase.co/storage/v1/object/public/media/biz_blink_001/unorganized/CTR_SS26_VISUALS_SUN_WOMAN_1920%20x%201080_4.jpg" alt="Brand Showcase">
+                                <div class="mega-banner-text">
+                                    <h3>The Designer Edit</h3>
+                                    <p>Exquisite craftsmanship from Milan and Paris.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SHOP BY CATEGORY MEGA MENU -->
+                <div class="nav-item">
+                    <a href="#/shop">Shop By Category <i class="fas fa-chevron-down" style="font-size:0.7rem; opacity:0.5; margin-left:4px;"></i></a>
+                    <div class="mega-menu">
+                        <div class="mega-content" style="grid-template-columns: repeat(3, 1fr) 500px; padding: 0 0 0 4%; gap: 0;">
+                            <!-- COL 1: Collections + Gender -->
+                            <div class="mega-col" style="padding: 50px 25px 50px 0;">
+                                <h4 class="mega-title">
+                                    <i class="fas fa-layer-group" style="color:var(--accent);"></i> The Collection
+                                </h4>
+                                <ul class="mega-menu-cats-list"></ul>
+
+                                <h4 class="mega-title spacer-title">
+                                    <i class="fas fa-venus-mars" style="color:var(--accent);"></i> Shop By Gender
+                                </h4>
+                                <ul class="mega-menu-genders-list"></ul>
+                            </div>
+
+                            <!-- COL 2: Frame Type + Shape -->
+                            <div class="mega-col" style="padding: 50px 25px;">
+                                <h4 class="mega-title">
+                                    <i class="fas fa-glasses" style="color:var(--accent);"></i> Frame Technology
+                                </h4>
+                                <ul class="mega-menu-types-list"></ul>
+
+                                <h4 class="mega-title spacer-title">
+                                    <i class="fas fa-shapes" style="color:var(--accent);"></i> Style &amp; Shape
+                                </h4>
+                                <ul class="mega-menu-shapes-list"></ul>
+                            </div>
+
+                            <!-- COL 3: Colors -->
+                            <div class="mega-col" style="padding: 50px 25px;">
+                                <h4 class="mega-title">
+                                    <i class="fas fa-palette" style="color:var(--accent);"></i> Lens &amp; Frame Colors
+                                </h4>
+                                <ul class="mega-menu-colors-list"></ul>
+
+                                <div style="margin-top:30px; background:var(--bg); border-radius:12px; padding:20px;">
+                                    <div style="font-size:0.7rem; font-weight:800; letter-spacing:2px; color:var(--text-sec); margin-bottom:15px; text-transform:uppercase;">Trending Now</div>
+                                    <div style="display:flex; flex-direction:column; gap:12px;">
+                                        <a href="#/shop?category=sunglasses" style="display:flex; align-items:center; gap:12px; text-decoration:none;">
+                                            <span style="background:var(--accent); color:#fff; font-size:0.65rem; font-weight:700; padding:3px 8px; border-radius:20px; white-space:nowrap;">HOT</span>
+                                            <span style="font-size:0.88rem; color:var(--text); font-weight:500;">Oversized Sunwear</span>
+                                        </a>
+                                        <a href="#/shop?type=rimless" style="display:flex; align-items:center; gap:12px; text-decoration:none;">
+                                            <span style="background:#000; color:#fff; font-size:0.65rem; font-weight:700; padding:3px 8px; border-radius:20px; white-space:nowrap;">NEW</span>
+                                            <span style="font-size:0.88rem; color:var(--text); font-weight:500;">Rimless Collection</span>
+                                        </a>
+                                        <a href="#/shop?gender=kids" style="display:flex; align-items:center; gap:12px; text-decoration:none;">
+                                            <span style="background:#004B93; color:#fff; font-size:0.65rem; font-weight:700; padding:3px 8px; border-radius:20px; white-space:nowrap;">SALE</span>
+                                            <span style="font-size:0.88rem; color:var(--text); font-weight:500;">Kids Frames</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- COL 4: Banner Edge to Edge -->
+                            <div class="mega-col" style="height: 100%;">
+                                <div class="mega-banner" style="background: url('https://mtoslybnnywmsmpwjphv.supabase.co/storage/v1/object/public/media/biz_blink_001/unorganized/DUN_2026_Visuals_1920x1080_01_NoLogo.jpg') center/cover; height:100%; min-height:450px; border-radius:0;">
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-item"><a href="#/account">Contact US</a></div>
+            </div>
+            <div class="nav-icons">
+                <button title="Search" class="nav-search-btn"><i class="fas fa-search"></i></button>
+                <button title="Wishlist" onclick="window.location.hash='#/wishlist'"><i class="far fa-heart"></i></button>
+                <button title="User Profile" onclick="window.handleUserIconClick()"><i class="fas fa-user"></i></button>
+                <button title="Cart" onclick="openCartSidebar()" class="cart-trigger">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-badge" id="cart-badge" style="display:none">0</span>
+                </button>
+                <button title="Menu" class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MEGA MENU OVERLAY -->
+    <div class="mega-menu-overlay"></div>
+
+    <!-- MOBILE MENU DRAWER -->
+    <div id="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
+    <div id="mobile-menu-drawer">
+        <div class="mobile-menu-header">
+            <img src="/admin/img/logo.png" alt="Blink Opticals" style="height:30px;">
+            <button onclick="toggleMobileMenu()">&times;</button>
+        </div>
+        <div class="mobile-menu-links">
+            <a href="#/" onclick="toggleMobileMenu()">Home</a>
+            <a href="#/shop" onclick="toggleMobileMenu()">Shop All</a>
+            <div class="mobile-menu-group">
+                <h4>Collections</h4>
+                <a href="#/shop?category=sunglasses" onclick="toggleMobileMenu()">Sunglasses</a>
+                <a href="#/shop?category=eyeglasses" onclick="toggleMobileMenu()">Eyeglasses</a>
+                <a href="#/shop?category=reading-glasses" onclick="toggleMobileMenu()">Reading Glasses</a>
+            </div>
+            <a href="#/wishlist" onclick="toggleMobileMenu()">My Wishlist</a>
+            <a href="#/account" onclick="toggleMobileMenu()">My Account</a>
+            <a href="#/account" onclick="toggleMobileMenu()">Contact Us</a>
+        </div>
+    </div>
+
+    <!-- MAIN SPA CONTAINER -->
+    <div id="store-app"></div>
+
+    <!-- CART SIDEBAR -->
+    <div id="cart-overlay" onclick="closeCartSidebar()"></div>
+    <div id="cart-sidebar">
+        <div class="cart-header">
+            <h2>Your Selection</h2>
+            <button style="background:none; border:none; font-size:1.5rem; cursor:pointer;" onclick="closeCartSidebar()">&times;</button>
+        </div>
+        <div class="cart-items" id="cart-items-container"></div>
+        <div class="cart-footer" id="cart-total-container"></div>
+    </div>
+
+    <!-- AUTH MODAL POPUP -->
+    <div id="auth-overlay" onclick="window.closeAuthModal()"></div>
+    <div id="auth-modal-popup">
+        <button onclick="window.closeAuthModal()" style="position:absolute; top:20px; right:20px; z-index:9999; background:white; border:none; width:35px; height:35px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 5px 15px rgba(0,0,0,0.1); color:#333; font-size:1.2rem;">
+            <i class="fas fa-times"></i>
+        </button>
+        <div id="auth-modal-content"></div>
+    </div>
+
+    <!-- VTO OVERLAY MODAL -->
+    <div class="vto-overlay" id="vtoOverlay">
+        <button class="vto-close" onclick="closeVTO()">✕</button>
+        <div class="vto-window">
+            <div id="vto-loader" style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff">
+                <div style="width:40px; height:40px; border:3px solid var(--accent); border-top-color:transparent; border-radius:50%; animation: spin 0.8s linear infinite; margin-bottom:15px"></div>
+                <span>Initializing Vision AI...</span>
+            </div>
+            <video id="vto-video" autoplay playsinline style="transform: scaleX(-1);"></video>
+            <img src="" id="vtoFrame" class="vto-frame-overlay" style="transition: none;">
+            <div class="vto-instruction">Tip: Center your face. AI will auto-position frames.</div>
+            <div id="vto-status" style="position:absolute; top:10px; right:10px; font-size:10px; background:rgba(31,172,99,0.3); color:var(--accent); padding:4px 8px; border-radius:4px; opacity:0">TRACKING ACTIVE</div>
+        </div>
+        
+        <div class="vto-controls reveal delay-1">
+            <button class="vto-btn" title="Scale Up" onclick="adjustFrame(5)"><i class="fas fa-search-plus"></i></button>
+            <button class="vto-btn" title="Scale Down" onclick="adjustFrame(-5)"><i class="fas fa-search-minus"></i></button>
+            <button class="vto-btn" title="Move Up" onclick="moveFrame(-2)"><i class="fas fa-arrow-up"></i></button>
+            <button class="vto-btn" title="Move Down" onclick="moveFrame(2)"><i class="fas fa-arrow-down"></i></button>
+            <button class="vto-btn" style="background:var(--accent); border-color:var(--accent);" onclick="takeSnap()"><i class="fas fa-camera"></i> Capture Snapshot</button>
+        </div>
+            <div style="display:flex; flex-direction:column; align-items:center; color:#fff">
+                <span style="font-size:0.6rem; opacity:0.5; margin-bottom:5px;">MANUAL CALIBRATION</span>
+                <div style="display:flex; gap:10px;">
+                    <button class="vto-btn" onclick="adjustFrame(5)">Size +</button>
+                    <button class="vto-btn" onclick="adjustFrame(-5)">Size -</button>
+                    <button class="vto-btn" onclick="moveFrame(-5)">Up</button>
+                    <button class="vto-btn" onclick="moveFrame(5)">Down</button>
+                </div>
+            </div>
+            <button class="vto-btn" style="background:var(--accent); border-color:var(--accent); height:54px; margin-top:18px;" onclick="takeSnap()">📸 Snap Photo</button>
+        </div>
+    </div>
+
+    <!-- PRE-FOOTER NEWSLETTER -->
+    <section class="newsletter-section" style="background:#fff; padding:60px 4%; border-top:1px solid #eee; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:30px;">
+        <div style="text-align:left;">
+            <h2 style="font-size:2.2rem; margin:0 0 10px 0; letter-spacing:-1.5px; font-weight:800; color:#111;">Join our newsletter and get daily updates</h2>
+            <p style="color:#666; margin:0; font-size:1.1rem;">Get e-mail updates about our latest news and special offers</p>
+        </div>
+        <div style="display:flex; gap:15px; min-width:400px; flex:1; max-width:600px;">
+            <input type="email" placeholder="Your email address" style="flex:1; padding:18px 25px; border:1px solid #eee; border-radius:4px; outline:none; font-size:1rem; background: #fdfdfd;">
+            <button style="background:#000; color:#fff; border:none; padding:18px 35px; border-radius:4px; font-weight:800; text-transform:uppercase; letter-spacing:2px; font-size:0.85rem; cursor:pointer;">Subscribe</button>
+        </div>
+    </section>
+
+    <!-- ROBUST FOOTER -->
+    <footer class="footer" style="background:#fff; color:#333; padding:60px 4% 40px; width:100%; box-sizing:border-box; border-top: 1px solid #eee;">
+        <div style="display:grid; grid-template-columns: 1.4fr 1.4fr 1fr 1fr 1fr; gap:50px; margin-bottom:60px; width:100%; align-items: start;">
+            <!-- STORE 1 -->
+            <div>
+                <img src="/admin/img/logo.png" style="height:42px; margin-bottom:30px; display:block;">
+                <h4 style="margin:0 0 15px 0; font-size:1.1rem; color:#111; font-weight:700;">Blink Opticals (Citylight Store)</h4>
+                <p style="margin:0; color:#777; font-size:0.95rem; line-height:1.8;">Shop No : 323 to 328, Citylight Shopping Centre, Opp. Indraprasth Appt.,<br>Citylight Main Road, Surat – 395007</p>
+                <div style="margin-top:25px; color:#777; font-size:0.95rem; line-height:1.8;">
+                    <span style="display:block;"><strong style="color:#111; font-weight:700;">Store Contacts:</strong> +91 88662 22 777 | +91 81407 43000</span>
+                    <span style="display:block;"><strong style="color:#111; font-weight:700;">E-mail:</strong> contact@blinkopticals.com</span>
+                </div>
+                <div style="margin-top:20px;">
+                    <a href="javascript:void(0)" style="color:#777; text-decoration:none; font-size:0.95rem; display:flex; align-items:center; gap:10px; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#777'">
+                        <i class="fas fa-map-marker-alt" style="font-size:1.2rem; opacity:0.5;"></i> Tap for Google Map
+                    </a>
+                </div>
+            </div>
+            
+            <!-- STORE 2 -->
+            <div>
+                <div style="height:42px; margin-bottom:30px;"></div> <!-- Spacer -->
+                <h4 style="margin:0 0 15px 0; font-size:1.1rem; color:#111; font-weight:700;">Blink Opticals (Ghod dod Store)</h4>
+                <p style="margin:0; color:#777; font-size:0.95rem; line-height:1.8;">UG 16, Bhavik Complex, Beside Panjra Pol,<br>Ghod dod Road, Surat – 395001</p>
+                <div style="margin-top:25px; color:#777; font-size:0.95rem; line-height:1.8;">
+                    <span style="display:block;"><strong style="color:#111; font-weight:700;">Store Contacts:</strong> +91 89089 99099 | +91 9925 339000</span>
+                    <span style="display:block;"><strong style="color:#111; font-weight:700;">E-mail:</strong> contact@blinkopticals.com</span>
+                </div>
+                <div style="margin-top:20px;">
+                    <a href="javascript:void(0)" style="color:#777; text-decoration:none; font-size:0.95rem; display:flex; align-items:center; gap:10px; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#777'">
+                        <i class="fas fa-map-marker-alt" style="font-size:1.2rem; opacity:0.5;"></i> Tap for Google Map
+                    </a>
+                </div>
+            </div>
+            
+            <!-- LINK COL 1 -->
+            <div>
+                <div style="height:42px; margin-bottom:30px;"></div> <!-- Spacer -->
+                <h4 style="margin:0 0 25px 0; font-size:1.1rem; color:#111; font-weight:700;">About Us</h4>
+                <div style="display:flex; flex-direction:column; gap:15px;">
+                    <a href="javascript:void(0)" style="color:#777; text-decoration:none; font-size:1rem; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#777'">About Us</a>
+                    <a href="javascript:void(0)" style="color:#777; text-decoration:none; font-size:1rem; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#777'">Contact Us</a>
+                    <a href="#/account" style="color:#777; text-decoration:none; font-size:1rem; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#777'">Track Shipment</a>
+                    <a href="#/account" style="color:#777; text-decoration:none; font-size:1rem; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#777'">Your Account</a>
+                    <a href="javascript:void(0)" style="color:#777; text-decoration:none; font-size:1rem; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#777'">Blogs</a>
+                </div>
+            </div>
+            
+            <!-- LINK COL 2 -->
+            <div>
+                <div style="height:42px; margin-bottom:30px;"></div> <!-- Spacer -->
+                <h4 style="margin:0 0 25px 0; font-size:1.1rem; color:#111; font-weight:700;">More Info</h4>
+                <div style="display:flex; flex-direction:column; gap:15px;">
+                    <a href="javascript:void(0)" style="color:#777; text-decoration:none; font-size:1rem; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#777'">FAQs</a>
+                    <a href="javascript:void(0)" style="color:#777; text-decoration:none; font-size:1rem; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#777'">Privacy Policy</a>
+                    <a href="javascript:void(0)" style="color:#777; text-decoration:none; font-size:1rem; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#777'">Shipping Policy</a>
+                    <a href="javascript:void(0)" style="color:#777; text-decoration:none; font-size:1rem; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#777'">Refund & Return Policy</a>
+                    <a href="javascript:void(0)" style="color:#777; text-decoration:none; font-size:1rem; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#777'">Terms & Conditions</a>
+                </div>
+            </div>
+            
+            <!-- LINK COL 3 -->
+            <div>
+                <div style="height:42px; margin-bottom:30px;"></div> <!-- Spacer -->
+                <h4 style="margin:0 0 25px 0; font-size:1.1rem; color:#111; font-weight:700;">Follow Us</h4>
+                <div style="display:flex; gap:20px; font-size:1.4rem;">
+                    <a href="#" style="color:#333; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#333'"><i class="fab fa-facebook"></i></a>
+                    <a href="#" style="color:#333; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#333'"><i class="fab fa-instagram"></i></a>
+                    <a href="#" style="color:#333; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#333'"><i class="fab fa-twitter"></i></a>
+                    <a href="#" style="color:#333; transition:0.3s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#333'"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+        </div>
+        <div style="border-top:1px solid #eee; padding-top:25px; text-align:center; color:#999; font-size:0.9rem; width:100%;">
+            © Copyright 2026 BlinkOpticals. All Rights Reserved. Developed By Hari Solutions
+        </div>
+    </footer>
+
+    <!-- FRONTEND LOGIC -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="/js/vto.js?v=1.9"></script>
+    <script src="/js/storefront.js?v=1.9"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+.vercel
+node_modules/
+.env*
+temp_*
+*.log
+tmp/
+tmp_*
+scratch/
+db_info.txt
+db_out.json
+cols.txt
+plugins_list.txt
+plugins_list_utf8.txt

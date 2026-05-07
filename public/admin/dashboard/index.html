@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BlinkOpticals ERP [Enterprise V3]</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="/admin/css/erp.css">
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo" style="padding: 20px 24px; padding-bottom: 0;">
+    <img src="/admin/img/logo.png" alt="Blink Opticals" style="max-height: 38px; width: auto; object-fit: contain; margin-left: -5px;" />
+  </div>
+  <nav class="nav">
+    <div class="nav-group">Core</div>
+    <a class="nav-item active" data-view="dashboard">📊 Dashboard</a>
+    <a class="nav-item" data-view="pos">🖥️ POS</a>
+    <a class="nav-item" data-view="pos_order" style="background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(245,158,11,0.05));border-left:3px solid #f59e0b;">🔬 POS Order</a>
+    <a class="nav-item" data-view="orders">📋 Orders</a>
+    <div class="nav-group">Catalog</div>
+    <a class="nav-item" data-view="products">👓 Standard Entry</a>
+    <a class="nav-item" data-view="ecommerce">🛍️ Ecommerce Products</a>
+    <a class="nav-item" data-view="bulk_import">📤 Bulk Import</a>
+    <a class="nav-item" data-view="ai_filler">🤖 AI Data Filler</a>
+    <a class="nav-item" data-view="inventory">📦 Inventory</a>
+    <a class="nav-item" data-view="media">🖼️ Media Library</a>
+
+    <a class="nav-item" data-view="transfers">🚛 Stock Transfers</a>
+    <a class="nav-item" data-view="purchase">🛒 Purchases</a>
+
+    <a class="nav-item" data-view="showrooms">🏢 Showrooms</a>
+    <a class="nav-item" data-view="business">🏭 Business Setup</a>
+    <a class="nav-item" data-view="master">🗄️ Master Data</a>
+    <div class="nav-group">Financials</div>
+    <a class="nav-item" data-view="accounting">💰 Accounting</a>
+
+    <div class="nav-group">Customers</div>
+
+    <a class="nav-item" data-view="customers">👥 Customers</a>
+    <a class="nav-item" data-view="crm">📞 CRM & Leads</a>
+    <a class="nav-item" data-view="appointments">📅 Appointments</a>
+    <div class="nav-group">Clinical</div>
+    <a class="nav-item" data-view="eyetests">👁️ Eye Tests</a>
+    <a class="nav-item" data-view="repairs">🔧 Repairs</a>
+    <a class="nav-item" data-view="loyalty">⭐ Loyalty</a>
+    <div class="nav-group">Marketing</div>
+    <a class="nav-item" data-view="cms">📄 Website CMS</a>
+    <a class="nav-item" data-view="offers">🏷️ Offers</a>
+    <a class="nav-item" data-view="coupons">🎟️ Coupons</a>
+    <a class="nav-item" data-view="campaigns">📣 Campaigns & Comms</a>
+    <div class="nav-group">Business</div>
+    <a class="nav-item" data-view="reports">📈 Reports</a>
+    <a class="nav-item" data-view="staff">👤 Staff</a>
+    <a class="nav-item" data-view="settings">⚙️ Settings</a>
+  </nav>
+  <div class="sidebar-foot">
+    <div class="user-info">
+      <div class="user-ava" id="sideAva">A</div>
+      <div><div id="sideName" style="font-weight:600;font-size:.85rem"></div><div id="sideRole" style="font-size:.7rem;color:#666"></div></div>
+    </div>
+    <button class="btn-logout" onclick="logout()">Sign Out</button>
+  </div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <div>
+      <h1 class="page-title" id="pageTitle">Dashboard</h1>
+      <div class="page-date" id="pageDate"></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <select class="filter-input" id="globalShowroom" style="width:180px; font-weight:600">
+        <option value="">All Showrooms</option>
+      </select>
+      <input class="search-input" placeholder="Search anything..." id="globalSearch">
+      <div class="user-badge" style="background:none;border-color:transparent;gap:12px">
+        <div id="pageDate" class="page-date" style="text-align:right"></div>
+        <div class="user-ava" id="topAva" style="background:var(--accent)">A</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="content" id="appContent">
+    <div id="view-dashboard" class="view active"></div>
+    <div id="view-pos" class="view"></div>
+    <div id="view-pos_order" class="view"></div>
+    <div id="view-orders" class="view"></div>
+    <div id="view-products" class="view"></div>
+    <div id="view-inventory" class="view"></div>
+    <div id="view-transfers" class="view"></div>
+    <div id="view-showrooms" class="view"></div>
+    <div id="view-business" class="view"></div>
+    <div id="view-customers" class="view"></div>
+    <div id="view-crm" class="view"></div>
+    <div id="view-appointments" class="view"></div>
+    <div id="view-eyetests" class="view"></div>
+    <div id="view-repairs" class="view"></div>
+    <div id="view-loyalty" class="view"></div>
+    <div id="view-offers" class="view"></div>
+    <div id="view-coupons" class="view"></div>
+    <div id="view-campaigns" class="view"></div>
+    <div id="view-staff" class="view"></div>
+    <div id="view-settings" class="view"></div>
+    <div id="view-master" class="view"></div>
+    <div id="view-media" class="view"></div>
+    <div id="view-cms" class="view"></div>
+
+    <div id="view-ecommerce" class="view"></div>
+    <div id="view-bulk_import" class="view"></div>
+    <div id="view-ai_filler" class="view"></div>
+    <div id="view-accounting" class="view"></div>
+    <div id="view-purchase" class="view"></div>
+    <div id="view-reports" class="view"></div>
+
+  </div>
+</div>
+
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
+<div class="modal" id="modal">
+  <div class="modal-header"><span id="modalTitle"></span><button onclick="closeModal()" style="background:none;border:none;color:#999;cursor:pointer;font-size:1.2rem">✕</button></div>
+  <div class="modal-body" id="modalBody"></div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<!-- External Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script src="/admin/js/erp-core.js?v=MARKETING_V2"></script>
+<script src="/admin/js/erp-media.js?v=MARKETING_V2"></script>
+<script src="/admin/js/erp-cms.js?v=CMS_V1"></script>
+<script src="/admin/js/erp-views.js?v=MARKETING_V2"></script>
+<script src="/admin/js/erp-ai-filler.js?v=MARKETING_V2"></script>
+</body>
+</html>
