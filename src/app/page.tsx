@@ -1,413 +1,209 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
-import {
-    ArrowRight, CheckCircle, ShieldCheck, Zap,
-    BarChart3, Users, Shield,
-    Building, GraduationCap, School, UserCheck, Wallet,
-    MessageSquare, Globe, Star,
-    Trophy, Activity, Target, BrainCircuit,
-    BookOpen, Bell, TrendingUp, Lock, Sparkles,
-    Play, PhoneCall
-} from 'lucide-react'
-import { PublicHeader } from '@/components/public/PublicHeader'
-import { PublicFooter } from '@/components/public/PublicFooter'
+import React, { useState, useEffect } from 'react'
+import Image from 'next/image'
+import { GraduationCap, Sparkles, Send, Bell, Globe, Zap, ArrowRight, CheckCircle2 } from 'lucide-react'
 
-/* ── Animated counter ──────────────────────────────────────────────────────── */
-function CountUp({ end, suffix = '' }: { end: number; suffix?: string }) {
-    const [val, setVal] = useState(0)
-    const ref = useRef<HTMLSpanElement>(null)
-    const ran = useRef(false)
+export default function ComingSoonPage() {
+    const [email, setEmail] = useState('')
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isSubmitted, setIsSubmitted] = useState(false)
+
+    // Countdown timer logic
+    const [timeLeft, setTimeLeft] = useState({
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0
+    })
+
     useEffect(() => {
-        const el = ref.current
-        if (!el) return
-        const obs = new IntersectionObserver(([e]) => {
-            if (e.isIntersecting && !ran.current) {
-                ran.current = true
-                const dur = 1600
-                const t0 = performance.now()
-                const tick = (now: number) => {
-                    const p = Math.min((now - t0) / dur, 1)
-                    setVal(Math.round((1 - Math.pow(1 - p, 3)) * end))
-                    if (p < 1) requestAnimationFrame(tick)
-                }
-                requestAnimationFrame(tick)
+        const targetDate = new Date('2026-06-01T00:00:00')
+
+        const timer = setInterval(() => {
+            const now = new Date().getTime()
+            const distance = targetDate.getTime() - now
+
+            setTimeLeft({
+                days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+                hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+                minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+                seconds: Math.floor((distance % (1000 * 60)) / 1000)
+            })
+
+            if (distance < 0) {
+                clearInterval(timer)
             }
-        }, { threshold: 0.3 })
-        obs.observe(el)
-        return () => obs.disconnect()
-    }, [end])
-    return <span ref={ref}>{val.toLocaleString('en-IN')}{suffix}</span>
-}
+        }, 1000)
 
-/* ── Data ──────────────────────────────────────────────────────────────────── */
-const FEATURES = [
-    { icon: ShieldCheck, title: 'Anti-Cheat Exam Engine', desc: 'AI-backed proctoring, tab-switch detection, and randomised question pools keep every exam fair.', color: '#004B93', bg: 'rgba(0,75,147,0.07)' },
-    { icon: BarChart3,   title: '360° Learning Analytics', desc: 'Real-time dashboards from cohort performance to individual learning trajectories for every role.', color: '#1FAC63', bg: 'rgba(31,172,99,0.07)' },
-    { icon: Wallet,      title: 'Secure Fee Collection',   desc: 'Razorpay-powered payments with instant settlements, auto-receipts, and full audit trails.', color: '#F0A026', bg: 'rgba(240,160,38,0.08)' },
-    { icon: MessageSquare, title: 'WhatsApp Growth Engine', desc: 'Recruit students via WhatsApp affiliate links with automated referral tracking and payouts.', color: '#25D366', bg: 'rgba(37,211,102,0.07)' },
-    { icon: BrainCircuit, title: 'AI Question Builder',  desc: 'Generate, import, and organise question banks by subject and difficulty with Gemini AI.', color: '#7C3AED', bg: 'rgba(124,58,237,0.07)' },
-    { icon: Bell,         title: 'Smart Notifications',  desc: 'Automated alerts for exam schedules, result releases, payment due dates, and milestones.', color: '#004B93', bg: 'rgba(0,75,147,0.07)' },
-    { icon: Globe,        title: 'Multi-Tenant Architecture', desc: 'Fully isolated per-institution environments with custom branding, domain, and roles.', color: '#1FAC63', bg: 'rgba(31,172,99,0.07)' },
-    { icon: Activity,     title: 'Real-Time Monitoring', desc: 'Live exam supervision, submission tracking, and instant result computation.', color: '#EF4444', bg: 'rgba(239,68,68,0.07)' },
-    { icon: Lock,         title: 'Enterprise Security',  desc: 'Row-level data isolation, DPDP-compliant storage, encrypted credentials, full audit logs.', color: '#F0A026', bg: 'rgba(240,160,38,0.08)' },
-]
+        return () => clearInterval(timer)
+    }, [])
 
-const ROLES = [
-    { icon: Building,      role: 'Institution Owner', desc: 'Run your entire coaching empire from one place. Track revenue, growth, staff, and students.', perks: ['Multi-branch management', 'Subscription & billing control', 'WhatsApp affiliate tracking', 'Revenue & growth analytics'], color: '#004B93', bg: 'rgba(0,75,147,0.08)' },
-    { icon: School,        role: 'Admin',             desc: 'Streamline operations, manage teachers, configure exams, and handle academic logistics.', perks: ['Teacher & class management', 'Bulk question import (CSV)', 'Automated result sharing', 'Fee collection oversight'], color: '#7C3AED', bg: 'rgba(124,58,237,0.08)' },
-    { icon: UserCheck,     role: 'Teacher',           desc: 'Create rich assessments, track your students\' growth, and share insights with parents.', perks: ['Question bank builder', 'Live exam monitoring', 'Per-student performance view', 'Automated result reports'], color: '#1FAC63', bg: 'rgba(31,172,99,0.08)' },
-    { icon: GraduationCap, role: 'Student',           desc: 'Take timed exams, review answers, track scores, and stay on top of upcoming assessments.', perks: ['Clean exam interface', 'Instant result & solutions', 'Progress timeline', 'Leaderboard & rankings'], color: '#F0A026', bg: 'rgba(240,160,38,0.08)' },
-    { icon: Target,        role: 'Parent',            desc: 'Stay informed about your child\'s academic journey — scores, attendance, fee status.', perks: ['Real-time score alerts', 'Fee payment history', 'Exam schedule notifications', 'Teacher communication'], color: '#EF4444', bg: 'rgba(239,68,68,0.08)' },
-    { icon: Trophy,        role: 'Affiliate',         desc: 'Earn commissions by referring students through your unique WhatsApp sharing links.', perks: ['Unique referral link', 'Real-time earnings tracker', 'WhatsApp quick-share', 'Withdrawal dashboard'], color: '#25D366', bg: 'rgba(37,211,102,0.08)' },
-]
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setIsSubmitting(true)
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        setIsSubmitting(false)
+        setIsSubmitted(true)
+        setEmail('')
+    }
 
-const TESTIMONIALS = [
-    { quote: 'We reduced our exam-management overhead by 70%. The bulk CSV import and automated result sharing is a game-changer for our 1,200-student institute.', name: 'Priya Sharma', role: 'Academic Director', org: 'Vidyamandir Classes, Pune', rating: 5 },
-    { quote: 'The WhatsApp affiliate feature brought us 340 new enrolments last month with zero marketing spend. Our students are now our best promoters.', name: 'Rajesh Menon', role: 'Founder', org: 'EduPath Academy, Kerala', rating: 5 },
-    { quote: 'Finally a platform where I can see every student\'s performance trend, not just raw scores. The analytics helped me redesign my teaching approach.', name: 'Anjali Desai', role: 'Senior Educator', org: 'Concept First, Ahmedabad', rating: 5 },
-    { quote: 'Fee collection used to take 3 days of manual work. Now it\'s instant and fully automated — including receipts and reconciliation reports.', name: 'Suresh Kulkarni', role: 'Admin', org: 'Nalanda Coaching, Nashik', rating: 5 },
-    { quote: 'My students love the clean exam interface. No confusion, no tech issues. They can focus entirely on the questions — that trust is priceless.', name: 'Meena Thomas', role: 'Mathematics Teacher', org: 'Bright Minds, Kochi', rating: 5 },
-    { quote: 'Setting up our entire institute took less than 24 hours. The onboarding flow is exceptional — even our non-technical admin team managed it.', name: 'Arjun Patel', role: 'Owner', org: 'Zenith Institute, Surat', rating: 5 },
-]
-
-/* ── Page ──────────────────────────────────────────────────────────────────── */
-export default function LandingPage() {
     return (
-        <div style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }} className="flex flex-col min-h-screen bg-white">
-            <PublicHeader />
-            <main>
+        <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-sans selection:bg-indigo-500/30">
+            {/* Background Image with Overlay */}
+            <div className="absolute inset-0 z-0">
+                <Image
+                    src="/images/coming-soon-bg.png"
+                    alt="Indian Education Background"
+                    fill
+                    className="object-cover"
+                    priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/90 via-slate-900/85 to-emerald-900/80 backdrop-blur-[2px]" />
+            </div>
 
-                {/* ─── ANNOUNCEMENT ─────────────────────────────────────────── */}
-                <div style={{ background: 'linear-gradient(90deg,#004B93,#0077CC,#1FAC63)', color: '#fff', textAlign: 'center', padding: '10px 16px', fontSize: '13px', fontWeight: 600, lineHeight: 1.4 }}>
-                    🎉 New: WhatsApp-powered affiliate program is live!{' '}
-                    <Link href="/features" style={{ color: '#fff', textDecoration: 'underline', opacity: 0.85 }}>Explore now →</Link>
+            {/* Animated Light Trails */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-indigo-500/20 blur-[120px] rounded-full animate-pulse" />
+                <div className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-emerald-500/20 blur-[120px] rounded-full animate-pulse delay-700" />
+            </div>
+
+            {/* Content Container */}
+            <main className="relative z-10 w-full max-w-5xl px-6 py-12 flex flex-col items-center text-center">
+                
+                {/* Logo & Brand */}
+                <div className="flex items-center gap-4 mb-20 animate-fade-in">
+                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/30">
+                        <GraduationCap className="text-indigo-600 w-8 h-8" />
+                    </div>
+                    <span className="text-3xl font-bold text-white tracking-tight">BeBrilliant</span>
                 </div>
 
-                {/* ─── HERO ─────────────────────────────────────────────────── */}
-                <section style={{ padding: '96px 5% 80px', background: '#fff', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-                    {/* Subtle bg blobs */}
-                    <div style={{ position: 'absolute', top: '-120px', right: '-120px', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,75,147,0.06),transparent 70%)', pointerEvents: 'none' }} />
-                    <div style={{ position: 'absolute', bottom: '-80px', left: '-80px', width: 380, height: 380, borderRadius: '50%', background: 'radial-gradient(circle,rgba(31,172,99,0.05),transparent 70%)', pointerEvents: 'none' }} />
-
-                    <div style={{ maxWidth: 760, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-                        {/* Badge */}
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(0,75,147,0.06)', border: '1px solid rgba(0,75,147,0.12)', color: '#004B93', borderRadius: 100, padding: '6px 16px', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 28 }}>
-                            <Sparkles size={11} /> Institutional Excellence Platform
-                        </div>
-
-                        {/* Headline */}
-                        <h1 style={{ fontSize: 'clamp(40px, 6vw, 72px)', fontWeight: 900, color: '#0a0a0a', lineHeight: 1.08, letterSpacing: '-0.03em', margin: '0 0 24px' }}>
-                            Empower Every{' '}
-                            <span style={{ background: 'linear-gradient(135deg,#004B93,#1FAC63)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                                Educator.
-                            </span>
-                            <br />Inspire Every Student.
-                        </h1>
-
-                        {/* Sub */}
-                        <p style={{ fontSize: 18, color: '#6b7280', lineHeight: 1.7, margin: '0 0 36px', maxWidth: 560, marginLeft: 'auto', marginRight: 'auto' }}>
-                            India's most trusted multi-role platform — smart exams, WhatsApp growth, real-time analytics, and secure fee collection in one place.
-                        </p>
-
-                        {/* CTA row */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: 28 }}>
-                            <Link href="/request-demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#004B93', color: '#fff', padding: '14px 28px', borderRadius: 14, fontWeight: 700, fontSize: 15, textDecoration: 'none', boxShadow: '0 8px 24px rgba(0,75,147,0.25)' }}>
-                                Get Started Free <ArrowRight size={15} />
-                            </Link>
-                            <Link href="/pricing" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', color: '#111', padding: '14px 28px', borderRadius: 14, fontWeight: 700, fontSize: 15, textDecoration: 'none', border: '1.5px solid #e5e7eb' }}>
-                                <Play size={14} style={{ color: '#004B93' }} /> View Pricing
-                            </Link>
-                        </div>
-
-                        {/* Trust strip */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px 24px', fontSize: 13, color: '#9ca3af' }}>
-                            {['No credit card required', 'DPDP & data-compliant', 'Setup in under 24h'].map(t => (
-                                <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                                    <CheckCircle size={13} style={{ color: '#1FAC63', flexShrink: 0 }} /> {t}
-                                </span>
-                            ))}
-                        </div>
+                {/* Main Heading */}
+                <div className="space-y-8 mb-20">
+                    <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-indigo-100 text-sm font-semibold animate-bounce-subtle">
+                        <Sparkles className="w-4.5 h-4.5 text-indigo-300" />
+                        <span>The Future of Indian Education is Coming</span>
                     </div>
+                    
+                    <h1 className="text-6xl md:text-8xl font-black text-white leading-[1.05] tracking-tighter">
+                        Empowering Every <br />
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white to-emerald-300">
+                            Educator & Student
+                        </span>
+                    </h1>
+                    
+                    <p className="text-xl md:text-2xl text-slate-300/90 max-w-3xl mx-auto leading-relaxed font-medium">
+                        We're building India's most advanced multi-role platform for institutional excellence. 
+                        Smart exams, WhatsApp-powered growth, and real-time analytics — all in one place.
+                    </p>
+                </div>
 
-                    {/* Dashboard mockup */}
-                    <div style={{ maxWidth: 1040, margin: '60px auto 0', position: 'relative' }}>
-                        {/* Floating badges */}
-                        <div style={{ position: 'absolute', left: -16, top: '30%', zIndex: 2, display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid #f0f0f0', borderRadius: 14, padding: '10px 14px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}>
-                            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(31,172,99,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><TrendingUp size={14} style={{ color: '#1FAC63' }} /></div>
-                            <div style={{ textAlign: 'left' }}>
-                                <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 500 }}>This week</div>
-                                <div style={{ fontSize: 13, color: '#111', fontWeight: 700 }}>+24% Growth</div>
+                {/* Countdown Timer */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-24 w-full max-w-4xl">
+                    {[
+                        { label: 'Days', value: timeLeft.days },
+                        { label: 'Hours', value: timeLeft.hours },
+                        { label: 'Minutes', value: timeLeft.minutes },
+                        { label: 'Seconds', value: timeLeft.seconds }
+                    ].map((item) => (
+                        <div key={item.label} className="group relative">
+                            <div className="absolute inset-0 bg-indigo-500/20 blur-2xl group-hover:bg-indigo-500/30 transition-colors rounded-3xl" />
+                            <div className="relative bg-white/5 border border-white/15 backdrop-blur-2xl rounded-3xl p-8 transition-all duration-500 group-hover:-translate-y-2 group-hover:border-white/30">
+                                <div className="text-5xl md:text-6xl font-black text-white mb-2 tabular-nums tracking-tighter">
+                                    {item.value.toString().padStart(2, '0')}
+                                </div>
+                                <div className="text-sm uppercase tracking-[0.2em] text-indigo-200/60 font-black">{item.label}</div>
                             </div>
                         </div>
-                        <div style={{ position: 'absolute', right: -16, top: 24, zIndex: 2, display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid #f0f0f0', borderRadius: 14, padding: '10px 14px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}>
-                            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(0,75,147,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Shield size={14} style={{ color: '#004B93' }} /></div>
-                            <div style={{ textAlign: 'left' }}>
-                                <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 500 }}>Exam integrity</div>
-                                <div style={{ fontSize: 13, color: '#111', fontWeight: 700 }}>99.9% Uptime</div>
-                            </div>
-                        </div>
+                    ))}
+                </div>
 
-                        {/* Screen chrome */}
-                        <div style={{ background: '#111827', borderRadius: 20, overflow: 'hidden', boxShadow: '0 32px 64px rgba(0,0,0,0.2)' }}>
-                            {/* Title bar */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 16px', background: '#1f2937', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF5F57' }} />
-                                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FEBC2E' }} />
-                                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28C840' }} />
-                                <div style={{ flex: 1, marginLeft: 8, background: 'rgba(255,255,255,0.07)', borderRadius: 6, padding: '4px 10px', fontSize: 11, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <Lock size={9} style={{ color: '#1FAC63' }} /> app.bebrilliant.in/dashboard
-                                </div>
+                {/* Waitlist Form */}
+                <div className="w-full max-w-lg relative group mb-32">
+                    <div className="absolute -inset-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition duration-1000" />
+                    
+                    <div className="relative bg-slate-950/40 backdrop-blur-3xl rounded-2xl p-2.5 border border-white/10 shadow-2xl">
+                        {!isSubmitted ? (
+                            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+                                <input
+                                    type="email"
+                                    required
+                                    placeholder="Enter your email for early access..."
+                                    className="flex-1 bg-white/5 border-0 focus:ring-2 focus:ring-indigo-500/50 text-white px-6 py-4 rounded-xl placeholder:text-slate-500 text-lg transition-all"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 text-white px-8 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl shadow-indigo-600/20"
+                                >
+                                    {isSubmitting ? (
+                                        <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        <>
+                                            <span>Join Waitlist</span>
+                                            <Send className="w-5 h-5" />
+                                        </>
+                                    )}
+                                </button>
+                            </form>
+                        ) : (
+                            <div className="py-5 px-6 flex items-center justify-center gap-4 text-emerald-400 font-bold text-lg animate-in fade-in zoom-in duration-700">
+                                <CheckCircle2 className="w-8 h-8" />
+                                <span>You're on the list! We'll be in touch.</span>
                             </div>
-                            {/* Content */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 0, minHeight: 260 }}>
-                                {/* Sidebar */}
-                                <div style={{ padding: '16px 10px', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                    {['Dashboard', 'Exams', 'Students', 'Analytics', 'Billing', 'Settings'].map((item, i) => (
-                                        <div key={item} style={{ padding: '7px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600, color: i === 0 ? '#fff' : 'rgba(255,255,255,0.35)', background: i === 0 ? '#004B93' : 'transparent' }}>{item}</div>
-                                    ))}
-                                </div>
-                                {/* Main */}
-                                <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                    {/* KPI row */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
-                                        {[
-                                            { label: 'Students', val: '4,821', gradient: 'linear-gradient(135deg,#004B93,#0077CC)', Icon: Users },
-                                            { label: 'Exams Today', val: '12', gradient: 'linear-gradient(135deg,#1FAC63,#28CC78)', Icon: BookOpen },
-                                            { label: 'Revenue (₹)', val: '2.4L', gradient: 'linear-gradient(135deg,#F0A026,#F5B94A)', Icon: Wallet },
-                                            { label: 'Avg Score', val: '78%', gradient: 'linear-gradient(135deg,#7C3AED,#9B59B6)', Icon: Trophy },
-                                        ].map(({ label, val, gradient, Icon }) => (
-                                            <div key={label} style={{ background: gradient, borderRadius: 12, padding: '12px 10px', color: '#fff' }}>
-                                                <Icon size={13} style={{ opacity: 0.7, marginBottom: 6 }} />
-                                                <div style={{ fontSize: 18, fontWeight: 900 }}>{val}</div>
-                                                <div style={{ fontSize: 9, opacity: 0.6, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {/* Chart */}
-                                    <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 12 }}>
-                                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginBottom: 10 }}>Weekly Exam Activity</div>
-                                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 60 }}>
-                                            {[45, 72, 58, 85, 63, 91, 77].map((h, i) => (
-                                                <div key={i} style={{ flex: 1, borderRadius: '4px 4px 0 0', background: 'linear-gradient(to top,#004B93,#1FAC63)', opacity: 0.75, height: `${h}%` }} />
-                                            ))}
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-                                            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-                                                <span key={i} style={{ flex: 1, textAlign: 'center', fontSize: 8, color: 'rgba(255,255,255,0.25)' }}>{d}</span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        )}
                     </div>
-                </section>
+                </div>
 
-                {/* ─── STATS ────────────────────────────────────────────────── */}
-                <section style={{ padding: '0 5% 80px', background: '#fff' }}>
-                    <div style={{ width: '100%', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', border: '1px solid #f0f0f0', borderRadius: 20, overflow: 'hidden', boxSizing: 'border-box' }}>
-                        {[
-                            { end: 1200000, suffix: '+', label: 'Exams Delivered', color: '#004B93' },
-                            { end: 500,     suffix: '+', label: 'Active Institutions', color: '#1FAC63' },
-                            { end: 4800000, suffix: '+', label: 'Students Served', color: '#004B93' },
-                            { end: 99,      suffix: '.9%', label: 'Platform Uptime', color: '#1FAC63' },
-                        ].map(({ end, suffix, label, color }, i) => (
-                            <div key={label} style={{ padding: '40px 16px', textAlign: 'center', borderLeft: i > 0 ? '1px solid #f0f0f0' : 'none' }}>
-                                <div style={{ fontSize: 'clamp(28px,3.5vw,44px)', fontWeight: 900, color, lineHeight: 1, marginBottom: 8 }}>
-                                    <CountUp end={end} suffix={suffix} />
-                                </div>
-                                <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</div>
+                {/* Quick Info/Features */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 w-full max-w-5xl mb-20">
+                    {[
+                        { icon: Zap, title: "AI-Powered", desc: "Anti-cheat exam engine and smart analytics." },
+                        { icon: Globe, title: "Multi-Role", desc: "Portals for Teachers, Students, Admins & Parents." },
+                        { icon: Bell, title: "WhatsApp Integration", desc: "Real-time updates and referral growth engine." }
+                    ].map((feature, i) => (
+                        <div key={i} className="flex flex-col items-center text-center space-y-5 group">
+                            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-indigo-500/10 group-hover:border-indigo-500/30">
+                                <feature.icon className="w-7 h-7 text-indigo-400" />
                             </div>
-                        ))}
-                    </div>
-                </section>
-
-                {/* ─── FEATURES ─────────────────────────────────────────────── */}
-                <section style={{ padding: '80px 5%', background: '#f9fafb' }}>
-                    <div style={{ width: '100%' }}>
-                        {/* Header */}
-                        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 100, padding: '6px 16px', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#004B93', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                                <Zap size={11} /> Platform Capabilities
-                            </div>
-                            <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 900, color: '#0a0a0a', letterSpacing: '-0.03em', lineHeight: 1.1, margin: '0 0 16px' }}>
-                                Everything your institution needs,
-                                <br />
-                                <span style={{ background: 'linear-gradient(135deg,#004B93,#1FAC63)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>in one platform.</span>
-                            </h2>
-                            <p style={{ fontSize: 17, color: '#6b7280', maxWidth: 480, margin: '0 auto' }}>
-                                From admissions to analytics — every critical workflow streamlined for scale.
-                            </p>
-                        </div>
-
-                        {/* Grid */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
-                            {FEATURES.map(({ icon: Icon, title, desc, color, bg }) => (
-                                <div key={title} style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: 20, padding: '28px 24px' }}>
-                                    <div style={{ width: 48, height: 48, borderRadius: 14, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                                        <Icon size={22} style={{ color }} />
-                                    </div>
-                                    <div style={{ fontSize: 15, fontWeight: 700, color: '#0a0a0a', marginBottom: 8 }}>{title}</div>
-                                    <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6 }}>{desc}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* ─── ROLES ────────────────────────────────────────────────── */}
-                <section style={{ padding: '80px 5%', background: '#fff' }}>
-                    <div style={{ width: '100%' }}>
-                        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(0,75,147,0.06)', border: '1px solid rgba(0,75,147,0.1)', borderRadius: 100, padding: '6px 16px', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#004B93', marginBottom: 20 }}>
-                                <Users size={11} /> Built for Every Role
-                            </div>
-                            <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 900, color: '#0a0a0a', letterSpacing: '-0.03em', lineHeight: 1.1, margin: '0 0 16px' }}>
-                                The right tools for<br />everyone in your institution.
-                            </h2>
-                            <p style={{ fontSize: 17, color: '#6b7280', maxWidth: 440, margin: '0 auto' }}>
-                                One platform, six dedicated portals — each tailored to what that role actually needs.
-                            </p>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
-                            {ROLES.map(({ icon: Icon, role, desc, perks, color, bg }) => (
-                                <div key={role} style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: 20, padding: '28px 24px' }}>
-                                    <div style={{ width: 48, height: 48, borderRadius: 14, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                                        <Icon size={22} style={{ color }} />
-                                    </div>
-                                    <div style={{ fontSize: 17, fontWeight: 700, color: '#0a0a0a', marginBottom: 6 }}>{role}</div>
-                                    <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6, marginBottom: 16 }}>{desc}</div>
-                                    <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                        {perks.map(p => (
-                                            <li key={p} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151' }}>
-                                                <CheckCircle size={13} style={{ color: '#1FAC63', flexShrink: 0 }} /> {p}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                    <Link href="/features" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 700, color: '#004B93', textDecoration: 'none' }}>
-                                        Learn more <ArrowRight size={13} />
-                                    </Link>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* ─── TESTIMONIALS ─────────────────────────────────────────── */}
-                <section style={{ padding: '80px 5%', background: '#f9fafb' }}>
-                    <div style={{ width: '100%' }}>
-                        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 100, padding: '6px 16px', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#004B93', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                                <Star size={11} style={{ color: '#F0A026', fill: '#F0A026' }} /> Trusted by Educators
-                            </div>
-                            <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 900, color: '#0a0a0a', letterSpacing: '-0.03em', lineHeight: 1.1, margin: '0 0 16px' }}>
-                                500+ institutions trust<br />BeBrilliant.
-                            </h2>
-                            <p style={{ fontSize: 17, color: '#6b7280', maxWidth: 440, margin: '0 auto' }}>
-                                Real testimonials from teachers, admins, and students across India.
-                            </p>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
-                            {TESTIMONIALS.map(({ quote, name, role, org, rating }) => (
-                                <div key={name} style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: 20, padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                    {/* Stars */}
-                                    <div style={{ display: 'flex', gap: 3 }}>
-                                        {Array.from({ length: rating }).map((_, i) => <Star key={i} size={13} style={{ color: '#F0A026', fill: '#F0A026' }} />)}
-                                    </div>
-                                    {/* Quote */}
-                                    <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.65, flex: 1, margin: 0 }}>"{quote}"</p>
-                                    {/* Author */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 16, borderTop: '1px solid #f9fafb' }}>
-                                        <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(135deg,#004B93,#1FAC63)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
-                                            {name[0]}
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: 13, fontWeight: 700, color: '#0a0a0a' }}>{name}</div>
-                                            <div style={{ fontSize: 11, color: '#9ca3af' }}>{role} · {org}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* ─── TRUST BAR ────────────────────────────────────────────── */}
-                <section style={{ padding: '48px 5%', background: '#fff', borderTop: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0' }}>
-                    <div style={{ width: '100%', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '24px 48px' }}>
-                        {[
-                            { Icon: ShieldCheck, label: 'DPDP Compliant', sub: 'Data Privacy' },
-                            { Icon: Lock,        label: 'Bank-Grade Encryption', sub: 'Security' },
-                            { Icon: Zap,         label: '< 200ms Response', sub: 'Performance' },
-                            { Icon: Globe,       label: 'Pan-India CDN', sub: 'Availability' },
-                            { Icon: Activity,    label: '99.9% Uptime SLA', sub: 'Reliability' },
-                        ].map(({ Icon, label, sub }) => (
-                            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(0,75,147,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                    <Icon size={18} style={{ color: '#004B93' }} />
-                                </div>
-                                <div>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{label}</div>
-                                    <div style={{ fontSize: 11, color: '#9ca3af' }}>{sub}</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-
-                {/* ─── CTA ──────────────────────────────────────────────────── */}
-                <section style={{ padding: '80px 5%', background: '#fff' }}>
-                    <div style={{ width: '100%' }}>
-                        <div style={{ background: 'linear-gradient(135deg,#003d7a,#004B93,#005fa3)', borderRadius: 28, padding: '72px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-                            {/* Decorative blobs */}
-                            <div style={{ position: 'absolute', top: '-20%', right: '-5%', width: 300, height: 300, borderRadius: '50%', background: 'rgba(31,172,99,0.1)', filter: 'blur(50px)', pointerEvents: 'none' }} />
-                            <div style={{ position: 'absolute', bottom: '-10%', left: '-8%', width: 240, height: 240, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', filter: 'blur(40px)', pointerEvents: 'none' }} />
-                            {/* Dot grid overlay */}
-                            <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle,rgba(255,255,255,0.06) 1px,transparent 1px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
-
-                            <div style={{ position: 'relative', zIndex: 1 }}>
-                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 100, padding: '6px 16px', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fff', marginBottom: 24 }}>
-                                    <Sparkles size={11} /> Start Your Free Trial
-                                </div>
-
-                                <h2 style={{ fontSize: 'clamp(28px,5vw,52px)', fontWeight: 900, color: '#fff', lineHeight: 1.1, letterSpacing: '-0.03em', margin: '0 0 20px' }}>
-                                    Ready to transform<br />your institution?
-                                </h2>
-                                <p style={{ fontSize: 17, color: 'rgba(255,255,255,0.6)', margin: '0 0 36px', maxWidth: 460, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
-                                    Join 500+ educators redefining digital education in India.<br />
-                                    No setup fees. No hidden charges. Results from day one.
-                                </p>
-
-                                {/* CTAs */}
-                                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: 48 }}>
-                                    <Link href="/request-demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', color: '#004B93', padding: '14px 28px', borderRadius: 14, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>
-                                        Book a Free Demo <ArrowRight size={15} />
-                                    </Link>
-                                    <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '14px 28px', borderRadius: 14, fontWeight: 700, fontSize: 15, textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)' }}>
-                                        <PhoneCall size={15} /> Talk to Sales
-                                    </Link>
-                                </div>
-
-                                {/* Mini stats */}
-                                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '16px 40px', paddingTop: 32, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                                    {[{ val: '48h', label: 'Avg. onboarding time' }, { val: '₹0', label: 'Setup cost' }, { val: '24/7', label: 'Support' }].map(({ val, label }) => (
-                                        <div key={label} style={{ textAlign: 'center' }}>
-                                            <div style={{ fontSize: 24, fontWeight: 900, color: '#fff' }}>{val}</div>
-                                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 3 }}>{label}</div>
-                                        </div>
-                                    ))}
-                                </div>
+                            <div className="space-y-2">
+                                <h3 className="text-white text-xl font-bold tracking-tight">{feature.title}</h3>
+                                <p className="text-base text-slate-400/80 leading-relaxed max-w-[280px] mx-auto">{feature.desc}</p>
                             </div>
                         </div>
-                    </div>
-                </section>
+                    ))}
+                </div>
 
+                {/* Footer Link */}
+                <div className="mt-auto pt-12 border-t border-white/10 w-full flex flex-col md:flex-row items-center justify-between gap-6 text-slate-500 text-sm font-medium tracking-wide">
+                    <p>© 2026 BeBrilliant. Crafted for Excellence in India.</p>
+                    <div className="flex gap-8">
+                        <a href="#" className="hover:text-indigo-400 transition-colors uppercase tracking-widest text-[10px] font-bold">Privacy Policy</a>
+                        <a href="#" className="hover:text-indigo-400 transition-colors uppercase tracking-widest text-[10px] font-bold">Contact Us</a>
+                    </div>
+                </div>
             </main>
-            <PublicFooter />
+
+            <style jsx global>{`
+                @keyframes bounce-subtle {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-4px); }
+                }
+                .animate-bounce-subtle {
+                    animation: bounce-subtle 3s ease-in-out infinite;
+                }
+                @keyframes fade-in {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fade-in {
+                    animation: fade-in 1s ease-out forwards;
+                }
+            `}</style>
         </div>
     )
 }
