@@ -18,8 +18,7 @@ export default function ComingSoonPage() {
     })
 
     useEffect(() => {
-        const targetDate = new Date()
-        targetDate.setDate(targetDate.getDate() + 14) // 14 days from now
+        const targetDate = new Date('2026-06-01T00:00:00')
 
         const timer = setInterval(() => {
             const now = new Date().getTime()
