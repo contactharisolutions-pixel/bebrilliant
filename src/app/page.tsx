@@ -54,19 +54,19 @@ export default function ComingSoonPage() {
             {/* Background Image with Overlay */}
             <div className="absolute inset-0 z-0">
                 <Image
-                    src="/images/coming-soon-bg.png"
-                    alt="Indian Education Background"
+                    src="/images/blinkopticals-bg.png"
+                    alt="Luxury Optical Store Background"
                     fill
                     className="object-cover"
                     priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/90 via-slate-900/85 to-emerald-900/80 backdrop-blur-[2px]" />
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-slate-900/85 to-indigo-900/80 backdrop-blur-[2px]" />
             </div>
 
             {/* Animated Light Trails */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-indigo-500/20 blur-[120px] rounded-full animate-pulse" />
-                <div className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-emerald-500/20 blur-[120px] rounded-full animate-pulse delay-700" />
+                <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-blue-500/20 blur-[120px] rounded-full animate-pulse" />
+                <div className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-indigo-500/20 blur-[120px] rounded-full animate-pulse delay-700" />
             </div>
 
             {/* Content Container */}
@@ -74,29 +74,29 @@ export default function ComingSoonPage() {
                 
                 {/* Logo & Brand */}
                 <div className="flex items-center gap-4 mb-20 animate-fade-in">
-                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/30">
-                        <GraduationCap className="text-indigo-600 w-8 h-8" />
+                    <div className="w-14 h-14 bg-white rounded-2xl overflow-hidden flex items-center justify-center shadow-2xl shadow-blue-500/30">
+                        <Image src="/images/blinkopticals-logo.png" alt="BlinkOpticals" width={56} height={56} className="object-cover" />
                     </div>
-                    <span className="text-3xl font-bold text-white tracking-tight">BeBrilliant</span>
+                    <span className="text-3xl font-bold text-white tracking-tight">BlinkOpticals</span>
                 </div>
 
                 {/* Main Heading */}
                 <div className="space-y-8 mb-20">
-                    <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-indigo-100 text-sm font-semibold animate-bounce-subtle">
-                        <Sparkles className="w-4.5 h-4.5 text-indigo-300" />
-                        <span>The Future of Indian Education is Coming</span>
+                    <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-blue-100 text-sm font-semibold animate-bounce-subtle">
+                        <Sparkles className="w-4.5 h-4.5 text-blue-300" />
+                        <span>The Future of Optical Management is Coming</span>
                     </div>
                     
                     <h1 className="text-6xl md:text-8xl font-black text-white leading-[1.05] tracking-tighter">
-                        Empowering Every <br />
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white to-emerald-300">
-                            Educator & Student
+                        Visionary ERP for <br />
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-white to-indigo-300">
+                            Modern Opticians
                         </span>
                     </h1>
                     
                     <p className="text-xl md:text-2xl text-slate-300/90 max-w-3xl mx-auto leading-relaxed font-medium">
-                        We're building India's most advanced multi-role platform for institutional excellence. 
-                        Smart exams, WhatsApp-powered growth, and real-time analytics — all in one place.
+                        We're building India's most advanced cloud ERP for optical stores. 
+                        Inventory tracking, automated prescriptions, and AI-powered sales insights — all in one place.
                     </p>
                 </div>
 
@@ -162,13 +162,13 @@ export default function ComingSoonPage() {
                 {/* Quick Info/Features */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 w-full max-w-5xl mb-20">
                     {[
-                        { icon: Zap, title: "AI-Powered", desc: "Anti-cheat exam engine and smart analytics." },
-                        { icon: Globe, title: "Multi-Role", desc: "Portals for Teachers, Students, Admins & Parents." },
-                        { icon: Bell, title: "WhatsApp Integration", desc: "Real-time updates and referral growth engine." }
+                        { icon: Zap, title: "Smart Inventory", desc: "Real-time stock tracking and automated reordering." },
+                        { icon: Globe, title: "Cloud-Based", desc: "Access your store data from anywhere, on any device." },
+                        { icon: Bell, title: "Instant Prescriptions", desc: "Digital prescription management and WhatsApp sharing." }
                     ].map((feature, i) => (
                         <div key={i} className="flex flex-col items-center text-center space-y-5 group">
-                            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-indigo-500/10 group-hover:border-indigo-500/30">
-                                <feature.icon className="w-7 h-7 text-indigo-400" />
+                            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-blue-500/10 group-hover:border-blue-500/30">
+                                <feature.icon className="w-7 h-7 text-blue-400" />
                             </div>
                             <div className="space-y-2">
                                 <h3 className="text-white text-xl font-bold tracking-tight">{feature.title}</h3>
@@ -180,7 +180,7 @@ export default function ComingSoonPage() {
 
                 {/* Footer Link */}
                 <div className="mt-auto pt-12 border-t border-white/10 w-full flex flex-col md:flex-row items-center justify-between gap-6 text-slate-500 text-sm font-medium tracking-wide">
-                    <p>© 2026 BeBrilliant. Crafted for Excellence in India.</p>
+                    <p>© 2026 BlinkOpticals. Crafted for Optical Excellence.</p>
                     <div className="flex gap-8">
                         <a href="#" className="hover:text-indigo-400 transition-colors uppercase tracking-widest text-[10px] font-bold">Privacy Policy</a>
                         <a href="#" className="hover:text-indigo-400 transition-colors uppercase tracking-widest text-[10px] font-bold">Contact Us</a>

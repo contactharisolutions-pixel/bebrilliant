@@ -43,9 +43,9 @@ export const PublicHeader = () => {
                 {/* Logo */}
                 <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
                     <img
-                        src="https://bfzlkdurgggzytegvvrw.supabase.co/storage/v1/object/public/bebrilliant/Logo2.jpeg"
-                        alt="BeBrilliant"
-                        style={{ height: 36, width: 'auto', objectFit: 'contain', display: 'block' }}
+                        src="/images/blinkopticals-logo.png"
+                        alt="BlinkOpticals"
+                        style={{ height: 40, width: 'auto', objectFit: 'contain', display: 'block', borderRadius: '8px' }}
                     />
                 </Link>
 

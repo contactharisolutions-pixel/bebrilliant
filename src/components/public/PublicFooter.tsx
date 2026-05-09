@@ -52,8 +52,8 @@ export const PublicFooter = () => {
                         <Link href="/" style={{ display: 'inline-flex', marginBottom: 24 }}>
                             <div style={{ background: '#fff', borderRadius: 12, padding: '8px 14px', display: 'inline-flex' }}>
                                 <img
-                                    src="https://bfzlkdurgggzytegvvrw.supabase.co/storage/v1/object/public/bebrilliant/Logo2.jpeg"
-                                    alt="BeBrilliant"
+                                    src="/images/blinkopticals-logo.png"
+                                    alt="BlinkOpticals"
                                     style={{ height: 32, width: 'auto', objectFit: 'contain', display: 'block' }}
                                 />
                             </div>
@@ -61,15 +61,15 @@ export const PublicFooter = () => {
 
                         {/* Tagline */}
                         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7, marginBottom: 28, maxWidth: 280 }}>
-                            India's most trusted platform for schools and institutes. Manage exams, track progress, and grow with ease.
+                            India's most trusted cloud ERP for optical stores and clinics. Manage inventory, prescriptions, and sales with ease.
                         </p>
 
                         {/* Contact details */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28 }}>
                             {[
-                                { Icon: Mail,   text: 'support@bebrilliant.in',  href: 'mailto:support@bebrilliant.in' },
+                                { Icon: Mail,   text: 'support@blinkopticals.com',  href: 'mailto:support@blinkopticals.com' },
                                 { Icon: Phone,  text: '+91 98751 59220',         href: 'tel:+919875159220' },
-                                { Icon: MapPin, text: '104, D Avenue, Rustomjee Global City, Virar (W), Mumbai — 401303', href: null },
+                                { Icon: MapPin, text: 'BlinkOpticals Hub, Mumbai, India', href: null },
                             ].map(({ Icon, text, href }) => {
                                 const content = (
                                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
@@ -131,7 +131,7 @@ export const PublicFooter = () => {
                 {/* ── Bottom bar ── */}
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
                     <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.22)', fontWeight: 500 }}>
-                        © 2026 BeBrilliant. All rights reserved.{' '}
+                        © 2026 BlinkOpticals. All rights reserved.{' '}
                         <span style={{ color: 'rgba(255,255,255,0.12)' }}>· Designed & Developed by Hari Solutions</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'rgba(255,255,255,0.22)', fontWeight: 500 }}>

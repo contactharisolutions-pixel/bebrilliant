@@ -11,16 +11,16 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'BeBrilliant — India\'s Institutional Excellence Platform',
+  title: 'BlinkOpticals — Modern Optical ERP System',
   description:
-    'Empower every educator, inspire every student. India\'s most trusted multi-role platform for institutions — smart exams, WhatsApp growth, real-time analytics, and secure fee collection.',
-  keywords: 'coaching institute software, online exam platform India, LMS India, student management system, fee collection software, WhatsApp affiliate education',
+    'Visionary ERP for modern opticians. India\'s most advanced cloud ERP for optical stores — inventory tracking, automated prescriptions, and AI-powered sales insights.',
+  keywords: 'optical store software, optician ERP, optical inventory management, optical shop billing software, eye clinic software India',
   icons: {
-    icon: 'https://bfzlkdurgggzytegvvrw.supabase.co/storage/v1/object/public/bebrilliant/favicon.ico',
+    icon: '/images/blinkopticals-logo.png',
   },
   openGraph: {
-    title: 'BeBrilliant — India\'s Institutional Excellence Platform',
-    description: 'Smart exams, WhatsApp growth, analytics, and secure payments for 500+ institutions.',
+    title: 'BlinkOpticals — Modern Optical ERP System',
+    description: 'Inventory tracking, automated prescriptions, and AI-powered sales insights for optical stores.',
     type: 'website',
   },
 }
