@@ -8,37 +8,6 @@ export default function ComingSoonPage() {
     const [email, setEmail] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSubmitted, setIsSubmitted] = useState(false)
-
-    // Countdown timer logic
-    const [timeLeft, setTimeLeft] = useState({
-        days: 0,
-        hours: 0,
-        minutes: 0,
-        seconds: 0
-    })
-
-    useEffect(() => {
-        const targetDate = new Date('2026-06-01T00:00:00')
-
-        const timer = setInterval(() => {
-            const now = new Date().getTime()
-            const distance = targetDate.getTime() - now
-
-            setTimeLeft({
-                days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-                hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-                minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-                seconds: Math.floor((distance % (1000 * 60)) / 1000)
-            })
-
-            if (distance < 0) {
-                clearInterval(timer)
-            }
-        }, 1000)
-
-        return () => clearInterval(timer)
-    }, [])
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsSubmitting(true)
@@ -99,27 +68,6 @@ export default function ComingSoonPage() {
                         Inventory tracking, automated prescriptions, and AI-powered sales insights — all in one place.
                     </p>
                 </div>
-
-                {/* Countdown Timer */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-24 w-full max-w-4xl">
-                    {[
-                        { label: 'Days', value: timeLeft.days },
-                        { label: 'Hours', value: timeLeft.hours },
-                        { label: 'Minutes', value: timeLeft.minutes },
-                        { label: 'Seconds', value: timeLeft.seconds }
-                    ].map((item) => (
-                        <div key={item.label} className="group relative">
-                            <div className="absolute inset-0 bg-indigo-500/20 blur-2xl group-hover:bg-indigo-500/30 transition-colors rounded-3xl" />
-                            <div className="relative bg-white/5 border border-white/15 backdrop-blur-2xl rounded-3xl p-8 transition-all duration-500 group-hover:-translate-y-2 group-hover:border-white/30">
-                                <div className="text-5xl md:text-6xl font-black text-white mb-2 tabular-nums tracking-tighter">
-                                    {item.value.toString().padStart(2, '0')}
-                                </div>
-                                <div className="text-sm uppercase tracking-[0.2em] text-indigo-200/60 font-black">{item.label}</div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
                 {/* Waitlist Form */}
                 <div className="w-full max-w-lg relative group mb-32">
                     <div className="absolute -inset-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition duration-1000" />
