@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         if (error) throw error
         return NextResponse.json({ classes: classes || [] })
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -68,6 +68,6 @@ export async function POST(request: NextRequest) {
         if (error) throw error
         return NextResponse.json({ class: cls })
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

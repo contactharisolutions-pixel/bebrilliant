@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
         if (!exam) return NextResponse.json({ error: 'Exam not found' }, { status: 404 })
 
         // 2. Fetch Students for the class/division
-        let query = supabaseAdmin
+        const query = supabaseAdmin
             .from('user_profiles')
             .select('id, first_name, last_name, metadata')
             .eq('tenant_id', profile.tenant_id)
@@ -82,6 +82,6 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ success: true, count: generatedSheets.length, message: 'OMR Metadata generated. Ready for PDF printing.' })
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

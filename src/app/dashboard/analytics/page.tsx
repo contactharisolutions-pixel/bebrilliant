@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useMemo } from 'react'
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -13,7 +12,6 @@ import {
     RefreshCcw, Download, CalendarDays, MousePointer2,
     ArrowRight
 } from 'lucide-react'
-
 const COLORS = {
     primary: '#004B93',
     primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
@@ -25,7 +23,6 @@ const COLORS = {
     border: '#E2E8F0',
     glass: 'rgba(255, 255, 255, 0.7)'
 }
-
 // ── MOCK DATA ENGINE ─────────────────────────────────────
 const MOCK_DATA = {
     growth: [
@@ -49,7 +46,6 @@ const MOCK_DATA = {
         { subject: 'English', performance: 65, target: 80 },
     ]
 }
-
 // ── UI COMPONENTS ──────────────────────────────────
 function AnalyticsKpi({ label, value, trend, icon: Icon, color }: any) {
     const isUp = trend.startsWith('+')
@@ -73,12 +69,10 @@ function AnalyticsKpi({ label, value, trend, icon: Icon, color }: any) {
         </div>
     )
 }
-
 // ── MAIN ENGINE ──────────────────────────────────────────
 export default function AnalyticsPage() {
     const [loading, setLoading] = useState(true)
     const [role, setRole] = useState('')
-
     useEffect(() => {
         const init = async () => {
             try {
@@ -91,26 +85,16 @@ export default function AnalyticsPage() {
         }
         init()
     }, [])
-
     if (loading) {
         return (
             <div style={{ padding: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#F8FAFC' }}>
                 <Loader2 size={48} color={COLORS.primary} className="spin" style={{ marginBottom: 24 }} />
                 <div style={{ fontSize: 14, fontWeight: 900, color: '#94A3B8', letterSpacing: '0.05em' }}>LOADING ANALYTICS MODULE...</div>
-                <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
             </div>
         )
     }
-
     return (
         <div style={{ padding: '48px 56px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            <style>{`
-                @keyframes float { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .analytics-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,75,147,0.06) !important; border-color: ${COLORS.primary}20 !important; }
-            `}</style>
-
             {/* ANALYTICS HUD HEADER */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 48 }}>
                 <div>
@@ -134,7 +118,6 @@ export default function AnalyticsPage() {
                     </button>
                 </div>
             </div>
-
             {/* PERFORMANCE OVERVIEW */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 48 }}>
                 <AnalyticsKpi label="Active Students" value="4,820" trend="+14.2%" icon={Users} color={COLORS.primary} />
@@ -142,10 +125,8 @@ export default function AnalyticsPage() {
                 <AnalyticsKpi label="Total Exams Taken" value="12,042" trend="+28%" icon={Target} color={COLORS.warning} />
                 <AnalyticsKpi label="Passing Rate" value="99.9%" trend="+0.1%" icon={Award} color="#8B5CF6" />
             </div>
-
             {/* MAIN DATA LAYER */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: 32, marginBottom: 32 }}>
-
                 {/* SUCCESS SIGNAL GROWTH */}
                 <div style={{ background: '#FFF', padding: 40, borderRadius: 36, border: '1px solid #E2E8F0', boxShadow: '0 40px 80px rgba(0,0,0,0.02)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
@@ -158,7 +139,6 @@ export default function AnalyticsPage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 900, color: COLORS.success }}><div style={{ width: 8, height: 8, borderRadius: '50%', background: COLORS.success }} /> PARTICIPATION</div>
                         </div>
                     </div>
-
                     <div style={{ height: 350 }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={MOCK_DATA.growth}>
@@ -185,7 +165,6 @@ export default function AnalyticsPage() {
                         </ResponsiveContainer>
                     </div>
                 </div>
-
                 {/* COMPETENCY DISTRIBUTION */}
                 <div style={{ background: '#FFF', padding: 40, borderRadius: 36, border: '1px solid #E2E8F0', boxShadow: '0 40px 80px rgba(0,0,0,0.02)' }}>
                     <h3 style={{ margin: '0 0 32px', fontSize: 20, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.02em' }}>Topic Categories</h3>
@@ -226,7 +205,6 @@ export default function AnalyticsPage() {
                     </div>
                 </div>
             </div>
-
             {/* PERFORMANCE DRILL-DOWN RADAR MOCK */}
             <div style={{ background: '#0F172A', borderRadius: 36, padding: 48, color: '#FFF', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 64, alignItems: 'center' }}>
                 <div>
@@ -242,7 +220,6 @@ export default function AnalyticsPage() {
                         Download Performance Report <ArrowRight size={18} />
                     </button>
                 </div>
-
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 20 }}>
                      {MOCK_DATA.subject_radar.map((subj, i) => (
                         <div key={i} style={{ padding: '24px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: 24, border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>

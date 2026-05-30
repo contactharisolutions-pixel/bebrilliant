@@ -1,12 +1,10 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     CreditCard, LayoutTemplate, Briefcase, FileText, CheckCircle, XCircle,
     Plus, Upload, Shield, Zap, Search, Activity, MoreVertical, RefreshCw, Loader2, ArrowUpRight,
     X, Check, Filter, ArrowRight, ExternalLink, ShieldCheck, Info, Layers
 } from 'lucide-react'
-
 // â”€â”€ PALETTE â”” MATCHING INSTITUTIONAL SYSTEM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const P = {
     bg: '#F7F8FA', card: '#FEFEFE', border: '#E8E8E8',
@@ -18,7 +16,6 @@ const P = {
     error: '#EF4444', errorBg: '#FEF2F2',
     info: '#3B82F6', infoBg: '#EFF6FF',
 }
-
 // â”€â”€ TYPES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 type Plan = {
     id: string; name: string; type: string; price: number; billing_cycle: string;
@@ -44,9 +41,7 @@ type Invoice = {
     gst_percent: number;
     tenants: { name: string };
 }
-
 type ApiData = { plans: Plan[]; subscriptions: Subscription[]; invoices: Invoice[] }
-
 // â”€â”€ COMPONENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Modal({ title, onClose, children, onSubmit, saving, saveText = 'Save' }: any) {
     return (
@@ -67,7 +62,6 @@ function Modal({ title, onClose, children, onSubmit, saving, saveText = 'Save' }
         </div>
     )
 }
-
 function InputField({ label, value, onChange, placeholder = '', type = 'text', readOnly = false }: any) {
     return (
         <div style={{ marginBottom: 20 }}>
@@ -76,7 +70,6 @@ function InputField({ label, value, onChange, placeholder = '', type = 'text', r
         </div>
     )
 }
-
 function FeatureToggle({ label, checked, onChange }: any) {
     return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: P.bg, border: `1px solid ${P.border}`, borderRadius: 14, marginBottom: 10 }}>
@@ -88,7 +81,6 @@ function FeatureToggle({ label, checked, onChange }: any) {
         </div>
     )
 }
-
 // â”€â”€ MAIN PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function SubscriptionsPage() {
     const [activeTab, setActiveTab] = useState<'plans' | 'subscriptions' | 'invoices'>('plans')
@@ -97,15 +89,12 @@ export default function SubscriptionsPage() {
     const [saving, setSaving] = useState(false)
     const [search, setSearch] = useState('')
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
     // Form
     const [showPlanModal, setShowPlanModal] = useState(false)
     const [planForm, setPlanForm] = useState<any>({ name: '', type: 'institute', price: 0, billing_cycle: 'monthly', max_students: 100, max_teachers: 5, features: { ai_mentor: false, adaptive_exam: false, white_label: false }, is_active: true })
-
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok }); setTimeout(() => setToast(null), 3000)
     }
-
     const fetchData = useCallback(async () => {
         setLoading(true)
         try {
@@ -114,9 +103,7 @@ export default function SubscriptionsPage() {
         } catch (e) { showToast('Error loading revenue metadata', false) }
         finally { setLoading(false) }
     }, [])
-
     useEffect(() => { fetchData() }, [fetchData])
-
     const apiAction = async (action: string, payload: any) => {
         setSaving(true)
         try {
@@ -133,7 +120,6 @@ export default function SubscriptionsPage() {
             return false
         } finally { setSaving(false) }
     }
-
     const handleSavePlan = async () => {
         if (!planForm.name) return showToast('Descriptor required', false)
         const success = planForm.id
@@ -141,30 +127,18 @@ export default function SubscriptionsPage() {
             : await apiAction('CREATE_PLAN', planForm)
         if (success) setShowPlanModal(false)
     }
-
     const handleToggleSub = async (sub: Subscription) => {
         const nextStatus = sub.status === 'active' ? 'cancelled' : 'active'
         if (!confirm(`Transition subscription state to ${nextStatus}?`)) return
         await apiAction('TOGGLE_SUBSCRIPTION', { id: sub.id, status: nextStatus })
     }
-
     const TABS = [
         { id: 'plans', icon: LayoutTemplate, label: 'Service Tiers' },
         { id: 'subscriptions', icon: Zap, label: 'Ecosystem Nodes' },
         { id: 'invoices', icon: FileText, label: 'Settlement Log' },
     ] as const
-
     return (
         <div style={{ background: P.bg, minHeight: '100vh', padding: '40px 48px', position: 'relative' }}>
-            <style>{`
-                @keyframes spin { to { transform: rotate(360deg); } }
-                .glass-card { backdrop-filter: blur(10px); background: rgba(254, 254, 254, 0.8) !important; }
-                .hover-lift { transition: transform 0.2s cubic-bezier(0.3, 0, 0.2, 1), box-shadow 0.2s !important; }
-                .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.08) !important; }
-                .focus-ring:focus-within { box-shadow: 0 0 0 3px ${P.brand}20; border-color: ${P.brand} !important; }
-                .tab-active { background: ${P.card} !important; color: ${P.brand} !important; border-color: ${P.border} !important; box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important; }
-            `}</style>
-
             {/* TOAST */}
             {toast && (
                 <div style={{ position: 'fixed', top: 32, right: 32, background: toast.ok ? P.successBg : P.errorBg, border: `1px solid ${toast.ok ? P.success : P.error}40`, borderRadius: 14, padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 12px 30px rgba(0,0,0,0.15)', zIndex: 9000, backdropFilter: 'blur(8px)' }}>
@@ -172,7 +146,6 @@ export default function SubscriptionsPage() {
                     <span style={{ fontSize: 14, fontWeight: 800, color: toast.ok ? P.success : P.error }}>{toast.msg}</span>
                 </div>
             )}
-
             {/* HEADER */}
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 44 }}>
                 <div>
@@ -196,7 +169,6 @@ export default function SubscriptionsPage() {
                     )}
                 </div>
             </header>
-
             {/* TABS NAVIGATION */}
             <div style={{ display: 'flex', gap: 10, background: 'rgba(0,0,0,0.03)', padding: 6, borderRadius: 18, width: 'fit-content', marginBottom: 32 }}>
                 {TABS.map(t => (
@@ -205,30 +177,25 @@ export default function SubscriptionsPage() {
                     </button>
                 ))}
             </div>
-
             <div className="glass-card" style={{ border: `1px solid ${P.border}`, borderRadius: 24, overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.03)', minHeight: 480 }}>
-
                 {/* SEARCH & ACTIONS */}
                 <div style={{ padding: '24px 32px', borderBottom: `1px solid ${P.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: P.bg }}>
                     <div style={{ position: 'relative', width: 320 }}>
                         <Search size={18} color={P.muted} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }} />
                         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search records by entity or tier..." className="focus-ring" style={{ width: '100%', padding: '14px 16px', paddingLeft: 46, border: `1px solid ${P.border}`, borderRadius: 12, fontSize: 14, color: P.dark, background: '#fff', outline: 'none', fontWeight: 600 }} />
                     </div>
-
                     {activeTab === 'plans' && (
                         <button onClick={() => { setPlanForm({ name: '', type: 'institute', price: 0, billing_cycle: 'monthly', max_students: 100, max_teachers: 5, features: { ai_mentor: false, adaptive_exam: false, white_label: false }, is_active: true }); setShowPlanModal(true) }} className="hover-lift" style={{ display: 'flex', alignItems: 'center', gap: 10, background: P.brand, color: '#fff', border: 'none', borderRadius: 12, padding: '12px 24px', fontSize: 14, fontWeight: 850, cursor: 'pointer', boxShadow: `0 8px 18px ${P.brand}35` }}>
                             <Plus size={18} strokeWidth={3} /> Define New Asset Tier
                         </button>
                     )}
                 </div>
-
                 {loading && data.plans.length === 0 ? (
                     <div style={{ padding: 120, display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'center', alignItems: 'center' }}>
                         <Loader2 size={40} color={P.brand} style={{ animation: 'spin 1s linear infinite' }} />
                     </div>
                 ) : (
                     <div style={{ padding: '0' }}>
-
                         {/* ── PLANS TAB ── */}
                         {activeTab === 'plans' && (
                             <div style={{ padding: 32 }}>
@@ -258,7 +225,6 @@ export default function SubscriptionsPage() {
                                                     <div style={{ fontSize: 12, color: P.muted, fontWeight: 750 }}>Per {plan.billing_cycle === 'monthly' ? 'Month' : 'Year'}</div>
                                                 </div>
                                             </div>
-
                                             <div style={{ display: 'flex', gap: 10, marginBottom: 28 }}>
                                                 <div style={{ flex: 1, background: P.bg, padding: '12px', borderRadius: 14, textAlign: 'center' }}>
                                                     <div style={{ fontSize: 16, fontWeight: 950, color: P.dark }}>{plan.max_students}</div>
@@ -269,7 +235,6 @@ export default function SubscriptionsPage() {
                                                     <div style={{ fontSize: 10, fontWeight: 800, color: P.muted, textTransform: 'uppercase' }}>Staff</div>
                                                 </div>
                                             </div>
-
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 32 }}>
                                                 {[
                                                     { active: plan.features.ai_mentor, label: 'AI Question Generation' },
@@ -284,7 +249,6 @@ export default function SubscriptionsPage() {
                                                     </div>
                                                 ))}
                                             </div>
-
                                             <button onClick={() => { setPlanForm(plan); setShowPlanModal(true); }} className="hover-lift" style={{ width: '100%', padding: '14px', background: P.bg, border: 'none', borderRadius: 12, fontSize: 13, fontWeight: 850, color: P.dark, cursor: 'pointer' }}>
                                                 Configure Logic
                                             </button>
@@ -293,7 +257,6 @@ export default function SubscriptionsPage() {
                                 </div>
                             </div>
                         )}
-
                         {/* â”€â”€ SUBSCRIPTIONS TAB â”€â”€ */}
                         {activeTab === 'subscriptions' && (
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -346,7 +309,6 @@ export default function SubscriptionsPage() {
                                 </tbody>
                             </table>
                         )}
-
                         {/* â”€â”€ INVOICES TAB â”€â”€ */}
                         {activeTab === 'invoices' && (
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -397,7 +359,6 @@ export default function SubscriptionsPage() {
                     </div>
                 )}
             </div>
-
             {/* SIDE LEGEND CARDS */}
             {activeTab === 'plans' && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 40 }}>
@@ -424,7 +385,6 @@ export default function SubscriptionsPage() {
                     </div>
                 </div>
             )}
-
             {/* PLAN MODAL */}
             {showPlanModal && (
                 <Modal title={planForm.id ? "Edit Enterprise Architecture" : "Define New Service Tier"} onClose={() => setShowPlanModal(false)} onSubmit={handleSavePlan} saving={saving} saveText={planForm.id ? "Update Architecture" : "Deploy System Tier"}>
@@ -439,7 +399,6 @@ export default function SubscriptionsPage() {
                                 </select>
                             </div>
                         </div>
-
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                             <InputField label="Base Multiplier (INR)" type="number" value={planForm.price} onChange={(v: string) => setPlanForm({ ...planForm, price: Number(v) })} />
                             <div style={{ marginBottom: 20 }}>
@@ -450,26 +409,22 @@ export default function SubscriptionsPage() {
                                 </select>
                             </div>
                         </div>
-
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                             <InputField label="Max Node Students" type="number" value={planForm.max_students} onChange={(v: string) => setPlanForm({ ...planForm, max_students: Number(v) })} />
                             <InputField label="Max Node Staff" type="number" value={planForm.max_teachers} onChange={(v: string) => setPlanForm({ ...planForm, max_teachers: Number(v) })} />
                         </div>
-
                         <div style={{ marginTop: 12, padding: '20px', background: P.bg, borderRadius: 20 }}>
                             <label style={{ display: 'block', fontSize: 12, fontWeight: 900, color: P.dark, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>System Capabilities</label>
                             <FeatureToggle label="Generative AI Engine" checked={planForm.features.ai_mentor} onChange={(v: boolean) => setPlanForm({ ...planForm, features: { ...planForm.features, ai_mentor: v } })} />
                             <FeatureToggle label="Adaptive & Proctor Module" checked={planForm.features.adaptive_exam} onChange={(v: boolean) => setPlanForm({ ...planForm, features: { ...planForm.features, adaptive_exam: v } })} />
                             <FeatureToggle label="Bespoke Node Branding" checked={planForm.features.white_label} onChange={(v: boolean) => setPlanForm({ ...planForm, features: { ...planForm.features, white_label: v } })} />
                         </div>
-
                         <div style={{ marginTop: 24 }}>
                             <FeatureToggle label="Tier Visibility & Intake Active" checked={planForm.is_active} onChange={(v: boolean) => setPlanForm({ ...planForm, is_active: v })} />
                         </div>
                     </div>
                 </Modal>
             )}
-
         </div>
     )
 }

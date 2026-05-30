@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     ClipboardList, Search, PlusCircle, UploadCloud, Download, CheckCircle, XCircle,
@@ -8,7 +7,6 @@ import {
     Zap, Target, Shield, LayoutDashboard, Database, AlertCircle, ChevronRight, Eye, Globe, RefreshCw, Building2, TrendingUp, DollarSign, Trash2
 } from 'lucide-react'
 import Link from 'next/link'
-
 // —— PALETTE ————————————————————————————————————
 const P = {
     bg: '#F7F8FA', card: '#FEFEFE', border: '#E8E8E8',
@@ -20,7 +18,6 @@ const P = {
     error: '#EF4444', errorBg: '#FEF2F2',
     info: '#3B82F6', infoBg: '#EFF6FF',
 }
-
 // —— TYPES ——————————————————————————————————————
 type Exam = { 
     id: string; name: string; description?: string; is_paid: boolean; price: number; 
@@ -29,7 +26,6 @@ type Exam = {
     exam_config?: { total_questions: number; randomization_mode: string } 
 }
 type Node = { id: string; name: string; type: string; parent_id: string | null }
-
 // —— UI COMPONENTS —————————————————————————————————
 function Toast({ msg, ok, onClose }: { msg: string; ok: boolean; onClose: () => void }) {
     useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t) }, [onClose])
@@ -41,7 +37,6 @@ function Toast({ msg, ok, onClose }: { msg: string; ok: boolean; onClose: () => 
         </div>
     )
 }
-
 function MetricCard({ icon: Icon, label, value, sub, color, bg }: any) {
     return (
         <div className="glass-card hover-lift" style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 24, padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -57,20 +52,17 @@ function MetricCard({ icon: Icon, label, value, sub, color, bg }: any) {
         </div>
     )
 }
-
 export default function AssessmentManagement() {
     const [view, setView] = useState<'list' | 'builder'>('list')
     const [step, setStep] = useState(1) 
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-    
     const [exams, setExams] = useState<Exam[]>([])
     const [search, setSearch] = useState('')
     const [editExamId, setEditExamId] = useState<string|null>(null)
     const [syllabuses, setSyllabuses] = useState<Node[]>([])
     const [allNodes, setAllNodes] = useState<Node[]>([])
-
     const [s1, setS1] = useState({
         name: '', description: '', mode: 'online', pricing_type: 'free', price: 0,
         schedule: 'live', liveDate: '', liveTime: '', duration: 60, targetStandards: [] as string[]
@@ -78,14 +70,11 @@ export default function AssessmentManagement() {
     const [s2, setS2] = useState({ syllabusId: '', subjectsConfig: [] as any[] })
     const [mockQuestions, setMockQuestions] = useState<any[]>([])
     const [approvedQs, setApprovedQs] = useState<Set<number>>(new Set())
-    
     const [showMarketplace, setShowMarketplace] = useState(false)
     const [marketTemplates, setMarketTemplates] = useState<any[]>([])
-
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok }); setTimeout(() => setToast(null), 4000)
     }
-
     const fetchData = useCallback(async () => {
         setLoading(true)
         try {
@@ -100,9 +89,7 @@ export default function AssessmentManagement() {
         } catch (e) { showToast('Sync failed', false) }
         finally { setLoading(false) }
     }, [])
-
     useEffect(() => { fetchData() }, [fetchData])
-
     const fetchMarketplace = async () => {
         setLoading(true)
         try {
@@ -112,7 +99,6 @@ export default function AssessmentManagement() {
             setShowMarketplace(true)
         } finally { setLoading(false) }
     }
-
     const loadTemplate = (tmpl: any) => {
         setS1({
             ...s1,
@@ -120,7 +106,6 @@ export default function AssessmentManagement() {
             duration: tmpl.duration_minutes,
             description: tmpl.instructions?.join('\n') || ''
         } as any)
-        
         const configs = tmpl.sections.flatMap((s: any) => 
             s.rules.map((r: any) => ({
                 id: Math.random().toString(36).substr(2, 9), 
@@ -133,14 +118,12 @@ export default function AssessmentManagement() {
                 diffHard: r.difficulty_hard_pct
             }))
         )
-
         setS2({ ...s2, subjectsConfig: configs })
         setShowMarketplace(false)
         setView('builder')
         setStep(1)
         showToast('Template Architecture Synced!', true)
     }
-
     const generateQuestions = async () => {
         if (!s2.syllabusId) return showToast('Please select a reference syllabus node', false)
         setSaving(true)
@@ -168,7 +151,6 @@ export default function AssessmentManagement() {
         } catch (e: any) { showToast(e.message, false) }
         finally { setSaving(false) }
     }
-
     const handleFinalize = async () => {
         setSaving(true)
         try {
@@ -192,7 +174,6 @@ export default function AssessmentManagement() {
             }
         } finally { setSaving(false) }
     }
-
     const handleDelete = async (id: string) => {
         if (!confirm('This exam will be permanently removed. Proceed?')) return
         await fetch('/api/dashboard/exams/online', {
@@ -201,20 +182,15 @@ export default function AssessmentManagement() {
         })
         fetchData(); showToast('Exam Deleted', true)
     }
-
     if (loading) return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: P.bg, gap: 20 }}>
             <Loader2 size={48} color={P.brand} style={{ animation: 'spin 1.5s linear infinite' }} />
             <div style={{ fontSize: 16, fontWeight: 900, color: P.brand, letterSpacing: '0.1em' }}>REFINING CORE ENGINE...</div>
         </div>
     )
-
     return (
         <div style={{ background: P.bg, minHeight: '100vh', padding: '32px 40px', fontFamily: 'Inter, sans-serif' }}>
-            <style>{`.hover-lift { transition: all 0.2s; } .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }`}</style>
-            
             {toast && <Toast msg={toast.msg} ok={toast.ok} onClose={() => setToast(null)} />}
-
             {showMarketplace && (
                 <div style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', padding: 40 }}>
                     <div style={{ width: '100%', maxWidth: 1000, background: '#fff', borderRadius: 32, display: 'flex', flexDirection: 'column', maxHeight: '90%', overflow: 'hidden', boxShadow: '0 40px 100px rgba(0,0,0,0.4)' }}>
@@ -241,7 +217,6 @@ export default function AssessmentManagement() {
                     </div>
                 </div>
             )}
-
             {view === 'list' ? (
                 <>
                     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40 }}>
@@ -262,14 +237,12 @@ export default function AssessmentManagement() {
                             </button>
                         </div>
                     </header>
-
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 32 }}>
                         <MetricCard icon={Zap} label="Online Vectors" value={String(exams.length)} color={P.brand} bg={P.brandBg} />
                         <MetricCard icon={CheckCircle} label="Live Sessions" value={String(exams.filter(e => e.is_active).length)} color={P.success} bg={P.successBg} />
                         <MetricCard icon={DollarSign} label="Exam Revenue" value="₹0" color={P.cta} bg={P.ctaBg} />
                         <MetricCard icon={Shield} label="Integrity Score" value="99.9%" color={P.info} bg={P.infoBg} />
                     </div>
-
                     <div style={{ background: P.card, borderRadius: 24, border: '1px solid ' + P.border, overflow: 'hidden', boxShadow: '0 12px 32px rgba(0,0,0,0.03)' }}>
                         <div style={{ padding: '20px 24px', borderBottom: '1px solid ' + P.border, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ position: 'relative', width: 340 }}>
@@ -326,7 +299,6 @@ export default function AssessmentManagement() {
                             <p style={{ margin: '4px 0 0', fontSize: 14, color: P.muted, fontWeight: 600 }}>Step {step} of 3 — {step === 1 ? 'Core Parameters' : step === 2 ? 'Question Architecture' : 'Final Validation'}</p>
                         </div>
                     </header>
-
                     <div style={{ background: '#fff', borderRadius: 32, padding: 40, border: '1px solid ' + P.border, boxShadow: '0 20px 60px rgba(0,0,0,0.05)' }}>
                         {step === 1 && (
                             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 40 }}>
@@ -363,7 +335,6 @@ export default function AssessmentManagement() {
                                 </div>
                             </div>
                         )}
-
                         {step === 2 && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
                                 <div>
@@ -393,7 +364,6 @@ export default function AssessmentManagement() {
                                 </div>
                             </div>
                         )}
-
                         {step === 3 && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
                                 <div style={{ background: P.successBg, border: '1px solid ' + P.success + '30', padding: 24, borderRadius: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -428,5 +398,3 @@ export default function AssessmentManagement() {
         </div>
     )
 }
-
-

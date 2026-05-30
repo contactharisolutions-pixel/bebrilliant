@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
     Users, Search, PlusCircle, UploadCloud, UserCheck, UserX,
@@ -11,7 +10,6 @@ import {
     Maximize2, MoreHorizontal
 } from 'lucide-react'
 import Link from 'next/link'
-
 const COLORS = {
     primary: '#004B93',
     primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
@@ -23,14 +21,12 @@ const COLORS = {
     border: '#E2E8F0',
     glass: 'rgba(255, 255, 255, 0.7)'
 }
-
 // ── TYPES ────────────────────────────────────────────────
 type Student = { 
     id: string; first_name: string; last_name: string; email: string; 
     phone: string; is_active: boolean; created_at: string; role: string; 
     metadata?: { school_class?: string; division?: string; marks_percentage?: number; } 
 }
-
 // ── UI COMPONENTS ──────────────────────────────────
 function AppToast({ msg, ok, onClose }: { msg: string; ok: boolean; onClose: () => void }) {
     useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
@@ -41,7 +37,6 @@ function AppToast({ msg, ok, onClose }: { msg: string; ok: boolean; onClose: () 
         </div>
     )
 }
-
 function AppModal({ title, onClose, children, onSubmit, saving, saveText = 'Save', maxWidth = 640 }: any) {
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: 20 }}>
@@ -63,7 +58,6 @@ function AppModal({ title, onClose, children, onSubmit, saving, saveText = 'Save
         </div>
     )
 }
-
 // ── MAIN APPLICATION ─────────────────────────────
 export default function StudentDirectoryPage() {
     const [students, setStudents] = useState<Student[]>([])
@@ -75,13 +69,10 @@ export default function StudentDirectoryPage() {
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
     const [showAddModal, setShowAddModal] = useState(false)
     const [showBulkModal, setShowBulkModal] = useState(false)
-
     // Filter Logic
     const [filters, setFilters] = useState({ standard: '', division: '', status: 'all' })
     const [studentForm, setStudentForm] = useState<any>({ first_name: '', last_name: '', email: '', phone: '', school_class: '', division: '' })
-
     const showToast = (msg: string, ok: boolean) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 3500) }
-
     const fetchStudents = useCallback(async () => {
         setLoading(true)
         try {
@@ -90,15 +81,12 @@ export default function StudentDirectoryPage() {
             if (filters.standard) url.searchParams.set('school_class', filters.standard)
             if (filters.division) url.searchParams.set('division', filters.division)
             if (filters.status !== 'all') url.searchParams.set('status', filters.status)
-            
             const res = await fetch(url.toString())
             const json = await res.json()
             if (res.ok) setStudents(json || [])
         } finally { setLoading(false) }
     }, [search, filters])
-
     useEffect(() => { fetchStudents() }, [fetchStudents])
-
     const handleCreateStudent = async () => {
         if (!studentForm.email) return showToast('Email Address Required', false)
         setSaving(true)
@@ -114,7 +102,6 @@ export default function StudentDirectoryPage() {
             }
         } finally { setSaving(false) }
     }
-
     const handleToggleStatus = async (id: string, current: boolean) => {
         setSaving(true)
         try {
@@ -128,20 +115,9 @@ export default function StudentDirectoryPage() {
             }
         } finally { setSaving(false) }
     }
-
     return (
         <div style={{ padding: '48px 56px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            <style>{`
-                @keyframes float { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .student-row:hover { background: #F8FAFC !important; transform: scale(1.002); }
-                .action-btn:hover { background: #F1F5F9; color: ${COLORS.primary}; }
-                .status-pulse { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-            `}</style>
-
             {toast && <AppToast msg={toast.msg} ok={toast.ok} onClose={() => setToast(null)} />}
-
             {/* STUDENT MANAGEMENT HEADER */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 48 }}>
                 <div>
@@ -164,7 +140,6 @@ export default function StudentDirectoryPage() {
                     </button>
                 </div>
             </div>
-
             {/* STUDENT STATS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 48 }}>
                 {[
@@ -184,7 +159,6 @@ export default function StudentDirectoryPage() {
                     </div>
                 ))}
             </div>
-
             {/* FILTER SECTION */}
             <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 36, padding: 32, marginBottom: 40, boxShadow: '0 40px 80px rgba(0,0,0,0.02)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -198,7 +172,6 @@ export default function StudentDirectoryPage() {
                         </button>
                     </div>
                 </div>
-
                 {showFilters && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, animation: 'float 0.3s ease-out' }}>
                         {[
@@ -220,7 +193,6 @@ export default function StudentDirectoryPage() {
                     </div>
                 )}
             </div>
-
             {/* STUDENT LIST */}
             <div style={{ background: '#FFF', borderRadius: 36, border: '1px solid #E2E8F0', boxShadow: '0 40px 80px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -284,7 +256,6 @@ export default function StudentDirectoryPage() {
                     </tbody>
                 </table>
             </div>
-
             {/* MODALS */}
             {showAddModal && (
                 <AppModal title="Add New Student" onClose={() => setShowAddModal(false)} onSubmit={handleCreateStudent} saving={saving}>
@@ -320,7 +291,6 @@ export default function StudentDirectoryPage() {
                     </div>
                 </AppModal>
             )}
-
             {showBulkModal && (
                 <AppModal title="Bulk Student Upload" onClose={() => setShowBulkModal(false)} onSubmit={() => setShowBulkModal(false)} maxWidth={750}>
                     <div style={{ background: '#0F172A', borderRadius: 24, padding: 32, position: 'relative' }}>

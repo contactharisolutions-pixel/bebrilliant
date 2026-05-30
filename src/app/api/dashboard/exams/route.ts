@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({ exams: exams || [], subjects: subjects || [] })
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 

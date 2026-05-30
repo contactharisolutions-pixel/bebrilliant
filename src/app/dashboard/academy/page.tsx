@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import { 
     School, BookOpen, Users, Plus, Layers, ChevronRight, 
@@ -7,7 +6,6 @@ import {
     Search, Filter, GraduationCap, LayoutPanelLeft, 
     Link as LinkIcon, UserPlus, MapPin
 } from 'lucide-react'
-
 const COLORS = {
     primary: '#004B93',
     primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
@@ -18,7 +16,6 @@ const COLORS = {
     border: '#E2E8F0',
     background: '#F8FAFC'
 }
-
 export default function AcademySetupPage() {
     const [activeTab, setActiveTab] = useState('classes') 
     const [loading, setLoading] = useState(true)
@@ -28,25 +25,21 @@ export default function AcademySetupPage() {
     const [mappings, setMappings] = useState<any[]>([])
     const [classSubMappings, setClassSubMappings] = useState<any[]>([])
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
     // Modals
     const [showClassModal, setShowClassModal] = useState(false)
     const [showDivisionModal, setShowDivisionModal] = useState<{classId: string, className: string} | null>(null)
     const [showSubjectModal, setShowSubjectModal] = useState(false)
     const [showMappingModal, setShowMappingModal] = useState(false)
     const [showClassSubModal, setShowClassSubModal] = useState<{classId: string, className: string} | null>(null)
-
     // Forms
     const [classForm, setClassForm] = useState({ name: '', code: '' })
     const [divisionForm, setDivisionForm] = useState({ name: '', capacity: 40 })
     const [subjectForm, setSubjectForm] = useState({ name: '' })
     const [mappingForm, setMappingForm] = useState({ teacher_id: '', class_id: '', division_id: '', subject_id: '' })
     const [classSubForm, setClassSubForm] = useState<string[]>([])
-
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok }); setTimeout(() => setToast(null), 3000)
     }
-
     const fetchData = useCallback(async () => {
         setLoading(true)
         try {
@@ -56,12 +49,10 @@ export default function AcademySetupPage() {
                 fetch('/api/dashboard/tenant/structure/mapping?type=teacher-subject'),
                 fetch('/api/dashboard/tenant/structure/mapping?type=class-subject')
             ])
-
             const clsData = await clsRes.json()
             const facData = await facRes.json() 
             const mapData = await mapRes.json()
             const clsSubData = await clsSubRes.json()
-
             setClasses(clsData.classes || [])
             setSubjects(facData.subjects || [])
             setTeachers(facData.teachers || [])
@@ -73,9 +64,7 @@ export default function AcademySetupPage() {
             setLoading(false)
         }
     }, [])
-
     useEffect(() => { fetchData() }, [fetchData])
-
     const handleCreateClass = async () => {
         if (!classForm.name) return
         try {
@@ -91,7 +80,6 @@ export default function AcademySetupPage() {
             }
         } catch (e) { showToast('Failed to create class', false) }
     }
-
     const handleCreateDivision = async () => {
         if (!divisionForm.name || !showDivisionModal) return
         try {
@@ -107,7 +95,6 @@ export default function AcademySetupPage() {
             }
         } catch (e) { showToast('Failed to add section', false) }
     }
-
     const handleCreateSubject = async () => {
         if (!subjectForm.name) return
         try {
@@ -123,7 +110,6 @@ export default function AcademySetupPage() {
             }
         } catch (e) { showToast('Failed to create subject', false) }
     }
-
     const handleCreateMapping = async () => {
         if (!mappingForm.teacher_id || !mappingForm.class_id || !mappingForm.subject_id) return
         try {
@@ -140,7 +126,6 @@ export default function AcademySetupPage() {
             }
         } catch (e) { showToast('Failed to save mapping', false) }
     }
-
     const handleUpdateClassSubjects = async () => {
         if (!showClassSubModal) return
         try {
@@ -159,7 +144,6 @@ export default function AcademySetupPage() {
             }
         } catch (e) { showToast('Failed to update subjects', false) }
     }
-
     return (
         <div style={{ padding: '40px 48px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
              {/* TOAST PANEL */}
@@ -169,7 +153,6 @@ export default function AcademySetupPage() {
                     <span style={{ fontSize: 14, fontWeight: 800, color: toast.ok ? '#065F46' : '#991B1B' }}>{toast.msg}</span>
                 </div>
             )}
-
             <header style={{ marginBottom: 48 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                     <div style={{ padding: 10, background: COLORS.primaryGradient, borderRadius: 14, color: '#FFF' }}>
@@ -179,7 +162,6 @@ export default function AcademySetupPage() {
                 </div>
                 <p style={{ color: COLORS.slate, fontSize: 16, fontWeight: 600, margin: 0 }}>Configure your institute's classes, sections, and subject-teacher mappings.</p>
             </header>
-
             {/* TAB NAV */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 32, background: '#FFF', padding: 8, borderRadius: 20, width: 'fit-content', border: '1px solid #E2E8F0' }}>
                 {[
@@ -201,7 +183,6 @@ export default function AcademySetupPage() {
                     </button>
                 ))}
             </div>
-
             {loading ? (
                  <div style={{ padding: 100, textAlign: 'center' }}>
                     <Loader2 size={48} color={COLORS.primary} className="animate-spin" style={{ margin: '0 auto 24px' }} />
@@ -217,7 +198,6 @@ export default function AcademySetupPage() {
                                     <Plus size={18} /> New Class
                                 </button>
                             </div>
-
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 24 }}>
                                 {classes.map(cls => (
                                     <div key={cls.id} style={{ background: '#FFF', borderRadius: 24, border: '1px solid #E2E8F0', padding: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
@@ -230,7 +210,6 @@ export default function AcademySetupPage() {
                                                 <Plus size={14} /> Add Section
                                             </button>
                                         </div>
-
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
                                             {cls.divisions?.length > 0 ? cls.divisions.map((div: any) => (
                                                 <div key={div.id} style={{ padding: '8px 16px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, fontSize: 13, fontWeight: 700, color: '#475569' }}>
@@ -240,7 +219,6 @@ export default function AcademySetupPage() {
                                                 <div style={{ fontSize: 13, color: '#94A3B8', fontStyle: 'italic' }}>No sections defined</div>
                                             )}
                                         </div>
-
                                         <div style={{ borderTop: '1px dashed #E2E8F0', paddingTop: 20 }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                                                 <div style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>Subjects Taught</div>
@@ -272,7 +250,6 @@ export default function AcademySetupPage() {
                             </div>
                         </div>
                     )}
-
                     {activeTab === 'subjects' && (
                          <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -281,7 +258,6 @@ export default function AcademySetupPage() {
                                     <Plus size={18} /> New Subject
                                 </button>
                             </div>
-
                             <div style={{ background: '#FFF', borderRadius: 28, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                     <thead style={{ background: '#F8FAFC', borderBottom: '1px solid #F1F5F9' }}>
@@ -320,7 +296,6 @@ export default function AcademySetupPage() {
                             </div>
                          </div>
                     )}
-
                     {activeTab === 'mapping' && (
                         <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -329,7 +304,6 @@ export default function AcademySetupPage() {
                                     <Plus size={18} /> Assign Teacher
                                 </button>
                             </div>
-
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 24 }}>
                                 {mappings.map((map, i) => (
                                     <div key={i} style={{ background: '#FFF', borderRadius: 24, border: '1px solid #E2E8F0', padding: 24, display: 'flex', gap: 16 }}>
@@ -339,7 +313,6 @@ export default function AcademySetupPage() {
                                         <div style={{ flex: 1 }}>
                                             <div style={{ fontSize: 16, fontWeight: 900, color: '#1E293B' }}>{map.user_profiles?.first_name} {map.user_profiles?.last_name}</div>
                                             <div style={{ fontSize: 12, color: COLORS.slate, fontWeight: 600, marginBottom: 12 }}>{map.user_profiles?.email}</div>
-                                            
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                                 <div style={{ padding: '4px 10px', background: '#F1F5F9', borderRadius: 8, fontSize: 11, fontWeight: 800, color: '#475569' }}>
                                                     {map.subjects?.name}
@@ -360,7 +333,6 @@ export default function AcademySetupPage() {
                     )}
                 </div>
             )}
-
             {/* MODALS */}
             {showClassModal && (
                 <Modal title="Create New Class" onClose={() => setShowClassModal(false)} onSave={handleCreateClass}>
@@ -371,7 +343,6 @@ export default function AcademySetupPage() {
                     </div>
                 </Modal>
             )}
-
             {showDivisionModal && (
                 <Modal title={`Add Section to ${showDivisionModal.className}`} onClose={() => setShowDivisionModal(null)} onSave={handleCreateDivision}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -381,7 +352,6 @@ export default function AcademySetupPage() {
                     </div>
                 </Modal>
             )}
-
             {showSubjectModal && (
                 <Modal title="Create New Subject" onClose={() => setShowSubjectModal(false)} onSave={handleCreateSubject}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -390,7 +360,6 @@ export default function AcademySetupPage() {
                     </div>
                 </Modal>
             )}
-
             {showClassSubModal && (
                 <Modal title={`Map Subjects for ${showClassSubModal.className}`} onClose={() => setShowClassSubModal(null)} onSave={handleUpdateClassSubjects}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -423,7 +392,6 @@ export default function AcademySetupPage() {
                     </div>
                 </Modal>
             )}
-
             {showMappingModal && (
                 <Modal title="Assign Teacher to Class/Section/Subject" onClose={() => setShowMappingModal(false)} onSave={handleCreateMapping}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -474,16 +442,9 @@ export default function AcademySetupPage() {
                     </div>
                 </Modal>
             )}
-
-            <style>{`
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .animate-spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-            `}</style>
         </div>
     )
 }
-
 function Modal({ title, onClose, onSave, children }: any) {
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(8px)', zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
@@ -501,7 +462,6 @@ function Modal({ title, onClose, onSave, children }: any) {
         </div>
     )
 }
-
 const inputStyle = {
     width: '100%',
     padding: '14px 18px',
@@ -513,7 +473,6 @@ const inputStyle = {
     outline: 'none',
     boxSizing: 'border-box' as const
 }
-
 const labelStyle = {
     display: 'block',
     fontSize: 11,

@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
     Settings, Globe, Shield, CreditCard, Palette, UserCircle,
@@ -9,7 +8,6 @@ import {
     MousePointer2, Terminal, History
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-
 // ── TYPES ────────────────────────────────────────────────
 type TenantData = {
     id: string;
@@ -27,7 +25,6 @@ type TenantData = {
         contact?: { address?: string, email?: string, phone?: string, website?: string }
     };
 }
-
 const COLORS = {
     primary: '#004B93',
     primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
@@ -39,21 +36,17 @@ const COLORS = {
     border: '#E2E8F0',
     glass: 'rgba(255, 255, 255, 0.7)'
 }
-
 // ── MAIN PAGE ────────────────────────────────────────────
 export default function SettingsPage() {
     const [data, setData] = useState<TenantData | null>(null)
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
     // UI Tabs
     const [activeTab, setActiveTab] = useState('branding')
-
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok }); setTimeout(() => setToast(null), 3500)
     }
-
     const fetchData = useCallback(async () => {
         setLoading(true)
         try {
@@ -68,9 +61,7 @@ export default function SettingsPage() {
             }
         } finally { setLoading(false) }
     }, [])
-
     useEffect(() => { fetchData() }, [fetchData])
-
     const apiAction = async (action: string, payload: any) => {
         setSaving(true)
         try {
@@ -88,7 +79,6 @@ export default function SettingsPage() {
             return { success: false }
         } finally { setSaving(false) }
     }
-
     const saveSettings = async () => {
         if (!data) return
         if (activeTab === 'branding') {
@@ -108,35 +98,22 @@ export default function SettingsPage() {
             })
         }
     }
-
     if (loading || !data) {
         return (
             <div style={{ padding: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#F8FAFC' }}>
                 <Loader2 size={48} color={COLORS.primary} className="spin" style={{ marginBottom: 24 }} />
                 <div style={{ fontSize: 14, fontWeight: 900, color: '#94A3B8', letterSpacing: '0.05em' }}>LOADING SETTINGS...</div>
-                <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
             </div>
         )
     }
-
     return (
         <div style={{ padding: '48px 56px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            <style>{`
-                @keyframes float { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .settings-tab:hover { background: #EEF2FF !important; transform: translateX(4px); }
-                .toggle-input:checked + .toggle-slider { background: ${COLORS.success} !important; }
-                .toggle-input:checked + .toggle-slider:before { transform: translateX(20px); }
-            `}</style>
-
             {toast && (
                 <div style={{ position: 'fixed', top: 32, right: 32, background: toast.ok ? '#ECFDF5' : '#FEF2F2', border: '1px solid ' + (toast.ok ? COLORS.success : COLORS.danger) + '40', borderRadius: 20, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', zIndex: 20000, animation: 'float 0.3s ease-out' }}>
                     {toast.ok ? <CheckCircle2 size={20} color={COLORS.success} /> : <XCircle size={20} color={COLORS.danger} />}
                     <span style={{ fontSize: 14, fontWeight: 900, color: toast.ok ? '#065F46' : '#991B1B' }}>{toast.msg}</span>
                 </div>
             )}
-
             {/* INSTITUTIONAL CONTROL HEADER */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 48 }}>
                 <div>
@@ -159,9 +136,7 @@ export default function SettingsPage() {
                     </button>
                 </div>
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 48 }}>
-
                 {/* INSTITUTIONAL TABS SIDECAR */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                      {[
@@ -185,10 +160,8 @@ export default function SettingsPage() {
                         )
                     })}
                 </div>
-
                 {/* SETTINGS CONTROL CORE */}
                 <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 36, padding: 48, boxShadow: '0 40px 80px rgba(0,0,0,0.02)', position: 'relative' }}>
-                    
                     {activeTab === 'branding' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 40, animation: 'float 0.3s ease-out' }}>
                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -198,7 +171,6 @@ export default function SettingsPage() {
                                 </div>
                                 <div style={{ padding: '8px 16px', background: `${COLORS.success}10`, color: COLORS.success, borderRadius: 12, fontSize: 12, fontWeight: 900, border: `1px solid ${COLORS.success}20` }}>ACTIVE</div>
                              </div>
-
                             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 32 }}>
                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                                     <div>
@@ -236,14 +208,12 @@ export default function SettingsPage() {
                                             </div>
                                         </div>
                                     </div>
-
                                     {/* CONTACT & LOCATION VERTICAL */}
                                     <div style={{ marginTop: 16, paddingTop: 32, borderTop: '1px dashed #E2E8F0' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
                                             <div style={{ width: 4, height: 20, background: COLORS.primary, borderRadius: 10 }} />
                                             <h4 style={{ margin: 0, fontSize: 13, fontWeight: 900, color: COLORS.primary, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contact & Location Details</h4>
                                         </div>
-
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                                             <div>
                                                 <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase' }}>Institutional Address</label>
@@ -286,10 +256,8 @@ export default function SettingsPage() {
                                         </div>
                                     </div>
                                  </div>
-
                                  <div style={{ background: '#F1F5F930', borderRadius: 28, border: '1px dashed #CBD5E1', padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                                     <div style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 24 }}>Institution Logo</div>
-                                    
                                     <input 
                                         type="file" 
                                         id="logo-upload" 
@@ -306,9 +274,7 @@ export default function SettingsPage() {
                                                     reader.onload = () => resolve((reader.result as string).split(',')[1])
                                                     reader.onerror = reject
                                                 })
-
                                                 const fileName = `${data.id}/logo_${Date.now()}.${file.name.split('.').pop()}`
-                                                
                                                 const res = await fetch('/api/dashboard/settings', {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
@@ -321,10 +287,8 @@ export default function SettingsPage() {
                                                         }
                                                     })
                                                 })
-                                                
                                                 const json = await res.json()
                                                 if (!res.ok) throw new Error(json.error || 'Upload Failed')
-
                                                 setData({ ...data, logo_url: json.url })
                                                 showToast('Logo Uploaded Successfully', true)
                                             } catch (err: any) {
@@ -334,7 +298,6 @@ export default function SettingsPage() {
                                             }
                                         }}
                                     />
-
                                     <label 
                                         htmlFor="logo-upload"
                                         style={{ 
@@ -361,7 +324,6 @@ export default function SettingsPage() {
                                             </div>
                                         )}
                                     </label>
-                                    
                                     <button 
                                         onClick={() => document.getElementById('logo-upload')?.click()}
                                         style={{ 
@@ -379,14 +341,12 @@ export default function SettingsPage() {
                             </div>
                         </div>
                     )}
-
                     {activeTab === 'security' && (
                          <div style={{ display: 'flex', flexDirection: 'column', gap: 40, animation: 'float 0.3s ease-out' }}>
                              <div>
                                 <h3 style={{ margin: '0 0 10px', fontSize: 22, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.02em' }}>Security & Access</h3>
                                 <p style={{ margin: 0, fontSize: 15, color: '#64748B', fontWeight: 600 }}>Configure student registration and login options.</p>
                              </div>
-
                              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                                 {[
                                     { key: 'allow_registration', label: 'Student Self-Registration', icon: MousePointer2, desc: 'Allow students to create accounts from the login page' },
@@ -414,14 +374,12 @@ export default function SettingsPage() {
                              </div>
                          </div>
                     )}
-
                     {activeTab === 'automation' && (
                          <div style={{ display: 'flex', flexDirection: 'column', gap: 40, animation: 'float 0.3s ease-out' }}>
                              <div>
                                 <h3 style={{ margin: '0 0 10px', fontSize: 22, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.02em' }}>Automation</h3>
                                 <p style={{ margin: 0, fontSize: 15, color: '#64748B', fontWeight: 600 }}>Configure automatic notifications and exam actions.</p>
                              </div>
-
                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
                                  <div style={{ background: `${COLORS.success}08`, border: `2px solid ${COLORS.success}20`, padding: 32, borderRadius: 28 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
@@ -436,7 +394,6 @@ export default function SettingsPage() {
                                         {data.settings.workflows?.notify_on_login ? 'ENABLED' : 'DISABLED'}
                                     </button>
                                  </div>
-
                                  <div style={{ background: `${COLORS.primary}08`, border: `2px solid ${COLORS.primary}20`, padding: 32, borderRadius: 28 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                                         <History size={20} color={COLORS.primary} />
@@ -453,14 +410,12 @@ export default function SettingsPage() {
                              </div>
                          </div>
                     )}
-
                     {activeTab === 'domains' && (
                          <div style={{ display: 'flex', flexDirection: 'column', gap: 40, animation: 'float 0.3s ease-out' }}>
                              <div>
                                 <h3 style={{ margin: '0 0 10px', fontSize: 22, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.02em' }}>Domains</h3>
                                 <p style={{ margin: 0, fontSize: 15, color: '#64748B', fontWeight: 600 }}>Manage your custom URLs.</p>
                              </div>
-
                              <div style={{ background: '#0F172A', borderRadius: 28, padding: 32, color: '#FFF' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -469,7 +424,6 @@ export default function SettingsPage() {
                                     </div>
                                     <button style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#FFF', fontSize: 11, fontWeight: 900, cursor: 'pointer' }}>Add Domain</button>
                                 </div>
-
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'rgba(255,255,255,0.03)', padding: '20px 24px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.05)' }}>
                                     <div style={{ width: 12, height: 12, background: COLORS.success, borderRadius: '50%', boxShadow: `0 0 10px ${COLORS.success}` }} />
                                     <div style={{ flex: 1 }}>

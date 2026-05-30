@@ -1,13 +1,10 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     WalletCards, ArrowRightLeft, Landmark, Receipt, CheckCircle, XCircle, Loader2, ArrowUpRight, ArrowDownRight, Building2
 } from 'lucide-react'
-
 // ── TYPES ──────────────────────────────────────────────────
 type WalletStats = { total_earnings: number, withdrawn_amount: number, pending_settlement: number, available_balance: number, monthly_earnings: number }
-
 // ── MODALS & COMPONENTS ────────────────────────────────────
 function Modal({ title, onClose, children, onSubmit, saving, saveText = 'Submit', maxWidth = 500 }: any) {
     return (
@@ -28,7 +25,6 @@ function Modal({ title, onClose, children, onSubmit, saving, saveText = 'Submit'
         </div>
     )
 }
-
 function Input({ label, value, onChange, placeholder = '', type = 'text', prefix = '' }: any) {
     return (
         <div style={{ marginBottom: 16 }}>
@@ -40,7 +36,6 @@ function Input({ label, value, onChange, placeholder = '', type = 'text', prefix
         </div>
     )
 }
-
 // ── MAIN PAGE ──────────────────────────────────────────────
 export default function WalletPayouts() {
     const [wallet, setWallet] = useState<WalletStats>({ total_earnings: 0, withdrawn_amount: 0, pending_settlement: 0, available_balance: 0, monthly_earnings: 0 })
@@ -49,17 +44,13 @@ export default function WalletPayouts() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
     // Modals
     const [showPayoutModal, setShowPayoutModal] = useState(false)
-
     // Form State
     const [form, setForm] = useState({ amount: '', bank_details: '' })
-
      const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok }); setTimeout(() => setToast(null), 3500)
     }
-
     const fetchWallet = useCallback(async () => {
         setLoading(true)
         try {
@@ -72,9 +63,7 @@ export default function WalletPayouts() {
             }
         } finally { setLoading(false) }
     }, [])
-
     useEffect(() => { fetchWallet() }, [fetchWallet])
-
     const apiAction = async (action: string, payload: any) => {
         setSaving(true)
         try {
@@ -92,23 +81,18 @@ export default function WalletPayouts() {
             return { success: false }
         } finally { setSaving(false) }
     }
-
     const handleWithdrawal = async () => {
          const withdrawalAmount = Number(form.amount)
         if (withdrawalAmount <= 0) return showToast('Invalid amount.', false)
         if (withdrawalAmount > wallet.available_balance) return showToast('Insufficient balance.', false)
-
         const { success } = await apiAction('REQUEST_PAYOUT', { amount: withdrawalAmount })
         if (success) {
             setShowPayoutModal(false)
             setForm({ amount: '', bank_details: '' })
         }
     }
-
     return (
         <div style={{ padding: '48px 56px', background: '#F8FAFC', minHeight: '100%', position: 'relative' }}>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
             {/* TOAST SYSTEM */}
             {toast && (
                 <div style={{ position: 'fixed', top: 32, right: 32, background: toast.ok ? '#ECFDF5' : '#FEF2F2', border: '1px solid ' + (toast.ok ? '#10B981' : '#EF4444') + '40', borderRadius: 20, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', zIndex: 90000 }}>
@@ -116,7 +100,6 @@ export default function WalletPayouts() {
                     <span style={{ fontSize: 14, fontWeight: 900, color: toast.ok ? '#065F46' : '#991B1B' }}>{toast.msg}</span>
                 </div>
             )}
-
             {/* HEADER */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 48 }}>
                  <div>
@@ -136,7 +119,6 @@ export default function WalletPayouts() {
                     </button>
                 </div>
             </div>
-
             {/* MASTER KPI LAYER */}
             {loading ? (
                 <div style={{ padding: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -169,10 +151,8 @@ export default function WalletPayouts() {
                     ))}
                 </div>
             ) }
-
             {/* LEDGER & TRANSACTIONS */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-
                 {/* INCOMING PAYMENTS */}
                 <div style={{ background: '#FFF', border: '1px solid #F1F5F9', borderRadius: 28, padding: '28px 0', overflow: 'hidden' }}>
                     <div style={{ padding: '0 28px 24px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -195,7 +175,6 @@ export default function WalletPayouts() {
                         )}
                     </div>
                 </div>
-
                 {/* PAYOUT REQUESTS */}
                 <div style={{ background: '#FFF', border: '1px solid #F1F5F9', borderRadius: 28, padding: '28px 0', overflow: 'hidden' }}>
                     <div style={{ padding: '0 28px 24px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -223,9 +202,7 @@ export default function WalletPayouts() {
                         )}
                     </div>
                 </div>
-
             </div>
-
             {/* PAYOUT MODAL */}
             {showPayoutModal && (
                 <Modal title="Initialize Asset Distribution" onClose={() => setShowPayoutModal(false)} onSubmit={handleWithdrawal} saving={saving} saveText="Confirm Withdrawal" maxWidth={500}>
@@ -234,9 +211,7 @@ export default function WalletPayouts() {
                             <div style={{ fontSize: 13, fontWeight: 1000, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.1em' }}>Redeemable Balance</div>
                             <div style={{ fontSize: 40, fontWeight: 1000, color: '#004B93' }}>₹{wallet.available_balance.toLocaleString()}</div>
                         </div>
-
                         <Input label="Withdrawal Amount (INR)" type="number" value={form.amount} onChange={(v: string) => setForm({ ...form, amount: v })} prefix="₹" placeholder="0.00" />
-                        
                          <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '20px', borderRadius: 20, fontSize: 13, color: '#004B93', fontWeight: 600, lineHeight: 1.6, marginTop: 4 }}>
                             <div style={{ fontWeight: 1000, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}><CheckCircle size={16} /> Settlement Policy</div>
                             • Redemptions are processed every Friday.<br/>
@@ -246,7 +221,6 @@ export default function WalletPayouts() {
                     </div>
                 </Modal>
             )}
-
         </div>
     )
 }

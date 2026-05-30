@@ -29,7 +29,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             .select()
             .single()
 
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
         return NextResponse.json({ tenant: data })
     } catch (err) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -60,7 +60,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
             .delete()
             .eq('id', id)
 
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
         return NextResponse.json({ success: true })
     } catch (err) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

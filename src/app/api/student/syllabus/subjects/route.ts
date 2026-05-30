@@ -52,6 +52,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ subjects: subjects || [] })
     } catch (error: any) {
         console.error('Student Syllabus API Error:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

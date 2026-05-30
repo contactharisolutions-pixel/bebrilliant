@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
             { key: 'billing', value: { default_currency: 'INR', trial_days: 14, tax_rate: 18, invoice_prefix: 'BB-' } },
         ])
     } else if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     return NextResponse.json(data)
@@ -45,6 +45,6 @@ export async function PATCH(request: NextRequest) {
         .eq('key', key)
         .select()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     return NextResponse.json({ success: true, count: data.length })
 }

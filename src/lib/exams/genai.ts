@@ -98,7 +98,7 @@ export async function generateAutonomousQuestion(tenantId: string, topic: string
             message: "Unique AI Question generated, validated semantically, and securely banked!"
         }
 
-    } catch (err: any) {
-        return { success: false, error: err.message }
+    } catch (err: unknown) {
+        return { success: false, error: err instanceof Error ? err.message : 'Unknown error' }
     }
 }

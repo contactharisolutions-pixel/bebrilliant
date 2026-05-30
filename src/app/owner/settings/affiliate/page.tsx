@@ -1,12 +1,10 @@
 'use client'
-
 import React, { useState, useEffect } from 'react'
 import {
     Settings2, Users, GraduationCap, Percent, Banknote,
     Save, CheckCircle2, AlertCircle, RefreshCcw, Loader2,
     BuildingIcon, ShieldCheck, HelpCircle, Activity
 } from 'lucide-react'
-
 // Institutional Palette
 const COLORS = {
     primary: '#004B93',
@@ -18,7 +16,6 @@ const COLORS = {
     background: '#F8FAFC',
     border: '#E2E8F0',
 }
-
 function Toast({ msg, type, onClose }: { msg: string, type: 'success' | 'error', onClose: () => void }) {
     useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
     const isOk = type === 'success'
@@ -29,14 +26,12 @@ function Toast({ msg, type, onClose }: { msg: string, type: 'success' | 'error',
         </div>
     )
 }
-
 export default function AffiliateSettingsPage() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState<{ msg: string, type: 'success' | 'error' } | null>(null)
     const [tenants, setTenants] = useState<any[]>([])
     const [selectedTenant, setSelectedTenant] = useState<string>('')
-    
     const [config, setConfig] = useState({
         enable_affiliate_teacher: false,
         teacher_reward_type: 'percentage',
@@ -51,9 +46,7 @@ export default function AffiliateSettingsPage() {
         student_credit_expiry_days: 365,
         student_usage_restriction: 'none'
     })
-
     const showToast = (msg: string, type: 'success' | 'error') => setToast({ msg, type })
-
     useEffect(() => {
         fetch('/api/owner/tenants')
             .then(res => res.json())
@@ -63,7 +56,6 @@ export default function AffiliateSettingsPage() {
             })
             .catch(() => setLoading(false))
     }, [])
-
     useEffect(() => {
         if (!selectedTenant) return
         setLoading(true)
@@ -79,7 +71,6 @@ export default function AffiliateSettingsPage() {
             })
             .finally(() => setLoading(false))
     }, [selectedTenant])
-
     const handleSave = async () => {
         if (!selectedTenant) return showToast('Select an institute first', 'error')
         setSaving(true)
@@ -97,7 +88,6 @@ export default function AffiliateSettingsPage() {
             setSaving(false)
         }
     }
-
     // Common Inputs
     const Toggle = ({ label, desc, val, onChange }: any) => (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', background: '#FFF', borderRadius: 16, border: `1px solid ${COLORS.border}`, marginBottom: 12 }}>
@@ -113,7 +103,6 @@ export default function AffiliateSettingsPage() {
             </div>
         </div>
     )
-
     const Input = ({ label, type = 'number', val, onChange, suffix }: any) => (
         <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 900, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
@@ -123,18 +112,9 @@ export default function AffiliateSettingsPage() {
             </div>
         </div>
     )
-
     return (
         <div style={{ padding: '40px 56px', minHeight: '100vh', background: COLORS.background, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            <style>{`
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-                .glass-panel { background: rgba(255,255,255,0.7); backdrop-filter: blur(16px); border: 1px solid #FFF; border-radius: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.02); }
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { 100% { transform: rotate(360deg); } }
-            `}</style>
-            
             {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
-
             {/* HEADER */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
                 <div>
@@ -150,7 +130,6 @@ export default function AffiliateSettingsPage() {
                     {saving ? <Loader2 size={18} className="spin" /> : <Save size={18} />} Save Architecture
                 </button>
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 32 }}>
                 {/* LEFT: TENANT SELECTOR */}
                 <div style={{ alignSelf: 'start' }}>
@@ -170,7 +149,6 @@ export default function AffiliateSettingsPage() {
                         ))}
                     </div>
                 </div>
-
                 {/* RIGHT: SETTINGS FORM */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
                     {!selectedTenant ? (
@@ -189,9 +167,7 @@ export default function AffiliateSettingsPage() {
                                     </div>
                                     <h2 style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', margin: 0 }}>Affiliate Teachers System</h2>
                                 </div>
-
                                 <Toggle label="Enable Teacher Affiliates" desc="Allow external staff to register, undergo KYC, and sell institute exams." val={config.enable_affiliate_teacher} onChange={(v: boolean) => setConfig({...config, enable_affiliate_teacher: v})} />
-
                                 {config.enable_affiliate_teacher && (
                                     <div style={{ background: '#F8FAFC', borderRadius: 16, padding: 24, border: `1px solid ${COLORS.border}` }}>
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
@@ -204,12 +180,10 @@ export default function AffiliateSettingsPage() {
                                             </div>
                                             <Input label={`Reward Amount (${config.teacher_reward_type === 'percentage' ? '%' : '₹'})`} val={config.teacher_reward_value} onChange={(v: string) => setConfig({...config, teacher_reward_value: Number(v)})} suffix={config.teacher_reward_type === 'percentage' ? '%' : '₹'} />
                                         </div>
-
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
                                             <Input label="Minimum Withdrawal Request" val={config.teacher_min_withdrawal} onChange={(v: string) => setConfig({...config, teacher_min_withdrawal: Number(v)})} suffix="₹" />
                                             <Input label="TDS Deduction Percentage" val={config.teacher_tds_percentage} onChange={(v: string) => setConfig({...config, teacher_tds_percentage: Number(v)})} suffix="%" />
                                         </div>
-
                                         <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 24 }}>
                                             <Toggle label="Enable Multi-Level Referral (Level 2)" desc="Allow affiliates to earn overriding commissions from other affiliates they refer." val={config.teacher_level2_enabled} onChange={(v: boolean) => setConfig({...config, teacher_level2_enabled: v})} />
                                             {config.teacher_level2_enabled && (
@@ -221,7 +195,6 @@ export default function AffiliateSettingsPage() {
                                     </div>
                                 )}
                             </div>
-
                             {/* STUDENT MODULE */}
                             <div className="glass-panel" style={{ padding: 32 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
@@ -230,21 +203,17 @@ export default function AffiliateSettingsPage() {
                                     </div>
                                     <h2 style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', margin: 0 }}>Affiliate Students System</h2>
                                 </div>
-
                                 <Toggle label="Enable Student Referral Links" desc="Allow registered institute students to earn wallet credits by sharing exams." val={config.enable_affiliate_student} onChange={(v: boolean) => setConfig({...config, enable_affiliate_student: v})} />
-
                                 {config.enable_affiliate_student && (
                                     <div style={{ background: '#F8FAFC', borderRadius: 16, padding: 24, border: `1px solid ${COLORS.border}` }}>
                                         <div style={{ display: 'flex', gap: 12, alignItems: 'center', background: '#FFF7ED', padding: '12px 16px', borderRadius: 12, marginBottom: 24 }}>
                                             <ShieldCheck size={16} color={COLORS.warning} />
                                             <span style={{ fontSize: 13, fontWeight: 700, color: '#9A3412' }}>Student rewards are strictly non-withdrawable internal credits.</span>
                                         </div>
-
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
                                             <Input label="Credits per Conversion" val={config.student_reward_credits} onChange={(v: string) => setConfig({...config, student_reward_credits: Number(v)})} suffix="Credits" />
                                             <Input label="Max Credits Earnable (Limit)" val={config.student_max_reward_limit} onChange={(v: string) => setConfig({...config, student_max_reward_limit: Number(v)})} suffix="Credits" />
                                         </div>
-
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                                             <Input label="Credit Expiry Duration" val={config.student_credit_expiry_days} onChange={(v: string) => setConfig({...config, student_credit_expiry_days: Number(v)})} suffix="Days" />
                                             <div>

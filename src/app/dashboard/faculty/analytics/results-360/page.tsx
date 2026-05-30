@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     BarChart3, PieChart, TrendingUp, Users, BookOpen,
@@ -10,9 +9,7 @@ import {
     UserCircle, BookMarked, LineChart, ShieldCheck, RefreshCcw
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-
 // ── CUSTOM CHART COMPONENTS ─────────────────
-
 const ProgressCircle = ({ percent, size = 160, stroke = 12 }: any) => {
     const radius = (size - stroke) / 2
     const circumference = radius * 2 * Math.PI
@@ -37,7 +34,6 @@ const ProgressCircle = ({ percent, size = 160, stroke = 12 }: any) => {
         </div>
     )
 }
-
 const COLORS = {
     blue: '#004B93',
     green: '#1FAC63',
@@ -47,7 +43,6 @@ const COLORS = {
     border: '#E5E7EB',
     bg: '#F9FAFB'
 }
-
 const GLASS_CARD = {
     background: 'rgba(255, 255, 255, 0.8)',
     backdropFilter: 'blur(10px)',
@@ -55,19 +50,15 @@ const GLASS_CARD = {
     borderRadius: '28px',
     boxShadow: '0 4px 30px rgba(0,0,0,0.02)'
 }
-
 // ── MAIN DASHBOARD ──────────────────
-
 export default function Result360Analytics() {
     const [loading, setLoading] = useState(true)
     const [stats, setStats] = useState<any>(null)
     const [selectedView, setSelectedView] = useState<'standard' | 'student' | 'subject'>('standard')
     const [filters, setFilters] = useState({ standard: 'Std 10', division: 'Division A', search: '' })
-
     const fetchAnalytics = useCallback(async () => {
         setLoading(true)
         await new Promise(r => setTimeout(r, 1200))
-        
         setStats({
             overview: {
                 avg_percentage: 74.2,
@@ -101,33 +92,16 @@ export default function Result360Analytics() {
         })
         setLoading(false)
     }, [])
-
     useEffect(() => { fetchAnalytics() }, [fetchAnalytics])
-
     if (loading && !stats) return (
         <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: COLORS.bg }}>
             <Loader2 size={48} color={COLORS.blue} className="spin" style={{ margin: '0 auto 24px' }} />
             <div style={{ color: COLORS.blue, fontWeight: 900, fontSize: 18, letterSpacing: '0.1em' }}>LOADING ACADEMIC DATA...</div>
             <p style={{ marginTop: 8, fontSize: 13, color: COLORS.slate, fontWeight: 600 }}>Aggregating multi-dimensional assessment vectors.</p>
-            <style>{`.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg) } }`}</style>
         </div>
     )
-
     return (
         <div style={{ padding: '40px 48px', background: COLORS.bg, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            <style>{`
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .hover-lift { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-                .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.05) !important; }
-                .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
-                .btn-primary { background: linear-gradient(135deg, ${COLORS.blue}, #003366); color: #FFF; border: none; padding: 14px 28px; borderRadius: 14px; fontWeight: 900; fontSize: 14px; cursor: pointer; display: flex; alignItems: center; gap: 10px; boxShadow: 0 8px 16px rgba(0, 75, 147, 0.15); transition: all 0.2s; }
-                .btn-primary:active { transform: scale(0.98); }
-                .bar-loading { animation: barGrow 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; transform-origin: left; }
-                @keyframes barGrow { from { transform: scaleX(0) } to { transform: scaleX(1) } }
-                select, input { appearance: none; -webkit-appearance: none; }
-                * { box-sizing: border-box; }
-            `}</style>
-
             {/* HEADER & CONTROLS */}
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48, animation: 'fadeIn 0.5s ease-out' }}>
                 <div>
@@ -148,7 +122,6 @@ export default function Result360Analytics() {
                     </button>
                 </div>
             </header>
-
             {/* ANALYTICS FILTERS */}
             <div className="glass-card" style={{ background: '#FFF', border: `1px solid ${COLORS.border}`, borderRadius: 24, padding: '20px 32px', display: 'flex', gap: 32, alignItems: 'center', marginBottom: 40, boxShadow: '0 4px 30px rgba(0,0,0,0.02)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -173,7 +146,6 @@ export default function Result360Analytics() {
                     <input type="text" value={filters.search} onChange={e => setFilters({...filters, search: e.target.value})} placeholder="Drilldown by candidate or subject identifier..." style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 14, fontWeight: 600, color: '#111827', width: '100%' }} />
                 </div>
             </div>
-
             {selectedView === 'standard' && (
                 <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
                     {/* KPI MEASURES */}
@@ -196,7 +168,6 @@ export default function Result360Analytics() {
                             </div>
                         ))}
                     </div>
-
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 32, alignItems: 'start' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
                             <div className="glass-card" style={{ background: '#FFF', padding: 40, border: `1px solid ${COLORS.border}` }}>
@@ -227,7 +198,6 @@ export default function Result360Analytics() {
                     </div>
                 </div>
             )}
-
             {selectedView === 'student' && (
                 <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
                     <div className="glass-card" style={{ background: '#FFF', border: `1px solid ${COLORS.border}`, borderRadius: 28, overflow: 'hidden' }}>
@@ -270,7 +240,6 @@ export default function Result360Analytics() {
                     </div>
                 </div>
             )}
-
             {selectedView === 'subject' && (
                 <div style={{ animation: 'fadeIn 0.5s ease-out', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
                     {stats.subject_details.map((s: any, i: number) => (

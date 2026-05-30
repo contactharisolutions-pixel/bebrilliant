@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     FileText, CheckCircle2, AlertCircle, Edit3,
@@ -8,7 +7,6 @@ import {
     LayoutGrid, Zap, BrainCircuit, RefreshCcw,
     Shield, Target, Users, LayoutDashboard, Sparkles, Loader2, X
 } from 'lucide-react'
-
 // ── TYPES ────────────────────────────────────────────────
 type EvaluationScript = {
     id: string
@@ -20,7 +18,6 @@ type EvaluationScript = {
     ai_confidence: number
     created_at: string
 }
-
 const COLORS = {
     blue: '#004B93',
     green: '#1FAC63',
@@ -30,7 +27,6 @@ const COLORS = {
     border: '#E5E7EB',
     bg: '#F9FAFB'
 }
-
 const GLASS_CARD = {
     background: 'rgba(255, 255, 255, 0.8)',
     backdropFilter: 'blur(10px)',
@@ -38,7 +34,6 @@ const GLASS_CARD = {
     borderRadius: '24px',
     boxShadow: '0 4px 30px rgba(0,0,0,0.02)'
 }
-
 // ── UI COMPONENTS ───────────────────────────────────────
 function AnalyticsCard({ label, value, icon: Icon, color, bg }: any) {
     return (
@@ -53,7 +48,6 @@ function AnalyticsCard({ label, value, icon: Icon, color, bg }: any) {
         </div>
     )
 }
-
 function StatusBadge({ status }: { status: string }) {
     const isCompleted = status === 'completed'
     return (
@@ -62,7 +56,6 @@ function StatusBadge({ status }: { status: string }) {
         </div>
     )
 }
-
 export default function AnswerGradingHub() {
     const [view, setView] = useState<'queue' | 'evaluation'>('queue')
     const [loading, setLoading] = useState(true)
@@ -70,7 +63,6 @@ export default function AnswerGradingHub() {
     const [selectedUpload, setSelectedUpload] = useState<EvaluationScript | null>(null)
     const [gradingDetails, setGradingDetails] = useState<any[]>([])
     const [search, setSearch] = useState('')
-
     const fetchInitialData = useCallback(async () => {
         setLoading(true)
         try {
@@ -85,9 +77,7 @@ export default function AnswerGradingHub() {
             setLoading(false)
         }
     }, [])
-
     useEffect(() => { fetchInitialData() }, [fetchInitialData])
-
     const loadGradingDetails = async (upload: EvaluationScript) => {
         setLoading(true)
         setSelectedUpload(upload)
@@ -114,26 +104,14 @@ export default function AnswerGradingHub() {
         setLoading(false)
         setView('evaluation')
     }
-
     if (loading && view === 'queue') return (
         <div style={{ padding: 120, textAlign: 'center', background: COLORS.bg, minHeight: '100vh' }}>
             <Loader2 size={48} color={COLORS.blue} className="spin" style={{ margin: '0 auto 24px' }} />
             <div style={{ color: COLORS.blue, fontWeight: 900, fontSize: 18, letterSpacing: '0.1em' }}>INITIALIZING EVALUATION...</div>
-            <style>{`.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg) } }`}</style>
         </div>
     )
-
     return (
         <div style={{ padding: '40px 48px', background: COLORS.bg, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            <style>{`
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes slideIn { from { opacity: 0; transform: translateY(-10px) } to { opacity: 1; transform: translateY(0) } }
-                .hover-lift { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-                .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.05) !important; }
-                .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
-                * { box-sizing: border-box; }
-            `}</style>
-
             {view === 'queue' ? (
                 <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
                     {/* HEADER */}
@@ -149,7 +127,6 @@ export default function AnswerGradingHub() {
                             <RefreshCcw size={16} /> Sync Queue
                         </button>
                     </header>
-
                     {/* KPI MEASURES */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 40 }}>
                         <AnalyticsCard label="Pending Scripts" value={uploads.filter(u => u.status !== 'completed').length} icon={FileText} color={COLORS.orange} bg={`${COLORS.orange}10`} />
@@ -157,7 +134,6 @@ export default function AnswerGradingHub() {
                         <AnalyticsCard label="Evaluated Today" value="142" icon={CheckCircle2} color={COLORS.green} bg={`${COLORS.green}10`} />
                         <AnalyticsCard label="Grading Speed" value="1.4s/pg" icon={Zap} color={COLORS.purple} bg={`${COLORS.purple}10`} />
                     </div>
-
                     {/* SEARCH & FILTER */}
                     <div className="glass-card" style={{ background: '#FFF', border: `1px solid ${COLORS.border}`, borderRadius: 24, padding: '24px 32px', display: 'flex', gap: 20, alignItems: 'center', marginBottom: 40, boxShadow: '0 4px 30px rgba(0,0,0,0.02)' }}>
                         <Search size={22} color={COLORS.slate} />
@@ -167,7 +143,6 @@ export default function AnswerGradingHub() {
                             <Filter size={18} /> Filters
                         </button>
                     </div>
-
                     {/* QUEUE TABLE */}
                     <div className="glass-card" style={{ background: '#FFF', border: `1px solid ${COLORS.border}`, borderRadius: 28, overflow: 'hidden' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -226,7 +201,6 @@ export default function AnswerGradingHub() {
                             <p style={{ margin: '4px 0 0', color: COLORS.slate, fontWeight: 600 }}>Candidate: {selectedUpload?.student.first_name} {selectedUpload?.student.last_name} • ID: {selectedUpload?.id.substring(0,8)}</p>
                         </div>
                     </header>
-
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 32 }}>
                         {/* LEFT: SCRIPT CARDS */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -237,7 +211,6 @@ export default function AnswerGradingHub() {
                                         <div style={{ fontSize: 12, fontWeight: 900, color: COLORS.blue }}>WEIGHT: {g.max_marks} MARKS</div>
                                     </div>
                                     <h3 style={{ margin: '0 0 24px', fontSize: 18, fontWeight: 800, color: '#111827', lineHeight: 1.4 }}>{g.question}</h3>
-                                    
                                     <div style={{ background: '#F8FAFB', padding: 24, borderRadius: 16, borderLeft: `4px solid ${COLORS.blue}40` }}>
                                         <div style={{ fontSize: 11, fontWeight: 900, color: COLORS.blue, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
                                             <Wand2 size={12} /> Extracted Script (OCR Deep Scan)
@@ -247,7 +220,6 @@ export default function AnswerGradingHub() {
                                 </div>
                             ))}
                         </div>
-
                         {/* RIGHT: AI INSIGHTS PANEL */}
                         <div style={{ position: 'sticky', top: 32, ...GLASS_CARD, background: '#FFF', padding: 40 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
@@ -257,7 +229,6 @@ export default function AnswerGradingHub() {
                                     <p style={{ margin: '4px 0 0', color: COLORS.slate, fontWeight: 600 }}>Semantic Consensus & Logic Verification</p>
                                 </div>
                             </div>
-
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
                                 {gradingDetails.map((g, i) => (
                                     <div key={i} style={{ paddingBottom: 24, borderBottom: `1px solid ${COLORS.border}` }}>
@@ -279,7 +250,6 @@ export default function AnswerGradingHub() {
                                     </div>
                                 ))}
                             </div>
-
                             <div style={{ marginTop: 48, display: 'flex', flexDirection: 'column', gap: 16 }}>
                                 <button style={{ width: '100%', padding: '18px', borderRadius: 18, background: COLORS.blue, color: '#FFF', border: 'none', fontWeight: 900, fontSize: 16, cursor: 'pointer', boxShadow: '0 8px 16px rgba(0, 75, 147, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
                                     <CheckCircle2 size={20} /> COMMIT EVALUATION

@@ -519,6 +519,20 @@ body {
   }
 }
 
+/* Spin utility — used by dashboard loading state */
+.spin {
+  animation: spin 0.7s linear infinite;
+}
+
+/* Hover-lift utility for cards */
+.hover-lift {
+  transition: all 0.2s;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.05);
+}
+
 /* ─── Alert Banner ───────────────────────────────────────────────────────────── */
 .alert {
   display: flex;

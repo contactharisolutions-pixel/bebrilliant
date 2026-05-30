@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect } from 'react'
 import { 
     Layers, BookOpen, UserCheck, Plus, 
@@ -7,11 +6,9 @@ import {
     Calendar, CheckCircle2, AlertCircle, ChevronRight,
     Search, Filter, LayoutGrid, Users, RefreshCcw
 } from 'lucide-react'
-
 export default function AcademicStructureHub() {
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'standards' | 'subjects' | 'mapping'>('standards')
-    
     // Data States
     const [years, setYears] = useState([])
     const [classes, setClasses] = useState([])
@@ -19,16 +16,13 @@ export default function AcademicStructureHub() {
     const [teachers, setTeachers] = useState([])
     const [classSubMapping, setClassSubMapping] = useState([])
     const [teacherSubMapping, setTeacherSubMapping] = useState([])
-    
     // UI States
     const [selectedYear, setSelectedYear] = useState('')
     const [selectedStandard, setSelectedStandard] = useState<any>(null)
     const [saving, setSaving] = useState(false)
-
     useEffect(() => {
         initPortal()
     }, [])
-
     const initPortal = async () => {
         try {
             const [yRes, cRes, sRes, tRes, m1Res, m2Res] = await Promise.all([
@@ -39,21 +33,18 @@ export default function AcademicStructureHub() {
                 fetch('/api/dashboard/tenant/structure/mapping?type=class-subject'),
                 fetch('/api/dashboard/tenant/structure/mapping?type=teacher-subject')
             ])
-
             const yData = await yRes.json()
             const cData = await cRes.json()
             const sData = await sRes.json()
             const tData = await tRes.json()
             const m1Data = await m1Res.json()
             const m2Data = await m2Res.json()
-
             setYears(yData.years || [])
             setClasses(cData.classes || [])
             setSubjects(sData.subjects || [])
             setTeachers(tData.users || [])
             setClassSubMapping(m1Data.mapping || [])
             setTeacherSubMapping(m2Data.mapping || [])
-
             if (yData.years?.length > 0) setSelectedYear(yData.years.find((y: any) => y.is_active)?.id || yData.years[0].id)
         } catch (err) {
             console.error('Portal Init Failed', err)
@@ -61,7 +52,6 @@ export default function AcademicStructureHub() {
             setLoading(false)
         }
     }
-
     // --- Action Handlers ---
     const handleAddClass = async (name: string) => {
         if (!selectedYear) return alert('Select academic year first')
@@ -71,7 +61,6 @@ export default function AcademicStructureHub() {
         })
         if (res.ok) initPortal()
     }
-
     const handleAddDivision = async (classId: string, name: string) => {
         const res = await fetch('/api/dashboard/tenant/divisions', {
             method: 'POST',
@@ -79,7 +68,6 @@ export default function AcademicStructureHub() {
         })
         if (res.ok) initPortal()
     }
-
     const handleAddSubject = async (name: string) => {
         const res = await fetch('/api/dashboard/tenant/subjects', {
             method: 'POST',
@@ -87,7 +75,6 @@ export default function AcademicStructureHub() {
         })
         if (res.ok) initPortal()
     }
-
     const handleMapSubject = async (classId: string, subjectIds: string[]) => {
         setSaving(true)
         const res = await fetch('/api/dashboard/tenant/structure/mapping', {
@@ -97,7 +84,6 @@ export default function AcademicStructureHub() {
         if (res.ok) initPortal()
         setSaving(false)
     }
-
     const handleMapTeacher = async (teacherId: string, classId: string, divId: string, subId: string) => {
         setSaving(true)
         const res = await fetch('/api/dashboard/tenant/structure/mapping', {
@@ -107,24 +93,19 @@ export default function AcademicStructureHub() {
         if (res.ok) initPortal()
         setSaving(false)
     }
-
     if (loading) return (
         <div style={{ padding: 60, textAlign: 'center' }}>
             <div style={{ width: 40, height: 40, border: '3px solid var(--color-primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 20px' }} />
             <p style={{ fontWeight: 800, color: '#64748B' }}>Loading academic structure...</p>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
     )
-
     return (
         <div style={{ padding: '32px 40px', background: '#F8FAFC', minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
-            
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
                  <div>
                     <h1 style={{ fontSize: 32, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.03em', margin: 0 }}>Academic Structure</h1>
                     <p style={{ color: '#64748B', fontWeight: 600, marginTop: 8 }}>Manage your institute's academic standards, subjects, and faculty assignments.</p>
                 </div>
-                
                 <div style={{ display: 'flex', gap: 16 }}>
                     <div style={{ background: '#FFF', padding: '10px 16px', borderRadius: 12, border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 12 }}>
                         <Calendar size={18} color="var(--color-primary)" />
@@ -137,7 +118,6 @@ export default function AcademicStructureHub() {
                     </div>
                 </div>
             </div>
-
             <div style={{ background: '#FFF', borderRadius: 28, border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
                 {/* Tabs */}
                 <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #F1F5F9', background: '#F8FAFC' }}>
@@ -160,9 +140,7 @@ export default function AcademicStructureHub() {
                         </button>
                     ))}
                 </div>
-
                 <div style={{ padding: 40 }}>
-                    
                     {/* --- STANDARDS & DIVISIONS --- */}
                     {activeTab === 'standards' && (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
@@ -201,7 +179,6 @@ export default function AcademicStructureHub() {
                             </button>
                         </div>
                     )}
-
                     {/* --- SUBJECTS MASTER --- */}
                     {activeTab === 'subjects' && (
                         <div>
@@ -228,7 +205,6 @@ export default function AcademicStructureHub() {
                             </div>
                         </div>
                     )}
-
                     {/* --- TEACHER & SUBJECT MAPPING --- */}
                     {activeTab === 'mapping' && (
                         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 40 }}>
@@ -254,13 +230,11 @@ export default function AcademicStructureHub() {
                                     ))}
                                 </div>
                             </div>
-
                             {/* New Assignment Form */}
                             <div style={{ background: '#F8FAFC', padding: 32, borderRadius: 28, border: '1px solid #E2E8F0', height: 'fit-content' }}>
                                 <h3 style={{ fontSize: 18, fontWeight: 900, color: '#0F172A', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
                                      <UserCheck size={20} color="var(--color-primary)" /> Faculty Assignment
                                 </h3>
-                                
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                                     <div>
                                         <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#64748B', marginBottom: 8 }}>Select Faculty Member</label>
@@ -294,7 +268,6 @@ export default function AcademicStructureHub() {
                                             {subjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
                                         </select>
                                     </div>
-
                                     <button 
                                         onClick={() => {
                                             const tid = (document.getElementById('teacher_id') as HTMLSelectElement).value
@@ -313,13 +286,8 @@ export default function AcademicStructureHub() {
                             </div>
                         </div>
                     )}
-
                 </div>
             </div>
-
-            <style>{`
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-            `}</style>
         </div>
     )
 }

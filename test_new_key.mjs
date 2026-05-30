@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
 
 // Try models
-const apiKey = "AIzaSyBVv4bn95oKgqZIqh_cCRfmvlmHlETl1kk";
+const apiKey = "AIzaSyB6MxW-dfjVgy-5RQDdcbTT5BPCc3Zko5s";
 const genAI = new GoogleGenerativeAI(apiKey);
 
 async function testModel(modelName) {

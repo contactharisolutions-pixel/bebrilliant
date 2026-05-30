@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
     BookOpen, Database, ShoppingBag, BarChart2,
@@ -13,7 +12,6 @@ import {
 } from 'lucide-react'
 import Papa from 'papaparse'
 import { createClient } from '@/lib/supabase/client'
-
 // ── TYPES ────────────────────────────────────────────────
 type NodeType = 'board' | 'class' | 'subject' | 'chapter' | 'topic'
 type SyllabusNode = {
@@ -25,7 +23,6 @@ type SyllabusPlan = {
     price: number; features: any; is_active: boolean
     syllabus_nodes?: { name: string; type: string }
 }
-
 const COLORS = {
     primary: '#004B93',
     primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
@@ -37,7 +34,6 @@ const COLORS = {
     border: '#E2E8F0',
     glass: 'rgba(255, 255, 255, 0.7)'
 }
-
 const NODE_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
     board: { label: 'Board', color: '#004B93', bg: '#004B9310', icon: Globe },
     class: { label: 'Class', color: '#8B5CF6', bg: '#8B5CF610', icon: GraduationCap },
@@ -45,14 +41,12 @@ const NODE_CONFIG: Record<string, { label: string; color: string; bg: string; ic
     chapter: { label: 'Chapter', color: '#F0A026', bg: '#F0A02610', icon: Layers },
     topic: { label: 'Topic', color: '#64748B', bg: '#64748B10', icon: Target },
 }
-
 const BOARD_GROUPS = [
     { label: 'School Syllabus', items: ['CBSE', 'ICSE', 'IB Board', 'NIOS Board', 'GUJCET', 'Gujarat Board', 'State Board'] },
     { label: 'Entrance Exams', items: ['JEE Main', 'JEE Advanced', 'NEET', 'CUET', 'CLAT', 'CAT', 'GATE'] },
     { label: 'Competitive', items: ['UPSC Civil Services', 'SSC CGL', 'NDA', 'CDS', 'RRB'] }
 ]
 const SCHOOL_BOARDS = BOARD_GROUPS[0].items;
-
 // ── COMPONENTS ──────────────────────────────────
 function ToastNotification({ msg, ok, onClose }: { msg: string; ok: boolean; onClose: () => void }) {
     useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
@@ -63,7 +57,6 @@ function ToastNotification({ msg, ok, onClose }: { msg: string; ok: boolean; onC
         </div>
     )
 }
-
 function Modal({ title, onClose, children, onSubmit, saving, saveText = 'Save' }: any) {
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: 20 }}>
@@ -83,38 +76,31 @@ function Modal({ title, onClose, children, onSubmit, saving, saveText = 'Save' }
         </div>
     )
 }
-
 // ── TREE NODE COMPONENT ──────────────────────────
 function TreeNode({ node, nodes, onEdit, onDelete, onAddChild, onToggle, onAIGen, level = 0 }: any) {
     const [expanded, setExpanded] = useState(false) // Default minimized
     const [generating, setGenerating] = useState(false)
     const children = useMemo(() => nodes.filter((n: SyllabusNode) => n.parent_id === node.id), [nodes, node.id])
     const config = NODE_CONFIG[node.type] || NODE_CONFIG.topic
-
     return (
         <div style={{ marginLeft: level > 0 ? 36 : 0, WebkitUserSelect: 'none' }}>
             <div className="node-pulse" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 20px', background: '#FFF', border: `1px solid ${expanded ? COLORS.primary + '20' : '#F1F5F9'}`, borderRadius: 20, marginBottom: 8, transition: '0.3s cubic-bezier(0.4, 0, 0.2, 1)', position: 'relative', overflow: 'hidden' }}>
                 {expanded && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: COLORS.primaryGradient }} />}
-                
                 <button onClick={() => children.length > 0 && setExpanded(!expanded)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: COLORS.slate }}>
                     {children.length > 0 ? (expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />) : <Binary size={14} color="#CBD5E1" />}
                 </button>
-
                 <div style={{ padding: 10, background: config.bg, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <config.icon size={18} color={config.color} />
                 </div>
-
                 <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 1000, color: node.is_active ? '#1E293B' : '#94A3B8' }}>{node.name}</div>
                     <div style={{ fontSize: 11, fontWeight: 900, color: config.color, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 }}>{config.label}</div>
                 </div>
-
                 {children.length > 0 && (
                     <div style={{ background: '#F1F5F9', padding: '6px 12px', borderRadius: 10, fontSize: 11, fontWeight: 900, color: '#475569', display: 'flex', alignItems: 'center', gap: 6 }}>
                         <Layers size={12} /> {children.length} Sequences
                     </div>
                 )}
-
                 <div style={{ display: 'flex', gap: 8, marginLeft: 16 }}>
                     {!node.is_master && (
                         <>
@@ -132,7 +118,6 @@ function TreeNode({ node, nodes, onEdit, onDelete, onAddChild, onToggle, onAIGen
                     )}
                 </div>
             </div>
-
             {expanded && children.length > 0 && (
                 <div style={{ borderLeft: `2px solid #F1F5F9`, marginLeft: 8, paddingLeft: 4 }}>
                     {children.map((child: SyllabusNode) => (
@@ -143,7 +128,6 @@ function TreeNode({ node, nodes, onEdit, onDelete, onAddChild, onToggle, onAIGen
         </div>
     )
 }
-
 // ── MAIN APPLICATION ─────────────────────────────
 export default function SyllabusManagement() {
     const [tab, setTab] = useState('tree')
@@ -153,10 +137,8 @@ export default function SyllabusManagement() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
     const [nodeModal, setNodeModal] = useState<{ open: boolean; editing?: SyllabusNode; parent?: SyllabusNode; success?: boolean }>({ open: false })
     const [nodeForm, setNodeForm] = useState({ name: '', type: 'chapter' as NodeType })
-
     const fetchHierarchy = useCallback(async () => {
         setLoading(true)
         try {
@@ -169,9 +151,7 @@ export default function SyllabusManagement() {
             }
         } finally { setLoading(false) }
     }, [])
-
     useEffect(() => { fetchHierarchy() }, [fetchHierarchy])
-
     const apiAction = async (action: string, payload: any) => {
         setSaving(true)
         try {
@@ -187,15 +167,12 @@ export default function SyllabusManagement() {
         } catch (e: any) { showToast(e.message, false); return null }
         finally { setSaving(false) }
     }
-
     const showToast = (msg: string, ok: boolean) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 3500) }
-
     const openAddChild = (p: SyllabusNode) => {
         const nextMap: Record<NodeType, NodeType> = { board: 'class', class: 'subject', subject: 'chapter', chapter: 'topic', topic: 'topic' }
         setNodeForm({ name: '', type: nextMap[p.type] })
         setNodeModal({ open: true, parent: p })
     }
-
     const handleSaveNode = async () => {
         if (!nodeForm.name.trim()) return showToast('Identity Name Required', false)
         if (nodeModal.editing) {
@@ -211,29 +188,15 @@ export default function SyllabusManagement() {
             fetchHierarchy()
         }, 5000)
     }
-
     const handleAIGenNode = async (node: SyllabusNode) => {
         const res = await apiAction('GENERATE_SYLLABUS', { node_id: node.id, node_type: node.type, node_name: node.name })
         if (res) fetchHierarchy()
     }
-
     const rootNodes = useMemo(() => nodes.filter(n => !n.parent_id), [nodes])
-
     return (
         <div style={{ padding: '48px 56px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            <style>{`
-                @keyframes float { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .node-pulse:hover { border-color: ${COLORS.primary}40 !important; background: #F8FAFC !important; transform: translateX(4px); }
-                .control-btn { padding: 8px; background: transparent; border: none; borderRadius: 10px; cursor: pointer; color: #94A3B8; transition: 0.2s; }
-                .control-btn:hover { background: #EEF2FF; color: ${COLORS.primary}; }
-                .tab-active { background: #FFF !important; color: ${COLORS.primary} !important; box-shadow: 0 10px 20px rgba(0,75,147,0.06); }
-            `}</style>
-
             {/* TOAST NODES */}
             {toast && <ToastNotification msg={toast.msg} ok={toast.ok} onClose={() => setToast(null)} />}
-
             {/* SYLLABUS HEADER */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 48 }}>
                 <div>
@@ -256,7 +219,6 @@ export default function SyllabusManagement() {
                     </button>
                 </div>
             </div>
-
             {/* SYLLABUS STATS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 48 }}>
                 {[
@@ -276,7 +238,6 @@ export default function SyllabusManagement() {
                     </div>
                 ))}
             </div>
-
             {/* VIEW TABS */}
             <div style={{ display: 'flex', gap: 8, background: '#F1F5F9', padding: 8, borderRadius: 24, width: 'fit-content', marginBottom: 40 }}>
                 {[
@@ -290,7 +251,6 @@ export default function SyllabusManagement() {
                     </button>
                 ))}
             </div>
-
             {/* CONTENT AREA */}
             {loading ? (
                 <div style={{ padding: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -307,7 +267,6 @@ export default function SyllabusManagement() {
                                     <h2 style={{ margin: 0, fontSize: 22, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.02em' }}>Academic Structure</h2>
                                     <div style={{ padding: '8px 16px', background: `${COLORS.primary}08`, color: COLORS.primary, borderRadius: 12, fontSize: 11, fontWeight: 1000, letterSpacing: '0.05em' }}>DEPTH ENFORCED</div>
                                 </div>
-                                
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                     {rootNodes.length > 0 ? rootNodes.map(node => (
                                         <TreeNode 
@@ -328,7 +287,6 @@ export default function SyllabusManagement() {
                                     )}
                                 </div>
                             </div>
-
                              {/* INFORMATION SIDEBAR */}
                              <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
                                  <div style={{ background: COLORS.primaryGradient, borderRadius: 32, padding: 32, color: '#FFF', boxShadow: '0 20px 40px rgba(0,75,147,0.2)', position: 'relative', overflow: 'hidden' }}>
@@ -374,7 +332,6 @@ export default function SyllabusManagement() {
                                          ))}
                                      </div>
                                  </div>
-
                                  <div style={{ background: '#FFF', borderRadius: 32, padding: 32, border: '1px solid #E2E8F0', borderTop: `4px solid ${COLORS.warning}` }}>
                                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                                          <Shield size={18} color={COLORS.warning} />
@@ -387,7 +344,6 @@ export default function SyllabusManagement() {
                              </div>
                          </div>
                      )}
-
                     {tab === 'acquired' && (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
                             {activeSubscriptions.map((s: any) => (
@@ -404,7 +360,6 @@ export default function SyllabusManagement() {
                             ))}
                         </div>
                     )}
-
                     {tab === 'market' && (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
                              {marketplace.map(p => (
@@ -424,7 +379,6 @@ export default function SyllabusManagement() {
                                      {(() => {
                                         const sub = activeSubscriptions.find((s: any) => s.syllabus_id === p.syllabus_id);
                                         const isActive = sub?.is_active;
-
                                         return (
                                             <button 
                                                 onClick={() => apiAction('PURCHASE_SYLLABUS', { plan_id: p.id, price: p.price })} 
@@ -449,7 +403,6 @@ export default function SyllabusManagement() {
                     )}
                 </div>
             )}
-
             {/* ADD / EDIT MODAL */}
             {nodeModal.open && (
                 <Modal title={nodeModal.editing ? `Configure: ${nodeModal.editing.name}` : `Add Syllabus Item`} onClose={() => setNodeModal({ open: false })} onSubmit={handleSaveNode} saving={saving} saveText={nodeModal.success ? 'Synced!' : 'Save'}>

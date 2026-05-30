@@ -14,13 +14,13 @@ export async function POST(request: NextRequest) {
         // Subjective 2
         // Hard Difficulty +1
         
-        let baseCost = question_type === 'subjective' ? 2 : 1
-        let difficultyCost = difficulty === 'Hard' ? 1 : 0
+        const baseCost = question_type === 'subjective' ? 2 : 1
+        const difficultyCost = difficulty === 'Hard' ? 1 : 0
 
         const totalCredits = (question_count * baseCost) + (question_count * difficultyCost)
 
         return NextResponse.json({ total_credits: totalCredits })
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

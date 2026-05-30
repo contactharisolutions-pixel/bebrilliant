@@ -1,745 +1,1 @@
-'use client'
-
-import React, { useState, useEffect, useCallback } from 'react'
-import {
-    BookOpen, Users, CheckCircle, XCircle, Loader2, RefreshCw,
-    Search, Filter, X, ChevronLeft, ChevronRight, AlertTriangle,
-    Shield, Clock, DollarSign, BarChart2, TrendingUp, Eye,
-    Calendar, Zap, FileText, ArrowUpRight, Building2, ClipboardList, ShieldAlert,
-    School, Settings
-} from 'lucide-react'
-import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-    ResponsiveContainer, Cell, PieChart, Pie
-} from 'recharts'
-
-// â”€â”€ PALETTE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const P = {
-    bg: '#F7F8FA', card: '#FEFEFE', border: '#E8E8E8',
-    brand: '#004B93', brandBg: '#004B9315',
-    cta: '#F0A026', ctaBg: '#FFF4E5',
-    dark: '#1B1D21', text: '#5A5A5A', muted: '#A5A2A6', hover: '#F1F2F4',
-    success: '#1FAC63', successBg: '#1FAC6310',
-    warning: '#F59E0B', warningBg: '#FFFBEB',
-    error: '#EF4444', errorBg: '#FEF2F2',
-    info: '#3B82F6', infoBg: '#EFF6FF',
-}
-
-type Exam = {
-    id: string
-    name: string
-    description?: string
-    is_paid: boolean
-    price: number
-    duration?: number
-    allow_anytime: boolean
-    start_time?: string
-    end_time?: string
-    created_at: string
-    tenant_id: string
-    tenants?: { name: string; type: string }
-    exam_config?: { total_questions: number; total_marks: number; negative_marking: boolean; randomization_mode: string } | null
-    attemptCount: number
-    procFlagCount: number
-}
-
-type Stats = {
-    totalExams: number; paidExams: number; freeExams: number
-    totalAttempts: number; evaluatedAttempts: number; avgScore: string
-    highSeverityFlags: number
-}
-
-type ApiData = {
-    exams: Exam[]
-    total: number; page: number; pageSize: number
-    stats: Stats
-    monthlyTrend: { label: string; count: number }[]
-    tenants: { id: string; name: string; type: string }[]
-}
-
-// ── EXAM DETAIL SLIDEOUT ──────────────────────────
-function ExamDrawer({ exam, onClose }: { exam: Exam; onClose: () => void }) {
-    const cfg = exam.exam_config
-    const now = new Date()
-    const isActive = exam.start_time && exam.end_time
-        ? new Date(exam.start_time) <= now && new Date(exam.end_time) >= now
-        : exam.allow_anytime
-
-    return (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', backdropFilter: 'blur(4px)' }}>
-            <div style={{ flex: 1, background: 'rgba(0,0,0,0.4)' }} onClick={onClose} />
-            <div className="glass-card" style={{ width: 520, background: '#fff', height: '100vh', overflowY: 'auto', boxShadow: '-20px 0 60px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column' }}>
-                {/* Header */}
-                <div style={{ padding: '32px', borderBottom: '1px solid ' + P.border, background: P.bg }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-                        <div style={{ width: 54, height: 54, borderRadius: 16, background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <BookOpen size={24} color={P.brand} strokeWidth={2.5} />
-                        </div>
-                        <button onClick={onClose} className="hover-lift" style={{ background: '#fff', border: `1px solid ${P.border}`, borderRadius: 12, padding: 10, cursor: 'pointer', display: 'flex', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-                            <X size={20} color={P.muted} />
-                        </button>
-                    </div>
-                    <div>
-                        <h2 style={{ fontSize: 24, fontWeight: 950, color: P.dark, margin: '0 0 8px', letterSpacing: '-0.02em' }}>{exam.name}</h2>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: P.muted, fontWeight: 600 }}>
-                                <School size={14} /> {exam.tenants?.name}
-                            </div>
-                            <div style={{ width: 4, height: 4, borderRadius: '50%', background: P.border }} />
-                            <div style={{ fontSize: 13, color: P.brand, fontWeight: 800 }}>ID: {exam.id.slice(0, 8).toUpperCase()}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 28 }}>
-                    {/* Visual Status */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                        <div style={{ background: isActive ? P.successBg : P.hover, padding: '16px', borderRadius: 16, border: `1px solid ${isActive ? P.success : P.border}20`, textAlign: 'center' }}>
-                            <div style={{ fontSize: 11, fontWeight: 900, color: isActive ? P.success : P.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Live Status</div>
-                            <div style={{ fontSize: 16, fontWeight: 950, color: isActive ? P.success : P.muted }}>{isActive ? 'ACTIVE NODE' : 'INACTIVE'}</div>
-                        </div>
-                        <div style={{ background: exam.is_paid ? P.ctaBg : P.successBg, padding: '16px', borderRadius: 16, border: `1px solid ${exam.is_paid ? P.cta : P.success}20`, textAlign: 'center' }}>
-                            <div style={{ fontSize: 11, fontWeight: 900, color: exam.is_paid ? P.cta : P.success, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Monetization</div>
-                            <div style={{ fontSize: 16, fontWeight: 950, color: exam.is_paid ? P.cta : P.success }}>{exam.is_paid ? 'INSTITUTIONAL' : 'FREE ENTRY'}</div>
-                        </div>
-                    </div>
-
-                    {/* KPI Tracker */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-                        {[
-                            { label: 'Attempts', value: exam.attemptCount, color: P.info, icon: Users },
-                            { label: 'Vectors', value: cfg?.total_questions ?? '0', color: P.brand, icon: Zap },
-                            { label: 'Revenue', value: exam.is_paid ? `₹${(exam.price * exam.attemptCount).toLocaleString()}` : '0', color: P.cta, icon: DollarSign },
-                        ].map((c, idx) => (
-                            <div key={idx} style={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: 16, padding: '16px', textAlign: 'center' }}>
-                                <div style={{ color: c.color, marginBottom: 8, display: 'flex', justifyContent: 'center' }}><c.icon size={20} strokeWidth={2.5} /></div>
-                                <div style={{ fontSize: 18, fontWeight: 950, color: P.dark }}>{c.value}</div>
-                                <div style={{ fontSize: 11, fontWeight: 700, color: P.muted, textTransform: 'uppercase', marginTop: 2 }}>{c.label}</div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Configuration Grid */}
-                    <div className="glass-card" style={{ border: `1px solid ${P.border}`, borderRadius: 20, padding: '24px' }}>
-                        <h4 style={{ fontSize: 14, fontWeight: 900, color: P.dark, margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Node Configuration</h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                            {[
-                                { label: 'Evaluation Period', value: exam.duration ? exam.duration + ' Minutes' : 'Indefinite' },
-                                { label: 'Negative Scoring', value: cfg?.negative_marking ? 'Enabled (-1.0v)' : 'Disabled' },
-                                { label: 'Node Randomization', value: cfg?.randomization_mode ? (cfg.randomization_mode === 'all' ? 'Full Entropic' : 'Shuffled') : 'Static' },
-                                { label: 'Access Rules', value: exam.allow_anytime ? 'Public Node' : 'Scheduled Event' },
-                            ].map((row, i) => (
-                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 12, borderBottom: i < 3 ? `1px solid ${P.border}80` : 'none' }}>
-                                    <span style={{ fontSize: 13, color: P.muted, fontWeight: 600 }}>{row.label}</span>
-                                    <span style={{ fontSize: 14, color: P.dark, fontWeight: 850 }}>{row.value}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Description */}
-                    {exam.description && (
-                        <div className="glass-card" style={{ border: `1px solid ${P.border}`, borderRadius: 20, padding: '24px' }}>
-                            <h4 style={{ fontSize: 13, fontWeight: 900, color: P.muted, margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assessment Intel</h4>
-                            <p style={{ fontSize: 14, color: P.text, margin: 0, lineHeight: 1.6, fontWeight: 500 }}>{exam.description}</p>
-                        </div>
-                    )}
-
-                    {/* Proctoring Alert */}
-                    {exam.procFlagCount > 0 && (
-                        <div style={{ background: `linear-gradient(135deg, ${P.error}, ${P.dark})`, borderRadius: 20, padding: '24px', color: '#fff', boxShadow: `0 12px 24px ${P.error}25` }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                                <ShieldAlert size={22} color={P.cta} strokeWidth={2.5} />
-                                <h4 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>High-Severity Flags</h4>
-                            </div>
-                            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', margin: 0, lineHeight: 1.6, fontWeight: 500 }}>
-                                {exam.procFlagCount} critical violations detected. Integrity baseline has been compromised. Master review required.
-                            </p>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    )
-}
-
-// ── METRIC CARD ────────────────────────────────────
-function MetricCard({ icon: Icon, label, value, sub, color, bg }: {
-    icon: any; label: string; value: string; sub?: string; color: string; bg: string
-}) {
-    return (
-        <div className="glass-card hover-lift" style={{ 
-            background: P.card, 
-            border: '1px solid ' + P.border, 
-            borderRadius: 24, 
-            padding: '24px 28px',
-            boxShadow: '0 8px 30px rgba(0,0,0,0.02)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16
-        }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ width: 52, height: 52, borderRadius: 16, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon size={24} color={color} strokeWidth={2.5} />
-                </div>
-                {sub && (
-                    <div style={{ 
-                        fontSize: 11, fontWeight: 800, color: P.muted, 
-                        background: P.bg, padding: '4px 10px', borderRadius: 8,
-                        letterSpacing: '0.05em', textTransform: 'uppercase'
-                    }}>{sub}</div>
-                )}
-            </div>
-            <div>
-                <div style={{ fontSize: 13, fontWeight: 850, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{label}</div>
-                <div style={{ fontSize: 32, fontWeight: 950, color: P.dark, letterSpacing: '-0.04em' }}>{value}</div>
-            </div>
-        </div>
-    )
-}
-
-// â”€â”€ MAIN PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export default function ExamsPage() {
-    const [data, setData] = useState<ApiData | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [refreshing, setRefreshing] = useState(false)
-    const [search, setSearch] = useState('')
-    const [debouncedSearch, setDebouncedSearch] = useState('')
-    const [tenantFilter, setTenantFilter] = useState('all')
-    const [paidFilter, setPaidFilter] = useState('all')
-    const [page, setPage] = useState(1)
-    const pageSize = 20
-    const [activeTab, setActiveTab] = useState<'exams' | 'analytics' | 'proctoring'>('exams')
-    const [selectedExam, setSelectedExam] = useState<Exam | null>(null)
-    const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
-    const showToast = (msg: string, ok: boolean) => {
-        setToast({ msg, ok }); setTimeout(() => setToast(null), 3000)
-    }
-
-    useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(search), 400)
-        return () => clearTimeout(t)
-    }, [search])
-
-    const fetchData = useCallback(async (isRefresh = false) => {
-        if (isRefresh) setRefreshing(true); else setLoading(true)
-        try {
-            const params = new URLSearchParams({ page: String(page), limit: String(pageSize), paid: paidFilter, tenant: tenantFilter })
-            if (debouncedSearch) params.append('search', debouncedSearch)
-            const res = await fetch('/api/owner/exams?' + params)
-            const json = await res.json()
-            if (res.ok) setData(json)
-        } finally { setLoading(false); setRefreshing(false) }
-    }, [page, debouncedSearch, tenantFilter, paidFilter])
-
-    useEffect(() => { fetchData() }, [fetchData])
-
-    const s = data?.stats
-    const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / pageSize))
-
-    const tabSt = (t: string): React.CSSProperties => ({
-        padding: '12px 28px', borderRadius: 12, border: 'none',
-        background: activeTab === t ? P.brand : 'transparent',
-        color: activeTab === t ? '#fff' : P.muted,
-        fontSize: 14, fontWeight: 900, cursor: 'pointer',
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        boxShadow: activeTab === t ? `0 8px 20px ${P.brand}30` : 'none',
-    })
-
-    // Pie data
-    const pieData = s ? [
-        { name: 'Free', value: s.freeExams, fill: P.success },
-        { name: 'Paid', value: s.paidExams, fill: P.cta },
-    ].filter(d => d.value > 0) : []
-
-    // Proctored exams with flags
-    const flaggedExams = (data?.exams ?? []).filter(e => e.procFlagCount > 0)
-        .sort((a, b) => b.procFlagCount - a.procFlagCount)
-
-    return (
-        <div style={{ background: P.bg, minHeight: '100%', padding: '32px 36px', position: 'relative' }}>
-            <style>{`
-                @keyframes spin { to { transform: rotate(360deg); } }
-                .glass-card { backdrop-filter: blur(10px); background: rgba(254, 254, 254, 0.8) !important; }
-                .hover-lift { transition: transform 0.2s cubic-bezier(0.3, 0, 0.2, 1), box-shadow 0.2s !important; }
-                .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.08) !important; }
-            `}</style>
-
-            {selectedExam && <ExamDrawer exam={selectedExam} onClose={() => setSelectedExam(null)} />}
-
-            {toast && (
-                <div style={{ position: 'fixed', top: 24, right: 28, background: toast.ok ? P.successBg : P.errorBg, border: '1px solid ' + (toast.ok ? P.success : P.error) + '40', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', zIndex: 9000 }}>
-                    {toast.ok ? <CheckCircle size={16} color={P.success} /> : <XCircle size={16} color={P.error} />}
-                    <span style={{ fontSize: 14, fontWeight: 700, color: toast.ok ? P.success : P.error }}>{toast.msg}</span>
-                </div>
-            )}
-
-            {/* HEADER */}
-            <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 40 }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                        <div style={{ background: P.brandBg, padding: '4px 12px', borderRadius: 8, fontSize: 11, fontWeight: 900, color: P.brand, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Assessment Insights</div>
-                        <div style={{ width: 4, height: 4, borderRadius: '50%', background: P.border }} />
-                        <div style={{ fontSize: 13, color: P.muted, fontWeight: 600 }}>Global Evaluation Oversign</div>
-                    </div>
-                    <h1 style={{ fontSize: 36, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.04em' }}>Assessment Overview</h1>
-                    <p style={{ fontSize: 15, color: P.muted, margin: '8px 0 0', fontWeight: 600 }}>Master control for global examination rules, cross-institutional evaluation metrics, and proctoring integrity.</p>
-                </div>
-                <button onClick={() => fetchData(true)} className="hover-lift" disabled={refreshing} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid ' + P.border, borderRadius: 14, padding: '12px 24px', fontSize: 14, fontWeight: 850, color: P.dark, cursor: 'pointer', boxShadow: '0 8px 30px rgba(0,0,0,0.03)' }}>
-                    <RefreshCw size={18} color={P.brand} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} /> Refresh Analytics
-                </button>
-            </header>
-
-            {/* TABS */}
-            <div style={{ display: 'flex', gap: 6, background: P.card, border: '1px solid ' + P.border, borderRadius: 14, padding: 6, marginBottom: 24, width: 'fit-content' }}>
-                {[
-                    { key: 'exams', label: 'All Exams', icon: ClipboardList },
-                    { key: 'analytics', label: 'Analytics', icon: BarChart2 },
-                    { key: 'proctoring', label: 'Proctoring Flags', icon: ShieldAlert },
-                ].map(t => (
-                    <button key={t.key} onClick={() => setActiveTab(t.key as any)} style={{
-                        ...tabSt(t.key),
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8
-                    }}>
-                        <t.icon size={16} strokeWidth={activeTab === t.key ? 2.5 : 2} />
-                        {t.label}
-                        {t.key === 'proctoring' && s && s.highSeverityFlags > 0 && (
-                            <span style={{ 
-                                background: activeTab === 'proctoring' ? 'rgba(255,255,255,0.2)' : P.errorBg, 
-                                color: activeTab === 'proctoring' ? '#fff' : P.error, 
-                                fontSize: 10, 
-                                padding: '2px 6px', 
-                                borderRadius: 6, 
-                                marginLeft: 4 
-                            }}>{s.highSeverityFlags}</span>
-                        )}
-                    </button>
-                ))}
-            </div>
-
-            {loading ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 480, gap: 20 }}>
-                    <div style={{ width: 72, height: 72, borderRadius: 24, background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 12px 32px ${P.brand}20` }}>
-                        <Loader2 size={36} color={P.brand} style={{ animation: 'spin 1s linear infinite' }} />
-                    </div>
-                    <div>
-                        <div style={{ fontSize: 20, fontWeight: 950, color: P.dark, textAlign: 'center', letterSpacing: '-0.02em' }}>Loading Assessment Data</div>
-                        <div style={{ fontSize: 14, color: P.muted, fontWeight: 600, textAlign: 'center', marginTop: 8 }}>Fetching examination data from institutional database...</div>
-                    </div>
-                </div>
-            ) : (
-                <>
-                    {/* â”€â”€ EXAMS TAB â”€â”€ */}
-                    {activeTab === 'exams' && (
-                        <>
-                            {/* KPI CARDS */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-                                <MetricCard icon={BookOpen} label="Nodal Banks" value={String(s?.totalExams ?? 0)} sub={(s?.paidExams ?? 0) + ' Institutional • ' + (s?.freeExams ?? 0) + ' Standard'} color={P.brand} bg={P.brandBg} />
-                                <MetricCard icon={Users} label="Evaluations" value={String(s?.totalAttempts ?? 0)} sub={(s?.evaluatedAttempts ?? 0) + ' Verified'} color={P.info} bg={P.infoBg} />
-                                <MetricCard icon={BarChart2} label="Average Score" value={(s?.avgScore ?? '0') + ' pts'} color={P.success} bg={P.successBg} />
-                                <MetricCard icon={Shield} label="Security Flags" value={String(s?.highSeverityFlags ?? 0)} sub="Anti-cheat triggers" color={s && s.highSeverityFlags > 0 ? P.error : P.muted} bg={s && s.highSeverityFlags > 0 ? P.errorBg : P.hover} />
-                            </div>
-
-                            {/* FILTERS */}
-                            <div style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 14, padding: '14px 18px', marginBottom: 20, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                                {/* Search */}
-                                <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
-                                    <Search size={16} color={P.muted} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
-                                    <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
-                                        placeholder="Search exams by name..."
-                                        style={{ width: '100%', paddingLeft: 42, paddingRight: search ? 36 : 14, paddingTop: 9, paddingBottom: 9, border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, color: P.dark, background: P.bg, outline: 'none', boxSizing: 'border-box' }} />
-                                    {search && (
-                                        <button onClick={() => { setSearch(''); setPage(1) }} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
-                                            <X size={14} color={P.muted} />
-                                        </button>
-                                    )}
-                                </div>
-
-                                {/* Tenant filter */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <Building2 size={14} color={P.muted} />
-                                    <select value={tenantFilter} onChange={e => { setTenantFilter(e.target.value); setPage(1) }}
-                                        style={{ padding: '8px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, color: P.dark, background: P.bg, outline: 'none', cursor: 'pointer', fontWeight: 600 }}>
-                                        <option value="all">All Tenants</option>
-                                        {(data?.tenants ?? []).map(t => (
-                                            <option key={t.id} value={t.id}>{t.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Paid filter */}
-                                <div style={{ display: 'flex', gap: 4, background: P.bg, border: '1px solid ' + P.border, borderRadius: 10, padding: 4 }}>
-                                    {[{ k: 'all', l: 'All Nodes' }, { k: 'free', l: 'Standard' }, { k: 'paid', l: 'Institutional' }].map(f => (
-                                        <button key={f.k} onClick={() => { setPaidFilter(f.k); setPage(1) }} style={{
-                                            padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',
-                                            background: paidFilter === f.k ? P.card : 'transparent',
-                                            color: paidFilter === f.k ? P.dark : P.muted,
-                                            boxShadow: paidFilter === f.k ? '0 1px 4px rgba(0,0,0,0.07)' : 'none',
-                                        }}>{f.l}</button>
-                                    ))}
-                                </div>
-
-                                <span style={{ fontSize: 12, color: P.muted, fontWeight: 600, flexShrink: 0 }}>{data?.total ?? 0} results</span>
-                            </div>
-
-                            {/* EXAMS TABLE */}
-                            <div style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 16, overflow: 'hidden' }}>
-                                {(data?.exams?.length ?? 0) === 0 ? (
-                                    <div style={{ padding: '80px 40px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
-                                        <div style={{ width: 80, height: 80, borderRadius: 24, background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <BookOpen size={36} color={P.brand} strokeWidth={2} />
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: 22, fontWeight: 950, color: P.dark, marginBottom: 8, letterSpacing: '-0.02em' }}>No Assessment Banks Found</div>
-                                            <div style={{ fontSize: 15, color: P.muted, fontWeight: 600 }}>{search ? 'Refine your search parameters or adjust institutional filters.' : 'Examination banks provisioned by tenant administrators will appear here.'}</div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div style={{ overflowX: 'auto' }}>
-                                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
-                                                <thead>
-                                                    <tr style={{ background: P.bg, borderBottom: '2px solid ' + P.border }}>
-                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><BookOpen size={13} /> Assessment Bank</div>
-                                                        </th>
-                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><School size={13} /> Institution Node</div>
-                                                        </th>
-                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><DollarSign size={13} /> Access Tier</div>
-                                                        </th>
-                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Settings size={13} /> Configuration</div>
-                                                        </th>
-                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Users size={13} /> Attempts</div>
-                                                        </th>
-                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><ShieldAlert size={13} /> Integrity</div>
-                                                        </th>
-                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Calendar size={13} /> Schedule</div>
-                                                        </th>
-                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>Oversight</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {data!.exams.map((exam, i) => {
-                                                        const cfg = exam.exam_config
-                                                        const now = new Date()
-                                                        const isLive = exam.allow_anytime
-                                                            || (exam.start_time && exam.end_time && new Date(exam.start_time) <= now && new Date(exam.end_time) >= now)
-                                                        return (
-                                                                <tr key={exam.id}
-                                                                    style={{ borderBottom: i < data!.exams.length - 1 ? '1px solid ' + P.border : 'none', cursor: 'pointer', transition: 'all 0.2s' }}
-                                                                    onMouseEnter={e => (e.currentTarget.style.background = P.bg)}
-                                                                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                                                                    onClick={() => setSelectedExam(exam)}
-                                                                >
-                                                                    <td style={{ padding: '20px 24px' }}>
-                                                                        <div style={{ fontSize: 15, fontWeight: 900, color: P.dark, maxWidth: 220 }}>{exam.name}</div>
-                                                                        {isLive && (
-                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                                                                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: P.success, boxShadow: `0 0 10px ${P.success}` }} />
-                                                                                <span style={{ fontSize: 11, fontWeight: 850, color: P.success }}>ACTIVE NODE</span>
-                                                                            </div>
-                                                                        )}
-                                                                    </td>
-                                                                    <td style={{ padding: '20px 24px' }}>
-                                                                        {exam.tenants?.name ? (
-                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                                                <div style={{ width: 32, height: 32, borderRadius: 10, background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                                                    <School size={14} color={P.brand} />
-                                                                                </div>
-                                                                                <span style={{ fontSize: 13, fontWeight: 700, color: P.text }}>{exam.tenants.name}</span>
-                                                                            </div>
-                                                                        ) : <span style={{ color: P.muted }}>—</span>}
-                                                                    </td>
-                                                                    <td style={{ padding: '20px 24px' }}>
-                                                                        <span style={{ background: exam.is_paid ? P.ctaBg : P.successBg, color: exam.is_paid ? P.cta : P.success, padding: '4px 12px', borderRadius: 10, fontSize: 11, fontWeight: 900, letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: 5, width: 'fit-content' }}>
-                                                                            {exam.is_paid ? <><DollarSign size={10} /> Institutional</> : <>Free Entry</>}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td style={{ padding: '20px 24px' }}>
-                                                                        <div style={{ fontSize: 13, color: P.dark, fontWeight: 750 }}>
-                                                                            {cfg?.total_questions ? cfg.total_questions + ' Vectors' : '—'}
-                                                                        </div>
-                                                                        <div style={{ fontSize: 11, color: P.muted, fontWeight: 600, marginTop: 2 }}>
-                                                                            {cfg?.total_marks ? cfg.total_marks + ' Marks' : ''}
-                                                                            {exam.duration ? ` • ${exam.duration}m` : ''}
-                                                                        </div>
-                                                                    </td>
-                                                                    <td style={{ padding: '20px 24px' }}>
-                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                                            <div style={{ padding: '6px 12px', borderRadius: 8, background: P.infoBg, color: P.info, fontSize: 14, fontWeight: 950 }}>{exam.attemptCount}</div>
-                                                                        </div>
-                                                                    </td>
-                                                                    <td style={{ padding: '20px 24px' }}>
-                                                                        {exam.procFlagCount > 0 ? (
-                                                                            <span style={{ background: P.errorBg, color: P.error, padding: '5px 12px', borderRadius: 10, fontSize: 12, fontWeight: 900, display: 'flex', alignItems: 'center', gap: 6, width: 'fit-content', boxShadow: `0 4px 12px ${P.error}15` }}>
-                                                                                <ShieldAlert size={14} />{exam.procFlagCount}
-                                                                            </span>
-                                                                        ) : (
-                                                                            <span style={{ color: P.success, fontSize: 13, fontWeight: 750, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                                                <Shield size={14} /> Secure
-                                                                            </span>
-                                                                        )}
-                                                                    </td>
-                                                                    <td style={{ padding: '20px 24px' }}>
-                                                                        <div style={{ fontSize: 12, color: P.dark, fontWeight: 800 }}>
-                                                                            {exam.start_time
-                                                                                ? new Date(exam.start_time).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })
-                                                                                : exam.allow_anytime ? 'Open Access' : '—'}
-                                                                        </div>
-                                                                    </td>
-                                                                    <td style={{ padding: '20px 24px' }} onClick={e => e.stopPropagation()}>
-                                                                        <button onClick={() => setSelectedExam(exam)} className="hover-lift" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', background: P.brand, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 850, cursor: 'pointer', boxShadow: `0 6px 16px ${P.brand}25` }}>
-                                                                            <Eye size={16} strokeWidth={2.5} /> Master Audit
-                                                                        </button>
-                                                                    </td>
-                                                                </tr>
-                                                        )
-                                                    })}
-                                                </tbody>
-                                            </table>
-                                        </div>
-
-                                        {/* PAGINATION */}
-                                        <div style={{ padding: '20px 24px', borderTop: '1px solid ' + P.border, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-                                            <span style={{ fontSize: 13, color: P.muted, fontWeight: 700 }}>
-                                                Showing {(page - 1) * pageSize + 1}â€“{Math.min(page * pageSize, data?.total ?? 0)} of {data?.total ?? 0} Exams
-                                            </span>
-                                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="hover-lift"
-                                                    style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid ' + P.border, background: '#fff', cursor: page === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: page === 1 ? 0.5 : 1 }}>
-                                                    <ChevronLeft size={16} color={P.dark} />
-                                                </button>
-                                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                                    const pg = i + Math.max(1, Math.min(page - 2, totalPages - 4))
-                                                    if (pg > totalPages) return null
-                                                    return (
-                                                        <button key={pg} onClick={() => setPage(pg)} className={page !== pg ? "hover-lift" : ""} style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid ' + (page === pg ? P.brand : P.border), background: page === pg ? P.brand : '#fff', color: page === pg ? '#fff' : P.dark, fontSize: 14, fontWeight: 800, cursor: 'pointer', boxShadow: page === pg ? `0 4px 12px ${P.brand}30` : 'none', transition: 'all 0.2s' }}>{pg}</button>
-                                                    )
-                                                })}
-                                                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="hover-lift"
-                                                    style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid ' + P.border, background: '#fff', cursor: page === totalPages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: page === totalPages ? 0.5 : 1 }}>
-                                                    <ChevronRight size={16} color={P.dark} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        </>
-                    )}
-
-                    {/* ── ANALYTICS TAB ── */}
-                    {activeTab === 'analytics' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                                <MetricCard icon={BookOpen} label="Total Exams" value={String(s?.totalExams ?? 0)} color={P.brand} bg={P.brandBg} />
-                                <MetricCard icon={DollarSign} label="Institutional Banks" value={String(s?.paidExams ?? 0)} sub={'of ' + (s?.totalExams ?? 0) + ' total'} color={P.cta} bg={P.ctaBg} />
-                                <MetricCard icon={Users} label="Total Evaluations" value={String(s?.totalAttempts ?? 0)} color={P.info} bg={P.infoBg} />
-                                <MetricCard icon={TrendingUp} label="Average Score" value={(s?.avgScore ?? '—') + ' pts'} color={P.success} bg={P.successBg} />
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24 }}>
-                                {/* Monthly Trend */}
-                                <div className="glass-card" style={{ border: '1px solid ' + P.border, borderRadius: 24, padding: '28px 32px' }}>
-                                    <div style={{ marginBottom: 24 }}>
-                                        <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Exam Growth Trend</div>
-                                        <h3 style={{ fontSize: 22, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.02em' }}>Monthly Bank Creation Trend</h3>
-                                    </div>
-                                    <div style={{ height: 280 }}>
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={data?.monthlyTrend ?? []} margin={{ left: -20 }}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={P.border} />
-                                                <XAxis dataKey="label" tick={{ fontSize: 12, fill: P.muted, fontWeight: 700 }} tickLine={false} axisLine={false} />
-                                                <YAxis tick={{ fontSize: 12, fill: P.muted, fontWeight: 700 }} tickLine={false} axisLine={false} allowDecimals={false} />
-                                                <Tooltip contentStyle={{ borderRadius: 16, border: '1px solid ' + P.border, fontWeight: 800, boxShadow: '0 8px 30px rgba(0,0,0,0.08)', fontSize: 13 }} />
-                                                <Bar dataKey="count" radius={[10, 10, 0, 0]} name="New Banks">
-                                                    {(data?.monthlyTrend ?? []).map((_, i) => <Cell key={i} fill={i === 5 ? P.brand : P.brandBg} />)}
-                                                </Bar>
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
-
-                                {/* Paid vs Free Donut */}
-                                <div className="glass-card" style={{ border: '1px solid ' + P.border, borderRadius: 24, padding: '28px 32px' }}>
-                                    <div style={{ marginBottom: 20 }}>
-                                        <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Monetization Mix</div>
-                                        <h3 style={{ fontSize: 22, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.02em' }}>Free vs Institutional</h3>
-                                    </div>
-                                    {pieData.length === 0 ? (
-                                        <div style={{ padding: '40px 0', textAlign: 'center', color: P.muted, fontSize: 14, fontWeight: 700 }}>No exam data yet</div>
-                                    ) : (
-                                        <>
-                                            <div style={{ height: 200 }}>
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <PieChart>
-                                                        <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value" paddingAngle={4}>
-                                                            {pieData.map((d, i) => <Cell key={i} fill={d.fill} />)}
-                                                        </Pie>
-                                                        <Tooltip formatter={(v: any) => [v + ' exams', '']} contentStyle={{ borderRadius: 12, border: '1px solid ' + P.border, fontWeight: 800, fontSize: 13 }} />
-                                                    </PieChart>
-                                                </ResponsiveContainer>
-                                            </div>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
-                                                {pieData.map(d => (
-                                                    <div key={d.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: P.bg, padding: '12px 16px', borderRadius: 12 }}>
-                                                        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.fill }} />
-                                                            <span style={{ fontSize: 14, fontWeight: 700, color: P.text }}>{d.name}</span>
-                                                        </div>
-                                                        <span style={{ fontSize: 16, fontWeight: 950, color: P.dark }}>{d.value}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Attempt status breakdown */}
-                            <div className="glass-card" style={{ border: '1px solid ' + P.border, borderRadius: 24, padding: '28px 32px' }}>
-                                <div style={{ marginBottom: 24 }}>
-                                    <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Evaluation Pipeline</div>
-                                    <h3 style={{ fontSize: 22, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.02em' }}>Evaluation Status</h3>
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                                    {[
-                                        { label: 'Completed Evaluations', count: s?.evaluatedAttempts ?? 0, color: P.success, icon: CheckCircle },
-                                        { label: 'Total Assessed', count: s?.totalAttempts ?? 0, color: P.brand, icon: Users },
-                                    ].map(row => (
-                                        <div key={row.label}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                    <div style={{ width: 32, height: 32, borderRadius: 10, background: row.color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                        <row.icon size={16} color={row.color} strokeWidth={2.5} />
-                                                    </div>
-                                                    <span style={{ fontSize: 15, fontWeight: 800, color: P.dark }}>{row.label}</span>
-                                                </div>
-                                                <span style={{ fontSize: 18, fontWeight: 950, color: row.color, letterSpacing: '-0.02em' }}>{row.count.toLocaleString()}</span>
-                                            </div>
-                                            <div style={{ background: P.bg, borderRadius: 99, height: 12, overflow: 'hidden' }}>
-                                                <div style={{ width: (s?.totalAttempts ? (row.count / s.totalAttempts) * 100 : 0) + '%', height: '100%', background: `linear-gradient(90deg, ${row.color}, ${row.color}CC)`, borderRadius: 99, transition: 'width 0.7s cubic-bezier(0.4, 0, 0.2, 1)' }} />
-                                            </div>
-                                            <div style={{ fontSize: 12, color: P.muted, fontWeight: 700, marginTop: 4 }}>
-                                                {s?.totalAttempts ? ((row.count / s.totalAttempts) * 100).toFixed(1) : 0}% of total
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* â”€â”€ PROCTORING TAB â”€â”€ */}
-                    {activeTab === 'proctoring' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-                                <MetricCard icon={Shield} label="High-Severity Flags" value={String(s?.highSeverityFlags ?? 0)} color={s && s.highSeverityFlags > 0 ? P.error : P.muted} bg={s && s.highSeverityFlags > 0 ? P.errorBg : P.hover} />
-                                <MetricCard icon={AlertTriangle} label="Flagged Exams" value={String(flaggedExams.length)} sub="Exams with violations" color={P.warning} bg={P.warningBg} />
-                                <MetricCard icon={CheckCircle} label="Clean Exams" value={String((data?.exams ?? []).filter(e => e.procFlagCount === 0).length)} sub="No flags detected" color={P.success} bg={P.successBg} />
-                            </div>
-
-                            {flaggedExams.length === 0 ? (
-                                <div className="glass-card" style={{ border: '1px solid ' + P.border, borderRadius: 24, padding: '80px 40px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
-                                    <div style={{ width: 80, height: 80, borderRadius: 24, background: P.successBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <CheckCircle size={36} color={P.success} strokeWidth={2.5} />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: 22, fontWeight: 950, color: P.dark, marginBottom: 8, letterSpacing: '-0.02em' }}>Zero Integrity Violations</div>
-                                        <div style={{ fontSize: 15, color: P.muted, fontWeight: 600 }}>All visible nodes are clean. Security flags manifest when learners trigger anti-cheat tracking events.</div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 16, overflow: 'hidden' }}>
-                                    <div style={{ padding: '24px 28px', borderBottom: '1px solid ' + P.border, background: P.errorBg, display: 'flex', alignItems: 'center', gap: 12 }}>
-                                        <AlertTriangle size={20} color={P.error} strokeWidth={2.5} />
-                                        <span style={{ fontSize: 16, fontWeight: 900, color: P.error }}>Flagged Exams — Action Required</span>
-                                    </div>
-                                    <div style={{ overflowX: 'auto' }}>
-                                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
-                                            <thead>
-                                                <tr style={{ background: P.bg, borderBottom: '1px solid ' + P.border }}>
-                                                    {['Exam Name', 'Tenant', 'Attempts', 'High Flags', 'Severity Node', 'Action'].map(h => (
-                                                        <th key={h} style={{ padding: '16px 24px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {flaggedExams.map((exam, i) => {
-                                                    const severity = exam.procFlagCount >= 10 ? 'critical' : exam.procFlagCount >= 5 ? 'high' : 'medium'
-                                                    const sevColor = severity === 'critical' ? P.error : severity === 'high' ? P.warning : P.info
-                                                    const sevBg = severity === 'critical' ? P.errorBg : severity === 'high' ? P.warningBg : P.infoBg
-                                                    return (
-                                                            <tr key={exam.id} style={{ borderBottom: i < flaggedExams.length - 1 ? '1px solid ' + P.border : 'none', cursor: 'pointer', transition: 'all 0.2s' }}
-                                                                onMouseEnter={e => (e.currentTarget.style.background = P.bg)}
-                                                                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                                                                onClick={() => setSelectedExam(exam)}
-                                                            >
-                                                                <td style={{ padding: '20px 24px', fontSize: 15, fontWeight: 900, color: P.dark }}>{exam.name}</td>
-                                                                <td style={{ padding: '20px 24px', fontSize: 13, color: P.text, fontWeight: 700 }}>{exam.tenants?.name ?? '—'}</td>
-                                                                <td style={{ padding: '20px 24px', fontSize: 15, fontWeight: 900, color: P.dark }}>{exam.attemptCount}</td>
-                                                                <td style={{ padding: '20px 24px' }}>
-                                                                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, background: P.errorBg, color: P.error, padding: '6px 12px', borderRadius: 10, fontSize: 13, fontWeight: 900, width: 'fit-content' }}>
-                                                                        <Shield size={14} />{exam.procFlagCount}
-                                                                    </span>
-                                                                </td>
-                                                                <td style={{ padding: '20px 24px' }}>
-                                                                    <span style={{ background: sevBg, color: sevColor, padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                                                        {severity}
-                                                                    </span>
-                                                                </td>
-                                                                <td style={{ padding: '20px 24px' }} onClick={e => e.stopPropagation()}>
-                                                                    <button onClick={() => setSelectedExam(exam)} className="hover-lift" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: P.brand, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 850, cursor: 'pointer', boxShadow: `0 6px 16px ${P.brand}25` }}>
-                                                                        <Eye size={16} strokeWidth={2.5} /> Review
-                                                                    </button>
-                                                                </td>
-                                                            </tr>
-                                                    )
-                                                })}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Anti-cheat events legend */}
-                            <div className="glass-card" style={{ border: '1px solid ' + P.border, borderRadius: 24, padding: 32 }}>
-                                <h3 style={{ fontSize: 20, fontWeight: 950, color: P.dark, margin: '0 0 24px', letterSpacing: '-0.02em' }}>Security Incident Taxonomy</h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
-                                    {[
-                                        { event: 'tab_switch', desc: 'Student switched browser tab during exam execution', severity: 'medium', color: P.warning },
-                                        { event: 'visibility_hidden', desc: 'Active evaluation window minimized or hidden', severity: 'medium', color: P.warning },
-                                        { event: 'right_click', desc: 'Context menu execution attempted (anti-copy)', severity: 'low', color: P.info },
-                                        { event: 'copy_attempt', desc: 'Clipboard text selection/copy detected', severity: 'medium', color: P.warning },
-                                        { event: 'multiple_faces', desc: 'Multiple biometric signatures present in frame', severity: 'critical', color: P.error },
-                                        { event: 'screen_share', desc: 'Screen broadcast pipeline detected operating', severity: 'high', color: P.error },
-                                    ].map((evt) => (
-                                        <div key={evt.event} className="hover-lift" style={{ padding: '20px', background: P.bg, borderRadius: 16, border: '1px solid ' + P.border, display: 'flex', gap: 16, transition: 'all 0.2s' }}>
-                                            <div style={{ width: 8, borderRadius: 99, background: evt.color, flexShrink: 0 }} />
-                                            <div>
-                                                <code style={{ fontSize: 13, fontWeight: 900, color: evt.color, background: `${evt.color}15`, padding: '4px 8px', borderRadius: 6, letterSpacing: '0.05em' }}>{evt.event}</code>
-                                                <div style={{ fontSize: 14, color: P.text, marginTop: 8, lineHeight: 1.6, fontWeight: 500 }}>{evt.desc}</div>
-                                                <div style={{ marginTop: 8, display: 'inline-block', fontSize: 11, fontWeight: 900, color: evt.color, letterSpacing: '0.08em', background: P.card, padding: '2px 8px', border: `1px solid ${evt.color}30`, borderRadius: 6 }}>
-                                                    NODE LEVEL: {evt.severity.toUpperCase()}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </>
-            )}
-        </div>
-    )
-}
+'use client'import React, { useState, useEffect, useCallback } from 'react'import {    BookOpen, Users, CheckCircle, XCircle, Loader2, RefreshCw,    Search, Filter, X, ChevronLeft, ChevronRight, AlertTriangle,    Shield, Clock, DollarSign, BarChart2, TrendingUp, Eye,    Calendar, Zap, FileText, ArrowUpRight, Building2, ClipboardList, ShieldAlert,    School, Settings} from 'lucide-react'import {    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,    ResponsiveContainer, Cell, PieChart, Pie} from 'recharts'// â”€â”€ PALETTE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€const P = {    bg: '#F7F8FA', card: '#FEFEFE', border: '#E8E8E8',    brand: '#004B93', brandBg: '#004B9315',    cta: '#F0A026', ctaBg: '#FFF4E5',    dark: '#1B1D21', text: '#5A5A5A', muted: '#A5A2A6', hover: '#F1F2F4',    success: '#1FAC63', successBg: '#1FAC6310',    warning: '#F59E0B', warningBg: '#FFFBEB',    error: '#EF4444', errorBg: '#FEF2F2',    info: '#3B82F6', infoBg: '#EFF6FF',}type Exam = {    id: string    name: string    description?: string    is_paid: boolean    price: number    duration?: number    allow_anytime: boolean    start_time?: string    end_time?: string    created_at: string    tenant_id: string    tenants?: { name: string; type: string }    exam_config?: { total_questions: number; total_marks: number; negative_marking: boolean; randomization_mode: string } | null    attemptCount: number    procFlagCount: number}type Stats = {    totalExams: number; paidExams: number; freeExams: number    totalAttempts: number; evaluatedAttempts: number; avgScore: string    highSeverityFlags: number}type ApiData = {    exams: Exam[]    total: number; page: number; pageSize: number    stats: Stats    monthlyTrend: { label: string; count: number }[]    tenants: { id: string; name: string; type: string }[]}// ── EXAM DETAIL SLIDEOUT ──────────────────────────function ExamDrawer({ exam, onClose }: { exam: Exam; onClose: () => void }) {    const cfg = exam.exam_config    const now = new Date()    const isActive = exam.start_time && exam.end_time        ? new Date(exam.start_time) <= now && new Date(exam.end_time) >= now        : exam.allow_anytime    return (        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', backdropFilter: 'blur(4px)' }}>            <div style={{ flex: 1, background: 'rgba(0,0,0,0.4)' }} onClick={onClose} />            <div className="glass-card" style={{ width: 520, background: '#fff', height: '100vh', overflowY: 'auto', boxShadow: '-20px 0 60px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column' }}>                {/* Header */}                <div style={{ padding: '32px', borderBottom: '1px solid ' + P.border, background: P.bg }}>                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>                        <div style={{ width: 54, height: 54, borderRadius: 16, background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>                            <BookOpen size={24} color={P.brand} strokeWidth={2.5} />                        </div>                        <button onClick={onClose} className="hover-lift" style={{ background: '#fff', border: `1px solid ${P.border}`, borderRadius: 12, padding: 10, cursor: 'pointer', display: 'flex', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>                            <X size={20} color={P.muted} />                        </button>                    </div>                    <div>                        <h2 style={{ fontSize: 24, fontWeight: 950, color: P.dark, margin: '0 0 8px', letterSpacing: '-0.02em' }}>{exam.name}</h2>                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: P.muted, fontWeight: 600 }}>                                <School size={14} /> {exam.tenants?.name}                            </div>                            <div style={{ width: 4, height: 4, borderRadius: '50%', background: P.border }} />                            <div style={{ fontSize: 13, color: P.brand, fontWeight: 800 }}>ID: {exam.id.slice(0, 8).toUpperCase()}</div>                        </div>                    </div>                </div>                <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 28 }}>                    {/* Visual Status */}                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>                        <div style={{ background: isActive ? P.successBg : P.hover, padding: '16px', borderRadius: 16, border: `1px solid ${isActive ? P.success : P.border}20`, textAlign: 'center' }}>                            <div style={{ fontSize: 11, fontWeight: 900, color: isActive ? P.success : P.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Live Status</div>                            <div style={{ fontSize: 16, fontWeight: 950, color: isActive ? P.success : P.muted }}>{isActive ? 'ACTIVE NODE' : 'INACTIVE'}</div>                        </div>                        <div style={{ background: exam.is_paid ? P.ctaBg : P.successBg, padding: '16px', borderRadius: 16, border: `1px solid ${exam.is_paid ? P.cta : P.success}20`, textAlign: 'center' }}>                            <div style={{ fontSize: 11, fontWeight: 900, color: exam.is_paid ? P.cta : P.success, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Monetization</div>                            <div style={{ fontSize: 16, fontWeight: 950, color: exam.is_paid ? P.cta : P.success }}>{exam.is_paid ? 'INSTITUTIONAL' : 'FREE ENTRY'}</div>                        </div>                    </div>                    {/* KPI Tracker */}                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>                        {[                            { label: 'Attempts', value: exam.attemptCount, color: P.info, icon: Users },                            { label: 'Vectors', value: cfg?.total_questions ?? '0', color: P.brand, icon: Zap },                            { label: 'Revenue', value: exam.is_paid ? `₹${(exam.price * exam.attemptCount).toLocaleString()}` : '0', color: P.cta, icon: DollarSign },                        ].map((c, idx) => (                            <div key={idx} style={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: 16, padding: '16px', textAlign: 'center' }}>                                <div style={{ color: c.color, marginBottom: 8, display: 'flex', justifyContent: 'center' }}><c.icon size={20} strokeWidth={2.5} /></div>                                <div style={{ fontSize: 18, fontWeight: 950, color: P.dark }}>{c.value}</div>                                <div style={{ fontSize: 11, fontWeight: 700, color: P.muted, textTransform: 'uppercase', marginTop: 2 }}>{c.label}</div>                            </div>                        ))}                    </div>                    {/* Configuration Grid */}                    <div className="glass-card" style={{ border: `1px solid ${P.border}`, borderRadius: 20, padding: '24px' }}>                        <h4 style={{ fontSize: 14, fontWeight: 900, color: P.dark, margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Node Configuration</h4>                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>                            {[                                { label: 'Evaluation Period', value: exam.duration ? exam.duration + ' Minutes' : 'Indefinite' },                                { label: 'Negative Scoring', value: cfg?.negative_marking ? 'Enabled (-1.0v)' : 'Disabled' },                                { label: 'Node Randomization', value: cfg?.randomization_mode ? (cfg.randomization_mode === 'all' ? 'Full Entropic' : 'Shuffled') : 'Static' },                                { label: 'Access Rules', value: exam.allow_anytime ? 'Public Node' : 'Scheduled Event' },                            ].map((row, i) => (                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 12, borderBottom: i < 3 ? `1px solid ${P.border}80` : 'none' }}>                                    <span style={{ fontSize: 13, color: P.muted, fontWeight: 600 }}>{row.label}</span>                                    <span style={{ fontSize: 14, color: P.dark, fontWeight: 850 }}>{row.value}</span>                                </div>                            ))}                        </div>                    </div>                    {/* Description */}                    {exam.description && (                        <div className="glass-card" style={{ border: `1px solid ${P.border}`, borderRadius: 20, padding: '24px' }}>                            <h4 style={{ fontSize: 13, fontWeight: 900, color: P.muted, margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assessment Intel</h4>                            <p style={{ fontSize: 14, color: P.text, margin: 0, lineHeight: 1.6, fontWeight: 500 }}>{exam.description}</p>                        </div>                    )}                    {/* Proctoring Alert */}                    {exam.procFlagCount > 0 && (                        <div style={{ background: `linear-gradient(135deg, ${P.error}, ${P.dark})`, borderRadius: 20, padding: '24px', color: '#fff', boxShadow: `0 12px 24px ${P.error}25` }}>                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>                                <ShieldAlert size={22} color={P.cta} strokeWidth={2.5} />                                <h4 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>High-Severity Flags</h4>                            </div>                            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', margin: 0, lineHeight: 1.6, fontWeight: 500 }}>                                {exam.procFlagCount} critical violations detected. Integrity baseline has been compromised. Master review required.                            </p>                        </div>                    )}                </div>            </div>        </div>    )}// ── METRIC CARD ────────────────────────────────────function MetricCard({ icon: Icon, label, value, sub, color, bg }: {    icon: any; label: string; value: string; sub?: string; color: string; bg: string}) {    return (        <div className="glass-card hover-lift" style={{             background: P.card,             border: '1px solid ' + P.border,             borderRadius: 24,             padding: '24px 28px',            boxShadow: '0 8px 30px rgba(0,0,0,0.02)',            display: 'flex',            flexDirection: 'column',            gap: 16        }}>            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>                <div style={{ width: 52, height: 52, borderRadius: 16, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>                    <Icon size={24} color={color} strokeWidth={2.5} />                </div>                {sub && (                    <div style={{                         fontSize: 11, fontWeight: 800, color: P.muted,                         background: P.bg, padding: '4px 10px', borderRadius: 8,                        letterSpacing: '0.05em', textTransform: 'uppercase'                    }}>{sub}</div>                )}            </div>            <div>                <div style={{ fontSize: 13, fontWeight: 850, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{label}</div>                <div style={{ fontSize: 32, fontWeight: 950, color: P.dark, letterSpacing: '-0.04em' }}>{value}</div>            </div>        </div>    )}// â”€â”€ MAIN PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€export default function ExamsPage() {    const [data, setData] = useState<ApiData | null>(null)    const [loading, setLoading] = useState(true)    const [refreshing, setRefreshing] = useState(false)    const [search, setSearch] = useState('')    const [debouncedSearch, setDebouncedSearch] = useState('')    const [tenantFilter, setTenantFilter] = useState('all')    const [paidFilter, setPaidFilter] = useState('all')    const [page, setPage] = useState(1)    const pageSize = 20    const [activeTab, setActiveTab] = useState<'exams' | 'analytics' | 'proctoring'>('exams')    const [selectedExam, setSelectedExam] = useState<Exam | null>(null)    const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)    const showToast = (msg: string, ok: boolean) => {        setToast({ msg, ok }); setTimeout(() => setToast(null), 3000)    }    useEffect(() => {        const t = setTimeout(() => setDebouncedSearch(search), 400)        return () => clearTimeout(t)    }, [search])    const fetchData = useCallback(async (isRefresh = false) => {        if (isRefresh) setRefreshing(true); else setLoading(true)        try {            const params = new URLSearchParams({ page: String(page), limit: String(pageSize), paid: paidFilter, tenant: tenantFilter })            if (debouncedSearch) params.append('search', debouncedSearch)            const res = await fetch('/api/owner/exams?' + params)            const json = await res.json()            if (res.ok) setData(json)        } finally { setLoading(false); setRefreshing(false) }    }, [page, debouncedSearch, tenantFilter, paidFilter])    useEffect(() => { fetchData() }, [fetchData])    const s = data?.stats    const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / pageSize))    const tabSt = (t: string): React.CSSProperties => ({        padding: '12px 28px', borderRadius: 12, border: 'none',        background: activeTab === t ? P.brand : 'transparent',        color: activeTab === t ? '#fff' : P.muted,        fontSize: 14, fontWeight: 900, cursor: 'pointer',        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',        boxShadow: activeTab === t ? `0 8px 20px ${P.brand}30` : 'none',    })    // Pie data    const pieData = s ? [        { name: 'Free', value: s.freeExams, fill: P.success },        { name: 'Paid', value: s.paidExams, fill: P.cta },    ].filter(d => d.value > 0) : []    // Proctored exams with flags    const flaggedExams = (data?.exams ?? []).filter(e => e.procFlagCount > 0)        .sort((a, b) => b.procFlagCount - a.procFlagCount)    return (        <div style={{ background: P.bg, minHeight: '100%', padding: '32px 36px', position: 'relative' }}>            {selectedExam && <ExamDrawer exam={selectedExam} onClose={() => setSelectedExam(null)} />}            {toast && (                <div style={{ position: 'fixed', top: 24, right: 28, background: toast.ok ? P.successBg : P.errorBg, border: '1px solid ' + (toast.ok ? P.success : P.error) + '40', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', zIndex: 9000 }}>                    {toast.ok ? <CheckCircle size={16} color={P.success} /> : <XCircle size={16} color={P.error} />}                    <span style={{ fontSize: 14, fontWeight: 700, color: toast.ok ? P.success : P.error }}>{toast.msg}</span>                </div>            )}            {/* HEADER */}            <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 40 }}>                <div>                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>                        <div style={{ background: P.brandBg, padding: '4px 12px', borderRadius: 8, fontSize: 11, fontWeight: 900, color: P.brand, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Assessment Insights</div>                        <div style={{ width: 4, height: 4, borderRadius: '50%', background: P.border }} />                        <div style={{ fontSize: 13, color: P.muted, fontWeight: 600 }}>Global Evaluation Oversign</div>                    </div>                    <h1 style={{ fontSize: 36, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.04em' }}>Assessment Overview</h1>                    <p style={{ fontSize: 15, color: P.muted, margin: '8px 0 0', fontWeight: 600 }}>Master control for global examination rules, cross-institutional evaluation metrics, and proctoring integrity.</p>                </div>                <button onClick={() => fetchData(true)} className="hover-lift" disabled={refreshing} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid ' + P.border, borderRadius: 14, padding: '12px 24px', fontSize: 14, fontWeight: 850, color: P.dark, cursor: 'pointer', boxShadow: '0 8px 30px rgba(0,0,0,0.03)' }}>                    <RefreshCw size={18} color={P.brand} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} /> Refresh Analytics                </button>            </header>            {/* TABS */}            <div style={{ display: 'flex', gap: 6, background: P.card, border: '1px solid ' + P.border, borderRadius: 14, padding: 6, marginBottom: 24, width: 'fit-content' }}>                {[                    { key: 'exams', label: 'All Exams', icon: ClipboardList },                    { key: 'analytics', label: 'Analytics', icon: BarChart2 },                    { key: 'proctoring', label: 'Proctoring Flags', icon: ShieldAlert },                ].map(t => (                    <button key={t.key} onClick={() => setActiveTab(t.key as any)} style={{                        ...tabSt(t.key),                        display: 'flex',                        alignItems: 'center',                        gap: 8                    }}>                        <t.icon size={16} strokeWidth={activeTab === t.key ? 2.5 : 2} />                        {t.label}                        {t.key === 'proctoring' && s && s.highSeverityFlags > 0 && (                            <span style={{                                 background: activeTab === 'proctoring' ? 'rgba(255,255,255,0.2)' : P.errorBg,                                 color: activeTab === 'proctoring' ? '#fff' : P.error,                                 fontSize: 10,                                 padding: '2px 6px',                                 borderRadius: 6,                                 marginLeft: 4                             }}>{s.highSeverityFlags}</span>                        )}                    </button>                ))}            </div>            {loading ? (                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 480, gap: 20 }}>                    <div style={{ width: 72, height: 72, borderRadius: 24, background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 12px 32px ${P.brand}20` }}>                        <Loader2 size={36} color={P.brand} style={{ animation: 'spin 1s linear infinite' }} />                    </div>                    <div>                        <div style={{ fontSize: 20, fontWeight: 950, color: P.dark, textAlign: 'center', letterSpacing: '-0.02em' }}>Loading Assessment Data</div>                        <div style={{ fontSize: 14, color: P.muted, fontWeight: 600, textAlign: 'center', marginTop: 8 }}>Fetching examination data from institutional database...</div>                    </div>                </div>            ) : (                <>                    {/* â”€â”€ EXAMS TAB â”€â”€ */}                    {activeTab === 'exams' && (                        <>                            {/* KPI CARDS */}                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>                                <MetricCard icon={BookOpen} label="Nodal Banks" value={String(s?.totalExams ?? 0)} sub={(s?.paidExams ?? 0) + ' Institutional • ' + (s?.freeExams ?? 0) + ' Standard'} color={P.brand} bg={P.brandBg} />                                <MetricCard icon={Users} label="Evaluations" value={String(s?.totalAttempts ?? 0)} sub={(s?.evaluatedAttempts ?? 0) + ' Verified'} color={P.info} bg={P.infoBg} />                                <MetricCard icon={BarChart2} label="Average Score" value={(s?.avgScore ?? '0') + ' pts'} color={P.success} bg={P.successBg} />                                <MetricCard icon={Shield} label="Security Flags" value={String(s?.highSeverityFlags ?? 0)} sub="Anti-cheat triggers" color={s && s.highSeverityFlags > 0 ? P.error : P.muted} bg={s && s.highSeverityFlags > 0 ? P.errorBg : P.hover} />                            </div>                            {/* FILTERS */}                            <div style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 14, padding: '14px 18px', marginBottom: 20, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>                                {/* Search */}                                <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>                                    <Search size={16} color={P.muted} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />                                    <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}                                        placeholder="Search exams by name..."                                        style={{ width: '100%', paddingLeft: 42, paddingRight: search ? 36 : 14, paddingTop: 9, paddingBottom: 9, border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, color: P.dark, background: P.bg, outline: 'none', boxSizing: 'border-box' }} />                                    {search && (                                        <button onClick={() => { setSearch(''); setPage(1) }} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>                                            <X size={14} color={P.muted} />                                        </button>                                    )}                                </div>                                {/* Tenant filter */}                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>                                    <Building2 size={14} color={P.muted} />                                    <select value={tenantFilter} onChange={e => { setTenantFilter(e.target.value); setPage(1) }}                                        style={{ padding: '8px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, color: P.dark, background: P.bg, outline: 'none', cursor: 'pointer', fontWeight: 600 }}>                                        <option value="all">All Tenants</option>                                        {(data?.tenants ?? []).map(t => (                                            <option key={t.id} value={t.id}>{t.name}</option>                                        ))}                                    </select>                                </div>                                {/* Paid filter */}                                <div style={{ display: 'flex', gap: 4, background: P.bg, border: '1px solid ' + P.border, borderRadius: 10, padding: 4 }}>                                    {[{ k: 'all', l: 'All Nodes' }, { k: 'free', l: 'Standard' }, { k: 'paid', l: 'Institutional' }].map(f => (                                        <button key={f.k} onClick={() => { setPaidFilter(f.k); setPage(1) }} style={{                                            padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',                                            background: paidFilter === f.k ? P.card : 'transparent',                                            color: paidFilter === f.k ? P.dark : P.muted,                                            boxShadow: paidFilter === f.k ? '0 1px 4px rgba(0,0,0,0.07)' : 'none',                                        }}>{f.l}</button>                                    ))}                                </div>                                <span style={{ fontSize: 12, color: P.muted, fontWeight: 600, flexShrink: 0 }}>{data?.total ?? 0} results</span>                            </div>                            {/* EXAMS TABLE */}                            <div style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 16, overflow: 'hidden' }}>                                {(data?.exams?.length ?? 0) === 0 ? (                                    <div style={{ padding: '80px 40px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>                                        <div style={{ width: 80, height: 80, borderRadius: 24, background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>                                            <BookOpen size={36} color={P.brand} strokeWidth={2} />                                        </div>                                        <div>                                            <div style={{ fontSize: 22, fontWeight: 950, color: P.dark, marginBottom: 8, letterSpacing: '-0.02em' }}>No Assessment Banks Found</div>                                            <div style={{ fontSize: 15, color: P.muted, fontWeight: 600 }}>{search ? 'Refine your search parameters or adjust institutional filters.' : 'Examination banks provisioned by tenant administrators will appear here.'}</div>                                        </div>                                    </div>                                ) : (                                    <>                                        <div style={{ overflowX: 'auto' }}>                                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>                                                <thead>                                                    <tr style={{ background: P.bg, borderBottom: '2px solid ' + P.border }}>                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><BookOpen size={13} /> Assessment Bank</div>                                                        </th>                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><School size={13} /> Institution Node</div>                                                        </th>                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><DollarSign size={13} /> Access Tier</div>                                                        </th>                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Settings size={13} /> Configuration</div>                                                        </th>                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Users size={13} /> Attempts</div>                                                        </th>                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><ShieldAlert size={13} /> Integrity</div>                                                        </th>                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Calendar size={13} /> Schedule</div>                                                        </th>                                                        <th style={{ padding: '18px 24px', textAlign: 'left', fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>Oversight</th>                                                    </tr>                                                </thead>                                                <tbody>                                                    {data!.exams.map((exam, i) => {                                                        const cfg = exam.exam_config                                                        const now = new Date()                                                        const isLive = exam.allow_anytime                                                            || (exam.start_time && exam.end_time && new Date(exam.start_time) <= now && new Date(exam.end_time) >= now)                                                        return (                                                                <tr key={exam.id}                                                                    style={{ borderBottom: i < data!.exams.length - 1 ? '1px solid ' + P.border : 'none', cursor: 'pointer', transition: 'all 0.2s' }}                                                                    onMouseEnter={e => (e.currentTarget.style.background = P.bg)}                                                                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}                                                                    onClick={() => setSelectedExam(exam)}                                                                >                                                                    <td style={{ padding: '20px 24px' }}>                                                                        <div style={{ fontSize: 15, fontWeight: 900, color: P.dark, maxWidth: 220 }}>{exam.name}</div>                                                                        {isLive && (                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>                                                                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: P.success, boxShadow: `0 0 10px ${P.success}` }} />                                                                                <span style={{ fontSize: 11, fontWeight: 850, color: P.success }}>ACTIVE NODE</span>                                                                            </div>                                                                        )}                                                                    </td>                                                                    <td style={{ padding: '20px 24px' }}>                                                                        {exam.tenants?.name ? (                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>                                                                                <div style={{ width: 32, height: 32, borderRadius: 10, background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>                                                                                    <School size={14} color={P.brand} />                                                                                </div>                                                                                <span style={{ fontSize: 13, fontWeight: 700, color: P.text }}>{exam.tenants.name}</span>                                                                            </div>                                                                        ) : <span style={{ color: P.muted }}>—</span>}                                                                    </td>                                                                    <td style={{ padding: '20px 24px' }}>                                                                        <span style={{ background: exam.is_paid ? P.ctaBg : P.successBg, color: exam.is_paid ? P.cta : P.success, padding: '4px 12px', borderRadius: 10, fontSize: 11, fontWeight: 900, letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: 5, width: 'fit-content' }}>                                                                            {exam.is_paid ? <><DollarSign size={10} /> Institutional</> : <>Free Entry</>}                                                                        </span>                                                                    </td>                                                                    <td style={{ padding: '20px 24px' }}>                                                                        <div style={{ fontSize: 13, color: P.dark, fontWeight: 750 }}>                                                                            {cfg?.total_questions ? cfg.total_questions + ' Vectors' : '—'}                                                                        </div>                                                                        <div style={{ fontSize: 11, color: P.muted, fontWeight: 600, marginTop: 2 }}>                                                                            {cfg?.total_marks ? cfg.total_marks + ' Marks' : ''}                                                                            {exam.duration ? ` • ${exam.duration}m` : ''}                                                                        </div>                                                                    </td>                                                                    <td style={{ padding: '20px 24px' }}>                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>                                                                            <div style={{ padding: '6px 12px', borderRadius: 8, background: P.infoBg, color: P.info, fontSize: 14, fontWeight: 950 }}>{exam.attemptCount}</div>                                                                        </div>                                                                    </td>                                                                    <td style={{ padding: '20px 24px' }}>                                                                        {exam.procFlagCount > 0 ? (                                                                            <span style={{ background: P.errorBg, color: P.error, padding: '5px 12px', borderRadius: 10, fontSize: 12, fontWeight: 900, display: 'flex', alignItems: 'center', gap: 6, width: 'fit-content', boxShadow: `0 4px 12px ${P.error}15` }}>                                                                                <ShieldAlert size={14} />{exam.procFlagCount}                                                                            </span>                                                                        ) : (                                                                            <span style={{ color: P.success, fontSize: 13, fontWeight: 750, display: 'flex', alignItems: 'center', gap: 6 }}>                                                                                <Shield size={14} /> Secure                                                                            </span>                                                                        )}                                                                    </td>                                                                    <td style={{ padding: '20px 24px' }}>                                                                        <div style={{ fontSize: 12, color: P.dark, fontWeight: 800 }}>                                                                            {exam.start_time                                                                                ? new Date(exam.start_time).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })                                                                                : exam.allow_anytime ? 'Open Access' : '—'}                                                                        </div>                                                                    </td>                                                                    <td style={{ padding: '20px 24px' }} onClick={e => e.stopPropagation()}>                                                                        <button onClick={() => setSelectedExam(exam)} className="hover-lift" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', background: P.brand, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 850, cursor: 'pointer', boxShadow: `0 6px 16px ${P.brand}25` }}>                                                                            <Eye size={16} strokeWidth={2.5} /> Master Audit                                                                        </button>                                                                    </td>                                                                </tr>                                                        )                                                    })}                                                </tbody>                                            </table>                                        </div>                                        {/* PAGINATION */}                                        <div style={{ padding: '20px 24px', borderTop: '1px solid ' + P.border, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>                                            <span style={{ fontSize: 13, color: P.muted, fontWeight: 700 }}>                                                Showing {(page - 1) * pageSize + 1}â€“{Math.min(page * pageSize, data?.total ?? 0)} of {data?.total ?? 0} Exams                                            </span>                                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>                                                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="hover-lift"                                                    style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid ' + P.border, background: '#fff', cursor: page === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: page === 1 ? 0.5 : 1 }}>                                                    <ChevronLeft size={16} color={P.dark} />                                                </button>                                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {                                                    const pg = i + Math.max(1, Math.min(page - 2, totalPages - 4))                                                    if (pg > totalPages) return null                                                    return (                                                        <button key={pg} onClick={() => setPage(pg)} className={page !== pg ? "hover-lift" : ""} style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid ' + (page === pg ? P.brand : P.border), background: page === pg ? P.brand : '#fff', color: page === pg ? '#fff' : P.dark, fontSize: 14, fontWeight: 800, cursor: 'pointer', boxShadow: page === pg ? `0 4px 12px ${P.brand}30` : 'none', transition: 'all 0.2s' }}>{pg}</button>                                                    )                                                })}                                                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="hover-lift"                                                    style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid ' + P.border, background: '#fff', cursor: page === totalPages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: page === totalPages ? 0.5 : 1 }}>                                                    <ChevronRight size={16} color={P.dark} />                                                </button>                                            </div>                                        </div>                                    </>                                )}                            </div>                        </>                    )}                    {/* ── ANALYTICS TAB ── */}                    {activeTab === 'analytics' && (                        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>                                <MetricCard icon={BookOpen} label="Total Exams" value={String(s?.totalExams ?? 0)} color={P.brand} bg={P.brandBg} />                                <MetricCard icon={DollarSign} label="Institutional Banks" value={String(s?.paidExams ?? 0)} sub={'of ' + (s?.totalExams ?? 0) + ' total'} color={P.cta} bg={P.ctaBg} />                                <MetricCard icon={Users} label="Total Evaluations" value={String(s?.totalAttempts ?? 0)} color={P.info} bg={P.infoBg} />                                <MetricCard icon={TrendingUp} label="Average Score" value={(s?.avgScore ?? '—') + ' pts'} color={P.success} bg={P.successBg} />                            </div>                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24 }}>                                {/* Monthly Trend */}                                <div className="glass-card" style={{ border: '1px solid ' + P.border, borderRadius: 24, padding: '28px 32px' }}>                                    <div style={{ marginBottom: 24 }}>                                        <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Exam Growth Trend</div>                                        <h3 style={{ fontSize: 22, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.02em' }}>Monthly Bank Creation Trend</h3>                                    </div>                                    <div style={{ height: 280 }}>                                        <ResponsiveContainer width="100%" height="100%">                                            <BarChart data={data?.monthlyTrend ?? []} margin={{ left: -20 }}>                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={P.border} />                                                <XAxis dataKey="label" tick={{ fontSize: 12, fill: P.muted, fontWeight: 700 }} tickLine={false} axisLine={false} />                                                <YAxis tick={{ fontSize: 12, fill: P.muted, fontWeight: 700 }} tickLine={false} axisLine={false} allowDecimals={false} />                                                <Tooltip contentStyle={{ borderRadius: 16, border: '1px solid ' + P.border, fontWeight: 800, boxShadow: '0 8px 30px rgba(0,0,0,0.08)', fontSize: 13 }} />                                                <Bar dataKey="count" radius={[10, 10, 0, 0]} name="New Banks">                                                    {(data?.monthlyTrend ?? []).map((_, i) => <Cell key={i} fill={i === 5 ? P.brand : P.brandBg} />)}                                                </Bar>                                            </BarChart>                                        </ResponsiveContainer>                                    </div>                                </div>                                {/* Paid vs Free Donut */}                                <div className="glass-card" style={{ border: '1px solid ' + P.border, borderRadius: 24, padding: '28px 32px' }}>                                    <div style={{ marginBottom: 20 }}>                                        <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Monetization Mix</div>                                        <h3 style={{ fontSize: 22, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.02em' }}>Free vs Institutional</h3>                                    </div>                                    {pieData.length === 0 ? (                                        <div style={{ padding: '40px 0', textAlign: 'center', color: P.muted, fontSize: 14, fontWeight: 700 }}>No exam data yet</div>                                    ) : (                                        <>                                            <div style={{ height: 200 }}>                                                <ResponsiveContainer width="100%" height="100%">                                                    <PieChart>                                                        <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value" paddingAngle={4}>                                                            {pieData.map((d, i) => <Cell key={i} fill={d.fill} />)}                                                        </Pie>                                                        <Tooltip formatter={(v: any) => [v + ' exams', '']} contentStyle={{ borderRadius: 12, border: '1px solid ' + P.border, fontWeight: 800, fontSize: 13 }} />                                                    </PieChart>                                                </ResponsiveContainer>                                            </div>                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>                                                {pieData.map(d => (                                                    <div key={d.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: P.bg, padding: '12px 16px', borderRadius: 12 }}>                                                        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>                                                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.fill }} />                                                            <span style={{ fontSize: 14, fontWeight: 700, color: P.text }}>{d.name}</span>                                                        </div>                                                        <span style={{ fontSize: 16, fontWeight: 950, color: P.dark }}>{d.value}</span>                                                    </div>                                                ))}                                            </div>                                        </>                                    )}                                </div>                            </div>                            {/* Attempt status breakdown */}                            <div className="glass-card" style={{ border: '1px solid ' + P.border, borderRadius: 24, padding: '28px 32px' }}>                                <div style={{ marginBottom: 24 }}>                                    <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Evaluation Pipeline</div>                                    <h3 style={{ fontSize: 22, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.02em' }}>Evaluation Status</h3>                                </div>                                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>                                    {[                                        { label: 'Completed Evaluations', count: s?.evaluatedAttempts ?? 0, color: P.success, icon: CheckCircle },                                        { label: 'Total Assessed', count: s?.totalAttempts ?? 0, color: P.brand, icon: Users },                                    ].map(row => (                                        <div key={row.label}>                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>                                                    <div style={{ width: 32, height: 32, borderRadius: 10, background: row.color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>                                                        <row.icon size={16} color={row.color} strokeWidth={2.5} />                                                    </div>                                                    <span style={{ fontSize: 15, fontWeight: 800, color: P.dark }}>{row.label}</span>                                                </div>                                                <span style={{ fontSize: 18, fontWeight: 950, color: row.color, letterSpacing: '-0.02em' }}>{row.count.toLocaleString()}</span>                                            </div>                                            <div style={{ background: P.bg, borderRadius: 99, height: 12, overflow: 'hidden' }}>                                                <div style={{ width: (s?.totalAttempts ? (row.count / s.totalAttempts) * 100 : 0) + '%', height: '100%', background: `linear-gradient(90deg, ${row.color}, ${row.color}CC)`, borderRadius: 99, transition: 'width 0.7s cubic-bezier(0.4, 0, 0.2, 1)' }} />                                            </div>                                            <div style={{ fontSize: 12, color: P.muted, fontWeight: 700, marginTop: 4 }}>                                                {s?.totalAttempts ? ((row.count / s.totalAttempts) * 100).toFixed(1) : 0}% of total                                            </div>                                        </div>                                    ))}                                </div>                            </div>                        </div>                    )}                    {/* â”€â”€ PROCTORING TAB â”€â”€ */}                    {activeTab === 'proctoring' && (                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>                                <MetricCard icon={Shield} label="High-Severity Flags" value={String(s?.highSeverityFlags ?? 0)} color={s && s.highSeverityFlags > 0 ? P.error : P.muted} bg={s && s.highSeverityFlags > 0 ? P.errorBg : P.hover} />                                <MetricCard icon={AlertTriangle} label="Flagged Exams" value={String(flaggedExams.length)} sub="Exams with violations" color={P.warning} bg={P.warningBg} />                                <MetricCard icon={CheckCircle} label="Clean Exams" value={String((data?.exams ?? []).filter(e => e.procFlagCount === 0).length)} sub="No flags detected" color={P.success} bg={P.successBg} />                            </div>                            {flaggedExams.length === 0 ? (                                <div className="glass-card" style={{ border: '1px solid ' + P.border, borderRadius: 24, padding: '80px 40px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>                                    <div style={{ width: 80, height: 80, borderRadius: 24, background: P.successBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>                                        <CheckCircle size={36} color={P.success} strokeWidth={2.5} />                                    </div>                                    <div>                                        <div style={{ fontSize: 22, fontWeight: 950, color: P.dark, marginBottom: 8, letterSpacing: '-0.02em' }}>Zero Integrity Violations</div>                                        <div style={{ fontSize: 15, color: P.muted, fontWeight: 600 }}>All visible nodes are clean. Security flags manifest when learners trigger anti-cheat tracking events.</div>                                    </div>                                </div>                            ) : (                                <div style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 16, overflow: 'hidden' }}>                                    <div style={{ padding: '24px 28px', borderBottom: '1px solid ' + P.border, background: P.errorBg, display: 'flex', alignItems: 'center', gap: 12 }}>                                        <AlertTriangle size={20} color={P.error} strokeWidth={2.5} />                                        <span style={{ fontSize: 16, fontWeight: 900, color: P.error }}>Flagged Exams — Action Required</span>                                    </div>                                    <div style={{ overflowX: 'auto' }}>                                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>                                            <thead>                                                <tr style={{ background: P.bg, borderBottom: '1px solid ' + P.border }}>                                                    {['Exam Name', 'Tenant', 'Attempts', 'High Flags', 'Severity Node', 'Action'].map(h => (                                                        <th key={h} style={{ padding: '16px 24px', textAlign: 'left', fontSize: 12, fontWeight: 800, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</th>                                                    ))}                                                </tr>                                            </thead>                                            <tbody>                                                {flaggedExams.map((exam, i) => {                                                    const severity = exam.procFlagCount >= 10 ? 'critical' : exam.procFlagCount >= 5 ? 'high' : 'medium'                                                    const sevColor = severity === 'critical' ? P.error : severity === 'high' ? P.warning : P.info                                                    const sevBg = severity === 'critical' ? P.errorBg : severity === 'high' ? P.warningBg : P.infoBg                                                    return (                                                            <tr key={exam.id} style={{ borderBottom: i < flaggedExams.length - 1 ? '1px solid ' + P.border : 'none', cursor: 'pointer', transition: 'all 0.2s' }}                                                                onMouseEnter={e => (e.currentTarget.style.background = P.bg)}                                                                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}                                                                onClick={() => setSelectedExam(exam)}                                                            >                                                                <td style={{ padding: '20px 24px', fontSize: 15, fontWeight: 900, color: P.dark }}>{exam.name}</td>                                                                <td style={{ padding: '20px 24px', fontSize: 13, color: P.text, fontWeight: 700 }}>{exam.tenants?.name ?? '—'}</td>                                                                <td style={{ padding: '20px 24px', fontSize: 15, fontWeight: 900, color: P.dark }}>{exam.attemptCount}</td>                                                                <td style={{ padding: '20px 24px' }}>                                                                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, background: P.errorBg, color: P.error, padding: '6px 12px', borderRadius: 10, fontSize: 13, fontWeight: 900, width: 'fit-content' }}>                                                                        <Shield size={14} />{exam.procFlagCount}                                                                    </span>                                                                </td>                                                                <td style={{ padding: '20px 24px' }}>                                                                    <span style={{ background: sevBg, color: sevColor, padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>                                                                        {severity}                                                                    </span>                                                                </td>                                                                <td style={{ padding: '20px 24px' }} onClick={e => e.stopPropagation()}>                                                                    <button onClick={() => setSelectedExam(exam)} className="hover-lift" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: P.brand, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 850, cursor: 'pointer', boxShadow: `0 6px 16px ${P.brand}25` }}>                                                                        <Eye size={16} strokeWidth={2.5} /> Review                                                                    </button>                                                                </td>                                                            </tr>                                                    )                                                })}                                            </tbody>                                        </table>                                    </div>                                </div>                            )}                            {/* Anti-cheat events legend */}                            <div className="glass-card" style={{ border: '1px solid ' + P.border, borderRadius: 24, padding: 32 }}>                                <h3 style={{ fontSize: 20, fontWeight: 950, color: P.dark, margin: '0 0 24px', letterSpacing: '-0.02em' }}>Security Incident Taxonomy</h3>                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>                                    {[                                        { event: 'tab_switch', desc: 'Student switched browser tab during exam execution', severity: 'medium', color: P.warning },                                        { event: 'visibility_hidden', desc: 'Active evaluation window minimized or hidden', severity: 'medium', color: P.warning },                                        { event: 'right_click', desc: 'Context menu execution attempted (anti-copy)', severity: 'low', color: P.info },                                        { event: 'copy_attempt', desc: 'Clipboard text selection/copy detected', severity: 'medium', color: P.warning },                                        { event: 'multiple_faces', desc: 'Multiple biometric signatures present in frame', severity: 'critical', color: P.error },                                        { event: 'screen_share', desc: 'Screen broadcast pipeline detected operating', severity: 'high', color: P.error },                                    ].map((evt) => (                                        <div key={evt.event} className="hover-lift" style={{ padding: '20px', background: P.bg, borderRadius: 16, border: '1px solid ' + P.border, display: 'flex', gap: 16, transition: 'all 0.2s' }}>                                            <div style={{ width: 8, borderRadius: 99, background: evt.color, flexShrink: 0 }} />                                            <div>                                                <code style={{ fontSize: 13, fontWeight: 900, color: evt.color, background: `${evt.color}15`, padding: '4px 8px', borderRadius: 6, letterSpacing: '0.05em' }}>{evt.event}</code>                                                <div style={{ fontSize: 14, color: P.text, marginTop: 8, lineHeight: 1.6, fontWeight: 500 }}>{evt.desc}</div>                                                <div style={{ marginTop: 8, display: 'inline-block', fontSize: 11, fontWeight: 900, color: evt.color, letterSpacing: '0.08em', background: P.card, padding: '2px 8px', border: `1px solid ${evt.color}30`, borderRadius: 6 }}>                                                    NODE LEVEL: {evt.severity.toUpperCase()}                                                </div>                                            </div>                                        </div>                                    ))}                                </div>                            </div>                        </div>                    )}                </>            )}        </div>    )}

@@ -1,17 +1,14 @@
 'use client'
-
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { 
     Clock, ChevronLeft, ChevronRight, AlertCircle, 
     CheckCircle, ShieldAlert, Loader2, Sparkles, Send
 } from 'lucide-react'
-
 export default function StudentExamAttempt() {
     const params = useParams()
     const router = useRouter()
     const exam_id = params.id as string
-
     const [loading, setLoading] = useState(true)
     const [exam, setExam] = useState<any>(null)
     const [questions, setQuestions] = useState<any[]>([])
@@ -21,7 +18,6 @@ export default function StudentExamAttempt() {
     const [timeLeft, setTimeLeft] = useState<number | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [warnings, setWarnings] = useState(0)
-
     // ── DATA PRE-FETCH & INITIALIZATION ──────────────────────────
     useEffect(() => {
         const initExam = async () => {
@@ -30,7 +26,6 @@ export default function StudentExamAttempt() {
                 const exRes = await fetch(`/api/dashboard/exams/detail?id=${exam_id}`)
                 const exData = await exRes.json()
                 setExam(exData)
-
                 // 2. Start/Fetch Attempt (Server-side)
                 const startRes = await fetch('/api/student/exam/start', {
                     method: 'POST',
@@ -40,19 +35,16 @@ export default function StudentExamAttempt() {
                 const startData = await startRes.json()
                 if (startData.error) throw new Error(startData.error)
                 setAttempt(startData.attempt)
-
                 // 3. Setup Questions (Mocked sequence for high-fidelity UI)
                 // In production, we fetch from /api/student/exam/questions
                 // I'll simulate a 10-question sequence
                 setQuestions(exData.questions || [])
-
                 // 4. Timer Setup
                 const startT = new Date(startData.attempt.start_time).getTime()
                 const durationMs = exData.duration * 60 * 1000
                 const endT = startT + durationMs
                 const now = Date.now()
                 setTimeLeft(Math.max(0, Math.floor((endT - now) / 1000)))
-
             } catch (err: any) {
                 alert(err.message)
                 router.back()
@@ -62,7 +54,6 @@ export default function StudentExamAttempt() {
         }
         initExam()
     }, [exam_id, router])
-
     // ── TIMER LOGIC ──────────────────────────────────────────────
     useEffect(() => {
         if (!timeLeft || timeLeft <= 0) return
@@ -78,7 +69,6 @@ export default function StudentExamAttempt() {
         }, 1000)
         return () => clearInterval(timer)
     }, [timeLeft])
-
     // ── ANTI-CHEAT SENSOR ─────────────────────────────────────────
     useEffect(() => {
         const handleBlur = () => {
@@ -93,17 +83,14 @@ export default function StudentExamAttempt() {
         window.addEventListener('blur', handleBlur)
         return () => window.removeEventListener('blur', handleBlur)
     }, [])
-
     const handleAnswer = (choice: any) => {
         const q_id = questions[currentIndex].id
         setUserAnswers(prev => ({ ...prev, [q_id]: choice }))
     }
-
     const handleAutoSubmit = () => {
         if (isSubmitting) return
         handleSubmit()
     }
-
     const handleSubmit = async () => {
         setIsSubmitting(true)
         // Simulate submit API latency
@@ -111,21 +98,16 @@ export default function StudentExamAttempt() {
             router.push(`/dashboard/student/results/success?id=${exam_id}`)
         }, 2000)
     }
-
     const formatTime = (seconds: number) => {
         const h = Math.floor(seconds / 3600)
         const m = Math.floor((seconds % 3600) / 60)
         const s = seconds % 60
         return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
     }
-
     if (loading) return <div style={{ padding: 100, textAlign: 'center' }}><Loader2 size={36} color="var(--color-primary)" style={{ animation: 'spin 1s linear infinite' }} /></div>
-
     const currentQ = questions[currentIndex]
-
     return (
         <div style={{ position: 'fixed', inset: 0, background: '#0F172A', display: 'flex', flexDirection: 'column', color: '#FFF' }}>
-            
             {/* ── EXAM HUD (HEADER) ── */}
             <div style={{ height: 80, background: '#1E293B', borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px', zIndex: 10 }}>
                  <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
@@ -137,7 +119,6 @@ export default function StudentExamAttempt() {
                         <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Secure Examination</div>
                     </div>
                 </div>
-
                 <div style={{ display: 'flex', alignItems: 'center', gap: 40 }}>
                     {/* PROGRESS BAR */}
                      <div style={{ width: 300, textAlign: 'center' }}>
@@ -149,21 +130,17 @@ export default function StudentExamAttempt() {
                             <div style={{ height: '100%', width: `${((currentIndex + 1) / questions.length) * 100}%`, background: 'var(--color-primary-gradient)', transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }} />
                         </div>
                     </div>
-
                     {/* TIMER CLOCK */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: (timeLeft || 0) < 300 ? '#EF4444' : '#111827', padding: '10px 24px', borderRadius: 12, border: '1px solid #334155' }}>
                         <Clock size={20} color="#FFF" />
                         <span style={{ fontSize: 18, fontWeight: 900, fontFamily: 'monospace' }}>{formatTime(timeLeft || 0)}</span>
                     </div>
-
                      <button onClick={handleSubmit} disabled={isSubmitting} style={{ background: '#10B981', color: '#FFF', padding: '12px 28px', borderRadius: 12, border: 'none', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 16px rgba(16,185,129,0.2)' }}>
                         {isSubmitting ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <><Send size={18} /> Finish Exam</>}
                     </button>
                 </div>
             </div>
-
             <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-                
                 {/* ── QUESTION SELECTOR (SIDEBAR) ── */}
                  <div style={{ width: 320, background: '#111827', borderRight: '1px solid #1E293B', padding: 32, overflowY: 'auto' }}>
                      <h4 style={{ margin: '0 0 24px', fontSize: 12, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Question Palette</h4>
@@ -184,7 +161,6 @@ export default function StudentExamAttempt() {
                             )
                         })}
                     </div>
-
                      <div style={{ marginTop: 60, padding: 24, background: '#1E293B', borderRadius: 20, border: '1px solid #334155' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#EF4444' }}>
                            <ShieldAlert size={18} />
@@ -197,20 +173,16 @@ export default function StudentExamAttempt() {
                         </div>
                     </div>
                 </div>
-
                 {/* ── QUESTION CANVAS (MAIN) ── */}
                 <div style={{ flex: 1, padding: '60px 100px', overflowY: 'auto', background: '#0F172A' }}>
                     <div style={{ maxWidth: 800, margin: '0 auto' }}>
-                        
                          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
                             <div style={{ background: 'var(--color-primary-gradient)', color: '#FFF', padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 900 }}>QUESTION {currentIndex + 1}</div>
                             <div style={{ height: 1, flex: 1, background: '#1E293B' }} />
                         </div>
-
                          <div style={{ fontSize: 24, fontWeight: 700, color: '#F1F5F9', lineHeight: 1.5, marginBottom: 44 }}>
                             {currentQ?.text || 'Loading Question Data...'}
                         </div>
-
                         {/* MCQ OPTIONS */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                             {(currentQ?.options || []).map((optValue: string, idx: number) => {
@@ -239,7 +211,6 @@ export default function StudentExamAttempt() {
                     </div>
                 </div>
             </div>
-
             {/* ── FOOTER CONTROLS ── */}
             <div style={{ height: 100, background: '#111827', borderTop: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32 }}>
                  <button 
@@ -249,7 +220,6 @@ export default function StudentExamAttempt() {
                 >
                      <ChevronLeft size={20} /> PREVIOUS
                 </button>
-                
                      <button 
                         onClick={() => {
                             if (currentIndex === questions.length - 1) handleSubmit()
@@ -260,10 +230,6 @@ export default function StudentExamAttempt() {
                          {currentIndex === questions.length - 1 ? 'FINISH & SUBMIT' : 'NEXT QUESTION'} <ChevronRight size={20} />
                     </button>
             </div>
-
-            <style>{`
-                @keyframes spin { to { transform: rotate(360deg); } }
-            `}</style>
         </div>
     )
 }

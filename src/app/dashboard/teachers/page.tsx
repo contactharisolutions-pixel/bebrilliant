@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
     UsersRound, Search, UserPlus, CheckCircle, XCircle,
@@ -9,7 +8,6 @@ import {
     CheckCheck, Star, SlidersHorizontal, ArrowUpRight
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-
 // ── TYPES ────────────────────────────────────────────────
 type Teacher = { 
     id: string; 
@@ -26,7 +24,6 @@ type Teacher = {
     } 
 }
 type Subject = { id: string; name: string; tenant_id?: string | null }
-
 const COLORS = {
     primary: '#004B93',
     primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
@@ -38,7 +35,6 @@ const COLORS = {
     background: '#F8FAFC',
     glass: 'rgba(255, 255, 255, 0.7)'
 }
-
 // ── COMPONENTS ──────────────────────────────────
 function TeacherModal({ title, onClose, children, onSubmit, saving, saveText = 'Save', maxWidth = 520 }: any) {
     return (
@@ -59,7 +55,6 @@ function TeacherModal({ title, onClose, children, onSubmit, saving, saveText = '
         </div>
     )
 }
-
 function TeacherInput({ label, value, onChange, placeholder = '', type = 'text', prefix = '', icon: Icon }: any) {
     return (
         <div style={{ marginBottom: 20 }}>
@@ -72,7 +67,6 @@ function TeacherInput({ label, value, onChange, placeholder = '', type = 'text',
         </div>
     )
 }
-
 // ── MAIN PAGE ────────────────────────────────────────────
 export default function FacultyManagement() {
     const [teachers, setTeachers] = useState<Teacher[]>([])
@@ -83,20 +77,16 @@ export default function FacultyManagement() {
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending'>('all')
     const [subjectFilter, setSubjectFilter] = useState('all')
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
     // Modals
     const [showAddModal, setShowAddModal] = useState(false)
     const [showScopeModal, setShowScopeModal] = useState<string | null>(null)
-
     // Forms
     const [teacherForm, setTeacherForm] = useState<any>({ first_name: '', last_name: '', email: '', phone: '', subjects: [] })
     const [assignForm, setAssignForm] = useState<string[]>([])
     const [assignClasses, setAssignClasses] = useState<string[]>([])
     const [assignDivisions, setAssignDivisions] = useState<string[]>([])
     const [newSubName, setNewSubName] = useState('')
-
     const supabase = createClient()
-
     const fetchFaculty = useCallback(async () => {
         setLoading(true)
         try {
@@ -108,13 +98,10 @@ export default function FacultyManagement() {
             }
         } finally { setLoading(false) }
     }, [])
-
     useEffect(() => { fetchFaculty() }, [fetchFaculty])
-
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok }); setTimeout(() => setToast(null), 3500)
     }
-
     const apiAction = async (action: string, payload: any) => {
         setSaving(true)
         try {
@@ -132,24 +119,20 @@ export default function FacultyManagement() {
             return { success: false }
         } finally { setSaving(false) }
     }
-
     const handleCreateTeacher = async () => {
         if (!teacherForm.email || !teacherForm.phone) return showToast('Email and Phone protocols required', false)
         const { success } = await apiAction('CREATE_TEACHER', teacherForm)
         if (success) setShowAddModal(false)
     }
-
     const handleToggleState = (id: string, current: boolean) => {
         apiAction('TOGGLE_STATUS', { id, is_active: !current })
     }
-
     const openScopeModal = (t: Teacher) => {
         setAssignForm(t.metadata?.assigned_subjects || [])
         setAssignClasses(t.metadata?.assigned_classes || [])
         setAssignDivisions(t.metadata?.assigned_divisions || [])
         setShowScopeModal(t.id)
     }
-
     const handleAssignScope = async () => {
         if (!showScopeModal) return
         const { success } = await apiAction('ASSIGN_SCOPE', { 
@@ -160,13 +143,11 @@ export default function FacultyManagement() {
         })
         if (success) setShowScopeModal(null)
     }
-
     const handleAddSubject = async () => {
         if (!newSubName || newSubName.length < 2) return
         const { success } = await apiAction('CREATE_SUBJECT', { name: newSubName })
         if (success) setNewSubName('')
     }
-
     const filteredTeachers = useMemo(() => {
         return teachers.filter(t => {
             const matchesSearch = t.first_name?.toLowerCase().includes(search.toLowerCase()) || t.email?.toLowerCase().includes(search.toLowerCase())
@@ -175,20 +156,9 @@ export default function FacultyManagement() {
             return matchesSearch && matchesStatus && matchesSubject
         })
     }, [teachers, search, statusFilter, subjectFilter])
-
     const pendingCount = teachers.filter(t => !t.is_active).length
-
     return (
         <div style={{ padding: '40px 48px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            <style>{`
-                @keyframes float { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
-                .faculty-card:hover { border-color: ${COLORS.primary}40 !important; background: #FFF !important; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,75,147,0.05) !important; }
-            `}</style>
-
             {/* TOAST NODES */}
             {toast && (
                 <div style={{ position: 'fixed', top: 32, right: 32, background: toast.ok ? '#ECFDF5' : '#FEF2F2', border: '1px solid ' + (toast.ok ? COLORS.success : COLORS.danger) + '40', borderRadius: 20, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', zIndex: 20000, animation: 'float 0.3s ease-out' }}>
@@ -196,7 +166,6 @@ export default function FacultyManagement() {
                     <span style={{ fontSize: 14, fontWeight: 900, color: toast.ok ? '#065F46' : '#991B1B' }}>{toast.msg}</span>
                 </div>
             )}
-
             {/* INSTITUTIONAL HEADER */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 48 }}>
                 <div>
@@ -214,7 +183,6 @@ export default function FacultyManagement() {
                     <UserPlus size={20} color="#FFF" /> Add New Teacher
                 </button>
             </div>
-
             {/* SEARCH FRAME */}
             <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: '24px 32px', display: 'flex', gap: 20, alignItems: 'center', marginBottom: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
                 <div style={{ flex: 1, position: 'relative' }}>
@@ -225,7 +193,6 @@ export default function FacultyManagement() {
                         style={{ width: '100%', padding: '18px 20px 18px 56px', border: '2px solid #F1F5F9', borderRadius: 18, outline: 'none', fontSize: 15, color: '#0F172A', fontWeight: 600, background: '#F8FAFC', transition: '0.2s' }}
                     />
                 </div>
-                
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderLeft: '1px solid #F1F5F9', paddingLeft: 24 }}>
                     <Filter size={18} color="#64748B" />
                     <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)} style={{ background: '#F8FAFC', border: 'none', borderRadius: 12, padding: '12px 16px', fontSize: 13, fontWeight: 800, color: '#475569', cursor: 'pointer', outline: 'none' }}>
@@ -239,7 +206,6 @@ export default function FacultyManagement() {
                     </select>
                 </div>
             </div>
-
             {/* RECORD LIST */}
             {loading && teachers.length === 0 ? (
                 <div style={{ padding: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -255,7 +221,6 @@ export default function FacultyManagement() {
                         <div>Activity Overview</div>
                         <div style={{ textAlign: 'right' }}>Authorization Controls</div>
                     </div>
-
                     {filteredTeachers.map((t) => (
                         <div key={t.id} className="faculty-card" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1fr', background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(10px)', border: '1px solid #F1F5F9', borderRadius: 24, padding: '24px 32px', alignItems: 'center', transition: '0.3s cubic-bezier(0.4, 0, 0.2, 1)', position: 'relative' }}>
                             {/* PROFILE */}
@@ -273,7 +238,6 @@ export default function FacultyManagement() {
                                     </div>
                                 </div>
                             </div>
-
                             {/* SUBJECT LIST */}
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                                 {t.metadata?.assigned_subjects?.length ? t.metadata.assigned_subjects.slice(0, 2).map(sid => (
@@ -285,7 +249,6 @@ export default function FacultyManagement() {
                                     <div style={{ fontSize: 11, fontWeight: 900, color: COLORS.slate }}>+{t.metadata.assigned_subjects.length - 2}</div>
                                 )}
                             </div>
-
                             {/* ACTIVITY */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -294,7 +257,6 @@ export default function FacultyManagement() {
                                 </div>
                                 <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 700, marginLeft: 24 }}>Last Active: 12m ago</div>
                             </div>
-
                             {/* CONTROLS */}
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
                                 <button onClick={() => openScopeModal(t)} style={{ padding: '12px 18px', borderRadius: 14, background: '#F8FAFC', border: '2px solid #F1F5F9', color: COLORS.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, fontWeight: 1000, transition: '0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = COLORS.primary}>
@@ -304,14 +266,12 @@ export default function FacultyManagement() {
                                     {t.is_active ? 'Revoke Access' : 'Authorize Node'}
                                 </button>
                             </div>
-
                             {/* FLOATING STATUS TAG */}
                             {!t.is_active && (
                                 <div style={{ position: 'absolute', top: 12, left: 12, background: COLORS.danger, color: '#FFF', padding: '4px 8px', borderRadius: 8, fontSize: 9, fontWeight: 1000, letterSpacing: '0.1em' }}>PRECISION APPROVAL REQUIRED</div>
                             )}
                         </div>
                     ))}
-
                     {filteredTeachers.length === 0 && (
                         <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 28, padding: 80, textAlign: 'center' }}>
                             <div style={{ width: 100, height: 100, background: '#F8FAFC', borderRadius: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', border: '1px solid #F1F5F9' }}>
@@ -323,7 +283,6 @@ export default function FacultyManagement() {
                     )}
                 </div>
             )}
-
             {/* PROVISIONING MODAL */}
             {showAddModal && (
                 <TeacherModal title="Add Teacher" onClose={() => setShowAddModal(false)} onSubmit={handleCreateTeacher} saving={saving} saveText="Add Teacher">
@@ -340,7 +299,6 @@ export default function FacultyManagement() {
                         </div>
                         <TeacherInput label="Email Address" icon={Globe} type="email" value={teacherForm.email} onChange={(v: string) => setTeacherForm({ ...teacherForm, email: v })} placeholder="marie@physics.inst" />
                         <TeacherInput label="Phone Number" icon={Clock} type="tel" value={teacherForm.phone} onChange={(v: string) => setTeacherForm({ ...teacherForm, phone: v })} placeholder="+91 000 000 000" />
-                        
                         <div style={{ marginTop: 20, padding: 24, background: '#F8FAFC', borderRadius: 24, border: '2px dashed #E2E8F0' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                                 <Cpu size={18} color="#94A3B8" />
@@ -360,7 +318,6 @@ export default function FacultyManagement() {
                     </div>
                 </TeacherModal>
             )}
-
             {/* JURISDICTION CONSTRAINTS MODAL */}
             {showScopeModal && (
                 <TeacherModal title="Manage Class Assignments" onClose={() => setShowScopeModal(null)} onSubmit={handleAssignScope} saving={saving} saveText="Confirm Assignments" maxWidth={720}>
@@ -389,7 +346,6 @@ export default function FacultyManagement() {
                                 </div>
                             </div>
                         </div>
-
                         {/* GRADE & SECTOR ENFORCEMENT */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
                             <div>
@@ -406,7 +362,6 @@ export default function FacultyManagement() {
                                     })}
                                 </div>
                             </div>
-
                             <div>
                                 <h4 style={{ margin: '0 0 20px', fontSize: 13, fontWeight: 1000, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Division Sectors</h4>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
@@ -428,5 +383,4 @@ export default function FacultyManagement() {
         </div>
     )
 }
-
 function Plus({ size, color }: any) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color || "currentColor"} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> }

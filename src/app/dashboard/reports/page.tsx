@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -12,7 +11,6 @@ import {
     Search, Filter, CalendarDays, RefreshCcw, Layout, Database, Sparkles,
     CheckCircle2, FileJson
 } from 'lucide-react'
-
 const COLORS = {
     primary: '#004B93',
     primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
@@ -24,7 +22,6 @@ const COLORS = {
     border: '#E2E8F0',
     glass: 'rgba(255, 255, 255, 0.7)'
 }
-
 // ── UI COMPONENTS ──────────────────────────────────
 function ToastNotification({ msg, ok, onClose }: { msg: string; ok: boolean; onClose: () => void }) {
     useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
@@ -35,7 +32,6 @@ function ToastNotification({ msg, ok, onClose }: { msg: string; ok: boolean; onC
         </div>
     )
 }
-
 function AnalyticsCard({ label, value, trend, icon: Icon, color, bg }: any) {
     const isUp = trend?.startsWith('+')
     return (
@@ -60,15 +56,12 @@ function AnalyticsCard({ label, value, trend, icon: Icon, color, bg }: any) {
         </div>
     )
 }
-
 // ── MAIN APPLICATION ─────────────────────────────
 export default function AnalyticsReports() {
     const [data, setData] = useState<{ revenue: any[], performance: any[], pass_fail: any[] } | null>(null)
     const [loading, setLoading] = useState(true)
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
     const showToast = (msg: string, ok: boolean) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 3500) }
-
     const fetchTopology = useCallback(async () => {
         setLoading(true)
         try {
@@ -77,32 +70,18 @@ export default function AnalyticsReports() {
             if (res.ok) setData(json)
         } finally { setLoading(false) }
     }, [])
-
     useEffect(() => { fetchTopology() }, [fetchTopology])
-
     if (loading || !data) {
         return (
             <div style={{ padding: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#F8FAFC' }}>
                 <Loader2 size={48} color={COLORS.primary} className="spin" style={{ marginBottom: 24 }} />
                 <div style={{ fontSize: 14, fontWeight: 900, color: '#94A3B8', letterSpacing: '0.05em' }}>LOADING DATA...</div>
-                <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
             </div>
         )
     }
-
     return (
         <div style={{ padding: '48px 56px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            <style>{`
-                @keyframes float { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .analytics-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,75,147,0.06) !important; border-color: ${COLORS.primary}20 !important; }
-                .tab-btn:hover { background: #F1F5F9; }
-                .active-report { background: #111827 !important; color: #FFF !important; }
-            `}</style>
-
             {toast && <ToastNotification msg={toast.msg} ok={toast.ok} onClose={() => setToast(null)} />}
-
             {/* INTEL HEADER */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 48 }}>
                 <div>
@@ -126,7 +105,6 @@ export default function AnalyticsReports() {
                     </button>
                 </div>
             </div>
-
             {/* BUSINESS KPI STRIP */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 48 }}>
                 <AnalyticsCard label="Gross Revenue" value="₹1.48M" trend="+24.8%" icon={TrendingUp} color={COLORS.success} bg={`${COLORS.success}10`} />
@@ -134,10 +112,8 @@ export default function AnalyticsReports() {
                 <AnalyticsCard label="Active Licenses" value="1,240" trend="+12.5%" icon={Database} color={COLORS.warning} bg={`${COLORS.warning}10`} />
                 <AnalyticsCard label="System Integrity" value="99.98%" trend="OPTIMAL" icon={Shield} color="#8B5CF6" bg="#8B5CF610" />
             </div>
-
             {/* PRIMARY ANALYSIS LAYER */}
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 32, marginBottom: 32 }}>
-
                 {/* ENROLLMENT REPORT */}
                 <div style={{ background: '#FFF', padding: 40, borderRadius: 36, border: '1px solid #E2E8F0', boxShadow: '0 40px 80px rgba(0,0,0,0.02)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
@@ -149,7 +125,6 @@ export default function AnalyticsReports() {
                             <FileJson size={14} color={COLORS.success} /> Download JSON
                         </button>
                     </div>
-
                     <div style={{ height: 320 }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data.revenue}>
@@ -168,7 +143,6 @@ export default function AnalyticsReports() {
                         </ResponsiveContainer>
                     </div>
                 </div>
-
                 {/* ACADEMIC SUCCESS DISTRIBUTION */}
                 <div style={{ background: '#FFF', padding: 40, borderRadius: 36, border: '1px solid #E2E8F0', boxShadow: '0 40px 80px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column' }}>
                      <h3 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.02em' }}>Success Distribution</h3>
@@ -199,7 +173,6 @@ export default function AnalyticsReports() {
                      </div>
                 </div>
             </div>
-
             {/* COGNITIVE PERFORMANCE TRAJECTORY */}
             <div style={{ background: '#FFF', padding: 40, borderRadius: 36, border: '1px solid #E2E8F0', boxShadow: '0 40px 80px rgba(0,0,0,0.02)', marginBottom: 32 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
@@ -213,7 +186,6 @@ export default function AnalyticsReports() {
                         ))}
                     </div>
                 </div>
-
                 <div style={{ height: 350 }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={data.performance}>
@@ -238,7 +210,6 @@ export default function AnalyticsReports() {
                     </ResponsiveContainer>
                 </div>
             </div>
-
             {/* ACTION FOOTER */}
             <div style={{ background: COLORS.primaryGradient, padding: 32, borderRadius: 28, color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 20px 40px rgba(0,75,147,0.2)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>

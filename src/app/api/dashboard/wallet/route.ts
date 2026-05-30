@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
             config
         })
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -128,6 +128,6 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ error: 'Invalid routing sequence' }, { status: 400 })
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

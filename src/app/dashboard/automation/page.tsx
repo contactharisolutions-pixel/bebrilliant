@@ -1,22 +1,18 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     BellRing, Zap, Mail, MessageSquare, PlayCircle, PlusCircle,
     PauseCircle, Trash2, CheckCircle2, XCircle, Loader2, Save, ArrowRight
 } from 'lucide-react'
-
 // ── MAIN PAGE ────────────────────────────────────────────
 export default function AutomatedWorkflows() {
     const [flows, setFlows] = useState<any[] | null>(null)
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok }); setTimeout(() => setToast(null), 3500)
     }
-
     const fetchFlows = useCallback(async () => {
         setLoading(true)
         try {
@@ -25,9 +21,7 @@ export default function AutomatedWorkflows() {
             if (res.ok) setFlows(json)
         } finally { setLoading(false) }
     }, [])
-
     useEffect(() => { fetchFlows() }, [fetchFlows])
-
     const handleSave = async (updatedFlows = flows) => {
         setSaving(true)
         try {
@@ -41,13 +35,11 @@ export default function AutomatedWorkflows() {
             showToast('Sync Failed', false)
         } finally { setSaving(false) }
     }
-
     const toggleStatus = (id: string) => {
         const newFlows = flows!.map(f => f.id === id ? { ...f, status: f.status === 'active' ? 'paused' : 'active' } : f)
         setFlows(newFlows)
         handleSave(newFlows)
     }
-
     const deleteFlow = (id: string) => {
         if (confirm('Delete this automated sequence permanently?')) {
             const newFlows = flows!.filter(f => f.id !== id)
@@ -55,21 +47,16 @@ export default function AutomatedWorkflows() {
             handleSave(newFlows)
         }
     }
-
     if (loading || !flows) {
         return (
             <div style={{ padding: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100%', background: '#F8FAFC' }}>
                 <Loader2 size={36} color="var(--color-primary)" style={{ animation: 'spin 1s linear infinite', marginBottom: 16 }} />
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#94A3B8' }}>Synchronizing Automation Engine...</div>
-                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
         )
     }
-
     return (
         <div style={{ padding: '32px 40px', background: '#F8FAFC', minHeight: '100%', position: 'relative' }}>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
             {/* TOAST SYSTEM */}
             {toast && (
                 <div style={{ position: 'fixed', top: 24, right: 28, background: toast.ok ? '#ECFDF5' : '#FEF2F2', border: '1px solid ' + (toast.ok ? '#10B981' : '#EF4444') + '40', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.1)', zIndex: 9000 }}>
@@ -77,7 +64,6 @@ export default function AutomatedWorkflows() {
                     <span style={{ fontSize: 13, fontWeight: 700, color: toast.ok ? '#065F46' : '#991B1B' }}>{toast.msg}</span>
                 </div>
             )}
-
             {/* HEADER */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 36 }}>
                 <div>
@@ -90,7 +76,6 @@ export default function AutomatedWorkflows() {
                     <PlusCircle size={18} /> INITIALIZE WORKFLOW
                 </button>
             </div>
-
             {/* FLOWS GRID */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
                 {flows.map((flow) => {
@@ -98,7 +83,6 @@ export default function AutomatedWorkflows() {
                     return (
                         <div key={flow.id} style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 32, boxShadow: '0 4px 12px rgba(0,0,0,0.02)', position: 'relative', overflow: 'hidden' }}>
                             {!isActive && <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.4)', backdropFilter: 'grayscale(1)', zIndex: 10, borderRadius: 24, pointerEvents: 'none' }} />}
-
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, position: 'relative', zIndex: 20 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                                     <div style={{ width: 48, height: 48, background: isActive ? 'var(--color-primary-bg)' : '#F1F5F9', color: isActive ? 'var(--color-primary)' : '#94A3B8', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -120,7 +104,6 @@ export default function AutomatedWorkflows() {
                                     </button>
                                 </div>
                             </div>
-
                              <div style={{ display: 'flex', alignItems: 'center', gap: 16, position: 'relative', zIndex: 20 }}>
                                 <div style={{ flex: 1, padding: '16px 20px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16 }}>
                                     <div style={{ fontSize: 11, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 8 }}>Event Trigger</div>
@@ -136,11 +119,9 @@ export default function AutomatedWorkflows() {
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     )
                 })}
-
                  {/* ADD STUB */}
                 <button style={{ border: '2px dashed #E2E8F0', borderRadius: 24, padding: 60, background: 'transparent', color: '#94A3B8', cursor: 'pointer', textAlign: 'center' }}>
                     <PlusCircle size={32} color="#CBD5E1" style={{ marginBottom: 16 }} />

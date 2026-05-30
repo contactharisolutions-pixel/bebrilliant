@@ -1,5 +1,14 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
+export interface AutomationContext {
+    student_id?: string;
+    student_name?: string;
+    parent_email?: string;
+    score?: number;
+    exam_name?: string;
+    [key: string]: unknown;
+}
+
 /**
  * Executes standard notification pipeline immediately throwing to WebSocket layer
  * or saving structurally into DB for client pulling.
@@ -52,7 +61,7 @@ export async function sendCompiledEmail(tenantId: string | null, templateName: s
  * 6. AUTOMATION ENGINE (CORE)
  * Takes an origin Event and Context, checking active rules and executing parallel logic operations.
  */
-export async function processAutomationTrigger(tenantId: string, eventName: string, contextData: any) {
+export async function processAutomationTrigger(tenantId: string, eventName: string, contextData: AutomationContext) {
     const { data: rules } = await supabaseAdmin
         .from('automation_rules')
         .select('condition, action')
@@ -69,14 +78,14 @@ export async function processAutomationTrigger(tenantId: string, eventName: stri
         if (rule.condition && Object.keys(rule.condition).length > 0) {
             const conditionKey = Object.keys(rule.condition)[0]
             const conditionValueString = rule.condition[conditionKey] as string
-            const contextValue = contextData[conditionKey]
+            const contextValue = contextData[conditionKey] as number | string;
 
             if (conditionValueString.startsWith('<')) {
                 const threshold = parseFloat(conditionValueString.substring(1))
-                conditionMet = contextValue < threshold
+                conditionMet = (contextValue as number) < threshold
             } else if (conditionValueString.startsWith('>')) {
                 const threshold = parseFloat(conditionValueString.substring(1))
-                conditionMet = contextValue > threshold
+                conditionMet = (contextValue as number) > threshold
             } else if (conditionValueString === String(contextValue)) {
                 conditionMet = true
             }
@@ -89,15 +98,15 @@ export async function processAutomationTrigger(tenantId: string, eventName: stri
             // 10. AUTOMATION FLOW (Check Rules -> Trigger Action)
             const actionType = rule.action?.type
 
-            if (actionType === 'send_email_parent') {
+            if (actionType === 'send_email_parent' && contextData.parent_email) {
                 await sendCompiledEmail(tenantId, 'Low_Score_Alert', contextData.parent_email, {
-                    student_name: contextData.student_name,
-                    score: contextData.score,
-                    exam_name: contextData.exam_name
+                    student_name: String(contextData.student_name || ''),
+                    score: String(contextData.score || 0),
+                    exam_name: String(contextData.exam_name || '')
                 })
             }
 
-            if (actionType === 'push_notification') {
+            if (actionType === 'push_notification' && contextData.student_id) {
                 await pushNotification(contextData.student_id, `System Alert: Automated message triggered for event ${eventName}.`, 'warning')
             }
         }

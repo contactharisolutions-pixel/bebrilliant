@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     Plus, Search, Filter, X, ChevronRight, Save, Loader2, RefreshCw,
@@ -7,7 +6,6 @@ import {
     Layout, Settings, Trash2, Edit3, ArrowRight, AlertCircle, Sparkles,
     ChevronDown, ChevronUp, Layers, Hash, Zap, Globe
 } from 'lucide-react'
-
 // —— PALETTE ————————————————————————————————————
 const P = {
     bg: '#F7F8FA', card: '#FEFEFE', border: '#E8E8E8',
@@ -19,10 +17,8 @@ const P = {
     error: '#EF4444', errorBg: '#FEF2F2',
     info: '#3B82F6', infoBg: '#EFF6FF',
 }
-
 // —— TYPES ——————————————————————————————————————
 type QuestionType = 'MCQ' | 'MSQ' | 'True/False' | 'Fill in the blanks' | 'Assertion Reason' | 'Short Answer' | 'Long Answer' | 'Case Study' | 'Numerical' | 'Diagram-based'
-
 type QuestionRule = {
     id?: string
     question_type: QuestionType
@@ -34,7 +30,6 @@ type QuestionRule = {
     difficulty_hard_pct: number
     internal_choice: boolean
 }
-
 type TemplateSection = {
     id?: string
     section_name: string
@@ -43,7 +38,6 @@ type TemplateSection = {
     attempt_limit?: number
     rules: QuestionRule[]
 }
-
 type PaperTemplate = {
     id: string
     name: string
@@ -57,18 +51,14 @@ type PaperTemplate = {
     sections?: TemplateSection[]
     created_at: string
 }
-
 // —— QUESTION MASTER ——————————————————————————————
 const QUESTION_TYPES: QuestionType[] = [
     'MCQ', 'MSQ', 'True/False', 'Fill in the blanks', 'Assertion Reason',
     'Short Answer', 'Long Answer', 'Case Study', 'Numerical', 'Diagram-based'
 ]
-
 const CATEGORIES = ['School', 'Entrance', 'Competitive']
 const EXAM_TYPES = ['Objective', 'Subjective', 'Mixed']
-
 // —— COMPONENTS ——————————————————————————————————
-
 export default function PaperPatternTemplatesPage() {
     const [templates, setTemplates] = useState<PaperTemplate[]>([])
     const [loading, setLoading] = useState(true)
@@ -76,7 +66,6 @@ export default function PaperPatternTemplatesPage() {
     const [modal, setModal] = useState<{ open: boolean, step: number, editing?: PaperTemplate | null }>({ open: false, step: 1 })
     const [aiModal, setAiModal] = useState<{ open: boolean, template: PaperTemplate | null }>({ open: false, template: null })
     const [search, setSearch] = useState('')
-    
     // Form State
     const [form, setForm] = useState<Partial<PaperTemplate>>({
         name: '',
@@ -87,7 +76,6 @@ export default function PaperPatternTemplatesPage() {
         instructions: []
     })
     const [sections, setSections] = useState<TemplateSection[]>([])
-
     const fetchTemplates = useCallback(async () => {
         setLoading(true)
         try {
@@ -96,9 +84,7 @@ export default function PaperPatternTemplatesPage() {
             if (res.ok) setTemplates(data)
         } finally { setLoading(false) }
     }, [])
-
     useEffect(() => { fetchTemplates() }, [fetchTemplates])
-
     const handleSaveTemplate = async () => {
         setSaving(true)
         try {
@@ -117,7 +103,6 @@ export default function PaperPatternTemplatesPage() {
             }
         } finally { setSaving(false) }
     }
-
     const handleAIGeneration = async (templateId: string) => {
         setSaving(true)
         try {
@@ -138,7 +123,6 @@ export default function PaperPatternTemplatesPage() {
             }
         } finally { setSaving(false) }
     }
-
     const handlePublish = async (id: string, currentStatus: boolean) => {
         try {
             const res = await fetch('/api/owner/exams/templates', {
@@ -153,7 +137,6 @@ export default function PaperPatternTemplatesPage() {
             if (res.ok) fetchTemplates()
         } catch (error) { console.error("Publish failed:", error) }
     }
-
     const addSection = () => {
         const letters = 'ABCDEFGH'
         const nextId = letters[sections.length] || sections.length
@@ -164,7 +147,6 @@ export default function PaperPatternTemplatesPage() {
             rules: []
         }])
     }
-
     const addRule = (sectionIndex: number) => {
         const newSections = [...sections]
         newSections[sectionIndex].rules.push({
@@ -179,38 +161,25 @@ export default function PaperPatternTemplatesPage() {
         })
         setSections(newSections)
     }
-
     const updateRule = (sIdx: number, rIdx: number, updates: Partial<QuestionRule>) => {
         const newSections = [...sections]
         newSections[sIdx].rules[rIdx] = { ...newSections[sIdx].rules[rIdx], ...updates }
         setSections(newSections)
     }
-
     const removeSection = (idx: number) => setSections(sections.filter((_, i) => i !== idx))
     const removeRule = (sIdx: number, rIdx: number) => {
         const newSections = [...sections]
         newSections[sIdx].rules = newSections[sIdx].rules.filter((_, i) => i !== rIdx)
         setSections(newSections)
     }
-
     const calculateSectionTotal = (section: TemplateSection) => {
         return section.rules.reduce((acc, r) => acc + (r.num_questions * r.marks_per_question), 0)
     }
-
     const calculateGrandTotal = () => {
         return sections.reduce((acc, s) => acc + calculateSectionTotal(s), 0)
     }
-
     return (
         <div style={{ background: P.bg, minHeight: '100vh', padding: '32px 40px', fontFamily: 'Inter, sans-serif' }}>
-            <style>{`
-                @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes spin { to { transform: rotate(360deg); } }
-                .hover-scale { transition: transform 0.2s; }
-                .hover-scale:hover { transform: scale(1.02); }
-                .glass { backdrop-filter: blur(8px); background: rgba(255, 255, 255, 0.8) !important; }
-            `}</style>
-
             {/* HEADER */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40 }}>
                 <div>
@@ -226,7 +195,6 @@ export default function PaperPatternTemplatesPage() {
                     <Plus size={18} strokeWidth={2.5} /> Create Master Template
                 </button>
             </div>
-
             {/* QUICK STATS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
                 {[
@@ -246,7 +214,6 @@ export default function PaperPatternTemplatesPage() {
                     </div>
                 ))}
             </div>
-
             {/* SEARCH & FILTERS */}
             <div style={{ background: '#fff', borderRadius: 20, border: '1px solid ' + P.border, marginBottom: 24, padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
@@ -264,7 +231,6 @@ export default function PaperPatternTemplatesPage() {
                     <RefreshCw size={18} style={{ animation: loading ? 'spin 1s linear infinite' : 'none', color: P.brand }} />
                 </button>
             </div>
-
             {/* TEMPLATE GRID */}
             {loading ? (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
@@ -283,7 +249,6 @@ export default function PaperPatternTemplatesPage() {
                     {templates.map(t => (
                         <div key={t.id} style={{ background: '#fff', borderRadius: 24, padding: '24px', border: '1px solid ' + (t.is_global ? P.brand : P.border), display: 'flex', flexDirection: 'column', gap: 20, position: 'relative', boxShadow: t.is_global ? '0 10px 40px ' + P.brand + '10' : 'none' }} className="hover-scale">
                             {t.is_global && <div style={{ position: 'absolute', top: -12, right: 24, background: P.brand, color: '#fff', padding: '4px 12px', borderRadius: 20, fontSize: 10, fontWeight: 900, display: 'flex', alignItems: 'center', gap: 4, boxShadow: '0 4px 12px ' + P.brand + '40' }}><Globe size={12} /> LIVE IN MARKETPLACE</div>}
-                            
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div style={{ background: t.category === 'School' ? P.successBg : t.category === 'Entrance' ? P.ctaBg : P.infoBg, padding: '6px 12px', borderRadius: 10, fontSize: 10, fontWeight: 900, color: t.category === 'School' ? P.success : t.category === 'Entrance' ? P.cta : P.info, textTransform: 'uppercase' }}>{t.category}</div>
                                 <div style={{ display: 'flex', gap: 6 }}>
@@ -323,7 +288,6 @@ export default function PaperPatternTemplatesPage() {
                     ))}
                 </div>
             ))}
-
             {/* MODAL / BUILDER ———————————————————————————————————————————————— */}
             {modal.open && (
                 <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', padding: 40, animation: 'slideUp 0.3s' }}>
@@ -339,7 +303,6 @@ export default function PaperPatternTemplatesPage() {
                             </div>
                             <button onClick={() => setModal({ ...modal, open: false })} style={{ background: P.hover, border: 'none', borderRadius: 12, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><X size={20} color={P.muted} /></button>
                         </div>
-
                         {/* Modal Body */}
                         <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
                             {modal.step === 1 && (
@@ -383,7 +346,6 @@ export default function PaperPatternTemplatesPage() {
                                     </div>
                                 </div>
                             )}
-
                             {modal.step === 2 && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -424,7 +386,6 @@ export default function PaperPatternTemplatesPage() {
                                     </div>
                                 </div>
                             )}
-
                             {modal.step === 3 && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
                                     {sections.map((s, sIdx) => (
@@ -490,7 +451,6 @@ export default function PaperPatternTemplatesPage() {
                                 </div>
                             )}
                         </div>
-
                         {/* Modal Footer */}
                         <div style={{ padding: '24px 32px', borderTop: '1px solid ' + P.border, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <button onClick={() => setModal({ ...modal, open: false })} style={{ padding: '12px 24px', background: '#fff', border: '1px solid ' + P.border, borderRadius: 12, fontSize: 14, fontWeight: 850, color: P.dark, cursor: 'pointer' }}>Discard Changes</button>
@@ -506,7 +466,6 @@ export default function PaperPatternTemplatesPage() {
                     </div>
                 </div>
             )}
-
             {/* AI GENERATION MODAL */}
             {aiModal.open && (
                 <div style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', animation: 'slideUp 0.3s' }}>
@@ -516,7 +475,6 @@ export default function PaperPatternTemplatesPage() {
                         </div>
                         <h2 style={{ fontSize: 24, fontWeight: 950, color: P.dark, margin: 0 }}>AI Question Engine</h2>
                         <p style={{ fontSize: 14, color: P.muted, margin: '12px 0 24px', lineHeight: 1.6 }}>You are about to generate a complete Question Bank for <br/><strong>{aiModal.template?.name}</strong>.</p>
-                        
                         <div style={{ background: P.bg, borderRadius: 16, padding: 20, marginBottom: 24, textAlign: 'left' }}>
                             <div style={{ fontSize: 11, fontWeight: 850, color: P.muted, textTransform: 'uppercase', marginBottom: 12 }}>Generation Targets</div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -525,7 +483,6 @@ export default function PaperPatternTemplatesPage() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: P.dark }}><CheckCircle2 size={14} color={P.success} /> Automatic Marking & Neg. Score Logic</div>
                             </div>
                         </div>
-
                         <div style={{ display: 'flex', gap: 12 }}>
                             <button onClick={() => setAiModal({ open: false, template: null })} style={{ flex: 1, padding: '14px', borderRadius: 12, border: '1px solid ' + P.border, background: '#fff', fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
                             <button 

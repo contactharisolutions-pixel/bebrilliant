@@ -1,10 +1,8 @@
 'use client'
-
 import React, { useState, useEffect } from 'react'
 import { X, Tag, Calculator, ShieldCheck, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react'
 import { P, GLASS_STYLES } from '@/components/shared/institutional/theme'
 import Script from 'next/script'
-
 interface PricingBreakdown {
     base_amount: number;
     discount_amount: number;
@@ -15,7 +13,6 @@ interface PricingBreakdown {
     coupon_applied?: string;
     offer_applied?: string;
 }
-
 export default function CheckoutOverlay({ 
     isOpen, 
     onClose, 
@@ -32,7 +29,6 @@ export default function CheckoutOverlay({
     const [loading, setLoading] = useState(false)
     const [processing, setProcessing] = useState(false)
     const [error, setError] = useState<string | null>(null)
-
     const fetchBreakdown = async (code?: string) => {
         setLoading(true)
         setError(null)
@@ -58,15 +54,12 @@ export default function CheckoutOverlay({
             setLoading(false)
         }
     }
-
     useEffect(() => {
         if (isOpen) fetchBreakdown()
     }, [isOpen, item.id])
-
     const handleApplyCoupon = () => {
         fetchBreakdown(coupon)
     }
-
     const handlePayment = async () => {
         setProcessing(true)
         try {
@@ -81,7 +74,6 @@ export default function CheckoutOverlay({
             })
             const order = await res.json()
             if (!res.ok) throw new Error(order.error)
-
             // 2. Razorpay
             const options = {
                 key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
@@ -116,17 +108,13 @@ export default function CheckoutOverlay({
             setProcessing(false)
         }
     }
-
     if (!isOpen) return null
-
     return (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
             <Script src="https://checkout.razorpay.com/v1/checkout.js" />
             <style>{GLASS_STYLES}</style>
-            
             {/* BACKDROP */}
             <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)' }} />
-
             {/* MODAL */}
             <div className="glass-card" style={{ 
                 position: 'relative', width: '100%', maxWidth: 500, background: '#fff', borderRadius: 32, 
@@ -141,7 +129,6 @@ export default function CheckoutOverlay({
                         <X size={20} color={P.dark} />
                     </button>
                 </header>
-
                 <div style={{ padding: 40 }}>
                     {/* ITEM INFO */}
                     <div style={{ background: P.bg, padding: 24, borderRadius: 24, border: `1px solid ${P.border}`, marginBottom: 32 }}>
@@ -153,7 +140,6 @@ export default function CheckoutOverlay({
                             <div style={{ fontSize: 24, fontWeight: 950, color: P.dark }}>₹{item.price.toLocaleString('en-IN')}</div>
                         </div>
                     </div>
-
                     {/* COUPON SECTION */}
                     <div style={{ marginBottom: 32 }}>
                         <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: P.dark, marginBottom: 12 }}>Promotional Code</label>
@@ -181,7 +167,6 @@ export default function CheckoutOverlay({
                             </div>
                         )}
                     </div>
-
                     {/* TAX BREAKDOWN */}
                     <div style={{ background: P.bg, padding: 24, borderRadius: 24, border: `1px dashed ${P.border}` }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -206,9 +191,7 @@ export default function CheckoutOverlay({
                             </div>
                         </div>
                     </div>
-
                     {error && <div style={{ marginTop: 24, padding: 16, background: P.errorBg, borderRadius: 12, color: P.error, fontSize: 13, fontWeight: 700 }}>{error}</div>}
-
                     {/* PAY BUTTON */}
                     <button 
                         onClick={handlePayment}
@@ -221,18 +204,10 @@ export default function CheckoutOverlay({
                     >
                         {processing ? <Loader2 className="animate-spin" /> : <><ShieldCheck size={20} /> Secure Checkout</>}
                     </button>
-                    
                     <div style={{ textAlign: 'center', marginTop: 20, fontSize: 11, color: P.muted, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                         <Calculator size={14} /> Tax calculations compliant with 2024 Finance Act
                     </div>
                 </div>
-
-                <style>{`
-                    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-                    @keyframes spin { to { transform: rotate(360deg); } }
-                    .animate-spin { animation: spin 1s linear infinite; }
-                    .hover-lift:hover { transform: translateY(-2px); }
-                `}</style>
             </div>
         </div>
     )

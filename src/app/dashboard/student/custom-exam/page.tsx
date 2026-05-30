@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect } from 'react'
 import { 
     BrainCircuit, Wallet, ClipboardList, Target, 
@@ -7,14 +6,12 @@ import {
     CheckCircle2, Clock, BookOpen, Layers
 } from 'lucide-react'
 import Link from 'next/link'
-
 export default function CustomExamBuilder() {
     const [loading, setLoading] = useState(true)
     const [creating, setCreating] = useState(false)
     const [wallet, setWallet] = useState({ balance: 0, transactions: [] })
     const [previousExams, setPreviousExams] = useState([])
     const [creditsRequired, setCreditsRequired] = useState(0)
-
     // Form Stats
     const [formData, setFormData] = useState({
         subject: '',
@@ -24,19 +21,15 @@ export default function CustomExamBuilder() {
         question_count: 10,
         question_type: 'MCQ'
     })
-
     const [subjects, setSubjects] = useState<any[]>([])
     const [chapters, setChapters] = useState<any[]>([])
     const [topics, setTopics] = useState<any[]>([])
-
     useEffect(() => {
         fetchInitialData()
     }, [])
-
     useEffect(() => {
         calculateCredits()
     }, [formData])
-
     const fetchInitialData = async () => {
         try {
             const [walletRes, examsRes, subRes] = await Promise.all([
@@ -44,11 +37,9 @@ export default function CustomExamBuilder() {
                 fetch('/api/student/custom-exam'),
                 fetch('/api/student/syllabus/subjects')
             ])
-
             const walletData = await walletRes.json()
             const examsData = await examsRes.json()
             const subData = await subRes.json()
-
             if (!walletData.error) setWallet(walletData)
             if (!examsData.error) setPreviousExams(examsData.exams || [])
             setSubjects(subData.subjects || [])
@@ -58,7 +49,6 @@ export default function CustomExamBuilder() {
             setLoading(false)
         }
     }
-
     const fetchNodes = async (parentId: string, type: 'chapter' | 'topic') => {
         try {
             const res = await fetch(`/api/student/syllabus/nodes?parentId=${parentId}`)
@@ -69,7 +59,6 @@ export default function CustomExamBuilder() {
             console.error(`Failed to fetch ${type}s`, err)
         }
     }
-
     const handleSubjectChange = (subjectName: string) => {
         const subject = subjects.find(s => s.name === subjectName)
         setFormData({ ...formData, subject: subjectName, chapter: '', topic: '' })
@@ -77,14 +66,12 @@ export default function CustomExamBuilder() {
         setTopics([])
         if (subject) fetchNodes(subject.id, 'chapter')
     }
-
     const handleChapterChange = (chapterName: string) => {
         const chapter = chapters.find(c => c.name === chapterName)
         setFormData({ ...formData, chapter: chapterName, topic: '' })
         setTopics([])
         if (chapter) fetchNodes(chapter.id, 'topic')
     }
-
     const calculateCredits = async () => {
         try {
             const res = await fetch('/api/student/wallet/calculate', {
@@ -101,11 +88,9 @@ export default function CustomExamBuilder() {
             console.error('Calculation failed', err)
         }
     }
-
     const handleCreate = async () => {
         if (!formData.subject) return alert('Please select a subject')
         if (creditsRequired > wallet.balance) return alert('Insufficient credits')
-
         setCreating(true)
         try {
             const res = await fetch('/api/student/custom-exam/create', {
@@ -113,7 +98,6 @@ export default function CustomExamBuilder() {
                 body: JSON.stringify(formData)
             })
             const data = await res.json()
-            
             if (data.success) {
                 // Success! Refresh data
                 fetchInitialData()
@@ -127,25 +111,20 @@ export default function CustomExamBuilder() {
             setCreating(false)
         }
     }
-
     if (loading) return (
         <div style={{ padding: 60, textAlign: 'center' }}>
             <div style={{ width: 40, height: 40, border: '3px solid var(--color-primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 20px' }} />
             <p style={{ fontWeight: 800, color: '#64748B' }}>INITIALIZING TEST GENERATOR...</p>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
     )
-
     return (
         <div style={{ padding: '32px 40px', background: '#F8FAFC', minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
-            
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40 }}>
                  <div style={{ marginBottom: 40 }}>
                     <h1 style={{ fontSize: 32, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.03em', margin: 0 }}>Custom Mock Exams</h1>
                     <p style={{ color: '#64748B', fontWeight: 600, marginTop: 8 }}>Create your own practice tests based on your syllabus topics.</p>
                 </div>
-                
                  <div style={{ background: '#FFF', padding: '12px 24px', borderRadius: 20, border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 16, boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
                     <div style={{ width: 44, height: 44, background: 'var(--color-primary-bg)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Wallet size={20} color="var(--color-primary)" />
@@ -156,15 +135,12 @@ export default function CustomExamBuilder() {
                     </div>
                 </div>
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 32 }}>
-                
                 {/* LEFT: Builder Panel */}
                  <div style={{ background: '#FFF', padding: 40, borderRadius: 28, border: '1px solid #E2E8F0', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
                     <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 32, display: 'flex', alignItems: 'center', gap: 12 }}>
                         <BrainCircuit size={24} color="var(--color-primary)" /> Define Assessment Parameters
                     </h3>
-
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
                         <div>
                             <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#475569', marginBottom: 10 }}>Target Subject</label>
@@ -190,7 +166,6 @@ export default function CustomExamBuilder() {
                             </select>
                         </div>
                     </div>
-
                     <div style={{ marginBottom: 32 }}>
                         <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#475569', marginBottom: 10 }}>Specific Topic (Optional)</label>
                         <select 
@@ -203,7 +178,6 @@ export default function CustomExamBuilder() {
                             {topics.map((t: any) => <option key={t.id} value={t.name}>{t.name}</option>)}
                         </select>
                     </div>
-
                      <div style={{ marginBottom: 32 }}>
                         <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#475569', marginBottom: 16 }}>Complexity Level</label>
                         <div style={{ display: 'flex', gap: 12 }}>
@@ -224,7 +198,6 @@ export default function CustomExamBuilder() {
                             ))}
                         </div>
                     </div>
-
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 40 }}>
                         <div>
                             <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#475569', marginBottom: 10 }}>Question Count ({formData.question_count})</label>
@@ -247,7 +220,6 @@ export default function CustomExamBuilder() {
                             </select>
                         </div>
                     </div>
-
                     {/* Credit Summary & Action */}
                     <div style={{ background: '#0F172A', padding: 32, borderRadius: 24, color: '#FFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                          <div>
@@ -273,10 +245,8 @@ export default function CustomExamBuilder() {
                         </button>
                     </div>
                 </div>
-
                 {/* RIGHT: History & Tips */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                    
                     {/* Wallet Stats Feed */}
                     <div style={{ background: '#FFF', padding: 32, borderRadius: 28, border: '1px solid #E2E8F0' }}>
                          <h4 style={{ fontSize: 16, fontWeight: 900, color: '#0F172A', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -298,7 +268,6 @@ export default function CustomExamBuilder() {
                             )}
                         </div>
                     </div>
-
                     {/* Previous Custom Exams */}
                     <div style={{ background: '#FFF', padding: 32, borderRadius: 28, border: '1px solid #E2E8F0' }}>
                          <h4 style={{ fontSize: 16, fontWeight: 900, color: '#0F172A', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -336,7 +305,6 @@ export default function CustomExamBuilder() {
                             )}
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>

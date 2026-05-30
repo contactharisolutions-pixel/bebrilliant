@@ -1,14 +1,11 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     Video, Calendar, Clock, PlusCircle, Server, CheckCircle, XCircle, UsersRound,
     DownloadCloud, Link as LinkIcon, AlertCircle, PhoneCall, Loader2
 } from 'lucide-react'
-
 // â”€â”€ TYPES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 type LiveClass = { id: string, title: string, scheduled_at: string, duration_minutes: number, status: string, join_url: string, auto_record: boolean, teacher?: { first_name: string, last_name: string } }
-
 // â”€â”€ MODALS & COMPONENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Modal({ title, onClose, children, onSubmit, saving, saveText = 'Deploy', maxWidth = 560 }: any) {
     return (
@@ -29,7 +26,6 @@ function Modal({ title, onClose, children, onSubmit, saving, saveText = 'Deploy'
         </div>
     )
 }
-
 function Input({ label, value, onChange, placeholder = '', type = 'text', prefix = '' }: any) {
     return (
         <div style={{ marginBottom: 16 }}>
@@ -41,7 +37,6 @@ function Input({ label, value, onChange, placeholder = '', type = 'text', prefix
         </div>
     )
 }
-
 function Toggle({ label, checked, onChange, desc }: any) {
     return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', border: '1px solid ' + (checked ? 'var(--color-primary)' : '#E2E8F0') + '50', borderRadius: 16, background: checked ? 'var(--color-primary-bg)' : '#FFF', marginBottom: 16, cursor: 'pointer', transition: 'all 0.2s' }} onClick={() => onChange(!checked)}>
@@ -55,7 +50,6 @@ function Toggle({ label, checked, onChange, desc }: any) {
         </div>
     )
 }
-
 // â”€â”€ MAIN PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function LiveClassesDashboard() {
     const [classes, setClasses] = useState<LiveClass[]>([])
@@ -63,19 +57,15 @@ export default function LiveClassesDashboard() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
     // Modals
     const [showScheduleModal, setShowScheduleModal] = useState(false)
-
     // Form State
     const [form, setForm] = useState<any>({
         title: '', teacher_id: '', date: '', duration: 60, auto_record: true
     })
-
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok }); setTimeout(() => setToast(null), 3500)
     }
-
     const fetchClasses = useCallback(async () => {
         setLoading(true)
         try {
@@ -87,9 +77,7 @@ export default function LiveClassesDashboard() {
             }
         } finally { setLoading(false) }
     }, [])
-
     useEffect(() => { fetchClasses() }, [fetchClasses])
-
     const apiAction = async (action: string, payload: any) => {
         setSaving(true)
         try {
@@ -107,17 +95,13 @@ export default function LiveClassesDashboard() {
             return { success: false }
         } finally { setSaving(false) }
     }
-
     const handleSchedule = async () => {
         if (!form.title || !form.date) return showToast('Please enter session title and schedule timestamp.', false)
         const { success } = await apiAction('SCHEDULE_CLASS', form)
         if (success) setShowScheduleModal(false)
     }
-
     return (
         <div style={{ padding: '32px 40px', background: '#F8FAFC', minHeight: '100%', position: 'relative' }}>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
             {/* TOAST SYSTEM */}
             {toast && (
                 <div style={{ position: 'fixed', top: 24, right: 28, background: toast.ok ? '#ECFDF5' : '#FEF2F2', border: '1px solid ' + (toast.ok ? '#10B981' : '#EF4444') + '40', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.1)', zIndex: 9000 }}>
@@ -125,7 +109,6 @@ export default function LiveClassesDashboard() {
                     <span style={{ fontSize: 13, fontWeight: 700, color: toast.ok ? '#065F46' : '#991B1B' }}>{toast.msg}</span>
                 </div>
             )}
-
             {/* HEADER */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
                 <div>
@@ -142,7 +125,6 @@ export default function LiveClassesDashboard() {
                     </button>
                 </div>
             </div>
-
             {/* TOP STATUS KPI CARDS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 32 }}>
                 <div style={{ background: '#FFF', padding: 24, borderRadius: 20, border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
@@ -160,7 +142,6 @@ export default function LiveClassesDashboard() {
                     <div style={{ fontSize: 32, fontWeight: 900, color: '#0F172A' }}>{classes.filter(c => c.auto_record).length} Sessions</div>
                 </div>
             </div>
-
             {/* LIVE CLASS GRID */}
             {loading && classes.length === 0 ? (
                 <div style={{ padding: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -170,7 +151,6 @@ export default function LiveClassesDashboard() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20 }}>
                     {classes.map((cls) => (
                         <div key={cls.id} style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-
                             <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
                                 <div style={{ width: 64, height: 64, background: cls.status === 'live' ? '#FEF2F2' : '#F1F5F9', border: '1px solid ' + (cls.status === 'live' ? '#FECACA' : '#E2E8F0'), borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <PhoneCall size={28} color={cls.status === 'live' ? '#EF4444' : '#64748B'} />
@@ -192,9 +172,7 @@ export default function LiveClassesDashboard() {
                                     </div>
                                 </div>
                             </div>
-
                             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-
                                 {cls.status === 'completed' && cls.auto_record ? (
                                     <button style={{ background: '#EFF6FF', color: '#1E3A8A', border: '1px solid #BFDBFE', padding: '12px 20px', borderRadius: 12, fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                                         <DownloadCloud size={16} /> DOWNLOAD RECORDING
@@ -214,7 +192,6 @@ export default function LiveClassesDashboard() {
                                     </div>
                                 )}
                             </div>
-
                         </div>
                     ))}
                     {classes.length === 0 && (
@@ -228,13 +205,11 @@ export default function LiveClassesDashboard() {
                     )}
                 </div>
             )}
-
             {/* ZOOM SCHEDULER MODAL */}
             {showScheduleModal && (
                 <Modal title="Schedule Live Session" onClose={() => setShowScheduleModal(false)} onSubmit={handleSchedule} saving={saving} saveText="AUTHORIZE SESSION" maxWidth={600}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
                         <Input label="Session Title" value={form.title} onChange={(v: string) => setForm({ ...form, title: v })} placeholder="e.g. Physics Thermodynamics Class 6" />
-
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                             <div style={{ marginBottom: 4 }}>
                                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 8 }}>Schedule Launch Timestamp</label>
@@ -242,7 +217,6 @@ export default function LiveClassesDashboard() {
                             </div>
                             <Input label="Session Duration (Minutes)" type="number" value={form.duration} onChange={(v: string) => setForm({ ...form, duration: Number(v) })} />
                         </div>
-
                         <div style={{ marginBottom: 4 }}>
                             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 8 }}>Override Faculty Node</label>
                             <select value={form.teacher_id} onChange={e => setForm({ ...form, teacher_id: e.target.value })} style={{ width: '100%', padding: '12px 14px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#0F172A', outline: 'none', background: '#fff' }}>
@@ -252,18 +226,15 @@ export default function LiveClassesDashboard() {
                                 ))}
                             </select>
                         </div>
-
                         <div style={{ marginTop: 8 }}>
                             <Toggle label="Automated Server Recording" desc="Initiates explicit rendering algorithms compiling the MP4 recording post-class directly into your institutional database." checked={form.auto_record} onChange={(v: boolean) => setForm({ ...form, auto_record: v })} />
                         </div>
-
                         <p style={{ margin: '0', fontSize: 11, color: '#64748B', fontWeight: 600, padding: '12px', background: '#F8FAFC', borderRadius: 8, border: '1px solid #E2E8F0' }}>
                             * Once authorized, session triggers fire generating automated API sequences. Zoom sessions deploy dynamically parsing the join URLs securely to students enrolled in this course session.
                         </p>
                     </div>
                 </Modal>
             )}
-
         </div>
     )
 }

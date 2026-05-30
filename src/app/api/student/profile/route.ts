@@ -49,7 +49,7 @@ export async function GET(_req: NextRequest) {
             parent: parentInfo,
         })
     } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -128,6 +128,6 @@ export async function POST(req: NextRequest) {
             warning: parentLookupError,
         })
     } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

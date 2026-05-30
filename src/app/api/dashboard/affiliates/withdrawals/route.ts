@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
             `)
             .eq('teacher:affiliate_teachers.tenant_id', tenant_id)
 
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
         return NextResponse.json({ withdrawals: data })
     }
 
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
         .select()
         .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
 
     // 4. Update Withdrawable Balance (Lock it)
     await supabaseAdmin
@@ -109,7 +109,7 @@ export async function PATCH(request: NextRequest) {
         .select()
         .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
 
     // If rejected, refund the wallet
     if (status === 'rejected') {

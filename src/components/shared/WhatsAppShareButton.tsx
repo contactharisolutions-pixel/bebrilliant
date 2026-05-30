@@ -1,17 +1,14 @@
 'use client'
-
 import { useState, useCallback } from 'react'
 import {
     MessageCircle, Link2, X, Loader2, CheckCircle2,
     Copy, QrCode, Share2, ExternalLink
 } from 'lucide-react'
-
 export type ShareMode =
     | 'teacher_exam_share'
     | 'student_exam_share'
     | 'teacher_invite'
     | 'institute_exam_promo'
-
 interface WhatsAppShareButtonProps {
     examId?:        string
     examName?:      string
@@ -24,7 +21,6 @@ interface WhatsAppShareButtonProps {
     /** Compact icon-only mode */
     compact?:       boolean
 }
-
 export function WhatsAppShareButton({
     examId,
     examName   = 'Online Exam',
@@ -46,13 +42,10 @@ export function WhatsAppShareButton({
     const [copied,      setCopied]      = useState(false)
     const [showQR,      setShowQR]      = useState(false)
     const [error,       setError]       = useState('')
-
     const resolvedMode = mode ?? (affiliateType === 'teacher' ? 'teacher_exam_share' : 'student_exam_share')
-
     const handleOpen = useCallback(async () => {
         setOpen(true)
         if (shareData) return // already loaded
-
         setLoading(true)
         setError('')
         try {
@@ -68,7 +61,6 @@ export function WhatsAppShareButton({
             })
             const genData = await genRes.json()
             if (!genRes.ok) throw new Error(genData.error || 'Failed to generate referral')
-
             // 2. Build WhatsApp message
             const params = new URLSearchParams({
                 ref_code:  genData.ref_code,
@@ -79,7 +71,6 @@ export function WhatsAppShareButton({
             const msgRes  = await fetch(`/api/affiliate/whatsapp/message?${params}`)
             const msgData = await msgRes.json()
             if (!msgRes.ok) throw new Error(msgData.error || 'Failed to build message')
-
             setShareData({ ...msgData, ref_code: genData.ref_code })
         } catch (e: any) {
             setError(e.message || 'Something went wrong')
@@ -87,13 +78,11 @@ export function WhatsAppShareButton({
             setLoading(false)
         }
     }, [examId, examName, examFee, affiliateType, affiliateId, resolvedMode, shareData])
-
     const handleWhatsApp = () => {
         if (shareData?.whatsapp_url) {
             window.open(shareData.whatsapp_url, '_blank', 'noopener,noreferrer')
         }
     }
-
     const handleCopy = async () => {
         if (shareData?.referral_url) {
             await navigator.clipboard.writeText(shareData.referral_url)
@@ -101,7 +90,6 @@ export function WhatsAppShareButton({
             setTimeout(() => setCopied(false), 2000)
         }
     }
-
     return (
         <>
             {/* TRIGGER BUTTON */}
@@ -127,7 +115,6 @@ export function WhatsAppShareButton({
                 <MessageCircle size={compact ? 18 : 16} fill="#FFF" />
                 {!compact && label}
             </button>
-
             {/* MODAL */}
             {open && (
                 <div
@@ -175,7 +162,6 @@ export function WhatsAppShareButton({
                                 <X size={18} color="#FFF" />
                             </button>
                         </div>
-
                         {/* MODAL BODY */}
                         <div style={{ padding: '28px 32px' }}>
                             {loading && (
@@ -184,13 +170,11 @@ export function WhatsAppShareButton({
                                     <div style={{ fontSize: 14, color: '#64748B', fontWeight: 700 }}>Preparing your referral link...</div>
                                 </div>
                             )}
-
                             {error && (
                                 <div style={{ padding: '16px 20px', background: '#FEF2F2', borderRadius: 14, color: '#991B1B', fontSize: 14, fontWeight: 700, marginBottom: 20 }}>
                                     ⚠️ {error}
                                 </div>
                             )}
-
                             {!loading && shareData && (
                                 <>
                                     {/* MESSAGE PREVIEW */}
@@ -215,7 +199,6 @@ export function WhatsAppShareButton({
                                             {shareData.message}
                                         </div>
                                     </div>
-
                                     {/* REFERRAL LINK */}
                                     <div style={{ marginBottom: 24 }}>
                                         <div style={{ fontSize: 12, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
@@ -239,7 +222,6 @@ export function WhatsAppShareButton({
                                             </div>
                                         </div>
                                     </div>
-
                                     {/* ACTION BUTTONS */}
                                     <div style={{ display: 'flex', gap: 12 }}>
                                         {/* WHATSAPP */}
@@ -266,7 +248,6 @@ export function WhatsAppShareButton({
                                             Open WhatsApp
                                             <ExternalLink size={14} />
                                         </button>
-
                                         {/* COPY */}
                                         <button
                                             onClick={handleCopy}
@@ -294,7 +275,6 @@ export function WhatsAppShareButton({
                                 </>
                             )}
                         </div>
-
                         {/* FOOTER NOTE */}
                         {!loading && (
                             <div style={{ padding: '16px 32px', background: '#F8FAFC', borderTop: '1px solid #F1F5F9', fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>
@@ -304,8 +284,6 @@ export function WhatsAppShareButton({
                     </div>
                 </div>
             )}
-
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </>
     )
 }

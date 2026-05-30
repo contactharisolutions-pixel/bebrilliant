@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
     CreditCard, CheckCircle2, Zap, Package, Info, ShieldCheck,
@@ -9,12 +8,10 @@ import {
 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
-
 // ── TYPES ────────────────────────────────────────────────
 type Plan = { id: string, name: string, price: number, tokens: number, features: string[] }
 type SubscriptionState = { plan_id: string, status: string, renewal: string }
 type Usage = { students: number, max_students: number, teachers: number, max_teachers: number, storage: number, max_storage: number }
-
 const COLORS = {
     primary: '#004B93',
     primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
@@ -26,7 +23,6 @@ const COLORS = {
     border: '#E2E8F0',
     glass: 'rgba(255, 255, 255, 0.7)'
 }
-
 // ── MODALS & COMPONENTS ──────────────────────────────────
 function CheckoutModal({ title, onClose, plan, onSubmit, saving }: any) {
     return (
@@ -42,11 +38,9 @@ function CheckoutModal({ title, onClose, plan, onSubmit, saving }: any) {
                         <div style={{ fontSize: 28, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.03em' }}>{plan.name}</div>
                         <div style={{ fontSize: 15, color: COLORS.warning, fontWeight: 900, marginTop: 8 }}>Subscription Price: ₹{plan.price.toLocaleString()} / mo</div>
                     </div>
-
                     <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, margin: '0 0 24px', fontWeight: 600 }}>
                         Switching to the <strong>{plan.name}</strong> will instantly update your subscription plan. Additional faculty slots and student nodes will be provisioned immediately.
                     </p>
-
                     <div style={{ background: `${COLORS.primary}08`, border: `1px solid ${COLORS.primary}20`, padding: '16px 20px', borderRadius: 20, fontSize: 12, color: '#1E3A8A', fontWeight: 700, lineHeight: 1.6, display: 'flex', gap: 12 }}>
                         <Lock size={18} style={{ flexShrink: 0 }} />
                         <span>Your transaction is secure. By authorizing, you agree to the Automated Billing Lifecycle Policy.</span>
@@ -62,7 +56,6 @@ function CheckoutModal({ title, onClose, plan, onSubmit, saving }: any) {
         </div>
     )
 }
-
 // ── MAIN PAGE ────────────────────────────────────────────
 export default function SubscriptionPage() {
     const [current, setCurrent] = useState<SubscriptionState | null>(null)
@@ -72,13 +65,10 @@ export default function SubscriptionPage() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
     const [showUpgradeModal, setShowUpgradeModal] = useState<Plan | null>(null)
-
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok }); setTimeout(() => setToast(null), 3500)
     }
-
     const fetchData = useCallback(async () => {
         setError(null)
         setLoading(true)
@@ -96,9 +86,7 @@ export default function SubscriptionPage() {
             setError('Gateway Timeout: Connection failure')
         } finally { setLoading(false) }
     }, [])
-
     useEffect(() => { fetchData() }, [fetchData])
-
     const apiAction = async (action: string, payload: any) => {
         setSaving(true)
         try {
@@ -116,31 +104,25 @@ export default function SubscriptionPage() {
             return { success: false }
         } finally { setSaving(false) }
     }
-
     const handleUpgrade = async () => {
         if (!showUpgradeModal) return
         const { success } = await apiAction('UPGRADE_PLAN', { plan_id: showUpgradeModal.id })
         if (success) setShowUpgradeModal(null)
     }
-
     const handleCancel = async () => {
         if (confirm('CRITICAL: Terminating the auto-renewal sequence will deactivate institutional bounds at the end of the current cycle. Proceed?')) {
             apiAction('CANCEL_SUBSCRIPTION', {})
         }
     }
-
     const currentPlan = useMemo(() => plans.find(p => p.id === current?.plan_id), [plans, current])
-
     if (loading) {
         return (
             <div style={{ padding: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#F8FAFC' }}>
                 <Loader2 size={48} color={COLORS.primary} className="spin" style={{ marginBottom: 24 }} />
                 <div style={{ fontSize: 14, fontWeight: 900, color: '#94A3B8', letterSpacing: '0.05em' }}>CALIBRATING BILLING GATEWAY...</div>
-                <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
             </div>
         )
     }
-
     if (error || !current) {
         return (
             <div style={{ padding: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#F8FAFC' }}>
@@ -151,23 +133,14 @@ export default function SubscriptionPage() {
             </div>
         )
     }
-
     return (
         <div style={{ padding: '48px 56px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            <style>{`
-                @keyframes float { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .plan-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,75,147,0.06) !important; border-color: ${COLORS.primary}40 !important; }
-            `}</style>
-
             {toast && (
                 <div style={{ position: 'fixed', top: 32, right: 32, background: toast.ok ? '#ECFDF5' : '#FEF2F2', border: '1px solid ' + (toast.ok ? COLORS.success : COLORS.danger) + '40', borderRadius: 20, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', zIndex: 20000, animation: 'float 0.3s ease-out' }}>
                     {toast.ok ? <CheckCircle2 size={20} color={COLORS.success} /> : <XCircle size={20} color={COLORS.danger} />}
                     <span style={{ fontSize: 14, fontWeight: 900, color: toast.ok ? '#065F46' : '#991B1B' }}>{toast.msg}</span>
                 </div>
             )}
-
             {/* INSTITUTIONAL BILLING HEADER */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 48 }}>
                 <div>
@@ -185,11 +158,9 @@ export default function SubscriptionPage() {
                     <RefreshCcw size={16} /> Refresh Info
                 </button>
             </div>
-
             {/* ACTIVE TIER TABLE */}
             <div style={{ background: '#FFF', borderRadius: 32, padding: 48, boxShadow: '0 10px 40px rgba(0,75,147,0.03)', border: '1px solid #F1F5F9', marginBottom: 48, display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 64, position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 0, right: 0, width: 400, height: 400, background: 'radial-gradient(circle, #004B9308 0%, transparent 70%)', zIndex: 0 }} />
-                
                 <div style={{ position: 'relative', zIndex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, fontWeight: 1000, color: COLORS.primary, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>
                         <ShieldCheck size={18} /> Primary Institutional Node
@@ -205,7 +176,6 @@ export default function SubscriptionPage() {
                             <span style={{ fontSize: 13, fontWeight: 900, color: '#1E293B' }}>Renewal: {formatDate(current.renewal)}</span>
                         </div>
                     </div>
-
                     <div style={{ display: 'flex', gap: 16, marginTop: 40 }}>
                         <button style={{ padding: '16px 28px', borderRadius: 18, background: COLORS.primaryGradient, border: 'none', color: '#FFF', fontSize: 14, fontWeight: 1000, cursor: 'pointer', boxShadow: '0 10px 20px rgba(0,75,147,0.1)', display: 'flex', alignItems: 'center', gap: 10 }}>
                             Manage Billing <ArrowUpRight size={18} />
@@ -215,10 +185,8 @@ export default function SubscriptionPage() {
                         </button>
                     </div>
                 </div>
-
                 <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 24 }}>
                     <div style={{ fontSize: 13, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Usage Analytics</div>
-                    
                     {[
                         { label: 'Student Assignments', val: usage?.students, max: usage?.max_students, icon: Globe, color: COLORS.primary },
                         { label: 'Faculty Nodes', val: usage?.teachers, max: usage?.max_teachers, icon: Shield, color: COLORS.success },
@@ -238,13 +206,11 @@ export default function SubscriptionPage() {
                     ))}
                 </div>
             </div>
-
             {/* INSTITUTIONAL TIER MARKETPLACE */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
                 <Package size={24} color="#0F172A" />
                 <h2 style={{ fontSize: 24, fontWeight: 1000, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>Available Plans</h2>
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
                 {plans.map((plan) => {
                     const isActive = current.plan_id === plan.id
@@ -255,7 +221,6 @@ export default function SubscriptionPage() {
                                     <Target size={14} /> ACTIVE NODE
                                 </div>
                             )}
-
                             <div style={{ marginBottom: 32 }}>
                                 <h3 style={{ margin: 0, fontSize: 20, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.02em' }}>{plan.name}</h3>
                                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 20 }}>
@@ -266,7 +231,6 @@ export default function SubscriptionPage() {
                                     <Cpu size={14} /> {plan.tokens.toLocaleString()} AI Resources
                                 </div>
                             </div>
-
                             <div style={{ flex: 1, marginBottom: 40 }}>
                                 <div style={{ fontSize: 11, fontWeight: 1000, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 20, letterSpacing: '0.1em' }}>Included Features</div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -278,7 +242,6 @@ export default function SubscriptionPage() {
                                     ))}
                                 </div>
                             </div>
-
                             {!isActive ? (
                                 <button onClick={() => setShowUpgradeModal(plan)} style={{ width: '100%', padding: '18px', background: COLORS.primaryGradient, border: 'none', borderRadius: 20, color: '#FFF', fontSize: 15, fontWeight: 1000, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, boxShadow: '0 10px 20px rgba(0,75,147,0.1)', transition: '0.2s' }}>
                                     Upgrade Plan <ArrowRight size={18} />
@@ -292,14 +255,12 @@ export default function SubscriptionPage() {
                     )
                 })}
             </div>
-
             {/* BILLING HISTORY LOGS */}
             <div style={{ marginTop: 64 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
                     <History size={24} color="#0F172A" />
                     <h2 style={{ fontSize: 24, fontWeight: 1000, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>Invoice History</h2>
                 </div>
-                
                 <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 32, overflow: 'hidden' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
@@ -332,7 +293,6 @@ export default function SubscriptionPage() {
                     </table>
                 </div>
             </div>
-
             {showUpgradeModal && (
                 <CheckoutModal
                     title="Confirm Plan Upgrade"

@@ -84,6 +84,6 @@ export async function POST(request: NextRequest) {
         .from('automation_rules')
         .insert({ event, condition, action, is_active: is_active ?? true, tenant_id: tenant_id || null })
         .select().single()
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     return NextResponse.json({ rule: data }, { status: 201 })
 }

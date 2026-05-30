@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
@@ -10,7 +9,6 @@ import {
     ChevronRight, ArrowLeft, Trash2
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-
 // ── TYPES ────────────────────────────────────────────────
 type Contact = { 
     id: string; 
@@ -31,7 +29,6 @@ type Message = {
     msg_type: string; 
     is_bulk?: boolean;
 }
-
 const COLORS = {
     primary: '#004B93',
     primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
@@ -43,7 +40,6 @@ const COLORS = {
     background: '#F8FAFC',
     glass: 'rgba(255, 255, 255, 0.8)'
 }
-
 export default function Messages() {
     const [selectedId, setSelectedId] = useState<string | null>(null)
     const [msg, setMsg] = useState('')
@@ -59,22 +55,18 @@ export default function Messages() {
     const [searchResults, setSearchResults] = useState<any[]>([])
     const chatEndRef = useRef<HTMLDivElement>(null)
     const router = useRouter()
-
     const supabase = createClient()
-
     const fetchInitial = async () => {
         setLoading(true)
         try {
             const { data: { user } } = await supabase.auth.getUser()
             setCurrentUser(user)
-
             const res = await fetch('/api/dashboard/messages')
             const data = await res.json()
             if (res.ok) {
                 const { profiles } = data
                 const teacherProfile = profiles.find((p: any) => p.id === user?.id) || {}
                 const assigned = teacherProfile.metadata?.assigned_classes || ['Std 12-A', 'Std 11-B']
-                
                 const groupContacts: Contact[] = assigned.map((g: string) => ({
                     id: `group_${g}`,
                     name: `Omni-Channel: Physics ${g}`,
@@ -84,7 +76,6 @@ export default function Messages() {
                     type: 'group',
                     meta: { group_id: g }
                 }))
-
                 const individualContacts: Contact[] = profiles.filter((p: any) => p.id !== user?.id && p.role !== 'student').map((p: any) => ({
                     id: p.id,
                     name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Internal Node',
@@ -93,7 +84,6 @@ export default function Messages() {
                     online: Math.random() > 0.5,
                     type: 'individual'
                 }))
-
                 const all = [...groupContacts, ...individualContacts]
                 setContacts(all)
                 if (all.length > 0) setSelectedId(all[0].id)
@@ -102,7 +92,6 @@ export default function Messages() {
             console.error('Initialization Error:', e)
         } finally { setLoading(false) }
     }
-
     const fetchMessages = useCallback(async () => {
         if (!selectedId) return
         try {
@@ -118,21 +107,17 @@ export default function Messages() {
             }
         } catch (e) { console.error('Signal Interruption:', e) }
     }, [selectedId, contacts, currentUser])
-
     useEffect(() => {
         fetchInitial()
     }, [])
-
     useEffect(() => {
         fetchMessages()
         const inv = setInterval(fetchMessages, 10000)
         return () => clearInterval(inv)
     }, [fetchMessages])
-
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages])
-
     const handleSend = async () => {
         if (!msg.trim() || !selectedId) return
         setSending(true)
@@ -145,22 +130,18 @@ export default function Messages() {
                 group_id: sel?.type === 'group' ? sel.meta.group_id : null,
                 recipient_id: sel?.type === 'individual' ? sel.id : null
             }
-
             const res = await fetch('/api/dashboard/messages', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'SEND_MESSAGE', payload })
             })
-
             if (res.ok) {
                 setMsg('')
                 fetchMessages()
             }
         } finally { setSending(false) }
     }
-
     const sel = contacts.find(c => c.id === selectedId)
-
     return (
         <div style={{ height: 'calc(100vh - 10px)', display: 'flex', background: COLORS.background, fontFamily: 'Inter, system-ui, sans-serif', padding: 12 }}>
             <style>{`
@@ -172,7 +153,6 @@ export default function Messages() {
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
             `}</style>
-            
             {/* 1. COMMUNICATIONS DIRECTORY (LEFT) */}
             <div style={{ width: 380, background: '#FFF', borderRadius: 24, border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', marginRight: 12 }}>
                 <div style={{ padding: '32px 24px', borderBottom: '1px solid #F1F5F9' }}>
@@ -185,13 +165,11 @@ export default function Messages() {
                             <Plus size={20} color={COLORS.primary} />
                         </button>
                     </div>
-                    
                     <div style={{ background: '#F8FAFC', borderRadius: 16, border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 12 }}>
                         <Search size={18} color="#94A3B8" />
                         <input type="text" placeholder="Search contacts..." style={{ flex: 1, border: 'none', background: 'transparent', padding: '14px 0', fontSize: 14, fontWeight: 600, outline: 'none' }} />
                     </div>
                 </div>
-
                 <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
                     {loading ? (
                         <div style={{ padding: 60, textAlign: 'center' }}><Loader2 size={32} className="spin" color={COLORS.primary} /></div>
@@ -225,7 +203,6 @@ export default function Messages() {
                     ))}
                 </div>
             </div>
-
             {/* 2. BRIDGE INTERFACE (CENTER) */}
             <div style={{ flex: 1, background: '#FFF', borderRadius: 24, border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
                 {/* MSG HEADER */}
@@ -241,7 +218,6 @@ export default function Messages() {
                             </div>
                         </div>
                     </div>
-                    
                     <div style={{ display: 'flex', gap: 12 }}>
                          {sel?.type === 'group' && (
                             <button onClick={() => setIsBulk(!isBulk)} style={{ padding: '10px 20px', borderRadius: 14, background: isBulk ? `${COLORS.danger}08` : '#F8FAFC', border: `1px solid ${isBulk ? COLORS.danger : '#E2E8F0'}`, color: isBulk ? COLORS.danger : '#475569', fontSize: 12, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, animation: isBulk ? 'alertPulse 1.5s infinite' : 'none' }}>
@@ -252,7 +228,6 @@ export default function Messages() {
                             <button onClick={() => setShowHeaderMenu(!showHeaderMenu)} style={{ padding: 12, borderRadius: 14, background: showHeaderMenu ? `${COLORS.primary}08` : '#F8FAFC', border: `1px solid ${showHeaderMenu ? COLORS.primary : '#E2E8F0'}`, cursor: 'pointer', transition: '0.2s' }}>
                                 <MoreVertical size={20} color={showHeaderMenu ? COLORS.primary : '#64748B'} />
                             </button>
-                            
                             {showHeaderMenu && (
                                 <div style={{ position: 'absolute', top: '120%', right: 0, width: 220, background: '#FFF', borderRadius: 18, border: `1px solid ${COLORS.border}`, boxShadow: '0 20px 40px rgba(0,0,0,0.12)', zIndex: 100, padding: 8, animation: 'float 0.2s ease-out' }}>
                                     {[
@@ -271,7 +246,6 @@ export default function Messages() {
                         </div>
                     </div>
                 </div>
-
                 {/* SIGNAL FEED */}
                 <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '32px 40px', background: '#FBFDFF', display: 'flex', flexDirection: 'column', gap: 20 }}>
                      {messages.length === 0 ? (
@@ -300,7 +274,6 @@ export default function Messages() {
                     ))}
                     <div ref={chatEndRef} />
                 </div>
-
                 {/* SIGNAL TRANSMITTER */}
                 <div style={{ padding: '24px 32px', background: '#FFF', borderTop: '1px solid #F1F5F9' }}>
                     <div style={{ background: '#F8FAFC', border: `2px solid ${isBulk ? COLORS.danger + '40' : '#E2E8F0'}`, borderRadius: 20, padding: 8, display: 'flex', gap: 12, alignItems: 'center', transition: '0.3s' }}>
@@ -329,7 +302,6 @@ export default function Messages() {
                     </div>
                 </div>
             </div>
-
             {/* 3. SIGNAL ANALYTICS (RIGHT) */}
             <div style={{ width: 340, background: '#FFF', borderRadius: 24, border: '1px solid #E2E8F0', marginLeft: 12, padding: 32, display: 'flex', flexDirection: 'column' }}>
                 <div style={{ textAlign: 'center', marginBottom: 32 }}>
@@ -340,7 +312,6 @@ export default function Messages() {
                     <h3 style={{ margin: 0, fontSize: 20, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.02em' }}>{sel?.name}</h3>
                     <div style={{ fontSize: 13, color: '#64748B', fontWeight: 600, marginTop: 6 }} >{sel?.sub}</div>
                 </div>
-
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
                      <div style={{ padding: 20, background: '#F1F5F960', border: '1px solid #F1F5F9', borderRadius: 20 }}>
                         <div style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>Chat Info</div>
@@ -359,7 +330,6 @@ export default function Messages() {
                             ))}
                         </div>
                     </div>
-
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                          <button onClick={() => router.push('/dashboard/material')} style={{ padding: 16, borderRadius: 18, background: '#FFF', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = COLORS.primary}>
                             <FileText size={20} color={COLORS.slate} />
@@ -371,7 +341,6 @@ export default function Messages() {
                         </button>
                     </div>
                 </div>
-
                 <div style={{ background: isBulk ? `${COLORS.danger}08` : `${COLORS.warning}08`, border: `1px solid ${isBulk ? COLORS.danger : COLORS.warning}20`, borderRadius: 24, padding: 24, marginTop: 'auto' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                         <ShieldAlert size={18} color={isBulk ? COLORS.danger : COLORS.warning} />
@@ -384,7 +353,6 @@ export default function Messages() {
                     </p>
                 </div>
             </div>
-
             {/* SEARCH & NEW CHAT MODAL */}
             {showSearchModal && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11000 }}>
@@ -393,7 +361,6 @@ export default function Messages() {
                             <h2 style={{ margin: 0, fontSize: 20, fontWeight: 1000, color: '#0F172A' }}>New Message</h2>
                             <button onClick={() => setShowSearchModal(false)} style={{ background: '#F1F5F9', border: 'none', width: 32, height: 32, borderRadius: '50%', cursor: 'pointer' }}><ChevronRight size={18} /></button>
                         </div>
-                        
                         <div style={{ background: '#F8FAFC', borderRadius: 16, border: `1px solid ${COLORS.border}`, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 12, marginBottom: 20 }}>
                             <Search size={18} color="#94A3B8" />
                             <input 
@@ -409,7 +376,6 @@ export default function Messages() {
                                 style={{ flex: 1, border: 'none', background: 'transparent', padding: '16px 0', fontSize: 14, fontWeight: 600, outline: 'none' }} 
                             />
                         </div>
-
                         <div className="custom-scrollbar" style={{ maxHeight: 300, overflowY: 'auto' }}>
                             {(searchQuery ? searchResults : contacts).map(c => (
                                 <div 
@@ -436,11 +402,6 @@ export default function Messages() {
                     </div>
                 </div>
             )}
-
-            <style>{`
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-            `}</style>
         </div>
     )
 }

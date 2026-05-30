@@ -5,7 +5,7 @@ import crypto from 'crypto'
  * 4.3 UNIQUENESS ENGINE
  * Phase 4 duplicate prevention system parsing hash comparisons for identical texts.
  */
-export function generateQuestionHash(questionTextEn: string, optionsJson: any): string {
+export function generateQuestionHash(questionTextEn: string, optionsJson: unknown): string {
     const seed = `${questionTextEn}-${JSON.stringify(optionsJson)}`
     return crypto.createHash('sha256').update(seed).digest('hex')
 }
@@ -13,7 +13,7 @@ export function generateQuestionHash(questionTextEn: string, optionsJson: any): 
 /**
  * Evaluates duplicate questions globally/locally before inserting an AI-generated question
  */
-export async function validateQuestionUniqueness(tenantId: string, textEn: string, options: any): Promise<boolean> {
+export async function validateQuestionUniqueness(tenantId: string, textEn: string, options: unknown): Promise<boolean> {
     const targetHash = generateQuestionHash(textEn, options)
 
     // Simplistic hash lookup for Phase 4 exact uniqueness (Embedding similarity is handled by Vector DB in phase 5)
@@ -65,7 +65,7 @@ export async function processObjectiveEvaluation(attemptId: string) {
 
     if (!submittedAnswers) return
 
-    for (let ans of submittedAnswers) {
+    for (const ans of submittedAnswers) {
         // Fetch original question with correct answer and marks 
         const { data: question } = await supabaseAdmin
             .from('questions')

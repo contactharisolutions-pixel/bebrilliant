@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     BarChart4, TrendingUp, Users, DollarSign, BookOpen, Brain,
@@ -13,7 +12,6 @@ import {
     AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts'
-
 // â”€â”€ PALETTE â”” MATCHING INSTITUTIONAL SYSTEM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const P = {
     bg: '#F7F8FA', card: '#FEFEFE', border: '#E8E8E8',
@@ -25,9 +23,7 @@ const P = {
     error: '#EF4444', errorBg: '#FEF2F2',
     info: '#3B82F6', infoBg: '#EFF6FF',
 }
-
 const CHART_COLORS = [P.brand, P.cta, P.success, P.info, '#1FAC63', '#F97316', '#14B8A6', P.error]
-
 type KPIs = {
     totalTenants: number; activeTenants: number; totalUsers: number; totalStudents: number
     totalRevenue: number; totalExams: number; totalAttempts: number; successfulAttempts: number
@@ -50,18 +46,15 @@ type ApiData = {
     procBreakdown: { total: number; low: number; medium: number; high: number; critical: number }
     tenants: { id: string; name: string; type: string }[]
 }
-
 const DAYS_OPTIONS = [
     { label: '7 Days', value: 7 },
     { label: '30 Days', value: 30 },
     { label: '90 Days', value: 90 },
     { label: '1 Year', value: 365 },
 ]
-
 const SUB_COLORS: Record<string, string> = {
     free: P.muted, basic: P.info, pro: P.brand, enterprise: P.cta
 }
-
 // â”€â”€ BIG KPI CARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function KpiCard({ icon: Icon, label, value, sub, trend, color, bg }: {
     icon: any; label: string; value: string; sub?: string; trend?: string; color: string; bg: string; badge?: string
@@ -95,12 +88,10 @@ function KpiCard({ icon: Icon, label, value, sub, trend, color, bg }: {
         </div>
     )
 }
-
 // â”€â”€ TENANT SUMMARY ROW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function TenantRow({ t }: { t: TenantRow }) {
     const [open, setOpen] = useState(false)
     const planColor = SUB_COLORS[t.subscription_plan ?? 'free'] ?? P.muted
-
     return (
         <div style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', transition: 'all 0.3s' }} className="hover-lift">
             <div onClick={() => setOpen(!open)} style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 20, cursor: 'pointer' }}>
@@ -108,13 +99,11 @@ function TenantRow({ t }: { t: TenantRow }) {
                 <div style={{ width: 44, height: 44, borderRadius: 12, background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 8px 20px ${P.brand}10` }}>
                     <Building2 size={20} color={P.brand} strokeWidth={2.5} />
                 </div>
-
                 {/* Name + type */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 16, fontWeight: 900, color: P.dark, letterSpacing: '-0.01em' }}>{t.name}</div>
                     <div style={{ fontSize: 12, color: P.muted, fontWeight: 700, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.type} Node</div>
                 </div>
-
                 {/* Metrics */}
                 <div style={{ display: 'flex', gap: 32, flexShrink: 0, marginRight: 20 }}>
                     <div style={{ textAlign: 'center' }}>
@@ -126,15 +115,12 @@ function TenantRow({ t }: { t: TenantRow }) {
                         <div style={{ fontSize: 10, color: P.muted, fontWeight: 850, textTransform: 'uppercase' }}>Revenue</div>
                     </div>
                 </div>
-
                 {/* Plan badge */}
                 <span style={{ background: planColor + '15', color: planColor, padding: '6px 14px', borderRadius: 10, fontSize: 11, fontWeight: 950, textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>
                     {t.subscription_plan ?? 'free'}
                 </span>
-
                 {open ? <ChevronUp size={18} color={P.muted} strokeWidth={3} /> : <ChevronDown size={18} color={P.muted} strokeWidth={3} />}
             </div>
-
             {open && (
                 <div style={{ padding: '0 24px 24px', borderTop: '1px solid ' + P.border, background: P.bg }}>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginTop: 20 }}>
@@ -153,7 +139,6 @@ function TenantRow({ t }: { t: TenantRow }) {
                             </div>
                         ))}
                     </div>
-
                     <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <Calendar size={14} color={P.muted} />
@@ -170,7 +155,6 @@ function TenantRow({ t }: { t: TenantRow }) {
         </div>
     )
 }
-
 // â”€â”€ MAIN PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function AnalyticsPage() {
     const [data, setData] = useState<ApiData | null>(null)
@@ -180,7 +164,6 @@ export default function AnalyticsPage() {
     const [days, setDays] = useState(30)
     const [tenantFilter, setTenantFilter] = useState('all')
     const [search, setSearch] = useState('')
-
     const fetchData = useCallback(async (isRefresh = false) => {
         if (isRefresh) setRefreshing(true); else setLoading(true)
         try {
@@ -190,15 +173,11 @@ export default function AnalyticsPage() {
             if (res.ok) setData(json)
         } finally { setLoading(false); setRefreshing(false) }
     }, [days, tenantFilter])
-
     useEffect(() => { fetchData() }, [fetchData])
-
     const k = data?.kpis
-
     const filteredTenants = (data?.tenantSummaries ?? []).filter(t =>
         !search || t.name.toLowerCase().includes(search.toLowerCase())
     )
-
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (!active || !payload?.length) return null
         return (
@@ -214,18 +193,8 @@ export default function AnalyticsPage() {
             </div>
         )
     }
-
     return (
         <div style={{ background: P.bg, minHeight: '100vh', padding: '40px 48px', position: 'relative' }}>
-            <style>{`
-                @keyframes spin { to { transform: rotate(360deg); } }
-                .glass-card { backdrop-filter: blur(10px); background: rgba(254, 254, 254, 0.8) !important; }
-                .hover-lift { transition: transform 0.2s cubic-bezier(0.3, 0, 0.2, 1), box-shadow 0.2s !important; }
-                .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.08) !important; }
-                .focus-ring:focus-within { box-shadow: 0 0 0 3px ${P.brand}20; border-color: ${P.brand} !important; }
-                .tab-active { background: ${P.card} !important; color: ${P.brand} !important; border-color: ${P.border} !important; box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important; }
-            `}</style>
-
             {/* HEADER */}
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40 }}>
                 <div>
@@ -250,7 +219,6 @@ export default function AnalyticsPage() {
                     </button>
                 </div>
             </header>
-
             {/* TABS */}
             <div style={{ display: 'flex', gap: 10, background: 'rgba(0,0,0,0.03)', padding: 6, borderRadius: 18, width: 'fit-content', marginBottom: 32 }}>
                 {[
@@ -265,7 +233,6 @@ export default function AnalyticsPage() {
                     </button>
                 ))}
             </div>
-
             {loading ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 480 }}>
                     <Loader2 size={48} color={P.brand} style={{ animation: 'spin 1s linear infinite', marginBottom: 20 }} />
@@ -273,7 +240,6 @@ export default function AnalyticsPage() {
                 </div>
             ) : (
                 <div style={{ animation: 'fadeIn 0.5s ease' }}>
-                    
                     {/* ———————————————————————————————————————————————— OVERVIEW ———————————————————————————————————————————————— */}
                     {activeTab === 'overview' && (
                         <>
@@ -283,7 +249,6 @@ export default function AnalyticsPage() {
                                 <KpiCard icon={Receipt} label="Period Revenue" value={'₹' + ((k?.totalRevenue ?? 0) / 1000).toFixed(1) + 'K'} sub="Direct Platform Revenue" color={P.success} bg={P.successBg} trend="+8.2%" />
                                 <KpiCard icon={BookOpenCheck} label="Exam Architecture" value={String(k?.totalExams ?? 0)} sub={(k?.totalAttempts ?? 0).toLocaleString() + ' Intake Cycles'} color={P.cta} bg={P.ctaBg} trend="Heavy" />
                             </div>
-
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
                                 <div className="glass-card" style={{ border: '1px solid ' + P.border, borderRadius: 24, padding: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -308,7 +273,6 @@ export default function AnalyticsPage() {
                                         </ResponsiveContainer>
                                     </div>
                                 </div>
-
                                 <div className="glass-card" style={{ border: '1px solid ' + P.border, borderRadius: 24, padding: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                                         <h3 style={{ fontSize: 18, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.02em' }}>User Intake Dynamics</h3>
@@ -329,7 +293,6 @@ export default function AnalyticsPage() {
                                     </div>
                                 </div>
                             </div>
-
                             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(360px, 0.4fr)', gap: 24 }}>
                                 <div className="glass-card" style={{ padding: 32, borderRadius: 24, border: '1px solid ' + P.border }}>
                                     <h3 style={{ fontSize: 16, fontWeight: 950, color: P.dark, margin: '0 0 24px', letterSpacing: '-0.01em' }}>Role Distribution</h3>
@@ -354,7 +317,6 @@ export default function AnalyticsPage() {
                                         })}
                                     </div>
                                 </div>
-
                                 <div className="glass-card" style={{ padding: 32, borderRadius: 24, border: '1px solid ' + P.border }}>
                                     <div style={{ textAlign: 'center', marginBottom: 20 }}>
                                         <h3 style={{ fontSize: 16, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.01em' }}>Subscription Revenue</h3>
@@ -385,7 +347,6 @@ export default function AnalyticsPage() {
                             </div>
                         </>
                     )}
-
                     {/* â”€â”€ REVENUE TAB â”€â”€ */}
                     {activeTab === 'revenue' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -394,7 +355,6 @@ export default function AnalyticsPage() {
                                 <KpiCard icon={TrendingUp} label="Platform Revenue" value="Enterprise Subscription" color={P.brand} bg={P.brandBg} sub="Subscription Account: Active" />
                                 <KpiCard icon={ArrowUpRight} label="Intake Nodes" value={String(k?.activeTenants ?? 0)} sub="Billing cycle: Stable" color={P.cta} bg={P.ctaBg} trend="Healthy" />
                             </div>
-
                             <div className="glass-card" style={{ padding: 40, borderRadius: 24, border: '1px solid ' + P.border }}>
                                 <h3 style={{ fontSize: 18, fontWeight: 950, color: P.dark, margin: '0 0 32px', letterSpacing: '-0.02em' }}>Financial Leaderboard</h3>
                                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -428,7 +388,6 @@ export default function AnalyticsPage() {
                             </div>
                         </div>
                     )}
-
                     {/* â”€â”€ STUDENTS TAB â”€â”€ */}
                     {activeTab === 'students' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -438,7 +397,6 @@ export default function AnalyticsPage() {
                                 <KpiCard icon={Activity} label="Cognitive Accuracy" value={(k?.avgAccuracy ?? '0') + '%'} color={P.info} bg={P.infoBg} sub="Decision Pathing" />
                                 <KpiCard icon={Cpu} label="AI Insights Cycle" value={(k?.aiMentorSessions ?? 0).toLocaleString()} color={P.cta} bg={P.ctaBg} trend="Intense" />
                             </div>
-
                             <div className="glass-card" style={{ padding: 40, borderRadius: 24, border: '1px solid ' + P.border }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
                                     <h3 style={{ fontSize: 18, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.02em' }}>Intake Cycle Analytics</h3>
@@ -465,7 +423,6 @@ export default function AnalyticsPage() {
                             </div>
                         </div>
                     )}
-
                     {/* â”€â”€ TENANTS LEADERBOARD â”€â”€ */}
                     {activeTab === 'tenants' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -479,7 +436,6 @@ export default function AnalyticsPage() {
                                     <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Filter entities by name or logic ID..." className="focus-ring" style={{ width: '100%', padding: '12px 16px', paddingLeft: 46, border: `1px solid ${P.border}`, borderRadius: 14, fontSize: 14, color: P.dark, background: P.card, outline: 'none', fontWeight: 650 }} />
                                 </div>
                             </div>
-
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                                 {[...filteredTenants].sort((a, b) => b.revenueInPeriod - a.revenueInPeriod).map(t => (
                                     <TenantRow key={t.id} t={t} />
@@ -495,7 +451,6 @@ export default function AnalyticsPage() {
                             </div>
                         </div>
                     )}
-
                     {/* â”€â”€ PROCTORING â”€â”€ */}
                     {activeTab === 'proctoring' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -505,7 +460,6 @@ export default function AnalyticsPage() {
                                 <KpiCard icon={ShieldAlert} label="System Breaches" value={String(data?.procBreakdown.critical ?? 0)} color={P.error} bg={P.errorBg} badge="LOCKDOWN" />
                                 <KpiCard icon={Zap} label="Edge Response" value="1.2ms" color={P.info} bg={P.infoBg} sub="Intake Latency: Optimal" />
                             </div>
-
                             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(320px, 0.4fr)', gap: 24 }}>
                                 <div className="glass-card" style={{ padding: 32, borderRadius: 24, border: '1px solid ' + P.border }}>
                                     <h3 style={{ fontSize: 16, fontWeight: 950, color: P.dark, margin: '0 0 24px', letterSpacing: '-0.01em' }}>Policy Violation Logs</h3>
@@ -538,7 +492,6 @@ export default function AnalyticsPage() {
                                         </table>
                                     </div>
                                 </div>
-
                                 <div className="glass-card" style={{ padding: 32, borderRadius: 24, border: '1px solid ' + P.border }}>
                                     <h3 style={{ fontSize: 16, fontWeight: 950, color: P.dark, margin: '0 0 24px', letterSpacing: '-0.01em' }}>Severity Breakdown</h3>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -572,7 +525,6 @@ export default function AnalyticsPage() {
                             </div>
                         </div>
                     )}
-
                 </div>
             )}
         </div>

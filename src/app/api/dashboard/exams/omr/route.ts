@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
         if (error) throw error
         return NextResponse.json({ sheets })
     } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const { action, payload } = body
     if (action === 'CREATE_EXAM') {
         const { data, error } = await supabaseAdmin.from('omr_exams').insert([payload]).select().single()
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
         return NextResponse.json({ exam: data })
     }
     return NextResponse.json({ error: 'Invalid Action' }, { status: 400 })

@@ -22,10 +22,10 @@ export async function GET() {
             .select('*')
             .order('tenant_type')
 
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
         return NextResponse.json(data)
     } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -59,12 +59,12 @@ export async function PUT(req: NextRequest) {
                 .select()
                 .single()
 
-            if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+            if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
             results.push(data)
         }
 
         return NextResponse.json({ success: true, updated: results })
     } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

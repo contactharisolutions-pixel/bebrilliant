@@ -16,7 +16,7 @@ $envs = @{
     "NEXT_PUBLIC_SUPABASE_ANON_KEY" = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnY21uY29vdGZreWd6ZWVibmh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5NjE0MDcsImV4cCI6MjA5MzUzNzQwN30.RswsFPn7l9hbstEoRAMY85DH5LaoatvzVFVNf3gZcGE"
     "NEXT_PUBLIC_SITE_URL" = "https://bebrilliant.in"
     "NEXT_PUBLIC_RAZORPAY_KEY_ID" = "rzp_live_SHBxckJxQTVh7g"
-    "GEMINI_API_KEY" = "AIzaSyBVv4bn95oKgqZIqh_cCRfmvlmHlETl1kk"
+    "GEMINI_API_KEY" = "AIzaSyB6MxW-dfjVgy-5RQDdcbTT5BPCc3Zko5s"
 }
 
 $targets = @("production", "preview", "development")

@@ -51,9 +51,8 @@ export default function LoginPage() {
                 // Phase 9 Role-Based Routing
                 if (json.user?.role === 'owner') {
                     router.push('/owner/dashboard')
-                } else if (json.user?.role === 'tenant_admin') {
-                    router.push('/admin/dashboard')
                 } else {
+                    // All other roles (tenant_admin, teacher, student, parent) → shared dashboard
                     router.push('/dashboard')
                 }
             } catch {

@@ -34,17 +34,26 @@ export async function GET(request: Request) {
         if (error) throw error
         return NextResponse.json(data)
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
 export async function POST(request: Request) {
-    const supabase = await createClient()
-    const { category, board, levels } = await request.json()
+    try {
+        const supabase = await createClient()
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        if (authError || !user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
 
-    // check if user is super admin (skip for now)
-    
-    // Logic to trigger AI sync would go here
-    // For now, return a placeholder
-    return NextResponse.json({ message: 'Sync triggered successfully' })
+        const { category, board, levels } = await request.json()
+
+        // check if user is super admin (skip for now)
+
+        // Logic to trigger AI sync would go here
+        // For now, return a placeholder
+        return NextResponse.json({ message: 'Sync triggered successfully' })
+    } catch (error: any) {
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 }

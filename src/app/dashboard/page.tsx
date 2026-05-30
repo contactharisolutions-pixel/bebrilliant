@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useMemo } from 'react'
 import {
     Users, UserCheck, GraduationCap, ClipboardList, Wallet, DollarSign, Target,
@@ -8,13 +7,9 @@ import {
     TrendingUp, Shield, Activity, Fingerprint, Layout, Sparkles, Database,
     ArrowUpRight, ArrowDownRight, Globe, Cpu, Loader2
 } from 'lucide-react'
-import {
-    AreaChart, Area, BarChart, Bar,
-    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    LineChart, Line
-} from 'recharts'
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
+import { useIdentity } from '@/contexts/IdentityContext'
 import Link from 'next/link'
-
 const COLORS = {
     primary: '#004B93',
     primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
@@ -25,9 +20,7 @@ const COLORS = {
     background: '#F8FAFC',
     border: '#E2E8F0'
 }
-
 // ── SUB-VIEWS ─────────────────────────────────────────────────────────────
-
 function KPICard({ label, val, icon: Icon, color, bg, trend }: any) {
     return (
         <div className="hover-card" style={{ background: '#FFF', padding: 32, borderRadius: 28, border: '1px solid #F1F5F9', boxShadow: '0 4px 15px rgba(0,0,0,0.01)', position: 'relative', overflow: 'hidden' }}>
@@ -51,7 +44,6 @@ function KPICard({ label, val, icon: Icon, color, bg, trend }: any) {
         </div>
     )
 }
-
 function ParentDashboardView({ data }: { data: any }) {
     const { kpi, upcoming_exams, subject_mastery } = data
     return (
@@ -62,7 +54,6 @@ function ParentDashboardView({ data }: { data: any }) {
                 <KPICard label="Upcoming Exams" val={kpi.pending_exams} icon={Clock} color={COLORS.warning} bg={`${COLORS.warning}10`} />
                 <KPICard label="Study Status" val="EXCELLENT" icon={Zap} color="#8B5CF6" bg="#8B5CF610" />
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 32 }}>
                 <div style={{ background: '#FFF', padding: 40, borderRadius: 36, border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
@@ -84,7 +75,6 @@ function ParentDashboardView({ data }: { data: any }) {
                         ))}
                     </div>
                 </div>
-
                 <div style={{ background: '#FFF', padding: 40, borderRadius: 36, border: '1px solid #E2E8F0' }}>
                     <h3 style={{ margin: '0 0 32px', fontSize: 20, fontWeight: 1000, color: '#0F172A' }}>Subject Performance</h3>
                     <div style={{ height: 350 }}>
@@ -98,7 +88,6 @@ function ParentDashboardView({ data }: { data: any }) {
                     </div>
                 </div>
             </div>
-
             <div style={{ marginTop: 32 }}>
                 <div style={{ background: '#FFF', padding: 40, borderRadius: 36, border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
@@ -107,7 +96,6 @@ function ParentDashboardView({ data }: { data: any }) {
                             <div style={{ fontSize: 12, fontWeight: 800, color: '#94A3B8', marginTop: 4, textTransform: 'uppercase' }}>Focus Areas by Subject & Topic</div>
                         </div>
                     </div>
-                    
                     {data.weak_areas?.length > 0 ? (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
                             {data.weak_areas.map((wa: any, i: number) => (
@@ -139,7 +127,6 @@ function ParentDashboardView({ data }: { data: any }) {
         </div>
     )
 }
-
 function StudentDashboardView({ data }: { data: any }) {
     const { kpi, upcoming_exams, performance_trend } = data
     return (
@@ -150,7 +137,6 @@ function StudentDashboardView({ data }: { data: any }) {
                 <KPICard label="Next Exams" val={kpi.pending_exams} icon={Zap} color={COLORS.warning} bg={`${COLORS.warning}10`} />
                 <KPICard label="Learning Status" val="GOOD" icon={BookOpen} color="#8B5CF6" bg="#8B5CF610" />
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 32 }}>
                 <div style={{ background: '#FFF', padding: 40, borderRadius: 36, border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
@@ -172,7 +158,6 @@ function StudentDashboardView({ data }: { data: any }) {
                         ))}
                     </div>
                 </div>
-
                 <div style={{ background: '#FFF', padding: 40, borderRadius: 36, border: '1px solid #E2E8F0' }}>
                     <h3 style={{ margin: '0 0 32px', fontSize: 20, fontWeight: 1000, color: '#0F172A' }}>Progress Chart</h3>
                     <div style={{ height: 350 }}>
@@ -193,7 +178,6 @@ function StudentDashboardView({ data }: { data: any }) {
                     </div>
                 </div>
             </div>
-
             <div style={{ marginTop: 32 }}>
                 <div style={{ background: '#FFF', padding: 40, borderRadius: 36, border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
@@ -202,7 +186,6 @@ function StudentDashboardView({ data }: { data: any }) {
                             <div style={{ fontSize: 12, fontWeight: 800, color: '#94A3B8', marginTop: 4, textTransform: 'uppercase' }}>Focus Areas by Subject & Topic</div>
                         </div>
                     </div>
-                    
                     {data.weak_areas?.length > 0 ? (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
                             {data.weak_areas.map((wa: any, i: number) => (
@@ -234,7 +217,6 @@ function StudentDashboardView({ data }: { data: any }) {
         </div>
     )
 }
-
 function AdminDashboardView({ data, role }: { data: any; role: string }) {
     return (
         <div style={{ animation: 'float 0.4s ease-out' }}>
@@ -244,7 +226,6 @@ function AdminDashboardView({ data, role }: { data: any; role: string }) {
                 <KPICard label="Tests Created" val={data.kpi?.exams_created} icon={GraduationCap} color={COLORS.warning} bg={`${COLORS.warning}10`} />
                 <KPICard label="Fees Collected" val={`₹${(data.kpi?.revenue_earned || 0).toLocaleString('en-IN')}`} icon={DollarSign} color="#8B5CF6" bg="#8B5CF610" trend="+₹2.4L" />
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 32, marginBottom: 40 }}>
                 <div style={{ background: '#FFF', padding: 40, borderRadius: 36, border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
@@ -272,7 +253,6 @@ function AdminDashboardView({ data, role }: { data: any; role: string }) {
                         </ResponsiveContainer>
                     </div>
                 </div>
-
                 <div style={{ background: '#FFF', padding: 40, borderRadius: 36, border: '1px solid #E2E8F0' }}>
                      <h3 style={{ margin: '0 0 12px', fontSize: 20, fontWeight: 1000, color: '#0F172A' }}>Earnings Overview</h3>
                      <div style={{ fontSize: 12, fontWeight: 800, color: '#94A3B8', marginBottom: 40, textTransform: 'uppercase' }}>FEES COLLECTION TREND</div>
@@ -293,7 +273,6 @@ function AdminDashboardView({ data, role }: { data: any; role: string }) {
                     </div>
                 </div>
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
                 {[
                     { title: 'Create Exam', desc: 'Create a new test or exam.', icon: PlusCircle, href: '/dashboard/exams/new', bg: COLORS.primaryGradient, color: '#FFF' },
@@ -316,46 +295,64 @@ function AdminDashboardView({ data, role }: { data: any; role: string }) {
         </div>
     )
 }
-
 // ── MAIN EXPORT ─────────────────────────────────────────────────────────────
-
 export default function PortalDashboard() {
     const [data, setData] = useState<any>(null)
     const [role, setRole] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<any>(null)
-
+    const { identity: ctxIdentity } = useIdentity()
     useEffect(() => {
-        const fetchDashboard = async () => {
-            try {
-                const meRes = await fetch('/api/auth/me')
-                const meData = await meRes.json()
-                setRole(meData.role)
-
-                let dashboardUrl = '/api/admin/dashboard'
-                if (meData.role === 'student' || meData.role === 'parent') dashboardUrl = '/api/student/dashboard'
-                
-                const dbRes = await fetch(dashboardUrl)
-                if (!dbRes.ok) {
-                    const err = await dbRes.json()
-                    throw { requiresBilling: err.requires_billing, message: err.error || 'Identity Sync Failed' }
-                }
-                const dbData = await dbRes.json()
-                setData(dbData)
-            } catch (err: any) { setError(err) }
-            finally { setLoading(false) }
+        const fetchDashboard = async (resolvedRole: string) => {
+            const dashboardUrl = (resolvedRole === 'student' || resolvedRole === 'parent')
+                ? '/api/student/dashboard'
+                : '/api/admin/dashboard'
+            const dbRes = await fetch(dashboardUrl, { cache: 'no-store' })
+            if (!dbRes.ok) {
+                const err = await dbRes.json()
+                throw { requiresBilling: err.requires_billing, message: err.error || 'Dashboard load failed' }
+            }
+            return await dbRes.json()
         }
-        fetchDashboard()
-    }, [])
-
+        const init = async () => {
+            try {
+                let resolvedRole: string
+                if (ctxIdentity?.role) {
+                    // ✅ Layout already fetched identity — no duplicate round-trip
+                    resolvedRole = ctxIdentity.role
+                    setRole(resolvedRole)
+                } else {
+                    // Fallback: layout hasn't set context yet (e.g. direct navigation)
+                    const meRes = await fetch('/api/auth/me', { cache: 'no-store' })
+                    if (!meRes.ok) {
+                        if (meRes.status === 401) {
+                            window.location.href = '/auth/login?redirect=' + encodeURIComponent(window.location.pathname)
+                            return
+                        }
+                        throw new Error('Identity Sync Failed')
+                    }
+                    const meData = await meRes.json()
+                    resolvedRole = meData.role
+                    setRole(resolvedRole)
+                }
+                const dbData = await fetchDashboard(resolvedRole)
+                setData(dbData)
+            } catch (err: any) {
+                console.error('Dashboard Load Error:', err)
+                setError(err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        init()
+    // Re-run when context identity becomes available
+    }, [ctxIdentity])
     if (loading) return (
         <div style={{ padding: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#F8FAFC' }}>
              <Loader2 size={48} color={COLORS.primary} className="spin" />
              <p style={{ marginTop: 24, color: '#111827', fontWeight: 1000, fontSize: 14, letterSpacing: '0.1em' }}>LOADING DASHBOARD...</p>
-             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
     )
-
     if (error?.requiresBilling) {
         return (
             <div style={{ display: 'flex', height: '100vh', padding: 40, alignItems: 'center', justifyContent: 'center', background: '#F9FAFB' }}>
@@ -372,20 +369,27 @@ export default function PortalDashboard() {
             </div>
         )
     }
-
+    if (error) {
+        return (
+            <div style={{ display: 'flex', height: '100vh', padding: 40, alignItems: 'center', justifyContent: 'center', background: '#F9FAFB' }}>
+                <div style={{ maxWidth: 460, width: '100%', background: '#fff', borderRadius: 36, padding: 48, boxShadow: '0 40px 80px rgba(0,0,0,0.06)', border: '1px solid #E2E8F0', textAlign: 'center' }}>
+                    <div style={{ width: 80, height: 80, background: '#F8FAFC', borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 32px' }}>
+                        <AlertCircle size={40} color={COLORS.slate} />
+                    </div>
+                    <h2 style={{ fontSize: 28, fontWeight: 1000, color: '#0F172A', margin: '0 0 12px', letterSpacing: '-0.03em' }}>System Error</h2>
+                    <p style={{ color: COLORS.slate, marginBottom: 40, fontWeight: 600, lineHeight: 1.6 }}>{error.message || 'An unexpected error occurred while loading your dashboard.'}</p>
+                    <button onClick={() => window.location.reload()} style={{ width: '100%', background: COLORS.primaryGradient, color: '#fff', padding: '18px', borderRadius: 20, fontWeight: 1000, border: 'none', cursor: 'pointer' }}>
+                        Try Again
+                    </button>
+                </div>
+            </div>
+        )
+    }
+    if (!data || !role) return null
     const headerTitle = role === 'parent' ? 'Parent Dashboard' : role === 'student' ? 'Student Dashboard' : 'Admin Dashboard'
     const headerDesc = role === 'parent' ? "Monitor your child's academic progress and attendance." : role === 'student' ? 'Welcome to your student portal.' : 'Manage your school administration and overview.'
-
     return (
         <div style={{ padding: '48px 56px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            <style>{`
-                @keyframes float { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .hover-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
-                .hover-card:hover { transform: translateY(-5px); box-shadow: 0 30px 60px rgba(0,75,147,0.08) !important; border-color: ${COLORS.primary}20 !important; }
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-            `}</style>
-            
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 56, animation: 'float 0.4s ease-out' }}>
                 <div>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '8px 16px', background: `${COLORS.primary}10`, color: COLORS.primary, borderRadius: 100, fontSize: 11, fontWeight: 1000, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -394,14 +398,12 @@ export default function PortalDashboard() {
                     <h1 style={{ margin: 0, fontSize: 42, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.04em' }}>{headerTitle}</h1>
                     <p style={{ margin: '8px 0 0', fontSize: 17, color: COLORS.slate, fontWeight: 600 }}>{headerDesc}</p>
                 </div>
-
                 <div style={{ display: 'flex', gap: 16 }}>
                     <button style={{ padding: '14px 28px', borderRadius: 18, background: '#FFF', border: '2px solid #F1F5F9', color: COLORS.slate, fontSize: 14, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, textTransform: 'capitalize' }}>
                         <Globe size={18} /> {role === 'tenant_admin' ? 'Admin' : role} Profile
                     </button>
                 </div>
             </header>
-
             {role === 'parent' ? <ParentDashboardView data={data} /> : role === 'student' ? <StudentDashboardView data={data} /> : <AdminDashboardView data={data} role={role || ''} />}
         </div>
     )

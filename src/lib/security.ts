@@ -36,57 +36,17 @@ export async function checkTenantSubscription(tenantId: string): Promise<{ allow
  * Looks up their role (both primary and assigned user_roles) and cross-references the role_permissions map.
  */
 export async function hasPermission(userId: string, permissionKey: string): Promise<boolean> {
-    const supabase = await createClient()
-
-    // 1. Get the requested permission's UUID
-    const { data: perm } = await supabaseAdmin
-        .from('permissions')
-        .select('id')
-        .eq('key', permissionKey)
-        .single()
-
-    if (!perm) return false // Invalid permission key requested
-
-    // 2. Fetch User's explicit user_roles bridging tables
-    const { data: explicitRoles } = await supabase
-        .from('user_roles')
-        .select('role_id')
-        .eq('user_id', userId)
-
-    let roleIds = explicitRoles ? explicitRoles.map(r => r.role_id) : []
-
-    // 3. Fallback to their primary text-based role from user_profiles if bridging table is skipped
-    if (roleIds.length === 0) {
-        const { data: profile } = await supabaseAdmin
-            .from('user_profiles')
-            .select('role')
-            .eq('id', userId)
-            .single()
-
-        if (profile?.role) {
-            // Owner overrides all permissions system checking immediately
-            if (profile.role === 'owner') return true
-
-            const { data: roleDef } = await supabaseAdmin
-                .from('roles')
-                .select('id')
-                .eq('name', profile.role)
-                .single()
-            if (roleDef) roleIds.push(roleDef.id)
-        }
+    const { data, error } = await supabaseAdmin.rpc('check_user_permission', {
+        p_user_id: userId,
+        p_key: permissionKey
+    })
+    
+    if (error) {
+        console.error('hasPermission RPC error:', error)
+        return false
     }
-
-    if (roleIds.length === 0) return false
-
-    // 4. Verify if ANY of the user's role_ids are matched with the permission_id
-    const { data: validPerm } = await supabaseAdmin
-        .from('role_permissions')
-        .select('id')
-        .eq('permission_id', perm.id)
-        .in('role_id', roleIds)
-        .limit(1)
-
-    return !!(validPerm && (validPerm as any[]).length > 0)
+    
+    return !!data
 }
 
 /**

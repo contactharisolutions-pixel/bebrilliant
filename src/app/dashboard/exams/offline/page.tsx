@@ -1,12 +1,10 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     Printer, FileText, Download, Share2, PlusCircle, LayoutDashboard,
     Search, ArrowLeft, Loader2, BookOpen, Target, Clock, ChevronRight,
     Zap, Sparkles, Database, Settings, Shield, Globe, Building2, Trash2
 } from 'lucide-react'
-
 // —— PALETTE ————————————————————————————————————
 const P = {
     bg: '#F1F5F9', card: '#FFFFFF', border: '#E2E8F0',
@@ -17,7 +15,6 @@ const P = {
     error: '#EF4444', errorBg: '#FEE2E2',
     info: '#0EA5E9', infoBg: '#E0F2FE',
 }
-
 export default function OfflinePaperManager() {
     const [view, setView] = useState<'list' | 'builder'>('list')
     const [loading, setLoading] = useState(true)
@@ -25,11 +22,9 @@ export default function OfflinePaperManager() {
     const [papers, setPapers] = useState<any[]>([])
     const [syllabuses, setSyllabuses] = useState<any[]>([])
     const [templates, setTemplates] = useState<any[]>([])
-
     const [form, setForm] = useState({
         title: '', syllabusId: '', templateId: '', marks: 100, duration: 180
     })
-
     const fetchData = useCallback(async () => {
         setLoading(true)
         try {
@@ -47,9 +42,7 @@ export default function OfflinePaperManager() {
             setLoading(false)
         }
     }, [])
-
     useEffect(() => { fetchData() }, [fetchData])
-
     const handleCreate = async () => {
         setSaving(true)
         try {
@@ -66,17 +59,13 @@ export default function OfflinePaperManager() {
             setSaving(false)
         }
     }
-
     if (loading) return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: P.bg }}>
             <Loader2 size={40} className="spin" color={P.brand} />
         </div>
     )
-
     return (
         <div style={{ background: P.bg, minHeight: '100vh', padding: '40px', fontFamily: 'Inter, sans-serif' }}>
-            <style>{`.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } } .hover-lift { transition: all 0.2s; } .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.05); }`}</style>
-
             {view === 'list' && (
                 <>
                     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
@@ -91,14 +80,12 @@ export default function OfflinePaperManager() {
                             <Printer size={20} /> Generate New Paper
                         </button>
                     </header>
-
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 40 }}>
                         <Metric icon={FileText} label="Generated Papers" value={String(papers.length)} color={P.brand} />
                         <Metric icon={Printer} label="Printed Assets" value="0" color={P.cta} />
                         <Metric icon={Target} label="Question Pool" value="12k+" color={P.success} />
                         <Metric icon={Shield} label="Archived Exam" value="0" color={P.info} />
                     </div>
-
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
                         {papers.map(p => (
                             <div key={p.id} className="hover-lift" style={{ background: P.card, borderRadius: 24, padding: 32, border: '1px solid ' + P.border, display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -142,7 +129,6 @@ export default function OfflinePaperManager() {
                     </div>
                 </>
             )}
-
             {view === 'builder' && (
                 <div style={{ maxWidth: 900, margin: '0 auto' }}>
                     <header style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 40 }}>
@@ -152,7 +138,6 @@ export default function OfflinePaperManager() {
                             <p style={{ margin: '4px 0 0', fontSize: 14, color: P.muted, fontWeight: 600 }}>Configure structural constraints for the physical paper.</p>
                         </div>
                     </header>
-
                     <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 40 }}>
                         <div style={{ background: P.card, borderRadius: 32, padding: 48, border: '1px solid ' + P.border, display: 'flex', flexDirection: 'column', gap: 24 }}>
                             <div>
@@ -180,7 +165,6 @@ export default function OfflinePaperManager() {
                                 {saving ? <Loader2 size={24} className="spin" /> : <Sparkles size={22} />} Compile & Generate Paper
                             </button>
                         </div>
-
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                             {form.templateId && templates.find(t => t.id === form.templateId) && (
                                 <div style={{ background: P.brandBg, borderRadius: 24, padding: 32, border: '1px solid ' + P.brand + '20' }}>
@@ -205,7 +189,6 @@ export default function OfflinePaperManager() {
                                     </div>
                                 </div>
                             )}
-                            
                             <div style={{ background: P.ctaBg, borderRadius: 24, padding: 32, border: '1px solid ' + P.cta + '20' }}>
                                 <h4 style={{ margin: 0, color: P.cta, fontWeight: 900, fontSize: 18 }}>Paper Policy</h4>
                                 <ul style={{ margin: '16px 0 0', paddingLeft: 20, color: P.cta, fontWeight: 600, fontSize: 13, lineHeight: 1.8 }}>
@@ -226,7 +209,6 @@ export default function OfflinePaperManager() {
         </div>
     )
 }
-
 function Metric({ icon: Icon, label, value, color }: any) {
     return (
         <div style={{ background: P.card, borderRadius: 24, padding: '24px', border: '1px solid ' + P.border, display: 'flex', flexDirection: 'column', gap: 12 }}>

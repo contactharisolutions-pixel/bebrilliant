@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ years: years || [] })
     } catch (error: any) {
         console.error('Academic Year GET error:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         if (error) throw error
         return NextResponse.json({ year })
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -87,6 +87,6 @@ export async function PATCH(request: NextRequest) {
         if (error) throw error
         return NextResponse.json({ success: true })
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

@@ -1,157 +1,1 @@
-'use client'
-
-import React, { useState, useEffect, useCallback } from 'react'
-import {
-    Globe, Layout, Type, Image as ImageIcon, CheckCircle2, XCircle,
-    Save, Loader2, ArrowUpRight, Search, List, Edit3
-} from 'lucide-react'
-
-// ── MAIN PAGE ────────────────────────────────────────────
-export default function WebsiteCMS() {
-    const [cms, setCms] = useState<any>(null)
-    const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
-    const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
-    const showToast = (msg: string, ok: boolean) => {
-        setToast({ msg, ok }); setTimeout(() => setToast(null), 3500)
-    }
-
-    const fetchCMS = useCallback(async () => {
-        setLoading(true)
-        try {
-            const res = await fetch('/api/dashboard/cms')
-            const json = await res.json()
-            if (res.ok) setCms(json)
-        } finally { setLoading(false) }
-    }, [])
-
-    useEffect(() => { fetchCMS() }, [fetchCMS])
-
-    const handleSave = async () => {
-        setSaving(true)
-        try {
-            const res = await fetch('/api/dashboard/cms', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'SAVE_CMS', payload: cms })
-            })
-            if (!res.ok) throw new Error()
-            showToast('Master CMS state updated successfully', true)
-        } catch (e: any) {
-            showToast('Action failed', false)
-        } finally { setSaving(false) }
-    }
-
-    if (loading || !cms) {
-        return (
-            <div style={{ padding: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100%', background: '#F8FAFC' }}>
-                <Loader2 size={36} color="var(--color-primary)" style={{ animation: 'spin 1s linear infinite', marginBottom: 16 }} />
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#94A3B8' }}>Synchronizing Content Hub...</div>
-                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            </div>
-        )
-    }
-
-    return (
-        <div style={{ padding: '32px 40px', background: '#F8FAFC', minHeight: '100%', position: 'relative' }}>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
-            {/* TOAST SYSTEM */}
-            {toast && (
-                <div style={{ position: 'fixed', top: 24, right: 28, background: toast.ok ? '#ECFDF5' : '#FEF2F2', border: '1px solid ' + (toast.ok ? '#10B981' : '#EF4444') + '40', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.1)', zIndex: 9000 }}>
-                    {toast.ok ? <CheckCircle2 size={16} color="#10B981" /> : <XCircle size={16} color="#EF4444" />}
-                    <span style={{ fontSize: 13, fontWeight: 700, color: toast.ok ? '#065F46' : '#991B1B' }}>{toast.msg}</span>
-                </div>
-            )}
-
-            {/* HEADER */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 36 }}>
-                <div>
-                    <h1 style={{ fontSize: 28, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 12 }}>
-                        Portal Content Management <Globe size={24} color="var(--color-primary)" />
-                    </h1>
-                    <p style={{ fontSize: 14, color: '#64748B', margin: '6px 0 0', fontWeight: 600 }}>Configure the public faces of your institute's localized website.</p>
-                </div>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: '12px 20px', fontSize: 13, fontWeight: 800, color: '#0F172A', cursor: 'pointer', textDecoration: 'none' }}>
-                        Preview Live Site <ArrowUpRight size={16} color="#64748B" />
-                    </a>
-                    <button onClick={handleSave} disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--color-primary-gradient)', border: 'none', borderRadius: 12, padding: '12px 24px', fontSize: 13, fontWeight: 800, color: '#FFF', cursor: 'pointer', boxShadow: 'var(--shadow-primary)' }}>
-                        {saving ? <Loader2 size={16} style={{ animation: 'spin 1.5s linear infinite' }} /> : <Save size={18} />} Deploy CMS Changes
-                    </button>
-                </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(400px, 1.3fr) 1fr', gap: 32 }}>
-
-                {/* LEFT: CONTENT BLOCKS */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-
-                    {/* HERO SECTION CONFIG */}
-                    <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 32, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-                        <h3 style={{ margin: '0 0 24px', fontSize: 18, fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <Layout size={20} color="#3B82F6" /> Main Hero Layout
-                        </h3>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.05em' }}>Hero Title Node</label>
-                                <input value={cms.hero_title} onChange={e => setCms({ ...cms, hero_title: e.target.value })} style={{ width: '100%', padding: '14px', borderRadius: 12, border: '1px solid #E2E8F0', fontSize: 15, fontWeight: 700, color: '#0F172A', outline: 'none' }} />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.05em' }}>Description Array</label>
-                                <textarea value={cms.hero_desc} onChange={e => setCms({ ...cms, hero_desc: e.target.value })} style={{ width: '100%', height: 100, padding: '14px', borderRadius: 12, border: '1px solid #E2E8F0', fontSize: 14, fontWeight: 600, color: '#475569', outline: 'none', resize: 'vertical' }} />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* VISIBILITY TOGGLES */}
-                    <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 32, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-                        <h3 style={{ margin: '0 0 24px', fontSize: 18, fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <ImageIcon size={20} color="#10B981" /> Interface Visibility
-                        </h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                            <div style={{ padding: '16px 20px', background: cms.show_marketplace ? '#ECFDF5' : '#F8FAFC', border: '1px solid ' + (cms.show_marketplace ? '#10B98150' : '#E2E8F0'), borderRadius: 16, cursor: 'pointer' }} onClick={() => setCms({ ...cms, show_marketplace: !cms.show_marketplace })}>
-                                <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Global Marketplace</div>
-                                <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginTop: 4 }}>Toggle owner product visibility</div>
-                            </div>
-                            <div style={{ padding: '16px 20px', background: cms.show_teacher_profiles ? '#ECFDF5' : '#F8FAFC', border: '1px solid ' + (cms.show_teacher_profiles ? '#10B98150' : '#E2E8F0'), borderRadius: 16, cursor: 'pointer' }} onClick={() => setCms({ ...cms, show_teacher_profiles: !cms.show_teacher_profiles })}>
-                                <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Faculty Portfolios</div>
-                                <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginTop: 4 }}>Show verified faculty publicly</div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                {/* RIGHT: PAGE MAPPING */}
-                <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 32, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-                    <h3 style={{ margin: '0 0 24px', fontSize: 18, fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <List size={20} color="#F59E0B" /> Linked Pages Hierarchy
-                    </h3>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        {cms.pages.map((p: any, i: number) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 14 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <div style={{ width: 32, height: 32, background: p.status === 'published' ? '#D1FAE5' : '#F1F4FF', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        {p.status === 'published' ? <CheckCircle2 size={16} color="#059669" /> : <Edit3 size={16} color="#3B82F6" />}
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>{p.name}</div>
-                                        <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>{p.status} Mode</div>
-                                    </div>
-                                </div>
-                                <button style={{ background: 'transparent', border: '1px solid #E2E8F0', padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 800, color: '#475569', cursor: 'pointer' }}>Edit Logic</button>
-                            </div>
-                        ))}
-                        <button style={{ outline: 'none', marginTop: 12, padding: '14px', background: 'transparent', border: '2px dashed #E2E8F0', borderRadius: 14, color: '#94A3B8', fontSize: 13, fontWeight: 800, cursor: 'pointer', textAlign: 'center' }}>
-                            + Add Network Node
-                        </button>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    )
-}
+'use client'import React, { useState, useEffect, useCallback } from 'react'import {    Globe, Layout, Type, Image as ImageIcon, CheckCircle2, XCircle,    Save, Loader2, ArrowUpRight, Search, List, Edit3} from 'lucide-react'// ── MAIN PAGE ────────────────────────────────────────────export default function WebsiteCMS() {    const [cms, setCms] = useState<any>(null)    const [loading, setLoading] = useState(true)    const [saving, setSaving] = useState(false)    const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)    const showToast = (msg: string, ok: boolean) => {        setToast({ msg, ok }); setTimeout(() => setToast(null), 3500)    }    const fetchCMS = useCallback(async () => {        setLoading(true)        try {            const res = await fetch('/api/dashboard/cms')            const json = await res.json()            if (res.ok) setCms(json)        } finally { setLoading(false) }    }, [])    useEffect(() => { fetchCMS() }, [fetchCMS])    const handleSave = async () => {        setSaving(true)        try {            const res = await fetch('/api/dashboard/cms', {                method: 'POST', headers: { 'Content-Type': 'application/json' },                body: JSON.stringify({ action: 'SAVE_CMS', payload: cms })            })            if (!res.ok) throw new Error()            showToast('Master CMS state updated successfully', true)        } catch (e: any) {            showToast('Action failed', false)        } finally { setSaving(false) }    }    if (loading || !cms) {        return (            <div style={{ padding: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100%', background: '#F8FAFC' }}>                <Loader2 size={36} color="var(--color-primary)" style={{ animation: 'spin 1s linear infinite', marginBottom: 16 }} />                <div style={{ fontSize: 14, fontWeight: 700, color: '#94A3B8' }}>Synchronizing Content Hub...</div>            </div>        )    }    return (        <div style={{ padding: '32px 40px', background: '#F8FAFC', minHeight: '100%', position: 'relative' }}>            {/* TOAST SYSTEM */}            {toast && (                <div style={{ position: 'fixed', top: 24, right: 28, background: toast.ok ? '#ECFDF5' : '#FEF2F2', border: '1px solid ' + (toast.ok ? '#10B981' : '#EF4444') + '40', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.1)', zIndex: 9000 }}>                    {toast.ok ? <CheckCircle2 size={16} color="#10B981" /> : <XCircle size={16} color="#EF4444" />}                    <span style={{ fontSize: 13, fontWeight: 700, color: toast.ok ? '#065F46' : '#991B1B' }}>{toast.msg}</span>                </div>            )}            {/* HEADER */}            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 36 }}>                <div>                    <h1 style={{ fontSize: 28, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 12 }}>                        Portal Content Management <Globe size={24} color="var(--color-primary)" />                    </h1>                    <p style={{ fontSize: 14, color: '#64748B', margin: '6px 0 0', fontWeight: 600 }}>Configure the public faces of your institute's localized website.</p>                </div>                <div style={{ display: 'flex', gap: 12 }}>                    <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: '12px 20px', fontSize: 13, fontWeight: 800, color: '#0F172A', cursor: 'pointer', textDecoration: 'none' }}>                        Preview Live Site <ArrowUpRight size={16} color="#64748B" />                    </a>                    <button onClick={handleSave} disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--color-primary-gradient)', border: 'none', borderRadius: 12, padding: '12px 24px', fontSize: 13, fontWeight: 800, color: '#FFF', cursor: 'pointer', boxShadow: 'var(--shadow-primary)' }}>                        {saving ? <Loader2 size={16} style={{ animation: 'spin 1.5s linear infinite' }} /> : <Save size={18} />} Deploy CMS Changes                    </button>                </div>            </div>            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(400px, 1.3fr) 1fr', gap: 32 }}>                {/* LEFT: CONTENT BLOCKS */}                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>                    {/* HERO SECTION CONFIG */}                    <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 32, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>                        <h3 style={{ margin: '0 0 24px', fontSize: 18, fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 10 }}>                            <Layout size={20} color="#3B82F6" /> Main Hero Layout                        </h3>                        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>                            <div>                                <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.05em' }}>Hero Title Node</label>                                <input value={cms.hero_title} onChange={e => setCms({ ...cms, hero_title: e.target.value })} style={{ width: '100%', padding: '14px', borderRadius: 12, border: '1px solid #E2E8F0', fontSize: 15, fontWeight: 700, color: '#0F172A', outline: 'none' }} />                            </div>                            <div>                                <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.05em' }}>Description Array</label>                                <textarea value={cms.hero_desc} onChange={e => setCms({ ...cms, hero_desc: e.target.value })} style={{ width: '100%', height: 100, padding: '14px', borderRadius: 12, border: '1px solid #E2E8F0', fontSize: 14, fontWeight: 600, color: '#475569', outline: 'none', resize: 'vertical' }} />                            </div>                        </div>                    </div>                    {/* VISIBILITY TOGGLES */}                    <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 32, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>                        <h3 style={{ margin: '0 0 24px', fontSize: 18, fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 10 }}>                            <ImageIcon size={20} color="#10B981" /> Interface Visibility                        </h3>                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>                            <div style={{ padding: '16px 20px', background: cms.show_marketplace ? '#ECFDF5' : '#F8FAFC', border: '1px solid ' + (cms.show_marketplace ? '#10B98150' : '#E2E8F0'), borderRadius: 16, cursor: 'pointer' }} onClick={() => setCms({ ...cms, show_marketplace: !cms.show_marketplace })}>                                <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Global Marketplace</div>                                <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginTop: 4 }}>Toggle owner product visibility</div>                            </div>                            <div style={{ padding: '16px 20px', background: cms.show_teacher_profiles ? '#ECFDF5' : '#F8FAFC', border: '1px solid ' + (cms.show_teacher_profiles ? '#10B98150' : '#E2E8F0'), borderRadius: 16, cursor: 'pointer' }} onClick={() => setCms({ ...cms, show_teacher_profiles: !cms.show_teacher_profiles })}>                                <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Faculty Portfolios</div>                                <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginTop: 4 }}>Show verified faculty publicly</div>                            </div>                        </div>                    </div>                </div>                {/* RIGHT: PAGE MAPPING */}                <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 32, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>                    <h3 style={{ margin: '0 0 24px', fontSize: 18, fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 10 }}>                        <List size={20} color="#F59E0B" /> Linked Pages Hierarchy                    </h3>                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>                        {cms.pages.map((p: any, i: number) => (                            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 14 }}>                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>                                    <div style={{ width: 32, height: 32, background: p.status === 'published' ? '#D1FAE5' : '#F1F4FF', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>                                        {p.status === 'published' ? <CheckCircle2 size={16} color="#059669" /> : <Edit3 size={16} color="#3B82F6" />}                                    </div>                                    <div>                                        <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>{p.name}</div>                                        <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>{p.status} Mode</div>                                    </div>                                </div>                                <button style={{ background: 'transparent', border: '1px solid #E2E8F0', padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 800, color: '#475569', cursor: 'pointer' }}>Edit Logic</button>                            </div>                        ))}                        <button style={{ outline: 'none', marginTop: 12, padding: '14px', background: 'transparent', border: '2px dashed #E2E8F0', borderRadius: 14, color: '#94A3B8', fontSize: 13, fontWeight: 800, cursor: 'pointer', textAlign: 'center' }}>                            + Add Network Node                        </button>                    </div>                </div>            </div>        </div>    )}

@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect } from 'react'
 import { 
     Wallet, Package, Zap, Award, 
@@ -8,17 +7,14 @@ import {
     TrendingUp, Rocket, RefreshCcw, Search
 } from 'lucide-react'
 import Script from 'next/script'
-
 export default function StudentWalletRecharge() {
     const [loading, setLoading] = useState(true)
     const [packages, setPackages] = useState([])
     const [wallet, setWallet] = useState({ free_credits: 0, paid_credits: 0, total_balance: 0, transactions: [] as any[] })
     const [rechargingId, setRechargingId] = useState<string | null>(null)
-
     useEffect(() => {
         fetchInitialData()
     }, [])
-
     const fetchInitialData = async () => {
         try {
             const [walletRes, txnRes, pkgRes] = await Promise.all([
@@ -26,11 +22,9 @@ export default function StudentWalletRecharge() {
                 fetch('/api/student/wallet/transactions?limit=20'),
                 fetch('/api/student/wallet/packages')
             ])
-
             const walletData = await walletRes.json()
             const txnData   = await txnRes.json()
             const pkgData   = await pkgRes.json()
-
             setWallet({
                 free_credits:  walletData.free_credits  ?? 0,
                 paid_credits:  walletData.paid_credits  ?? 0,
@@ -44,10 +38,8 @@ export default function StudentWalletRecharge() {
             setLoading(false)
         }
     }
-
     const handleRecharge = async (pkg: any) => {
         setRechargingId(pkg.id)
-
         try {
             // 1. Create Order
             const orderRes = await fetch('/api/student/wallet/recharge/create-order', {
@@ -56,9 +48,7 @@ export default function StudentWalletRecharge() {
                 body: JSON.stringify({ package_id: pkg.id })
             })
             const orderData = await orderRes.json()
-
             if (orderData.error) throw new Error(orderData.error)
-
             // 2. Initialize Razorpay Checkout
             const options = {
                 key: orderData.key_id,
@@ -79,7 +69,6 @@ export default function StudentWalletRecharge() {
                         })
                     })
                     const verifyData = await verifyRes.json()
-
                     if (verifyData.success) {
                         alert('Payment Successful! Wallet Updated.')
                         fetchInitialData() // Refresh balances
@@ -93,39 +82,32 @@ export default function StudentWalletRecharge() {
                 },
                 theme: { color: "var(--color-primary)" }
             }
-
             const rzp = new (window as any).Razorpay(options)
             rzp.on('payment.failed', function (response: any) {
                 alert('Payment Failed: ' + response.error.description)
             })
             rzp.open()
-
         } catch (error: any) {
             alert(error.message || 'Something went wrong')
         } finally {
             setRechargingId(null)
         }
     }
-
      if (loading) return (
         <div style={{ padding: 60, textAlign: 'center' }}>
             <div style={{ width: 40, height: 40, border: '3px solid var(--color-primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 20px' }} />
              <p style={{ fontWeight: 800, color: '#64748B' }}>Loading Academic Wallet...</p>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
     )
-
     return (
         <div style={{ padding: '32px 40px', background: '#F8FAFC', minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
             <Script src="https://checkout.razorpay.com/v1/checkout.js" />
-            
              {/* DUAL BALANCE BAR */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40 }}>
                 <div>
                     <h1 style={{ fontSize: 32, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.03em', margin: 0 }}>My Wallet & Transactions</h1>
                     <p style={{ color: '#64748B', fontWeight: 600, marginTop: 8 }}>Manage your credits, track exam fees, and buy extra exam passes.</p>
                 </div>
-
                 <div style={{ display: 'flex', gap: 16 }}>
                     {/* FREE CREDITS */}
                     <div style={{ background: '#ECFDF5', padding: '16px 28px', borderRadius: 24, border: '1px solid #A7F3D0', display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -156,16 +138,13 @@ export default function StudentWalletRecharge() {
                     </div>
                 </div>
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.4fr', gap: 40 }}>
-                
                 {/* LEFT: Package Grid */}
                  <div>
                      <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
                         <Rocket size={24} color="var(--color-primary)" /> Add Credits
                         <span style={{ fontSize: 12, background: 'var(--color-primary-bg)', color: 'var(--color-primary)', padding: '4px 12px', borderRadius: 10, fontWeight: 800, marginLeft: 8 }}>SECURE ENCRYPTION</span>
                     </h3>
-
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
                         {packages.map((pkg: any) => (
                             <div key={pkg.id} style={{ 
@@ -182,7 +161,6 @@ export default function StudentWalletRecharge() {
                                         +{pkg.bonus} BONUS
                                     </div>
                                 )}
-
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
                                     <div style={{ width: 48, height: 48, background: '#F8FAFC', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <Package size={24} color="#475569" />
@@ -192,7 +170,6 @@ export default function StudentWalletRecharge() {
                                         <div style={{ fontSize: 12, fontWeight: 700, color: '#94A3B8' }}>Incl. GST</div>
                                     </div>
                                 </div>
-
                                  <div style={{ marginBottom: 28 }}>
                                     <h4 style={{ fontSize: 18, fontWeight: 900, color: '#0F172A', margin: '0 0 4px 0' }}>{pkg.name} Plan</h4>
                                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
@@ -200,7 +177,6 @@ export default function StudentWalletRecharge() {
                                         <span style={{ fontSize: 14, fontWeight: 800, color: '#94A3B8' }}>CREDITS</span>
                                     </div>
                                 </div>
-
                                  <button 
                                     onClick={() => handleRecharge(pkg)}
                                     disabled={rechargingId !== null}
@@ -217,7 +193,6 @@ export default function StudentWalletRecharge() {
                             </div>
                         ))}
                     </div>
-
                     {/* Trust Banner */}
                     <div style={{ marginTop: 40, background: '#EEF2FF', padding: '20px 32px', borderRadius: 24, display: 'flex', alignItems: 'center', gap: 24 }}>
                         <ShieldCheck size={32} color="#4F46E5" />
@@ -227,14 +202,12 @@ export default function StudentWalletRecharge() {
                         </div>
                     </div>
                 </div>
-
                 {/* RIGHT: Transaction History */}
                 <div>
                      <div style={{ background: '#FFF', padding: 32, borderRadius: 28, border: '1px solid #E2E8F0', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
                          <h4 style={{ fontSize: 18, fontWeight: 900, color: '#0F172A', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 10 }}>
                             <History size={20} color="var(--color-primary)" /> Recent Transactions
                         </h4>
-                        
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                             {wallet.transactions.length > 0 ? wallet.transactions.map((t: any) => (
                                 <div key={t.id} style={{ 
@@ -276,19 +249,13 @@ export default function StudentWalletRecharge() {
                             )}
                         </div>
                     </div>
-
                      <div style={{ marginTop: 24, padding: '24px 32px', background: 'var(--color-primary-gradient)', borderRadius: 28, color: '#FFF', boxShadow: 'var(--shadow-primary)' }}>
                         <TrendingUp size={32} style={{ marginBottom: 12 }} />
                           <div style={{ fontSize: 14, fontWeight: 800 }}>Bonus System</div>
                         <p style={{ fontSize: 12, fontWeight: 600, opacity: 0.9, lineHeight: 1.6 }}>Unlock bonus credits with premium recharge packs. Happy learning!</p>
                     </div>
                 </div>
-
             </div>
-
-            <style>{`
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-            `}</style>
         </div>
     )
 }

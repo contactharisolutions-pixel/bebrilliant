@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
         if (cErr) throw cErr
         return NextResponse.json({ success: true, item: data })
     } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 

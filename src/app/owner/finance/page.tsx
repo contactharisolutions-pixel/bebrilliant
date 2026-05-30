@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useEffect, useState } from 'react'
 import {
     TrendingUp,
@@ -21,7 +20,6 @@ import {
     ShieldCheck
 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
-
 // â”€â”€ PALETTE â”” MATCHING INSTITUTIONAL SYSTEM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const P = {
     bg: '#F7F8FA', card: '#FEFEFE', border: '#E8E8E8',
@@ -33,7 +31,6 @@ const P = {
     error: '#EF4444', errorBg: '#FEF2F2',
     info: '#3B82F6', infoBg: '#EFF6FF',
 }
-
 // STATS KPI CARD COMPONENT
 const StatCard = ({ label, value, icon: Icon, change, trend, color = P.brand }: any) => (
     <div className="glass-card hover-lift" style={{
@@ -79,11 +76,9 @@ const StatCard = ({ label, value, icon: Icon, change, trend, color = P.brand }: 
         </div>
     </div>
 )
-
 export default function FinanceDashboard() {
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
-
     useEffect(() => {
         fetch('/api/owner/finance/stats')
             .then(res => res.json())
@@ -96,24 +91,14 @@ export default function FinanceDashboard() {
                 setIsLoading(false)
             })
     }, [])
-
     if (isLoading) return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: P.bg }}>
             <Loader2 size={40} color={P.brand} style={{ animation: 'spin 1s linear infinite' }} />
         </div>
     )
-
     const stats = data?.stats || { totalRevenue: 0, commissionEarned: 0, activeSubscriptions: 0, pendingPayouts: 0 }
-
     return (
         <div style={{ padding: '40px 48px', minHeight: '100vh', background: P.bg, position: 'relative' }}>
-            <style>{`
-                @keyframes spin { to { transform: rotate(360deg); } }
-                .glass-card { backdrop-filter: blur(10px); background: rgba(254, 254, 254, 0.8) !important; }
-                .hover-lift { transition: transform 0.2s cubic-bezier(0.3, 0, 0.2, 1), box-shadow 0.2s !important; }
-                .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.08) !important; }
-            `}</style>
-
             {/* HEADER */}
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40 }}>
                 <div>
@@ -131,7 +116,6 @@ export default function FinanceDashboard() {
                     </button>
                 </div>
             </header>
-
             {/* KPI GRID */}
             <div style={{
                 display: 'grid',
@@ -144,7 +128,6 @@ export default function FinanceDashboard() {
                 <StatCard label="Exam Fee Revenue" value={`\u20B9${(stats.breakdown?.exam || 0).toLocaleString()}`} icon={Zap} color={P.warning} />
                 <StatCard label="Wallet Purchases" value={`\u20B9${(stats.breakdown?.wallet || 0).toLocaleString()}`} icon={Wallet} color={P.success} />
             </div>
-
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(2, 1fr)',
@@ -162,7 +145,6 @@ export default function FinanceDashboard() {
                     <div style={{ fontSize: 12, marginTop: 16, fontWeight: 700, color: P.brand }}>{stats.pendingPayouts > 0 ? `\u20B9${stats.pendingPayouts.toLocaleString()} Currently Pending Settlement` : 'All shares settled locally'}</div>
                 </div>
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 40 }}>
                 {/* RECENT TRANSACTIONS */}
                 <div className="glass-card" style={{ border: `1px solid ${P.border}`, borderRadius: 24, overflow: 'hidden', boxShadow: '0 8px 30px rgba(0,0,0,0.03)' }}>
@@ -236,7 +218,6 @@ export default function FinanceDashboard() {
                         )}
                     </div>
                 </div>
-
                 {/* SIDE COLUMN: INVOICES & QUICK ACTIONS */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                     <div className="glass-card" style={{ border: `1px solid ${P.border}`, borderRadius: 24, padding: '32px', boxShadow: '0 8px 30px rgba(0,0,0,0.03)' }}>
@@ -273,7 +254,6 @@ export default function FinanceDashboard() {
                             )}
                         </div>
                     </div>
-
                     <div className="glass-card" style={{
                         background: `linear-gradient(135deg, ${P.brand}, ${P.dark})`,
                         borderRadius: 24, padding: '32px', color: '#fff', boxShadow: `0 20px 40px ${P.brand}25`, position: 'relative', overflow: 'hidden'

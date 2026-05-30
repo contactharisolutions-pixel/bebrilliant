@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect } from 'react'
 import { 
     ArrowRight, Loader2, Sparkles, BookOpen, AlertCircle, Award, 
@@ -9,12 +8,10 @@ import {
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { formatDate, formatDateTime } from '@/lib/utils'
-
 export default function StudentExamsPortal() {
     const [exams, setExams] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const router = useRouter()
-
     const fetchExams = async () => {
         try {
             const res = await fetch('/api/dashboard/exams?status=published')
@@ -24,11 +21,9 @@ export default function StudentExamsPortal() {
             setLoading(false)
         }
     }
-
     useEffect(() => {
         fetchExams()
     }, [])
-
     const handleEnroll = async (examId: string) => {
         const res = await fetch('/api/student/exam/enroll', {
             method: 'POST',
@@ -40,7 +35,6 @@ export default function StudentExamsPortal() {
             alert(d.error)
         }
     }
-
     const handleAddToCart = async (exam: any) => {
         const res = await fetch('/api/student/cart', {
             method: 'POST',
@@ -53,16 +47,13 @@ export default function StudentExamsPortal() {
         })
         if (res.ok) fetchExams()
     }
-
     if (loading) return (
         <div style={{ padding: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <Loader2 size={32} color="var(--color-primary)" style={{ animation: 'spin 1s linear infinite' }} />
         </div>
     )
-
     return (
         <div style={{ padding: '32px 40px', background: '#F8FAFC', minHeight: '100%' }}>
-            
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
                 <div>
                    <h1 style={{ fontSize: 32, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.03em' }}>Assessments & Exams</h1>
@@ -72,41 +63,32 @@ export default function StudentExamsPortal() {
                     <Sparkles size={16} color="var(--color-primary)" /> Active Scholar
                 </div>
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 32 }}>
                 {exams.map(ex => (
                     <ExamCard key={ex.id} exam={ex} onEnroll={handleEnroll} onAddToCart={handleAddToCart} />
                 ))}
             </div>
-
             {exams.length === 0 && (
                   <div style={{ padding: '80px', background: '#FFF', borderRadius: 24, border: '1px dashed #E2E8F0', textAlign: 'center' }}>
                     <AlertCircle size={32} color="#94A3B8" style={{ margin: '0 auto 16px' }} />
                     <div style={{ fontSize: 16, fontWeight: 700, color: '#64748B' }}>No active examinations found for your profile.</div>
                 </div>
             )}
-
-            <style>{`
-                @keyframes spin { to { transform: rotate(360deg); } }
-            `}</style>
         </div>
     )
 }
-
 function ExamCard({ exam, onEnroll, onAddToCart }: { exam: any, onEnroll: any, onAddToCart: any }) {
     const router = useRouter()
     const [timeLeft, setTimeLeft] = useState('')
     const isLive = !exam.allow_anytime
     const isPaid = exam.is_paid
     const isEnrolled = exam.is_enrolled
-
     useEffect(() => {
         if (!isLive || !exam.start_time) return
         const timer = setInterval(() => {
             const now = new Date().getTime()
             const start = new Date(exam.start_time).getTime()
             const diff = start - now
-            
             if (diff <= 0) {
                 setTimeLeft('LIVE NOW')
                 clearInterval(timer)
@@ -120,16 +102,12 @@ function ExamCard({ exam, onEnroll, onAddToCart }: { exam: any, onEnroll: any, o
         }, 1000)
         return () => clearInterval(timer)
     }, [isLive, exam.start_time])
-
     const canStart = !isLive || (timeLeft === 'LIVE NOW' && isEnrolled)
-
     return (
         <div style={{ background: '#FFF', borderRadius: 28, padding: 32, border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-            
               <div style={{ position: 'absolute', top: 0, right: 0, padding: '12px 24px', background: isLive ? '#EF4444' : 'var(--color-primary-gradient)', color: '#FFF', fontSize: 11, fontWeight: 900, borderRadius: '0 0 0 16px', boxShadow: isLive ? '0 4px 12px rgba(239,68,68,0.2)' : 'var(--shadow-primary)' }}>
                 {isLive ? 'LIVE' : 'ANYTIME'}
             </div>
-
              <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
                 <div style={{ width: 56, height: 56, background: isLive ? '#FEF2F2' : 'var(--color-primary-bg)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {isLive ? <Timer size={28} color="#EF4444" /> : <ClipboardList size={28} color="var(--color-primary)" />}
@@ -139,7 +117,6 @@ function ExamCard({ exam, onEnroll, onAddToCart }: { exam: any, onEnroll: any, o
                     <div style={{ fontSize: 12, fontWeight: 700, color: '#94A3B8', marginTop: 4 }}>Exam Session</div>
                 </div>
             </div>
-
             {/* METRICS */}
             <div style={{ marginTop: 28, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                  <div style={{ padding: '14px', background: '#F8FAFC', borderRadius: 16, border: '1px solid #F1F5F9' }}>
@@ -151,7 +128,6 @@ function ExamCard({ exam, onEnroll, onAddToCart }: { exam: any, onEnroll: any, o
                     <div style={{ fontSize: 16, fontWeight: 900, color: '#0F172A', marginTop: 4 }}>{exam.duration} Minutes</div>
                 </div>
             </div>
-
             {/* SCHEDULING DETAIL */}
             <div style={{ marginTop: 24, padding: '20px', background: '#F8FAFC', borderRadius: 20, border: '1px solid #E2E8F0' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -168,20 +144,17 @@ function ExamCard({ exam, onEnroll, onAddToCart }: { exam: any, onEnroll: any, o
                         </div>
                     </div>
                 </div>
-
                      <div style={{ marginTop: 20, padding: '16px', background: timeLeft === 'LIVE NOW' ? '#ECFDF5' : '#FFF7ED', borderRadius: 16, border: '1px solid', borderColor: timeLeft === 'LIVE NOW' ? '#A7F3D0' : '#FFEDD5', textAlign: 'center' }}>
                         <div style={{ fontSize: 10, fontWeight: 900, color: timeLeft === 'LIVE NOW' ? '#059669' : '#C2410C', textTransform: 'uppercase', marginBottom: 6 }}>Count Down</div>
                         <div style={{ fontSize: 24, fontWeight: 900, color: '#0F172A', letterSpacing: '0.05em' }}>
                             {timeLeft || 'LOADING...'}
                         </div>
                     </div>
-                
                 {isLive && !isEnrolled && (
                     <div style={{ marginTop: 20, textAlign: 'center', fontSize: 12, fontWeight: 600, color: '#94A3B8' }}>
                          Please register for this exam to unlock the countdown timer.
                     </div>
                 )}
-
                  {!isLive && (
                     <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 10, padding: '12px', background: 'var(--color-primary-bg)', borderRadius: 12, border: '1px solid var(--color-primary)20' }}>
                         <Sparkles size={16} color="var(--color-primary)" />
@@ -189,7 +162,6 @@ function ExamCard({ exam, onEnroll, onAddToCart }: { exam: any, onEnroll: any, o
                     </div>
                 )}
             </div>
-
             {/* PAYMENT / COMMERCE */}
             {isPaid && !isEnrolled && (
                 <div style={{ marginTop: 24, padding: '16px', background: '#F0FDFA', borderRadius: 16, border: '1px solid #CCFBF1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -202,7 +174,6 @@ function ExamCard({ exam, onEnroll, onAddToCart }: { exam: any, onEnroll: any, o
                     </button>
                 </div>
             )}
-
             {/* ACTIONS */}
             <div style={{ marginTop: 'auto', paddingTop: 28 }}>
                 {!isEnrolled ? (

@@ -1,5 +1,4 @@
 'use client'
-
 import { useState, useEffect } from 'react'
 import {
     Share2, TrendingUp, Users, CreditCard, Award,
@@ -7,7 +6,6 @@ import {
     CheckCircle2, Clock, Zap, RefreshCw
 } from 'lucide-react'
 import { WhatsAppShareButton } from '@/components/shared/WhatsAppShareButton'
-
 type ReferralRow = {
     ref_code:            string
     type:                string
@@ -23,17 +21,14 @@ type ReferralRow = {
     total_rewards:       number
     last_shared_at:      string | null
 }
-
 type Totals = {
     shares: number; clicks: number; registrations: number; payments: number; rewards: number
 }
-
 export default function AffiliateDashboard() {
     const [referrals, setReferrals] = useState<ReferralRow[]>([])
     const [totals,    setTotals]    = useState<Totals>({ shares: 0, clicks: 0, registrations: 0, payments: 0, rewards: 0 })
     const [loading,   setLoading]   = useState(true)
     const [exams,     setExams]     = useState<any[]>([])
-
     useEffect(() => {
         Promise.all([
             fetch('/api/affiliate/analytics').then(r => r.json()),
@@ -45,22 +40,16 @@ export default function AffiliateDashboard() {
             else if (eData.exams) setExams(eData.exams.slice(0, 5))
         }).finally(() => setLoading(false))
     }, [])
-
     const conversionRate = totals.clicks > 0
         ? ((totals.payments / totals.clicks) * 100).toFixed(1)
         : '0.0'
-
     if (loading) return (
         <div style={{ padding: 100, textAlign: 'center' }}>
             <Loader2 size={36} color="#25D366" style={{ animation: 'spin 1s linear infinite' }} />
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
     )
-
     return (
         <div style={{ padding: '40px 60px', background: '#F8FAFC', minHeight: '100vh' }}>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
             {/* HEADER */}
             <div style={{ marginBottom: 48 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
@@ -73,7 +62,6 @@ export default function AffiliateDashboard() {
                     </div>
                 </div>
             </div>
-
             {/* KPI GRID */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 20, marginBottom: 48 }}>
                 {[
@@ -92,9 +80,7 @@ export default function AffiliateDashboard() {
                     </div>
                 ))}
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.55fr', gap: 32 }}>
-
                 {/* LEFT: EXAM SHARE TABLE */}
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -105,7 +91,6 @@ export default function AffiliateDashboard() {
                             label="Invite Affiliate Teacher"
                         />
                     </div>
-
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                         {exams.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '60px 0', background: '#FFF', borderRadius: 24, border: '1px solid #E2E8F0' }}>
@@ -132,7 +117,6 @@ export default function AffiliateDashboard() {
                                         </span>
                                     </div>
                                 </div>
-
                                 <div style={{ display: 'flex', gap: 10 }}>
                                     <WhatsAppShareButton
                                         examId={exam.id}
@@ -148,10 +132,8 @@ export default function AffiliateDashboard() {
                         ))}
                     </div>
                 </div>
-
                 {/* RIGHT: MY REFERRAL LINKS + ANALYTICS */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-
                     {/* CONVERSION CARD */}
                     <div style={{ background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)', borderRadius: 24, padding: 28, color: '#FFF', boxShadow: '0 12px 40px rgba(37,211,102,0.25)' }}>
                         <BarChart2 size={28} style={{ marginBottom: 16 }} />
@@ -161,7 +143,6 @@ export default function AffiliateDashboard() {
                             {totals.payments} paid from {totals.clicks} clicks
                         </div>
                     </div>
-
                     {/* ACTIVE REFERRAL LINKS */}
                     <div style={{ background: '#FFF', borderRadius: 24, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
                         <div style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9' }}>

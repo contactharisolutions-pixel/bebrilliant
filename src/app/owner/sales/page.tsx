@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     TrendingUp, Users, Calendar, CheckCircle, XCircle, Loader2,
@@ -12,7 +11,6 @@ import {
     BarChart, Bar, PieChart as RePieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts'
-
 // ── PALETTE ────────────────────────────────────────────────
 const P = {
     bg: '#F7F8FA', card: '#FEFEFE', border: '#E8E8E8',
@@ -24,13 +22,11 @@ const P = {
     error: '#EF4444', errorBg: '#FEF2F2',
     info: '#3B82F6', infoBg: '#EFF6FF',
 }
-
 const FUNNEL_COLORS: Record<string, string> = {
     new: '#1FAC63', contacted: '#F0A026', demo_scheduled: '#004B93',
     demo_completed: '#7C3AED', converted: '#059669', lost: '#EF4444',
 }
 const PIE_COLORS = ['#004B93', '#F0A026', '#1FAC63', '#3B82F6', '#7C3AED', '#EF4444', '#F97316']
-
 type Stats = {
     metrics: {
         totalLeads: number; newLeads: number; demosScheduled: number
@@ -43,13 +39,11 @@ type Stats = {
     emailTemplates: any[]
     recentTenants: any[]
 }
-
 // ———— ADD TEMPLATE MODAL ————
 function AddTemplateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
     const [form, setForm] = useState({ name: '', subject: '', body: '' })
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
-
     const submit = async () => {
         if (!form.name || !form.subject || !form.body) { setError('All fields are required.'); return }
         setLoading(true)
@@ -63,7 +57,6 @@ function AddTemplateModal({ onClose, onSuccess }: { onClose: () => void; onSucce
             onSuccess(); onClose()
         } finally { setLoading(false) }
     }
-
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,10,30,0.5)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
             <div className="glass-card" style={{ background: P.card, borderRadius: 28, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 40px 100px rgba(0,0,0,0.2)', border: `1px solid ${P.border}` }}>
@@ -76,7 +69,6 @@ function AddTemplateModal({ onClose, onSuccess }: { onClose: () => void; onSucce
                         <X size={20} color={P.dark} strokeWidth={2.5} />
                     </button>
                 </div>
-
                 <div style={{ padding: '32px 40px 40px' }}>
                     {(['name', 'subject'] as const).map(key => (
                         <div key={key} style={{ marginBottom: 20 }}>
@@ -88,7 +80,6 @@ function AddTemplateModal({ onClose, onSuccess }: { onClose: () => void; onSucce
                                 style={{ width: '100%', padding: '14px 18px', border: '1px solid ' + P.border, borderRadius: 12, fontSize: 14, color: P.dark, background: P.bg, outline: 'none', boxSizing: 'border-box', fontWeight: 600, transition: 'border-color 0.2s' }} />
                         </div>
                     ))}
-
                     <div style={{ marginBottom: 20 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                             <div style={{ fontSize: 11, fontWeight: 800, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Payload Body</div>
@@ -101,14 +92,12 @@ function AddTemplateModal({ onClose, onSuccess }: { onClose: () => void; onSucce
                             placeholder="Draft your logic-infused transmission here..."
                             style={{ width: '100%', padding: '16px 20px', border: '1px solid ' + P.border, borderRadius: 16, fontSize: 14, color: P.dark, background: P.bg, outline: 'none', boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.8, fontWeight: 500 }} />
                     </div>
-
                     {error && (
                         <div style={{ background: P.errorBg, border: '1px solid ' + P.error + '40', borderRadius: 12, padding: '14px 18px', display: 'flex', gap: 10, alignItems: 'center', marginBottom: 20 }}>
                             <AlertTriangle size={18} color={P.error} />
                             <span style={{ fontSize: 13, color: P.error, fontWeight: 750 }}>{error}</span>
                         </div>
                     )}
-
                     <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
                         <button onClick={onClose} style={{ flex: 1, padding: '14px', borderRadius: 12, border: '1px solid ' + P.border, background: '#fff', color: P.dark, fontSize: 14, fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s' }}>Decline</button>
                         <button onClick={submit} disabled={loading} className="hover-lift" style={{ flex: 2, padding: '14px', borderRadius: 12, border: 'none', background: P.brand, color: '#fff', fontSize: 14, fontWeight: 900, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, opacity: loading ? 0.7 : 1, boxShadow: '0 8px 25px ' + P.brand + '30' }}>
@@ -121,7 +110,6 @@ function AddTemplateModal({ onClose, onSuccess }: { onClose: () => void; onSucce
         </div>
     )
 }
-
 // ── METRIC CARD ───────────────────────────────────────────
 function MetricCard({ icon: Icon, label, value, sub, color, bg, trend }: {
     icon: any; label: string; value: string | number; sub?: string
@@ -148,7 +136,6 @@ function MetricCard({ icon: Icon, label, value, sub, color, bg, trend }: {
         </div>
     )
 }
-
 // ── MAIN PAGE ────────────────────────────────────────────────
 export default function SalesMarketingPage() {
     const [data, setData] = useState<Stats | null>(null)
@@ -159,12 +146,10 @@ export default function SalesMarketingPage() {
     const [showAddTemplate, setShowAddTemplate] = useState(false)
     const [expandedTemplate, setExpandedTemplate] = useState<string | null>(null)
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok })
         setTimeout(() => setToast(null), 3000)
     }
-
     const fetchData = useCallback(async (isRefresh = false) => {
         if (isRefresh) setRefreshing(true); else setLoading(true)
         try {
@@ -173,42 +158,28 @@ export default function SalesMarketingPage() {
             if (res.ok) setData(json)
         } finally { setLoading(false); setRefreshing(false) }
     }, [range])
-
     useEffect(() => { fetchData() }, [fetchData])
-
     const m = data?.metrics
-
     const funnelChartData = (data?.statusFunnel ?? []).map(s => ({
         name: s.status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
         value: s.count,
         fill: FUNNEL_COLORS[s.status] ?? P.brand,
     }))
-
     const sourceChartData = (data?.sourceBreakdown ?? []).map(s => ({ name: s.source, value: s.count }))
-
     return (
         <div style={{ background: P.bg, minHeight: '100%', padding: '32px 36px', position: 'relative' }}>
-            <style>{`
-                @keyframes spin { to { transform: rotate(360deg); } }
-                .glass-card { backdrop-filter: blur(10px); background: rgba(254, 254, 254, 0.8) !important; }
-                .hover-lift:hover { transform: translateY(-4px); boxShadow: 0 12px 30px rgba(0,0,0,0.08) !important; }
-                .table-row-hover:hover { background: ${P.hover}40 !important; }
-            `}</style>
-
             {showAddTemplate && (
                 <AddTemplateModal
                     onClose={() => setShowAddTemplate(false)}
                     onSuccess={() => { showToast('Template created!', true); fetchData(true) }}
                 />
             )}
-
             {toast && (
                 <div style={{ position: 'fixed', top: 24, right: 28, background: toast.ok ? P.successBg : P.errorBg, border: '1px solid ' + (toast.ok ? P.success : P.error) + '40', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', zIndex: 9000 }}>
                     {toast.ok ? <CheckCircle size={16} color={P.success} /> : <XCircle size={16} color={P.error} />}
                     <span style={{ fontSize: 14, fontWeight: 700, color: toast.ok ? P.success : P.error }}>{toast.msg}</span>
                 </div>
             )}
-
             {/* HEADER */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 36, flexWrap: 'wrap', gap: 16 }}>
                 <div>
@@ -236,7 +207,6 @@ export default function SalesMarketingPage() {
                     </button>
                 </div>
             </div>
-
             {/* TABS */}
             <div style={{ display: 'flex', gap: 6, background: P.card, border: '1px solid ' + P.border, borderRadius: 16, padding: 6, marginBottom: 32, width: 'fit-content', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
                 {([
@@ -257,7 +227,6 @@ export default function SalesMarketingPage() {
                     </button>
                 ))}
             </div>
-
             {loading ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
                     <Loader2 size={32} color={P.brand} style={{ animation: 'spin 1s linear infinite', marginBottom: 14 }} />
@@ -274,7 +243,6 @@ export default function SalesMarketingPage() {
                                 <MetricCard icon={Target} label="Conversion Rate" value={(m?.conversionRate ?? '0.0') + '%'} sub={(m?.converted ?? 0) + ' conversions'} color={P.success} bg={P.successBg} trend="up" />
                                 <MetricCard icon={DollarSign} label="Subscription MRR" value={'\u20B9' + (((m?.totalRevenue ?? 0) / 1000).toFixed(0)) + 'K'} sub={(m?.activeSubscriptions ?? 0) + ' active plans'} color={P.cta} bg={P.ctaBg} trend="up" />
                             </div>
-
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20, marginBottom: 20 }}>
                                 {/* Funnel Bar Chart */}
                                 <div className="glass-card" style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 24, padding: '28px 28px 20px', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
@@ -299,7 +267,6 @@ export default function SalesMarketingPage() {
                                         </ResponsiveContainer>
                                     </div>
                                 </div>
-
                                 {/* Source Pie */}
                                 <div className="glass-card" style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 24, padding: 28, boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
                                     <div style={{ marginBottom: 24 }}>
@@ -341,7 +308,6 @@ export default function SalesMarketingPage() {
                                     </div>
                                 </div>
                             </div>
-
                             {(data?.recentTenants?.length ?? 0) > 0 && (
                                 <div className="glass-card" style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 24, padding: 28, boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
@@ -373,7 +339,6 @@ export default function SalesMarketingPage() {
                             )}
                         </>
                     )}
-
                     {/* ———— FUNNEL TAB ———— */}
                     {activeTab === 'funnel' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -409,7 +374,6 @@ export default function SalesMarketingPage() {
                                     })}
                                 </div>
                             </div>
-
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
                                 {[
                                     { label: 'Demo Conversion Rate', value: m && m.demosScheduled > 0 ? ((m.demosCompleted / m.demosScheduled) * 100).toFixed(0) + '%' : '—', icon: Calendar, color: P.brand, bg: P.brandBg, desc: 'Completed / Scheduled demos' },
@@ -428,7 +392,6 @@ export default function SalesMarketingPage() {
                             </div>
                         </div>
                     )}
-
                     {/* ———— TEMPLATES TAB ———— */}
                     {activeTab === 'templates' && (
                         <div>
@@ -441,7 +404,6 @@ export default function SalesMarketingPage() {
                                     <Plus size={16} strokeWidth={3} /> New Template
                                 </button>
                             </div>
-
                             {(data?.emailTemplates?.length ?? 0) === 0 ? (
                                 <div className="glass-card" style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 24, padding: 80, textAlign: 'center' }}>
                                     <div style={{ width: 80, height: 80, borderRadius: 24, background: P.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
@@ -476,7 +438,6 @@ export default function SalesMarketingPage() {
                                                     </div>
                                                 </div>
                                             </div>
-
                                             {expandedTemplate === t.id && (
                                                 <div style={{ padding: '0 24px 24px', borderTop: '1px solid ' + P.border }}>
                                                     <div style={{ marginTop: 20, background: P.bg, border: '1px solid ' + P.border, borderRadius: 14, padding: '20px' }}>
@@ -502,7 +463,6 @@ export default function SalesMarketingPage() {
                             )}
                         </div>
                     )}
-
                     {/* ———— SUBSCRIPTIONS TAB ———— */}
                     {activeTab === 'subscriptions' && (
                         <div>
@@ -515,13 +475,11 @@ export default function SalesMarketingPage() {
                                     <Download size={15} strokeWidth={2.5} /> Export Data
                                 </button>
                             </div>
-
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
                                 <MetricCard icon={DollarSign} label="Aggregate Revenue" value={'\u20B9' + (((m?.totalRevenue ?? 0) / 1000).toFixed(1)) + 'K'} color={P.success} bg={P.successBg} />
                                 <MetricCard icon={Zap} label="Active Pipelines" value={m?.activeSubscriptions ?? 0} color={P.brand} bg={P.brandBg} />
                                 <MetricCard icon={Target} label="Projected NRV" value={'\u20B9' + (((m?.totalRevenue ?? 0) / 12 / 1000).toFixed(1)) + 'K'} sub="Monthly recurring estimate" color={P.cta} bg={P.ctaBg} />
                             </div>
-
                             {(data?.recentSubscriptions?.length ?? 0) === 0 ? (
                                 <div className="glass-card" style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 24, padding: 80, textAlign: 'center' }}>
                                     <div style={{ width: 80, height: 80, borderRadius: 24, background: P.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>

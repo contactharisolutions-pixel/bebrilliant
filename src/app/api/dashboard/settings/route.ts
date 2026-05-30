@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
         // Aggregating settings from multiple potential containers (tenants.settings, tenants.metadata, tenant_theme.custom_config)
         // This ensures the contact details are retrieved even if they were stored in a fallback location
-        let aggregatedSettings = tenant.settings || tenant.metadata || {}
+        const aggregatedSettings = tenant.settings || tenant.metadata || {}
         
         if (!aggregatedSettings.contact) {
             const { data: theme } = await supabaseAdmin.from('tenant_theme').select('custom_config').eq('tenant_id', tenant_id).single()
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
             settings: aggregatedSettings
         })
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -171,6 +171,6 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ error: 'Invalid routing sequence' }, { status: 400 })
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

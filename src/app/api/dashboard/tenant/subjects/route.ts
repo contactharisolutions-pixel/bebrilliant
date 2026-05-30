@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         if (error) throw error
         return NextResponse.json({ subjects: subjects || [] })
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -60,6 +60,6 @@ export async function POST(request: NextRequest) {
         if (error) throw error
         return NextResponse.json({ subject: sub })
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

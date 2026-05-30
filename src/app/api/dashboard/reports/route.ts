@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
         let revenueData = []
         let performanceData = []
-        let passFailRatio = { pass: 78, fail: 22 } // Mock baseline
+        const passFailRatio = { pass: 78, fail: 22 } // Mock baseline
 
         // Attempt real revenue fetch if 'payments' mapped correctly
         const { data: payments } = await supabaseAdmin
@@ -73,6 +73,6 @@ export async function GET(request: NextRequest) {
             ]
         })
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

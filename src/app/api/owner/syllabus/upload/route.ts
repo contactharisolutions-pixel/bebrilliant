@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
 
     } catch (e: any) {
         console.error('[CSV Upload Error]', e.message)
-        return NextResponse.json({ error: e.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 

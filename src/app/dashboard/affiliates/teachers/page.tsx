@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect } from 'react'
 import {
     Users, PlusCircle, Search, Filter, ShieldCheck,
@@ -7,7 +6,6 @@ import {
     Eye, BuildingIcon, UploadCloud, Loader2, MessageCircle
 } from 'lucide-react'
 import { WhatsAppShareButton } from '@/components/shared/WhatsAppShareButton'
-
 // Institutional Palette
 const COLORS = {
     primary: '#004B93',
@@ -19,27 +17,22 @@ const COLORS = {
     background: '#F8FAFC',
     border: '#E2E8F0',
 }
-
 export default function AffiliateTeachersManagement() {
     const [teachers, setTeachers] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
-    
     // Modal states
     const [showOnboard, setShowOnboard] = useState(false)
     const [saving, setSaving] = useState(false)
-    
     // New Affiliate Form
     const [form, setForm] = useState({
         name: '', mobile: '', email: '',
         pan_number: '', aadhar_number: '',
         bank_account: '', ifsc_code: ''
     })
-
     useEffect(() => {
         fetchTeachers()
     }, [])
-
     const fetchTeachers = async () => {
         setLoading(true)
         try {
@@ -52,7 +45,6 @@ export default function AffiliateTeachersManagement() {
             setLoading(false)
         }
     }
-
     const handleOnboard = async () => {
         setSaving(true)
         try {
@@ -82,17 +74,14 @@ export default function AffiliateTeachersManagement() {
             setSaving(false)
         }
     }
-
     if (loading) {
         return (
              <div style={{ padding: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#F8FAFC' }}>
-                <style>{`@keyframes spin { 100% { transform: rotate(360deg); } } .spin { animation: spin 1s linear infinite; }`}</style>
                 <Loader2 size={48} color={COLORS.primary} className="spin" style={{ marginBottom: 24 }} />
                 <div style={{ fontSize: 14, fontWeight: 900, color: '#94A3B8', letterSpacing: '0.05em' }}>LOADING AFFILIATE NETWORK...</div>
             </div>
         )
     }
-
     return (
         <div style={{ padding: '48px 56px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
             <style>{`
@@ -100,7 +89,6 @@ export default function AffiliateTeachersManagement() {
                 .hover-btn:hover { transform: scale(1.02); }
                 .table-row:hover { background: #F8FAFC !important; }
             `}</style>
-
             {/* HEADER */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 48 }}>
                 <div>
@@ -118,7 +106,6 @@ export default function AffiliateTeachersManagement() {
                     <PlusCircle size={20} /> Onboard Affiliate
                 </button>
             </div>
-
             {/* OVERVIEW CARDS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 40 }}>
                 {[
@@ -138,7 +125,6 @@ export default function AffiliateTeachersManagement() {
                     </div>
                 ))}
             </div>
-
             {/* SEARCH AND TABLE */}
             <div style={{ background: '#FFF', borderRadius: 28, border: `1px solid ${COLORS.border}`, boxShadow: '0 20px 40px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
                 <div style={{ padding: '24px 32px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -148,7 +134,6 @@ export default function AffiliateTeachersManagement() {
                     </div>
                     <button style={{ padding: '12px 20px', background: '#FFF', border: `1px solid ${COLORS.border}`, borderRadius: 16, color: '#475569', fontSize: 13, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}><Filter size={16} /> Filter List</button>
                 </div>
-
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead style={{ background: '#F8FAFC', borderBottom: `1px solid ${COLORS.border}` }}>
                         <tr style={{ fontSize: 11, fontWeight: 1000, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -201,7 +186,6 @@ export default function AffiliateTeachersManagement() {
                     </tbody>
                 </table>
             </div>
-
             {/* ONBOARD MODAL */}
             {showOnboard && (
                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: 20 }}>
@@ -210,7 +194,6 @@ export default function AffiliateTeachersManagement() {
                             <h3 style={{ margin: 0, fontSize: 20, fontWeight: 1000, color: '#0F172A' }}>Onboard New Affiliate</h3>
                             <button onClick={() => setShowOnboard(false)} style={{ background: '#F1F5F9', border: 'none', width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><XCircle size={20} color="#64748B" /></button>
                         </div>
-                        
                         <div style={{ padding: 32, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
                             {/* Personal Details */}
                             <div style={{ background: '#F8FAFC', padding: 24, borderRadius: 16, border: `1px solid ${COLORS.border}` }}>
@@ -221,7 +204,6 @@ export default function AffiliateTeachersManagement() {
                                     <input placeholder="Email Address" type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} style={{ gridColumn: '1 / -1', padding: '14px 16px', borderRadius: 12, border: `2px solid ${COLORS.border}`, outline: 'none', fontSize: 14, fontWeight: 600 }} />
                                 </div>
                             </div>
-
                             {/* KYC Details */}
                             <div style={{ background: '#F8FAFC', padding: 24, borderRadius: 16, border: `1px solid ${COLORS.border}` }}>
                                 <h4 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}><ShieldCheck size={18} /> Compliance & KYC</h4>
@@ -235,7 +217,6 @@ export default function AffiliateTeachersManagement() {
                                     <div style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600, marginTop: 4 }}>Scan of PAN and Aadhar (PDF/JPG)</div>
                                 </div>
                             </div>
-
                             {/* Banking Details */}
                             <div style={{ background: '#F8FAFC', padding: 24, borderRadius: 16, border: `1px solid ${COLORS.border}` }}>
                                 <h4 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}><Banknote size={18} /> Bank Payout Routing</h4>
@@ -245,11 +226,10 @@ export default function AffiliateTeachersManagement() {
                                 </div>
                             </div>
                         </div>
-
                         <div style={{ padding: '24px 32px', background: '#F8FAFC', borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'flex-end', gap: 16, flexShrink: 0 }}>
                             <button onClick={() => setShowOnboard(false)} style={{ padding: '12px 24px', borderRadius: 14, background: 'transparent', border: `1px solid ${COLORS.border}`, color: '#475569', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
                             <button onClick={handleOnboard} disabled={saving} style={{ padding: '12px 28px', borderRadius: 14, background: COLORS.primaryGradient, border: 'none', color: '#fff', fontSize: 14, fontWeight: 1000, cursor: saving ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 10px 20px rgba(0,75,147,0.15)' }}>
-                                {saving ? <><style>{`@keyframes spin { 100% { transform: rotate(360deg); } } .spin { animation: spin 1s linear infinite; }`}</style><Loader2 size={16} className="spin" /> Processing...</> : 'Send KYC for Approval'}
+                                {saving ? <><Loader2 size={16} className="spin" /> Processing...</> : 'Send KYC for Approval'}
                             </button>
                         </div>
                      </div>

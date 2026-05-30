@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
         if (error) throw error
         return NextResponse.json({ exams: exams || [] })
     } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -131,6 +131,6 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ error: 'Invalid Action' }, { status: 400 })
     } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

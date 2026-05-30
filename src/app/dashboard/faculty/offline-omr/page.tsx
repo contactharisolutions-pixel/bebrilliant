@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
     FileText, Printer, UploadCloud, PieChart,
@@ -12,7 +11,6 @@ import {
     Camera, Maximize2, Activity, CheckCheck, Users,
     CloudLightning, FileJson, Gauge, Layout, XCircle, PlusCircle
 } from 'lucide-react'
-
 // ── TYPES ────────────────────────────────────────────────
 type OmrExam = {
     id: string
@@ -24,7 +22,6 @@ type OmrExam = {
     processed_count: number
     created_at: string
 }
-
 const COLORS = {
     primary: '#004B93',
     primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
@@ -36,7 +33,6 @@ const COLORS = {
     border: '#E2E8F0',
     glass: 'rgba(255, 255, 255, 0.7)'
 }
-
 // ── UI COMPONENTS ──────────────────────────────────
 function OmrToast({ msg, ok, onClose }: { msg: string; ok: boolean; onClose: () => void }) {
     useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
@@ -47,7 +43,6 @@ function OmrToast({ msg, ok, onClose }: { msg: string; ok: boolean; onClose: () 
         </div>
     )
 }
-
 function OmrModal({ title, onClose, children, onSubmit, saving, saveText = 'Save' }: any) {
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: 20 }}>
@@ -69,25 +64,20 @@ function OmrModal({ title, onClose, children, onSubmit, saving, saveText = 'Save
         </div>
     )
 }
-
 // ── MAIN ENGINE ──────────────────────────────────────────
 export default function OfflineOmrPage() {
     const [exams, setExams] = useState<OmrExam[]>([])
     const [loading, setLoading] = useState(true)
     const [processing, setProcessing] = useState<string | null>(null)
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-    
     // Modal & Data States
     const [showCreate, setShowCreate] = useState(false)
     const [showTemplates, setShowTemplates] = useState(false)
     const [classes, setClasses] = useState<any[]>([])
     const [subjects, setSubjects] = useState<any[]>([])
-    
     const [form, setForm] = useState({ title: '', class_id: '', subject_id: '', total_questions: 100 })
     const [saving, setSaving] = useState(false)
-
     const showToast = (msg: string, ok: boolean) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 3500) }
-
     const fetchExams = useCallback(async () => {
         setLoading(true)
         try {
@@ -101,9 +91,7 @@ export default function OfflineOmrPage() {
             setSubjects(subRes.subjects || [])
         } finally { setLoading(false) }
     }, [])
-
     useEffect(() => { fetchExams() }, [fetchExams])
-
     const handleRunChecking = async (id: string) => {
         setProcessing(id)
         try {
@@ -120,29 +108,17 @@ export default function OfflineOmrPage() {
         } catch (e: any) { showToast(e.message, false) }
         finally { setProcessing(null) }
     }
-
     if (loading) {
         return (
             <div style={{ padding: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#F8FAFC' }}>
                 <Loader2 size={48} color={COLORS.primary} className="spin" style={{ marginBottom: 24 }} />
                 <div style={{ fontSize: 14, fontWeight: 900, color: '#94A3B8', letterSpacing: '0.05em' }}>LOADING OMR SCANNER...</div>
-                <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
             </div>
         )
     }
-
     return (
         <div style={{ padding: '48px 56px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            <style>{`
-                @keyframes float { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .ledger-row:hover { background: #F8FAFC !important; transform: scale(1.002); }
-                .blueprint-card:hover { transform: translateY(-4px); border-color: ${COLORS.primary}40 !important; box-shadow: 0 10px 30px rgba(0,75,147,0.06) !important; }
-            `}</style>
-
             {toast && <OmrToast msg={toast.msg} ok={toast.ok} onClose={() => setToast(null)} />}
-
             {/* OMR CHECKER HEADER */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 48 }}>
                 <div>
@@ -165,7 +141,6 @@ export default function OfflineOmrPage() {
                     </button>
                 </div>
             </div>
-
             {/* REAL-TIME STATS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 48 }}>
                 {[
@@ -185,7 +160,6 @@ export default function OfflineOmrPage() {
                     </div>
                 ))}
             </div>
-
             {/* EXAM LIST TABLE */}
             <div style={{ background: '#FFF', borderRadius: 36, border: '1px solid #E2E8F0', boxShadow: '0 40px 80px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
                 <div style={{ padding: '24px 40px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -198,7 +172,6 @@ export default function OfflineOmrPage() {
                         <button style={{ padding: '10px 18px', background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 14, color: '#475569', fontSize: 13, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}><Filter size={16} /> Filters</button>
                     </div>
                 </div>
-
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead style={{ background: '#F8FAFC', borderBottom: '1px solid #F1F5F9' }}>
                         <tr style={{ fontSize: 11, fontWeight: 1000, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -271,7 +244,6 @@ export default function OfflineOmrPage() {
                     </tbody>
                 </table>
             </div>
-
             {/* EXAM SETUP MODAL */}
             {showCreate && (
                 <OmrModal title="Setup OMR Checking" onClose={() => setShowCreate(false)} onSubmit={() => { setShowCreate(false); showToast('Exam Setup Complete', true); }} saving={saving} saveText="Start Setup">
@@ -306,7 +278,6 @@ export default function OfflineOmrPage() {
                     </div>
                 </OmrModal>
             )}
-
             {/* TEMPLATES MODAL */}
             {showTemplates && (
                 <OmrModal title="OMR Sheet Templates" onClose={() => setShowTemplates(false)}>

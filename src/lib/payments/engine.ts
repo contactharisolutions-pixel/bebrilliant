@@ -4,11 +4,43 @@ import { PricingBreakdown } from '@/lib/finance'
 
 export type PaymentType = 'subscription' | 'syllabus' | 'exam' | 'marketplace' | 'wallet'
 
+export interface PaymentMetadata {
+    breakdown?: {
+        gst_amount: number;
+        taxable_amount: number;
+        gst_percent: number;
+    };
+    referral_source_id?: string;
+    referral_source_type?: 'teacher' | 'student';
+    exam_id?: string;
+    credits?: number;
+    [key: string]: unknown;
+}
+
+export interface PaymentRecord {
+    id: string;
+    user_id: string;
+    tenant_id: string;
+    amount: number;
+    type: PaymentType | string;
+    status: string;
+    metadata?: PaymentMetadata;
+}
+
+export interface PaymentSplit {
+    ownerAmount: number;
+    tenantAmount: number;
+    commissionPercentage: number;
+    baseAmount: number;
+    gstAmount: number;
+    gstPercent: number;
+}
+
 export class PaymentsEngine {
     /**
      * Calculates the commission split based on dynamic rules.
      */
-    static async calculateSplit(amount: number, type: PaymentType, tenantId: string | null, metadata?: any) {
+    static async calculateSplit(amount: number, type: PaymentType, tenantId: string | null, metadata?: PaymentMetadata): Promise<PaymentSplit> {
         // 0. Priority: Use Pre-calculated Breakdown if exists
         if (metadata?.breakdown) {
             const b = metadata.breakdown
@@ -111,7 +143,7 @@ export class PaymentsEngine {
         return { success: true, split }
     }
 
-    private static async processAffiliateRewards(payment: any, split: any) {
+    private static async processAffiliateRewards(payment: PaymentRecord, split: PaymentSplit) {
         if (!payment.tenant_id) return
         
         // 1. Check if referring partner or student exists in metadata
@@ -185,7 +217,7 @@ export class PaymentsEngine {
         }
     }
 
-    private static async creditStudentWallet(payment: any) {
+    private static async creditStudentWallet(payment: PaymentRecord) {
         const credits = payment.metadata?.credits || 0
         if (credits <= 0) return
 

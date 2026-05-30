@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     // Attempt counts per exam (parallel query per exam ID batch)
     const examIds = (exams ?? []).map(e => e.id)
-    let attemptMap: Record<string, number> = {}
+    const attemptMap: Record<string, number> = {}
     if (examIds.length > 0) {
         const { data: attempts } = await supabaseAdmin
             .from('exam_attempts')
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Proctoring flags count
-    let procMap: Record<string, number> = {}
+    const procMap: Record<string, number> = {}
     if (examIds.length > 0) {
         const { data: procLogs } = await supabaseAdmin
             .from('proctoring_logs')

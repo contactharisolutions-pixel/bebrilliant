@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     FileText, Video, Book, UploadCloud, Download, Search, 
@@ -9,7 +8,6 @@ import {
     Share2, ExternalLink
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-
 // ── TYPES ────────────────────────────────────────────────
 type Material = { 
     id: string; 
@@ -21,7 +19,6 @@ type Material = {
     file_size?: string; 
     created_at: string; 
 }
-
 const COLORS = {
     primary: '#004B93',
     success: '#1FAC63',
@@ -31,9 +28,7 @@ const COLORS = {
     border: '#E2E8F0',
     bg: '#F8FAFC'
 }
-
 // ── MAIN APPLICATION ────────────────────────────────────────────
-
 export default function InstitutionalAssetVault() {
     const [tab, setTab] = useState<'all' | 'pdf' | 'video' | 'notes' | 'assignment'>('all')
     const [search, setSearch] = useState('')
@@ -44,13 +39,10 @@ export default function InstitutionalAssetVault() {
     const [showModal, setShowModal] = useState(false)
     const [newAsset, setNewAsset] = useState({ title: '', subject: 'General', class: 'Standard 10', type: 'pdf' })
     const [file, setFile] = useState<File | null>(null)
-
     const supabase = createClient()
-
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok }); setTimeout(() => setToast(null), 3500)
     }
-
     const fetchMaterials = useCallback(async () => {
         setLoading(true)
         try {
@@ -62,14 +54,11 @@ export default function InstitutionalAssetVault() {
             showToast(e.message, false)
         } finally { setLoading(false) }
     }, [tab, search])
-
     useEffect(() => {
         fetchMaterials()
     }, [fetchMaterials])
-
     const handleUpload = async () => {
         if (!file || !newAsset.title) return showToast('Complete all vectors before deployment.', false)
-        
         setUploading(true)
         try {
             // 1. Storage Upload
@@ -78,9 +67,7 @@ export default function InstitutionalAssetVault() {
             const { data: sData, error: sErr } = await supabase.storage
                 .from('study-materials')
                 .upload(fileName, file)
-            
             if (sErr) throw sErr
-
             // 2. Metadata Indexing
             const payload = {
                 title: newAsset.title,
@@ -90,15 +77,12 @@ export default function InstitutionalAssetVault() {
                 file_url: sData.path,
                 file_size: (file.size / (1024 * 1024)).toFixed(2) + ' MB'
             }
-
             const res = await fetch('/api/dashboard/material', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'CREATE_ASSET', payload })
             })
-
             if (!res.ok) throw new Error('Database indexing failure.')
-
             showToast('Knowledge Vector Deployed Successfully.', true)
             setShowModal(false)
             setFile(null)
@@ -108,7 +92,6 @@ export default function InstitutionalAssetVault() {
             showToast(e.message, false)
         } finally { setUploading(false) }
     }
-
     const handleDelete = async (id: string) => {
         if (!confirm('Confirm decommissioning of this academic resource?')) return
         try {
@@ -123,17 +106,14 @@ export default function InstitutionalAssetVault() {
             } else throw new Error()
         } catch { showToast('Decommissioning Sequence Fault.', false) }
     }
-
     const getIcon = (type: string) => {
         if (type === 'pdf') return <FileSearch size={24} color={COLORS.danger} />
         if (type === 'video') return <MonitorPlay size={24} color={COLORS.primary} />
         if (type === 'notes') return <Book size={24} color={COLORS.warning} />
         return <Sparkles size={24} color={COLORS.success} />
     }
-
     const totalStorage = (materials.reduce((a, b) => a + parseFloat(b.file_size || '0'), 0)).toFixed(1)
     const storagePercent = Math.min((parseFloat(totalStorage) / 1000) * 100, 100) // Assuming 1GB soft limit
-
     return (
         <div style={{ padding: '40px 48px', background: COLORS.bg, minHeight: '100vh', position: 'relative', fontFamily: 'Inter, system-ui, sans-serif' }}>
             <style>{`
@@ -145,7 +125,6 @@ export default function InstitutionalAssetVault() {
                 .glass-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.7); box-shadow: 0 4px 30px rgba(0,0,0,0.02); }
                 .badge { padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 6px; }
             `}</style>
-            
             {/* TOAST SYSTEM */}
             {toast && (
                 <div style={{ position: 'fixed', top: 32, right: 32, background: toast.ok ? '#064E3B' : '#7F1D1D', border: `1px solid ${toast.ok ? COLORS.success : COLORS.danger}40`, borderRadius: 16, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', zIndex: 10000, animation: 'scaleIn 0.3s ease-out' }}>
@@ -153,7 +132,6 @@ export default function InstitutionalAssetVault() {
                     <span style={{ fontSize: 14, fontWeight: 900, color: '#FFF' }}>{toast.msg}</span>
                 </div>
             )}
-
             {/* DEPLOYMENT MODAL */}
             {showModal && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 8000 }}>
@@ -165,13 +143,11 @@ export default function InstitutionalAssetVault() {
                             </div>
                             <button onClick={() => setShowModal(false)} style={{ background: '#F1F5F9', border: 'none', width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={18} color={COLORS.slate} /></button>
                         </div>
-
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: COLORS.slate, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Asset Identification</label>
                                 <input type="text" placeholder="e.g. Advanced Calculus Lecture Notes" value={newAsset.title} onChange={e => setNewAsset({ ...newAsset, title: e.target.value })} style={{ width: '100%', padding: '16px', borderRadius: 16, border: `1px solid ${COLORS.border}`, outline: 'none', fontSize: 15, fontWeight: 600, color: '#0F172A', background: '#F8FAFC' }} />
                             </div>
-
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                                 <div>
                                     <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: COLORS.slate, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Subject Vertical</label>
@@ -186,7 +162,6 @@ export default function InstitutionalAssetVault() {
                                     </select>
                                 </div>
                             </div>
-
                             <div>
                                 <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: COLORS.slate, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Knowledge Type</label>
                                 <div style={{ display: 'flex', gap: 8 }}>
@@ -195,7 +170,6 @@ export default function InstitutionalAssetVault() {
                                     ))}
                                 </div>
                             </div>
-
                             <div style={{ padding: 24, border: `2px dashed ${COLORS.border}`, borderRadius: 20, textAlign: 'center', background: '#F9FAFB' }}>
                                 <input 
                                     type="file" 
@@ -210,7 +184,6 @@ export default function InstitutionalAssetVault() {
                                 </label>
                             </div>
                         </div>
-
                         <div style={{ display: 'flex', gap: 16, marginTop: 40 }}>
                             <button onClick={() => setShowModal(false)} style={{ flex: 1, padding: '16px', background: '#F1F5F9', border: 'none', borderRadius: 16, fontSize: 14, fontWeight: 800, color: '#475569', cursor: 'pointer' }}>Cancel Sequence</button>
                             <button onClick={handleUpload} disabled={uploading} style={{ flex: 1.5, padding: '16px', background: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)', border: 'none', borderRadius: 16, fontSize: 14, fontWeight: 900, color: '#FFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, boxShadow: '0 10px 20px rgba(0, 75, 147, 0.15)' }}>
@@ -220,7 +193,6 @@ export default function InstitutionalAssetVault() {
                     </div>
                 </div>
             )}
-
             {/* HEADER & ANALYTICS */}
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48, animation: 'fadeInUp 0.5s ease-out' }}>
                 <div>
@@ -248,7 +220,6 @@ export default function InstitutionalAssetVault() {
                     </div>
                 </div>
             </header>
-
             {/* FILTER ORBIT */}
             <div className="glass-card" style={{ padding: '20px 24px', borderRadius: 24, marginBottom: 40, display: 'flex', alignItems: 'center', gap: 32 }}>
                 <div style={{ display: 'flex', gap: 6, background: '#F8FAFC', padding: 6, borderRadius: 16, border: `1px solid ${COLORS.border}` }}>
@@ -261,7 +232,6 @@ export default function InstitutionalAssetVault() {
                         <button key={t.id} onClick={() => setTab(t.id as any)} className="tab-item" style={{ background: tab === t.id ? '#FFF' : 'transparent', color: tab === t.id ? COLORS.primary : COLORS.slate, boxShadow: tab === t.id ? '0 4px 10px rgba(0,0,0,0.04)' : 'none' }}>{t.lbl}</button>
                     ))}
                 </div>
-                
                 <div style={{ flex: 1, position: 'relative' }}>
                     <Search size={18} color={COLORS.slate} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }} />
                     <input 
@@ -270,7 +240,6 @@ export default function InstitutionalAssetVault() {
                         style={{ width: '100%', padding: '14px 16px 14px 48px', borderRadius: 18, border: `1px solid ${COLORS.border}`, outline: 'none', fontSize: 14, fontWeight: 600, color: '#0F172A', background: '#F8FAFC' }} 
                     />
                 </div>
-
                 <div style={{ display: 'flex', gap: 12 }}>
                     <button style={{ padding: '12px 16px', background: '#FFF', border: `1px solid ${COLORS.border}`, borderRadius: 16, color: COLORS.slate, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 800 }}>
                         <Filter size={18} /> Global Catalog
@@ -280,7 +249,6 @@ export default function InstitutionalAssetVault() {
                     </button>
                 </div>
             </div>
-
             {/* ASSET GRID */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 28 }}>
                 {loading ? (
@@ -312,9 +280,7 @@ export default function InstitutionalAssetVault() {
                                 </button>
                             </div>
                         </div>
-
                         <div style={{ fontSize: 18, fontWeight: 1000, color: '#0F172A', marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.title}</div>
-                        
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
                             <span className="badge" style={{ background: `${COLORS.primary}10`, color: COLORS.primary }}>
                                 <Book size={10} /> {m.subject}
@@ -323,9 +289,7 @@ export default function InstitutionalAssetVault() {
                                 <Globe size={10} /> {m.class_name}
                             </span>
                         </div>
-
                         <div style={{ height: 1, background: `linear-gradient(90deg, ${COLORS.border}, transparent)`, marginBottom: 20 }} />
-
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: COLORS.slate, fontWeight: 700 }}>
@@ -347,7 +311,6 @@ export default function InstitutionalAssetVault() {
                     </div>
                 ))}
             </div>
-
             {/* SYNC CONSOLE */}
             <div style={{ marginTop: 60, padding: 32, background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', borderRadius: 36, border: '1px solid rgba(255,255,255,0.05)', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 0, right: 0, width: 300, height: '100%', background: 'radial-gradient(circle at 100% 0%, rgba(0, 75, 147, 0.2) 0%, transparent 70%)' }} />
@@ -377,15 +340,9 @@ export default function InstitutionalAssetVault() {
                     </div>
                 </div>
             </div>
-            
-            <style>{`
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-            `}</style>
         </div>
     )
 }
-
 function RefreshCcw({ size, className }: any) {
     return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M16 16h5v5"></path></svg>
 }

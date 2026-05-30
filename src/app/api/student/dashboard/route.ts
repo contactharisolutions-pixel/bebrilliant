@@ -8,38 +8,46 @@ export async function GET(request: NextRequest) {
     if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
     const { data: profile } = await supabaseAdmin.from('user_profiles').select('role, tenant_id').eq('id', user.id).single()
-    if (!profile || profile.role !== 'student') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!profile || !['student', 'parent'].includes(profile.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const uid = user.id
     const tid = profile.tenant_id
 
     try {
-        // 1. KPI Aggregation
-        const [perfRes, examsRes] = await Promise.all([
-            // Select all necessary dimensions for deep analytics
-            supabaseAdmin.from('student_performance').select('marks_obtained, total_marks, percentage, exam_id, exam_date, subject, chapter, topic, exams(name)').eq('student_id', uid).order('exam_date', { ascending: true }),
-            supabaseAdmin.from('exams').select('id', { count: 'exact', head: true }).eq('tenant_id', tid).eq('is_active', true)
+        // Fire all DB queries in parallel — eliminates sequential waterfall
+        const [perfRes, examsRes, recentRaw, upcomingRaw] = await Promise.all([
+            supabaseAdmin.from('student_performance')
+                .select('marks_obtained, total_marks, percentage, exam_id, exam_date, subject, chapter, topic, exams(name)')
+                .eq('student_id', uid)
+                .order('exam_date', { ascending: true }),
+            supabaseAdmin.from('exams')
+                .select('id', { count: 'exact', head: true })
+                .eq('tenant_id', tid)
+                .eq('is_active', true),
+            supabaseAdmin.from('student_performance')
+                .select('id, exam_id, marks_obtained, total_marks, exam_date, exams(name)')
+                .eq('student_id', uid)
+                .order('exam_date', { ascending: false })
+                .limit(5),
+            supabaseAdmin.from('exams')
+                .select('id, name, created_at, description')
+                .eq('tenant_id', tid)
+                .eq('is_active', true)
+                .limit(3)
         ])
 
         const performances = perfRes.data || []
         const totalPublished = examsRes.count || 0
 
-        const avgScore = performances.length > 0 
-            ? Math.round(performances.reduce((acc, p) => acc + Number(p.percentage), 0) / performances.length) 
+        const avgScore = performances.length > 0
+            ? Math.round(performances.reduce((acc, p) => acc + Number(p.percentage), 0) / performances.length)
             : 0
-        
+
         const completedCount = new Set(performances.map(p => p.exam_id)).size
         const pendingCount = Math.max(0, totalPublished - completedCount)
 
-        // 2. Recent Results
-        const { data: recentRaw } = await supabaseAdmin
-            .from('student_performance')
-            .select('id, exam_id, marks_obtained, total_marks, exam_date, exams(name)')
-            .eq('student_id', uid)
-            .order('exam_date', { ascending: false })
-            .limit(5)
-
-        const recentResults = (recentRaw || []).map((r: any) => ({
+        // Recent results (already fetched in parallel above)
+        const recentResults = (recentRaw.data || []).map((r: any) => ({
             id: r.id,
             exam_name: r.exams?.name || 'Institutional Exam',
             score: r.marks_obtained,
@@ -80,22 +88,14 @@ export async function GET(request: NextRequest) {
             performanceTrend = [ { name: 'Active Session', score: avgScore || 0 } ]
         }
 
-        // 5. Upcoming Exams
-        const { data: upcomingRaw } = await supabaseAdmin
-            .from('exams')
-            .select('id, name, created_at, description')
-            .eq('tenant_id', tid)
-            .eq('is_active', true)
-            .limit(3)
-        
-        // Filter out those already completed
+        // Upcoming exams (already fetched in parallel above)
         const completedIds = new Set(performances.map(p => p.exam_id))
-        const upcomingExams = (upcomingRaw || [])
+        const upcomingExams = (upcomingRaw.data || [])
             .filter(e => !completedIds.has(e.id))
             .map(e => ({
                 id: e.id,
                 name: e.name,
-                date: e.created_at, // Placeholder for actual schedule
+                date: e.created_at,
                 subject: 'General',
                 duration: 60
             }))
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
             .sort((a, b) => a.score - b.score) // Lowest scores first
             .slice(0, 5) // Top 5 critical areas
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             kpi: {
                 avg_score: avgScore,
                 completed_exams: completedCount,
@@ -138,8 +138,9 @@ export async function GET(request: NextRequest) {
             weak_areas: weakAreas,
             announcements: []
         })
+        return response
     } catch (e: any) {
         console.error('Student Dashboard API Error:', e)
-        return NextResponse.json({ error: e.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

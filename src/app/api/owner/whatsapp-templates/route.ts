@@ -21,7 +21,7 @@ export async function GET() {
         .is('tenant_id', null)
         .order('template_key')
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     return NextResponse.json(data)
 }
 
@@ -50,6 +50,6 @@ export async function PUT(req: NextRequest) {
         .from('whatsapp_templates')
         .upsert(rows, { onConflict: 'tenant_id,template_key' })
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     return NextResponse.json({ success: true })
 }

@@ -1,11 +1,9 @@
 'use client'
-
 import React, { useEffect, useState, useCallback } from 'react'
 import {
     Landmark, CheckCircle, XCircle, Loader2, ArrowLeft, Search, Filter,
     FileText, HelpCircle, AlertCircle, Calendar, Building2, Receipt, Inbox
 } from 'lucide-react'
-
 const P = {
     brand: '#004B93',
     brandBg: '#004B9315',
@@ -21,25 +19,20 @@ const P = {
     errorBg: '#FEF2F2',
     warning: '#F59E0B',
 }
-
 export default function OwnerPayouts() {
     const [requests, setRequests] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
     // Modals
     const [activeRequest, setActiveRequest] = useState<any>(null)
     const [showSettleModal, setShowSettleModal] = useState(false)
     const [showRejectModal, setShowRejectModal] = useState(false)
-
     // Form inputs
     const [form, setForm] = useState({ ref: '', note: '' })
-
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok }); setTimeout(() => setToast(null), 3500)
     }
-
     const fetchRequests = useCallback(async () => {
         setLoading(true)
         try {
@@ -48,9 +41,7 @@ export default function OwnerPayouts() {
             if (res.ok) setRequests(json.requests || [])
         } finally { setLoading(false) }
     }, [])
-
     useEffect(() => { fetchRequests() }, [fetchRequests])
-
     const processAction = async (action: 'APPROVE' | 'REJECT') => {
         setSaving(true)
         try {
@@ -74,11 +65,8 @@ export default function OwnerPayouts() {
             showToast(e.message, false)
         } finally { setSaving(false) }
     }
-
     return (
         <div style={{ padding: '48px 64px', background: P.bg, minHeight: '100vh', position: 'relative' }}>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
             {/* TOAST SYSTEM */}
             {toast && (
                 <div style={{ position: 'fixed', top: 32, right: 32, background: toast.ok ? '#ECFDF5' : '#FEF2F2', border: '1px solid ' + (toast.ok ? P.success : P.error) + '40', borderRadius: 20, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', zIndex: 90000 }}>
@@ -86,7 +74,6 @@ export default function OwnerPayouts() {
                     <span style={{ fontSize: 14, fontWeight: 900, color: toast.ok ? '#065F46' : '#991B1B' }}>{toast.msg}</span>
                 </div>
             )}
-
             {/* HEADER */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 48 }}>
                 <div>
@@ -104,7 +91,6 @@ export default function OwnerPayouts() {
                     </div>
                 </div>
             </div>
-
             {/* DATA VIEW */}
             <div style={{ background: '#FFF', borderRadius: 32, border: `1px solid ${P.border}`, overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.02)' }}>
                 <div style={{ padding: '28px 32px', borderBottom: `1px solid ${P.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FAFBFC' }}>
@@ -121,7 +107,6 @@ export default function OwnerPayouts() {
                         <Loader2 size={18} color={P.brand} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
                      </button>
                 </div>
-
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
@@ -178,7 +163,6 @@ export default function OwnerPayouts() {
                             ))}
                         </tbody>
                     </table>
-
                     {requests.length === 0 && !loading && (
                         <div style={{ padding: '120px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
                             <div style={{ width: 80, height: 80, borderRadius: 28, background: P.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -192,7 +176,6 @@ export default function OwnerPayouts() {
                     )}
                 </div>
             </div>
-
             {/* SETTLE MODAL */}
             {showSettleModal && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
@@ -203,12 +186,10 @@ export default function OwnerPayouts() {
                         <p style={{ fontSize: 14, color: P.muted, fontWeight: 600, lineHeight: 1.6, marginBottom: 24 }}>
                             Authorize fund distribution of <b>₹{Number(activeRequest.amount).toLocaleString()}</b> to {activeRequest.tenants?.name}. System will auto-record TDS and processing fees.
                         </p>
-
                         <div style={{ marginBottom: 20 }}>
                             <label style={{ display: 'block', fontSize: 12, fontWeight: 1000, color: P.muted, textTransform: 'uppercase', marginBottom: 8 }}>Bank Transaction Ref #</label>
                             <input value={form.ref} onChange={e => setForm({...form, ref: e.target.value})} placeholder="e.g. UTR10928301982" style={{ width: '100%', padding: '16px', borderRadius: 16, border: `1px solid ${P.border}`, outline: 'none', fontSize: 15, fontWeight: 700 }} />
                         </div>
-
                         <div style={{ display: 'flex', gap: 14 }}>
                              <button onClick={() => setShowSettleModal(false)} style={{ flex: 1, padding: '16px', borderRadius: 16, border: `1px solid ${P.border}`, background: '#FFF', fontWeight: 900, cursor: 'pointer' }}>Cancel</button>
                              <button onClick={() => processAction('APPROVE')} disabled={saving} style={{ flex: 2, padding: '16px', borderRadius: 16, border: 'none', background: P.brand, color: '#FFF', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
@@ -218,7 +199,6 @@ export default function OwnerPayouts() {
                     </div>
                 </div>
             )}
-
             {/* REJECT MODAL */}
              {showRejectModal && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
@@ -229,12 +209,10 @@ export default function OwnerPayouts() {
                         <p style={{ fontSize: 14, color: P.muted, fontWeight: 600, lineHeight: 1.6, marginBottom: 24 }}>
                             Decline withdrawal request from <b>{activeRequest.tenants?.name}</b>. Capital will be reverted to node's liquid balance.
                         </p>
-
                         <div style={{ marginBottom: 20 }}>
                             <label style={{ display: 'block', fontSize: 12, fontWeight: 1000, color: P.muted, textTransform: 'uppercase', marginBottom: 8 }}>Internal Reason / Admin Note</label>
                             <textarea value={form.note} onChange={e => setForm({...form, note: e.target.value})} placeholder="Provide reasoning for interception..." style={{ width: '100%', padding: '16px', borderRadius: 16, border: `1px solid ${P.border}`, outline: 'none', fontSize: 15, fontWeight: 600, minHeight: 100, resize: 'none' }} />
                         </div>
-
                         <div style={{ display: 'flex', gap: 14 }}>
                              <button onClick={() => setShowRejectModal(false)} style={{ flex: 1, padding: '16px', borderRadius: 16, border: `1px solid ${P.border}`, background: '#FFF', fontWeight: 900, cursor: 'pointer' }}>Cancel</button>
                              <button onClick={() => processAction('REJECT')} disabled={saving} style={{ flex: 2, padding: '16px', borderRadius: 16, border: 'none', background: P.error, color: '#FFF', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
@@ -244,11 +222,9 @@ export default function OwnerPayouts() {
                     </div>
                 </div>
             )}
-
         </div>
     )
 }
-
 function ShieldCheck({ size, color }: any) {
     return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /><path d="m9 12 2 2 4-4" /></svg>
 }

@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { 
     Calendar, TrendingUp, Users, ShieldCheck, 
@@ -9,7 +8,6 @@ import {
     ChevronRight, Info
 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
-
 export default function AcademicYearPortal() {
     const [loading, setLoading] = useState(true)
     const [years, setYears] = useState([])
@@ -18,18 +16,15 @@ export default function AcademicYearPortal() {
     const [activeTab, setActiveTab] = useState<'years' | 'rules' | 'promote'>('years')
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set())
-    
     // Form States
     const [newYear, setNewYear] = useState({ name: '', start_date: '', end_date: '', make_active: false })
     const [editingYear, setEditingYear] = useState<any>(null)
     const [targetYearId, setTargetYearId] = useState('')
     const [executing, setExecuting] = useState(false)
     const [savingRules, setSavingRules] = useState(false)
-
     useEffect(() => {
         fetchData()
     }, [])
-
     const fetchData = async () => {
         try {
             const [yRes, rRes] = await Promise.all([
@@ -46,7 +41,6 @@ export default function AcademicYearPortal() {
             setLoading(false)
         }
     }
-
     const handleCreateYear = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
@@ -67,7 +61,6 @@ export default function AcademicYearPortal() {
         } catch (err) { alert('System sync failed: Communication error') }
         finally { setLoading(false) }
     }
-
     const handleUpdateYear = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
@@ -84,7 +77,6 @@ export default function AcademicYearPortal() {
         } catch (err) { alert('Update propagation failed') }
         finally { setLoading(false) }
     }
-
     const handleSaveRules = async () => {
         setSavingRules(true)
         try {
@@ -97,7 +89,6 @@ export default function AcademicYearPortal() {
         } catch (err) { alert('Failed to save rules') }
         finally { setSavingRules(false) }
     }
-
     const fetchPreview = async (yearId: string) => {
         setTargetYearId(yearId)
         setLoading(true)
@@ -112,12 +103,10 @@ export default function AcademicYearPortal() {
         } catch (err) { alert('Audit synchronization failed') }
         finally { setLoading(false) }
     }
-
     const executePromotion = async () => {
         if (!targetYearId) return alert('Select target academic node')
         if (selectedStudents.size === 0) return alert('No students selected for migration')
         if (!confirm(`CONFIRMATION: You are about to migrate ${selectedStudents.size} students to a new academic cycle. This is irreversible. Proceed?`)) return
-
         setExecuting(true)
         try {
             const payload = {
@@ -131,7 +120,6 @@ export default function AcademicYearPortal() {
                         status: 'promoted'
                     }))
             }
-
             const res = await fetch('/api/dashboard/tenant/promotion/execute', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -148,38 +136,32 @@ export default function AcademicYearPortal() {
         } catch (err) { alert('Execution pipeline failed') }
         finally { setExecuting(false) }
     }
-
     const filteredPreview = useMemo(() => {
         return preview.filter(p => 
             p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             p.old_class.toLowerCase().includes(searchQuery.toLowerCase())
         )
     }, [preview, searchQuery])
-
     const toggleStudent = (id: string) => {
         const next = new Set(selectedStudents)
         if (next.has(id)) next.delete(id)
         else next.add(id)
         setSelectedStudents(next)
     }
-
     // Custom Date Input for DD/MM/YYYY format
     const InstitutionalDateInput = ({ value, onChange, label }: { value: string, onChange: (val: string) => void, label: string }) => {
         const pickerRef = useRef<HTMLInputElement>(null)
-        
         // Convert YYYY-MM-DD to DD/MM/YYYY for display
         const displayValue = useMemo(() => {
             if (!value) return ''
             const [y, m, d] = value.split('-')
             return `${d}/${m}/${y}`
         }, [value])
-
         const onTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             let val = e.target.value.replace(/[^0-9/]/g, '')
             if (val.length === 2 && !val.includes('/')) val += '/'
             if (val.length === 5 && val.split('/').length === 2) val += '/'
             if (val.length > 10) val = val.substring(0, 10)
-            
             if (val.length === 10) {
                 const [d, m, y] = val.split('/')
                 if (parseInt(m) <= 12 && parseInt(d) <= 31) {
@@ -187,7 +169,6 @@ export default function AcademicYearPortal() {
                 }
             }
         }
-
         const triggerPicker = () => {
             const picker = pickerRef.current as any;
             if (picker) {
@@ -202,7 +183,6 @@ export default function AcademicYearPortal() {
                 }
             }
         }
-
         return (
             <div style={{ position: 'relative' }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase' }}>{label}</label>
@@ -238,18 +218,14 @@ export default function AcademicYearPortal() {
             </div>
         )
     }
-
     if (loading && !years.length) return (
         <div style={{ padding: 100, textAlign: 'center' }}>
             <div style={{ width: 48, height: 48, border: '4px solid var(--color-primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 32px' }} />
             <p style={{ fontSize: 18, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.02em' }}>Synchronizing Academic Core...</p>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
     )
-
     return (
         <div style={{ padding: '40px 60px', background: '#F8FAFC', minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
-            
             {/* ── HEADER ── */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 48 }}>
                 <div>
@@ -258,7 +234,6 @@ export default function AcademicYearPortal() {
                     </h1>
                     <p style={{ color: '#64748B', fontSize: 16, fontWeight: 600, marginTop: 12, maxWidth: 600 }}>Manage institutional cycles, define promotion vectors, and execute mass student migrations across academic years.</p>
                 </div>
-                
                 <div style={{ background: '#FFF', padding: '10px', borderRadius: 20, border: '1px solid #E2E8F0', display: 'flex', gap: 6, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
                     {(['years', 'rules', 'promote'] as const).map(tab => (
                         <button 
@@ -278,7 +253,6 @@ export default function AcademicYearPortal() {
                     ))}
                 </div>
             </div>
-
             {/* ── CONTENT ── */}
             <div style={{ position: 'relative' }}>
                 {activeTab === 'years' && (
@@ -290,7 +264,6 @@ export default function AcademicYearPortal() {
                             </div>
                             <h3 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', marginBottom: 8 }}>{editingYear ? 'Recalibrate Cycle' : 'Initialize Session'}</h3>
                             <p style={{ color: '#64748B', fontSize: 14, fontWeight: 600, marginBottom: 32 }}>Configure the operational dates for your institution's academic timeline.</p>
-                            
                             <form onSubmit={editingYear ? handleUpdateYear : handleCreateYear}>
                                 <div style={{ marginBottom: 24 }}>
                                     <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cycle Designation</label>
@@ -333,7 +306,6 @@ export default function AcademicYearPortal() {
                                 </div>
                             </form>
                         </div>
-
                         {/* LIST */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                             {years.length === 0 && (
@@ -385,7 +357,6 @@ export default function AcademicYearPortal() {
                         </div>
                     </div>
                 )}
-
                 {activeTab === 'rules' && (
                     <div style={{ background: '#FFF', padding: 60, borderRadius: 40, border: '1px solid #E2E8F0', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.05)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 48 }}>
@@ -407,7 +378,6 @@ export default function AcademicYearPortal() {
                                 {savingRules ? <RefreshCcw size={20} className="animate-spin" /> : <Save size={20} />} SAVE RULES
                             </button>
                         </div>
-
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
                             {rules.length === 0 && (
                                 <div style={{ gridColumn: 'span 2', padding: 80, textAlign: 'center', background: '#F8FAFC', borderRadius: 32, border: '2px dashed #E2E8F0' }}>
@@ -482,7 +452,6 @@ export default function AcademicYearPortal() {
                         </div>
                     </div>
                 )}
-
                 {activeTab === 'promote' && (
                     <div style={{ background: '#FFF', padding: 60, borderRadius: 40, border: '1px solid #E2E8F0', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.05)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48, gap: 40 }}>
@@ -491,7 +460,6 @@ export default function AcademicYearPortal() {
                                     <TrendingUp size={32} color="var(--color-primary)" /> Mass Migration Audit
                                 </h3>
                                 <p style={{ color: '#64748B', fontSize: 16, fontWeight: 500, marginTop: 12 }}>Currently processing <span style={{ color: '#0F172A', fontWeight: 900 }}>{selectedStudents.size} candidates</span> for institutional migration.</p>
-                                
                                 <div style={{ position: 'relative', marginTop: 24, maxWidth: 400 }}>
                                     <Search size={18} color="#94A3B8" style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }} />
                                     <input 
@@ -501,7 +469,6 @@ export default function AcademicYearPortal() {
                                     />
                                 </div>
                             </div>
-                            
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 320 }}>
                                 <label style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>Destination Academic Node</label>
                                 <select 
@@ -526,7 +493,6 @@ export default function AcademicYearPortal() {
                                 </button>
                             </div>
                         </div>
-
                         <div style={{ border: '1px solid #E2E8F0', borderRadius: 28, overflow: 'hidden' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
@@ -599,12 +565,6 @@ export default function AcademicYearPortal() {
                     </div>
                 )}
             </div>
-
-            <style>{`
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .animate-spin { animation: spin 1s linear infinite; }
-                input:focus { border-color: var(--color-primary) !important; box-shadow: 0 0 0 4px var(--color-primary-bg); }
-            `}</style>
         </div>
     )
 }

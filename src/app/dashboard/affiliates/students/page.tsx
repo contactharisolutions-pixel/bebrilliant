@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect } from 'react'
 import {
     GraduationCap, Share2, TrendingUp, Wallet, ShieldCheck,
@@ -7,7 +6,6 @@ import {
     BarChart3, UserCheck, Zap, HelpCircle, MessageCircle
 } from 'lucide-react'
 import { WhatsAppShareButton } from '@/components/shared/WhatsAppShareButton'
-
 // Institutional Palette
 const COLORS = {
     primary: '#004B93',
@@ -19,16 +17,13 @@ const COLORS = {
     background: '#F8FAFC',
     border: '#E2E8F0',
 }
-
 export default function AffiliateStudentsManagement() {
     const [students, setStudents] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
-
     useEffect(() => {
         fetchAffiliates()
     }, [])
-
     const fetchAffiliates = async () => {
         setLoading(true)
         try {
@@ -41,17 +36,14 @@ export default function AffiliateStudentsManagement() {
             setLoading(false)
         }
     }
-
     if (loading) {
         return (
              <div style={{ padding: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#F8FAFC' }}>
-                <style>{`@keyframes spin { 100% { transform: rotate(360deg); } } .spin { animation: spin 1s linear infinite; }`}</style>
                 <Loader2 size={48} color={COLORS.primary} className="spin" style={{ marginBottom: 24 }} />
                 <div style={{ fontSize: 13, fontWeight: 900, color: '#94A3B8', letterSpacing: '0.1em' }}>SYNCHRONIZING STUDENT REFERRAL DATA...</div>
             </div>
         )
     }
-
     return (
         <div style={{ padding: '48px 56px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
             {/* HEADER */}
@@ -76,7 +68,6 @@ export default function AffiliateStudentsManagement() {
                     </button>
                 </div>
             </div>
-
             {/* STATS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 40 }}>
                 {[
@@ -96,7 +87,6 @@ export default function AffiliateStudentsManagement() {
                     </div>
                 ))}
             </div>
-
             {/* TABLE AREA */}
             <div style={{ background: '#FFF', borderRadius: 28, border: `1px solid ${COLORS.border}`, overflow: 'hidden' }}>
                 <div style={{ padding: '24px 32px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -109,7 +99,6 @@ export default function AffiliateStudentsManagement() {
                         <span style={{ fontSize: 12, fontWeight: 800, color: '#9A3412' }}>Auto-Distribution: Active</span>
                     </div>
                 </div>
-
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead style={{ background: '#F8FAFC', borderBottom: `1px solid ${COLORS.border}` }}>
                         <tr style={{ fontSize: 11, fontWeight: 1000, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -159,7 +148,6 @@ export default function AffiliateStudentsManagement() {
                     </tbody>
                 </table>
             </div>
-            
             <div style={{ marginTop: 32, display: 'flex', gap: 16 }}>
                  <div style={{ flex: 1, background: '#EFF6FF', border: '1px solid #DBEAFE', borderRadius: 20, padding: 24, display: 'flex', alignItems: 'flex-start', gap: 16 }}>
                     <div style={{ width: 44, height: 44, borderRadius: 14, background: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', flexShrink: 0 }}>

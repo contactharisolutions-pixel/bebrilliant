@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
             if (!deepGen) {
                 // If not deep gen, just mock it from template
                 const template = CURRICULUM_TEMPLATES[boardName];
-                let mockTree = [];
+                const mockTree = [];
                 if (template) {
                     for (let i = 0; i < template.classes.length; i++) {
                         const className = template.classes[i];
@@ -264,7 +264,7 @@ export async function POST(request: NextRequest) {
 
     } catch (e: any) {
         console.error('[AI Generate Error]', e.message)
-        return NextResponse.json({ error: e.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 

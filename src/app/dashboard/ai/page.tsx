@@ -1,12 +1,10 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     Sparkles, Bot, BrainCircuit, Activity, Settings2, Zap, LayoutTemplate,
     MessageSquare, Sliders, CheckCircle, XCircle, Loader2, PlayCircle, ShieldCheck,
     Cpu, Globe, Lock, Workflow, CpuIcon, Binary, RefreshCcw, Send
 } from 'lucide-react'
-
 // ── TYPES ───────────────────
 type AISettings = {
     adaptive_learning: boolean;
@@ -17,7 +15,6 @@ type AISettings = {
     questions_generated: number;
     llm_model: string;
 }
-
 const COLORS = {
     primary: '#004B93',
     success: '#1FAC63',
@@ -28,9 +25,7 @@ const COLORS = {
     border: 'rgba(255, 255, 255, 0.1)',
     glass: 'rgba(15, 23, 42, 0.7)'
 }
-
 // ── COMPONENTS ─────────────────
-
 function TerminalModal({ title, onClose, content, generating }: any) {
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(2, 6, 23, 0.9)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)', padding: 24 }}>
@@ -63,11 +58,9 @@ function TerminalModal({ title, onClose, content, generating }: any) {
                     )}
                 </div>
             </div>
-            <style>{`.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg) } } @keyframes fadeIn { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }`}</style>
         </div>
     )
 }
-
 function ControlToggle({ label, checked, onChange, desc, premium = false, disabled = false }: any) {
     return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', border: `1px solid ${checked ? 'rgba(56, 189, 248, 0.3)' : 'rgba(255,255,255,0.05)'}`, borderRadius: 24, background: checked ? 'rgba(56, 189, 248, 0.03)' : 'rgba(255,255,255,0.02)', marginBottom: 20, cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', opacity: disabled ? 0.6 : 1 }} onClick={() => !disabled && onChange(!checked)}>
@@ -83,9 +76,7 @@ function ControlToggle({ label, checked, onChange, desc, premium = false, disabl
         </div>
     )
 }
-
 // ── MAIN APPLICATION ───────────────────
-
 export default function IntelligenceCenter() {
     const [settings, setSettings] = useState<AISettings | null>(null)
     const [loading, setLoading] = useState(true)
@@ -93,11 +84,9 @@ export default function IntelligenceCenter() {
     const [showTerminal, setShowTerminal] = useState(false)
     const [generating, setGenerating] = useState(false)
     const [mockContent, setMockContent] = useState('')
-
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok }); setTimeout(() => setToast(null), 3500)
     }
-
     const fetchAI = useCallback(async () => {
         setLoading(true)
         try {
@@ -107,9 +96,7 @@ export default function IntelligenceCenter() {
         } catch (e) { console.error(e) }
         finally { setLoading(false) }
     }, [])
-
     useEffect(() => { fetchAI() }, [fetchAI])
-
     const updateSettings = async (override: Partial<AISettings>) => {
         if (!settings) return
         const newSettings = { ...settings, ...override }
@@ -126,7 +113,6 @@ export default function IntelligenceCenter() {
             fetchAI()
         }
     }
-
     const handleOnboardAgent = async () => {
         setShowTerminal(true)
         setGenerating(true)
@@ -135,7 +121,6 @@ export default function IntelligenceCenter() {
         setMockContent(`{\n  "cluster_id": "GEMINI-2.5-FLASH-C7",\n  "status": "OPERATIONAL",\n  "metrics": {\n    "latency": "14ms",\n    "curriculum_lock": true,\n    "nodes_indexed": 1247,\n    "accuracy_drift": 0.002\n  },\n  "timestamp": "${new Date().toISOString()}"\n}`)
         setGenerating(false)
     }
-
     if (loading || !settings) {
         return (
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#020617' }}>
@@ -144,7 +129,6 @@ export default function IntelligenceCenter() {
             </div>
         )
     }
-
     return (
         <div style={{ padding: '40px 48px', background: '#020617', minHeight: '100vh', position: 'relative', overflowX: 'hidden', color: '#F1F5F9', fontFamily: 'Inter, system-ui, sans-serif' }}>
             <style>{`
@@ -155,7 +139,6 @@ export default function IntelligenceCenter() {
                 select { -webkit-appearance: none; appearance: none; }
             `}</style>
             <div className="grid-bg" />
-
             {/* TOAST SYSTEM */}
             {toast && (
                 <div style={{ position: 'fixed', top: 32, right: 32, background: toast.ok ? '#064E3B' : '#7F1D1D', border: `1px solid ${toast.ok ? COLORS.success : COLORS.danger}80`, borderRadius: 16, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 24px 60px rgba(0,0,0,0.6)', zIndex: 10000, animation: 'fadeIn 0.3s ease-out' }}>
@@ -163,7 +146,6 @@ export default function IntelligenceCenter() {
                     <span style={{ fontSize: 14, fontWeight: 900, letterSpacing: '0.01em' }}>{toast.msg}</span>
                 </div>
             )}
-
             <div style={{ position: 'relative', zIndex: 10 }}>
                 {/* HEADER */}
                 <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48 }}>
@@ -186,12 +168,9 @@ export default function IntelligenceCenter() {
                         </div>
                     </div>
                 </header>
-
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(400px, 1fr) 2fr', gap: 40 }}>
-                    
                     {/* LEFT PANEL: ACTIVITY & METRICS */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                        
                         {/* TOKEN USAGE */}
                         <div className="glow-card" style={{ padding: 40, borderRadius: 32, background: 'linear-gradient(165deg, #0F172A, #020617)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
@@ -212,7 +191,6 @@ export default function IntelligenceCenter() {
                                 ))}
                             </div>
                         </div>
-
                         {/* RECENT NODE EXPORTS */}
                         <div className="glow-card" style={{ padding: 40, borderRadius: 32 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 28 }}>
@@ -235,7 +213,6 @@ export default function IntelligenceCenter() {
                                 ))}
                             </div>
                         </div>
-
                         {/* ACTION PANEL */}
                         <div style={{ background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(0, 75, 147, 0.1))', border: `1px solid rgba(56, 189, 248, 0.2)`, borderRadius: 32, padding: 40 }}>
                             <h3 style={{ margin: '0 0 10px', fontSize: 18, fontWeight: 900 }}>Curriculum AI Sync</h3>
@@ -244,12 +221,9 @@ export default function IntelligenceCenter() {
                                 <Cpu size={20} /> SYNC CURRICULUM
                             </button>
                         </div>
-
                     </div>
-
                     {/* RIGHT PANEL: CONFIGURATION */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                        
                         <div className="glow-card" style={{ padding: 48, borderRadius: 32, background: 'rgba(255,255,255,0.01)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 40 }}>
                                 <div style={{ width: 52, height: 52, borderRadius: 16, background: 'rgba(56, 189, 248, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
@@ -260,7 +234,6 @@ export default function IntelligenceCenter() {
                                     <p style={{ margin: '4px 0 0', fontSize: 14, color: COLORS.slate, fontWeight: 600 }}>Enable or disable specific AI capabilities for your institution.</p>
                                 </div>
                             </div>
-
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <ControlToggle
                                     label="Adaptive Learning Logic"
@@ -288,7 +261,6 @@ export default function IntelligenceCenter() {
                                     checked={settings.strict_syllabus_mapping}
                                     onChange={(v: boolean) => updateSettings({ strict_syllabus_mapping: v })}
                                 />
-
                                 {/* MODEL SELECTION SECTION */}
                                 <div style={{ marginTop: 20, padding: 32, background: 'rgba(255,255,255,0.02)', borderRadius: 28, border: `1px solid rgba(255,255,255,0.05)` }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -316,12 +288,9 @@ export default function IntelligenceCenter() {
                                 </div>
                             </div>
                         </div>
-
                     </div>
-
                 </div>
             </div>
-
             {/* TERMINAL MODAL */}
             {showTerminal && (
                 <TerminalModal

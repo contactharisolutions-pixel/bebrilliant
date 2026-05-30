@@ -1,12 +1,10 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     FileText, Palette, Building2, Users, RefreshCw, Loader2,
     Plus, Search, Edit3, Trash2, Globe, Link as LinkIcon, CheckCircle,
     XCircle, ChevronRight, Mail, LayoutTemplate, Activity, Zap
 } from 'lucide-react'
-
 // ── PALETTE ── MATCHING INSTITUTIONAL SYSTEM ────────────────
 const P = {
     bg: '#F7F8FA', card: '#FEFEFE', border: '#E8E8E8',
@@ -18,20 +16,17 @@ const P = {
     error: '#EF4444', errorBg: '#FEF2F2',
     info: '#3B82F6', infoBg: '#EFF6FF',
 }
-
 // ── TYPES ───────────────────────────────────────────────────
 type CmsPage = { id: string; page_name: string; slug: string; is_published: boolean; created_at: string }
 type Palette = { id: string; name: string; primary_color: string; secondary_color: string; background: string; text_color: string; created_at: string }
 type Branding = { tenant_id: string; brand_name: string; email_sender: string; custom_domain: string; logo: string; created_at: string; tenants: { name: string; type: string; is_active: boolean } }
 type DemoRequest = { id: string; name: string; organization: string; email: string; phone: string; message: string; status: string; created_at: string }
-
 type ApiData = {
     pages: CmsPage[]
     palettes: Palette[]
     branding: Branding[]
     demos: DemoRequest[]
 }
-
 // ── MODALS ──────────────────────────────────────────────────
 function Modal({ title, onClose, children, onSubmit, saving, saveText = 'Save' }: any) {
     return (
@@ -55,7 +50,6 @@ function Modal({ title, onClose, children, onSubmit, saving, saveText = 'Save' }
         </div>
     )
 }
-
 function KpiCard({ icon: Icon, label, value, sub, color, bg }: {
     icon: any; label: string; value: string; sub?: string; color: string; bg: string
 }) {
@@ -83,7 +77,6 @@ function KpiCard({ icon: Icon, label, value, sub, color, bg }: {
         </div>
     )
 }
-
 function Input({ label, value, onChange, placeholder = '', type = 'text', readOnly = false }: any) {
     return (
         <div style={{ marginBottom: 18 }}>
@@ -94,7 +87,6 @@ function Input({ label, value, onChange, placeholder = '', type = 'text', readOn
         </div>
     )
 }
-
 // ── MAIN PAGE ────────────────────────────────────────────────
 export default function CMSPage() {
     const [activeTab, setActiveTab] = useState<'pages' | 'palettes' | 'branding' | 'demos'>('pages')
@@ -102,20 +94,15 @@ export default function CMSPage() {
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
     // Modal States
     const [showPageModal, setShowPageModal] = useState(false)
     const [pageForm, setPageForm] = useState({ page_name: '', slug: '', is_published: true })
-
     const [showPaletteModal, setShowPaletteModal] = useState(false)
     const [paletteForm, setPaletteForm] = useState({ name: '', primary_color: '#004B93', secondary_color: '#F0A026', background: '#FFFFFF', text_color: '#18181A' })
-
     const [saving, setSaving] = useState(false)
-
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok }); setTimeout(() => setToast(null), 3000)
     }
-
     const fetchData = useCallback(async () => {
         setLoading(true)
         try {
@@ -124,9 +111,7 @@ export default function CMSPage() {
         } catch (e) { showToast('Error fetching CMS data', false) }
         finally { setLoading(false) }
     }, [])
-
     useEffect(() => { fetchData() }, [fetchData])
-
     const apiAction = async (action: string, payload: any) => {
         setSaving(true)
         try {
@@ -143,7 +128,6 @@ export default function CMSPage() {
             return false
         } finally { setSaving(false) }
     }
-
     const tabStyle = (id: string) => ({
         padding: '12px 20px', borderRadius: 12, border: 'none', display: 'flex', alignItems: 'center', gap: 10,
         background: activeTab === id ? P.card : 'transparent',
@@ -151,7 +135,6 @@ export default function CMSPage() {
         boxShadow: activeTab === id ? '0 4px 12px rgba(0,0,0,0.04)' : 'none',
         fontSize: 14, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
     })
-
     // HANDLERS
     const handleCreatePage = async () => {
         if (!pageForm.page_name || !pageForm.slug) return showToast('Fill all fields', false)
@@ -164,7 +147,6 @@ export default function CMSPage() {
     const handleTogglePage = async (p: CmsPage) => {
         await apiAction('TOGGLE_PAGE', { id: p.id, is_published: !p.is_published })
     }
-
     const handleCreatePalette = async () => {
         if (!paletteForm.name) return showToast('Palette needs a name', false)
         if (await apiAction('CREATE_PALETTE', paletteForm)) setShowPaletteModal(false)
@@ -173,21 +155,11 @@ export default function CMSPage() {
         if (!confirm('Delete this theme palette? Existing tenants will lose it.')) return
         await apiAction('DELETE_PALETTE', { id })
     }
-
     const handleUpdateDemoStatus = async (id: string, status: string) => {
         await apiAction('UPDATE_DEMO_STATUS', { id, status })
     }
-
     return (
         <div style={{ background: P.bg, minHeight: '100%', padding: '32px 36px', position: 'relative' }}>
-            <style>{`
-                @keyframes spin { to { transform: rotate(360deg); } }
-                .glass-card { backdrop-filter: blur(10px); background: rgba(254, 254, 254, 0.8) !important; }
-                .hover-lift { transition: transform 0.2s cubic-bezier(0.3, 0, 0.2, 1), box-shadow 0.2s !important; }
-                .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.08) !important; }
-                .focus-ring:focus { border-color: ${P.brand} !important; box-shadow: 0 0 0 4px ${P.brand}10 !important; }
-            `}</style>
-
             {/* TOAST */}
             {toast && (
                 <div style={{ position: 'fixed', top: 24, right: 28, background: toast.ok ? P.successBg : P.errorBg, border: '1px solid ' + (toast.ok ? P.success : P.error) + '40', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', zIndex: 9000 }}>
@@ -195,7 +167,6 @@ export default function CMSPage() {
                     <span style={{ fontSize: 14, fontWeight: 700, color: toast.ok ? P.success : P.error }}>{toast.msg}</span>
                 </div>
             )}
-
             {/* HEADER */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
                 <div>
@@ -212,7 +183,6 @@ export default function CMSPage() {
                     <RefreshCw size={16} color={P.brand} strokeWidth={2.5} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} /> Refresh Data
                 </button>
             </div>
-
             {/* KPI GRID */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 32 }}>
                 <KpiCard icon={LayoutTemplate} label="Platform Pages" value={String(data.pages.length)} sub="Active Pages" color={P.brand} bg={P.brandBg} />
@@ -220,7 +190,6 @@ export default function CMSPage() {
                 <KpiCard icon={Globe} label="Brand Whitelabels" value={String(data.branding.length)} sub="Custom Domains" color={P.info} bg={P.infoBg} />
                 <KpiCard icon={Palette} label="Theme Palettes" value={String(data.palettes.length)} sub="Saved Presets" color={P.success} bg={P.successBg} />
             </div>
-
             {/* TABS */}
             <div style={{ display: 'flex', gap: 8, background: '#fff', border: '1px solid ' + P.border, borderRadius: 18, padding: 6, marginBottom: 28, width: 'fit-content', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
                 <button onClick={() => setActiveTab('pages')} style={tabStyle('pages')}><LayoutTemplate size={16} /> Platform Pages</button>
@@ -228,7 +197,6 @@ export default function CMSPage() {
                 <button onClick={() => setActiveTab('branding')} style={tabStyle('branding')}><Globe size={16} /> Brand Whitelabels</button>
                 <button onClick={() => setActiveTab('demos')} style={tabStyle('demos')}><Zap size={16} /> Demo Requests</button>
             </div>
-
             {loading && data.pages.length === 0 ? (
                 <div style={{ padding: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                     <Loader2 size={32} color={P.brand} style={{ animation: 'spin 1s linear infinite', marginBottom: 14 }} />
@@ -236,7 +204,6 @@ export default function CMSPage() {
                 </div>
             ) : (
                 <div style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 16, overflow: 'hidden', minHeight: 400 }}>
-
                     {/* SEARCH & ACTIONS HEADER (Per Tab) */}
                     <div style={{ padding: '24px 28px', borderBottom: '1px solid ' + P.border, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: P.card }}>
                         <div style={{ position: 'relative', width: 320 }}>
@@ -245,7 +212,6 @@ export default function CMSPage() {
                                 className="focus-ring"
                                 style={{ width: '100%', paddingLeft: 44, paddingRight: 16, paddingTop: 12, paddingBottom: 12, border: '1px solid ' + P.border, borderRadius: 12, fontSize: 13, color: P.dark, background: P.bg, outline: 'none', fontWeight: 600, transition: 'all 0.2s' }} />
                         </div>
-
                         {activeTab === 'pages' && (
                             <button onClick={() => { setPageForm({ page_name: '', slug: '', is_published: true }); setShowPageModal(true) }} className="hover-lift" style={{ display: 'flex', alignItems: 'center', gap: 10, background: P.brand, color: '#fff', border: 'none', borderRadius: 12, padding: '12px 24px', fontSize: 13, fontWeight: 850, cursor: 'pointer', boxShadow: `0 8px 20px ${P.brand}25` }}>
                                 <Plus size={18} strokeWidth={3} /> Create New Page
@@ -257,7 +223,6 @@ export default function CMSPage() {
                             </button>
                         )}
                     </div>
-
                     {/* ── DEPLOYMENT NODES ── */}
                     {activeTab === 'pages' && (
                         <div style={{ overflowX: 'auto' }}>
@@ -308,7 +273,6 @@ export default function CMSPage() {
                             </table>
                         </div>
                     )}
-
                     {/* ── THEMATIC SOVEREIGNTY ── */}
                     {activeTab === 'palettes' && (
                         <div style={{ padding: 28, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24, background: P.bg }}>
@@ -326,7 +290,6 @@ export default function CMSPage() {
                                                 <Trash2 size={15} color={P.error} />
                                             </button>
                                         </div>
-
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                             {[
                                                 { l: 'Primary Hub', c: p.primary_color },
@@ -348,7 +311,6 @@ export default function CMSPage() {
                             ))}
                         </div>
                     )}
-
                     {/* ── WHITELABEL ENFORCEMENTS ── */}
                     {activeTab === 'branding' && (
                         <div style={{ overflowX: 'auto' }}>
@@ -396,7 +358,6 @@ export default function CMSPage() {
                             </table>
                         </div>
                     )}
-
                     {/* ── ACQUISITION ANALYTICS ── */}
                     {activeTab === 'demos' && (
                         <div style={{ overflowX: 'auto' }}>
@@ -450,14 +411,12 @@ export default function CMSPage() {
                     )}
                 </div>
             )}
-
             {/* NEW PAGE MODAL */}
             {showPageModal && (
                 <Modal title="Create Platform Page" onClose={() => setShowPageModal(false)} onSubmit={handleCreatePage} saving={saving}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         <Input label="Page Name" value={pageForm.page_name} onChange={(v: string) => setPageForm({ ...pageForm, page_name: v, slug: v.toLowerCase().replace(/[^a-z0-9]+/g, '-') })} placeholder="e.g. Terms of Service" />
                         <Input label="URL Slug" value={pageForm.slug} onChange={(v: string) => setPageForm({ ...pageForm, slug: v })} placeholder="e.g. terms-of-service" />
-
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: P.bg, border: '1px solid ' + P.border, borderRadius: 10 }}>
                             <span style={{ fontSize: 13, fontWeight: 700, color: P.dark }}>Publish Immediately</span>
                             <input type="checkbox" checked={pageForm.is_published} onChange={e => setPageForm({ ...pageForm, is_published: e.target.checked })} style={{ cursor: 'pointer', width: 16, height: 16 }} />
@@ -466,13 +425,11 @@ export default function CMSPage() {
                     </div>
                 </Modal>
             )}
-
             {/* NEW PALETTE MODAL */}
             {showPaletteModal && (
                 <Modal title="Add Custom Theme Palette" onClose={() => setShowPaletteModal(false)} onSubmit={handleCreatePalette} saving={saving} saveText="Publish Theme">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         <Input label="Theme Name" value={paletteForm.name} onChange={(v: string) => setPaletteForm({ ...paletteForm, name: v })} placeholder="e.g. Midnight Ruby" />
-
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                             <Input type="color" label="Primary Accent" value={paletteForm.primary_color} onChange={(v: string) => setPaletteForm({ ...paletteForm, primary_color: v })} />
                             <Input type="color" label="Secondary Accent" value={paletteForm.secondary_color} onChange={(v: string) => setPaletteForm({ ...paletteForm, secondary_color: v })} />
@@ -482,7 +439,6 @@ export default function CMSPage() {
                     </div>
                 </Modal>
             )}
-
         </div>
     )
 }

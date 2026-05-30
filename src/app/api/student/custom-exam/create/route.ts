@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
         }
 
         // 2. Calculate Credits
-        let baseCost = question_type === 'subjective' ? 2 : 1
-        let difficultyCost = difficulty === 'Hard' ? 1 : 0
+        const baseCost = question_type === 'subjective' ? 2 : 1
+        const difficultyCost = difficulty === 'Hard' ? 1 : 0
         const totalCredits = (question_count * baseCost) + (question_count * difficultyCost)
 
         // 3. Check Wallet Balance (Transaction Safe-ish in Supabase without full RPC for now)
@@ -135,6 +135,6 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
         console.error('Custom Exam Create Error:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

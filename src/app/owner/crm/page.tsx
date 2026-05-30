@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     Search, Plus, RefreshCw, X, Loader2, CheckCircle, XCircle,
@@ -11,7 +10,6 @@ import {
     Layers, Layout, PieChart as PieIcon, Activity, Heart,
     Globe, PhoneForwarded, MessageSquare, Users
 } from 'lucide-react'
-
 // â”€â”€ PALETTE â”” MATCHING INSTITUTIONAL SYSTEM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const P = {
     bg: '#F7F8FA', card: '#FEFEFE', border: '#E8E8E8',
@@ -23,7 +21,6 @@ const P = {
     error: '#EF4444', errorBg: '#FEF2F2',
     info: '#3B82F6', infoBg: '#EFF6FF',
 }
-
 // ——————————————————————————————————————————————————————————————————————————————
 const STATUSES = [
     { key: 'new', label: 'New Lead', color: '#1FAC63', bg: '#1FAC6310', icon: Sparkles },
@@ -33,20 +30,16 @@ const STATUSES = [
     { key: 'converted', label: 'Partner', color: '#059669', bg: '#05966915', icon: Trophy },
     { key: 'lost', label: 'Lost', color: '#EF4444', bg: '#EF444410', icon: Ban },
 ]
-
 const SOURCES = ['Website', 'Referral', 'Cold Call', 'LinkedIn', 'Conference', 'Google Ads', 'Manual', 'Other']
-
 type Demo = { id: string; scheduled_at: string; status: string; notes: string }
 type Lead = {
     id: string; name: string; organization: string; email: string
     phone?: string; source?: string; status: string; type?: string
     created_at: string; updated_at: string; demos?: Demo[]
 }
-
 function statusMeta(key: string) {
     return STATUSES.find(s => s.key === key) ?? STATUSES[0]
 }
-
 // â”€â”€ TOAST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function useToast() {
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
@@ -56,13 +49,11 @@ function useToast() {
     }
     return { toast, show }
 }
-
 // â”€â”€ ADD LEAD MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function AddLeadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
     const [form, setForm] = useState({ name: '', organization: '', email: '', phone: '', source: 'Website', status: 'new', type: 'INSTITUTE' })
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
-
     const submit = async () => {
         if (!form.name || !form.organization || !form.email) { setError('Name, Organization and Email are required.'); return }
         setLoading(true)
@@ -76,7 +67,6 @@ function AddLeadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
             onSuccess(); onClose()
         } finally { setLoading(false) }
     }
-
     const field = (label: string, key: keyof typeof form, type = 'text') => (
         <div style={{ marginBottom: 18 }}>
             <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
@@ -84,7 +74,6 @@ function AddLeadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
                 style={{ width: '100%', padding: '12px 16px', border: `1px solid ${P.border}`, borderRadius: 12, fontSize: 14, color: P.dark, background: '#fff', outline: 'none', boxSizing: 'border-box', fontWeight: 650, transition: 'all 0.2s' }} className="focus-ring" />
         </div>
     )
-
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(10, 20, 40, 0.4)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
             <div className="glass-card" style={{ borderRadius: 28, width: '100%', maxWidth: 540, boxShadow: '0 40px 120px rgba(0,0,0,0.3)', border: `1px solid ${P.border}`, overflow: 'hidden', animation: 'scaleUp 0.3s ease' }}>
@@ -103,7 +92,6 @@ function AddLeadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
                     </div>
                     <button onClick={onClose} style={{ background: P.hover, border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer', display: 'flex' }}><X size={20} color={P.muted} /></button>
                 </div>
-
                 <div style={{ padding: '32px 40px', background: '#fff' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                         {field('Identity Identity', 'name')}
@@ -113,7 +101,6 @@ function AddLeadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
                         {field('Primary Comms', 'email', 'email')}
                         {field('Secondary Link', 'phone', 'tel')}
                     </div>
-
                     <div style={{ marginBottom: 24 }}>
                         <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Node Architecture Type</div>
                         <div style={{ display: 'flex', gap: 12 }}>
@@ -129,13 +116,11 @@ function AddLeadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
                             ))}
                         </div>
                     </div>
-
                     {error && (
                         <div style={{ background: P.errorBg, border: `1px solid ${P.error}30`, borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
                             <AlertTriangle size={18} color={P.error} /><span style={{ fontSize: 13, color: P.error, fontWeight: 750 }}>{error}</span>
                         </div>
                     )}
-
                     <div style={{ display: 'flex', gap: 14 }}>
                         <button onClick={onClose} style={{ flex: 1, padding: '14px 0', borderRadius: 14, border: `1px solid ${P.border}`, background: P.bg, color: P.dark, fontSize: 14, fontWeight: 850, cursor: 'pointer' }}>Cancel</button>
                         <button onClick={submit} disabled={loading} className="hover-lift" style={{ flex: 2, padding: '14px 0', borderRadius: 14, border: 'none', background: P.brand, color: '#fff', fontSize: 14, fontWeight: 950, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, boxShadow: `0 8px 24px ${P.brand}30` }}>
@@ -148,14 +133,12 @@ function AddLeadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
         </div>
     )
 }
-
 // â”€â”€ SCHEDULE DEMO MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ScheduleDemoModal({ lead, onClose, onSuccess }: { lead: Lead; onClose: () => void; onSuccess: () => void }) {
     const [scheduledAt, setScheduledAt] = useState('')
     const [notes, setNotes] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
-
     const submit = async () => {
         if (!scheduledAt) { setError('Select a sync time.'); return }
         setLoading(true)
@@ -168,7 +151,6 @@ function ScheduleDemoModal({ lead, onClose, onSuccess }: { lead: Lead; onClose: 
             onSuccess(); onClose()
         } catch (err) { setError('Failed to synchronize schedule.'); } finally { setLoading(false) }
     }
-
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(10, 20, 40, 0.4)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 20 }}>
             <div className="glass-card" style={{ borderRadius: 28, width: '100%', maxWidth: 480, boxShadow: '0 40px 100px rgba(0,0,0,0.3)', border: `1px solid ${P.border}`, overflow: 'hidden' }}>
@@ -199,7 +181,6 @@ function ScheduleDemoModal({ lead, onClose, onSuccess }: { lead: Lead; onClose: 
         </div>
     )
 }
-
 // ——————————————————————————————————————————————————————————————————————————————
 function LeadDrawer({ lead, onClose, onRefresh }: { lead: Lead; onClose: () => void; onRefresh: () => void }) {
     const [activeTab, setActiveTab] = useState<'overview' | 'demos' | 'update'>('overview')
@@ -207,7 +188,6 @@ function LeadDrawer({ lead, onClose, onRefresh }: { lead: Lead; onClose: () => v
     const [loading, setLoading] = useState<string | null>(null)
     const { toast, show: showToast } = useToast()
     const [scheduleOpen, setScheduleOpen] = useState(false)
-
     const updateStatus = async () => {
         setLoading('status')
         try {
@@ -219,7 +199,6 @@ function LeadDrawer({ lead, onClose, onRefresh }: { lead: Lead; onClose: () => v
             else throw new Error('Sync failed')
         } catch (err) { showToast('Sync failed.', false) } finally { setLoading(null) }
     }
-
     const deleteLead = async () => {
         if (!confirm('Execute node expungement?')) return
         setLoading('delete')
@@ -229,13 +208,10 @@ function LeadDrawer({ lead, onClose, onRefresh }: { lead: Lead; onClose: () => v
             else throw new Error('Purge failed')
         } catch (err) { showToast('Purge interrupted.', false) } finally { setLoading(null) }
     }
-
     const sm = statusMeta(lead.status)
-
     return (
         <>
             {scheduleOpen && <ScheduleDemoModal lead={lead} onClose={() => setScheduleOpen(false)} onSuccess={() => { setScheduleOpen(false); onRefresh() }} />}
-
             {/* Side Drawer */}
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(10, 20, 40, 0.4)', backdropFilter: 'blur(8px)', zIndex: 990, animation: 'fadeIn 0.3s ease' }} onClick={onClose} />
             <div style={{ position: 'fixed', top: 0, right: 0, width: 540, height: '100vh', background: P.card, boxShadow: '-20px 0 60px rgba(0,0,0,0.15)', zIndex: 995, display: 'flex', flexDirection: 'column', animation: 'slideRight 0.4s cubic-bezier(0.2, 0, 0, 1)', borderLeft: `1px solid ${P.border}` }}>
@@ -243,14 +219,12 @@ function LeadDrawer({ lead, onClose, onRefresh }: { lead: Lead; onClose: () => v
                     @keyframes slideRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
                     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 `}</style>
-
                 {toast && (
                     <div style={{ position: 'fixed', top: 32, right: 572, background: toast.ok ? P.successBg : P.errorBg, border: `1px solid ${toast.ok ? P.success : P.error}40`, borderRadius: 14, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 12px 30px rgba(0,0,0,0.1)', zIndex: 9999, backdropFilter: 'blur(10px)' }}>
                         {toast.ok ? <CheckCircle size={18} color={P.success} /> : <XCircle size={18} color={P.error} />}
                         <span style={{ fontSize: 13, fontWeight: 900, color: toast.ok ? P.success : P.error, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{toast.msg}</span>
                     </div>
                 )}
-
                 {/* Drawer Header */}
                 <div style={{ padding: '40px 48px', borderBottom: `1px solid ${P.border}`, background: P.bg }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
@@ -268,7 +242,6 @@ function LeadDrawer({ lead, onClose, onRefresh }: { lead: Lead; onClose: () => v
                         </div>
                         <button onClick={onClose} className="hover-lift" style={{ background: '#fff', border: `1px solid ${P.border}`, borderRadius: 12, padding: 10, cursor: 'pointer', display: 'flex', color: P.muted }}><X size={20} /></button>
                     </div>
-
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                         <span style={{ background: sm.bg, color: sm.color, padding: '8px 18px', borderRadius: 12, fontSize: 12, fontWeight: 950, border: `1px solid ${sm.color}30`, display: 'inline-flex', alignItems: 'center', gap: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             <sm.icon size={16} strokeWidth={2.5} /> {sm.label}
@@ -276,7 +249,6 @@ function LeadDrawer({ lead, onClose, onRefresh }: { lead: Lead; onClose: () => v
                         <span style={{ background: '#fff', color: P.muted, padding: '8px 16px', borderRadius: 12, fontSize: 12, fontWeight: 850, border: `1px solid ${P.border}`, display: 'inline-flex', alignItems: 'center', gap: 8 }}><Globe size={16} /> {lead.source || 'Direct Node'}</span>
                     </div>
                 </div>
-
                 {/* Tabs */}
                 <div style={{ padding: '8px 48px', background: '#fff', borderBottom: `1px solid ${P.border}`, display: 'flex', gap: 10 }}>
                     {[
@@ -294,7 +266,6 @@ function LeadDrawer({ lead, onClose, onRefresh }: { lead: Lead; onClose: () => v
                         </button>
                     ))}
                 </div>
-
                 {/* Tab Content */}
                 <div style={{ flex: 1, overflowY: 'auto', padding: '40px 48px', background: '#fff' }}>
                     {activeTab === 'overview' && (
@@ -318,7 +289,6 @@ function LeadDrawer({ lead, onClose, onRefresh }: { lead: Lead; onClose: () => v
                             ))}
                         </div>
                     )}
-
                     {activeTab === 'demos' && (
                         <div>
                              {(!lead.demos || lead.demos.length === 0) ? (
@@ -353,7 +323,6 @@ function LeadDrawer({ lead, onClose, onRefresh }: { lead: Lead; onClose: () => v
                             )}
                         </div>
                     )}
-
                     {activeTab === 'update' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                             {lead.status !== 'converted' ? (
@@ -382,7 +351,6 @@ function LeadDrawer({ lead, onClose, onRefresh }: { lead: Lead; onClose: () => v
                                     </div>
                                 </div>
                             )}
-
                             <div>
                                 <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Pipeline Life-Cycle Stage</div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -400,7 +368,6 @@ function LeadDrawer({ lead, onClose, onRefresh }: { lead: Lead; onClose: () => v
                                     {loading === 'status' ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />} Synchronize State
                                 </button>
                             </div>
-
                             <button onClick={deleteLead} disabled={loading === 'delete'} style={{ marginTop: 'auto', padding: '16px', borderRadius: 14, border: `1px solid ${P.error}30`, background: P.errorBg, color: P.error, fontSize: 14, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
                                 {loading === 'delete' ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />} Expunge Entity Logic
                             </button>
@@ -411,7 +378,6 @@ function LeadDrawer({ lead, onClose, onRefresh }: { lead: Lead; onClose: () => v
         </>
     )
 }
-
 // ——————————————————————————————————————————————————————————————————————————————
 export default function CrmDemoPage() {
     const [leads, setLeads] = useState<Lead[]>([])
@@ -428,12 +394,10 @@ export default function CrmDemoPage() {
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
     const [scheduleOpen, setScheduleOpen] = useState<{ open: boolean, lead: Lead | null }>({ open: false, lead: null })
     const { toast, show: showToast } = useToast()
-
     useEffect(() => {
         const t = setTimeout(() => setDebouncedSearch(search), 400)
         return () => clearTimeout(t)
     }, [search])
-
     const fetchLeads = useCallback(async (isRefresh = false) => {
         if (isRefresh) setRefreshing(true); else setLoading(true)
         try {
@@ -447,22 +411,10 @@ export default function CrmDemoPage() {
             if (res.ok) { setLeads(json.leads ?? []); setTotal(json.total ?? 0) }
         } finally { setLoading(false); setRefreshing(false) }
     }, [page, statusFilter, classificationFilter, debouncedSearch])
-
     useEffect(() => { fetchLeads() }, [fetchLeads])
-
     const totalPages = Math.max(1, Math.ceil(total / pageSize))
-
     return (
         <div style={{ background: P.bg, minHeight: '100vh', padding: '40px 48px', position: 'relative' }}>
-            <style>{`
-                @keyframes spin { to { transform: rotate(360deg); } }
-                .glass-card { backdrop-filter: blur(10px); background: rgba(254, 254, 254, 0.8) !important; }
-                .hover-lift { transition: transform 0.2s cubic-bezier(0.3, 0, 0.2, 1), box-shadow 0.2s !important; }
-                .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.08) !important; }
-                .focus-ring:focus-within { box-shadow: 0 0 0 3px ${P.brand}20; border-color: ${P.brand} !important; }
-                .animate-spin { animation: spin 1s linear infinite; }
-            `}</style>
-
             {showAdd && <AddLeadModal onClose={() => setShowAdd(false)} onSuccess={() => { showToast('Lead entry initialized.', true); fetchLeads(true) }} />}
             {selectedLead && <LeadDrawer lead={selectedLead} onClose={() => setSelectedLead(null)} onRefresh={() => { fetchLeads(true); setSelectedLead(null) }} />}
             {scheduleOpen.open && scheduleOpen.lead && (
@@ -472,14 +424,12 @@ export default function CrmDemoPage() {
                     onSuccess={() => { showToast('Architecture demo synchronized.', true); fetchLeads(true) }} 
                 />
             )}
-
             {toast && !selectedLead && (
                 <div style={{ position: 'fixed', top: 32, right: 32, background: toast.ok ? P.successBg : P.errorBg, border: `1px solid ${toast.ok ? P.success : P.error}40`, borderRadius: 14, padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 12px 30px rgba(0,0,0,0.15)', zIndex: 9000, backdropFilter: 'blur(10px)' }}>
                     {toast.ok ? <CheckCircle size={18} color={P.success} /> : <XCircle size={18} color={P.error} />}
                     <span style={{ fontSize: 13, fontWeight: 900, color: toast.ok ? P.success : P.error, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{toast.msg}</span>
                 </div>
             )}
-
             {/* HEADER */}
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40 }}>
                 <div>
@@ -500,7 +450,6 @@ export default function CrmDemoPage() {
                     </button>
                 </div>
             </header>
-
             {/* STATUS SUMMARY SCROLL */}
             <div style={{ display: 'flex', gap: 16, marginBottom: 32, overflowX: 'auto', paddingBottom: 10 }} className="hide-scrollbar">
                 {STATUSES.map(s => {
@@ -516,7 +465,6 @@ export default function CrmDemoPage() {
                     )
                 })}
             </div>
-
             {/* FILTERS */}
             <div style={{ display: 'flex', gap: 20, marginBottom: 24, alignItems: 'center' }}>
                 <div style={{ position: 'relative', flex: 1 }}>
@@ -535,7 +483,6 @@ export default function CrmDemoPage() {
                     ))}
                 </div>
             </div>
-
             {/* GRID */}
             <div className="glass-card" style={{ borderRadius: 24, border: `1px solid ${P.border}`, overflow: 'hidden', minHeight: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.03)' }}>
                 {loading ? (
