@@ -1,11 +1,9 @@
 {
-  "name": "blinkopticals",
+  "name": "bebrilliant",
   "version": "1.0.0",
   "private": true,
-  "main": "index.js",
   "scripts": {
     "dev": "next dev",
-    "dev:server": "node --watch server.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
