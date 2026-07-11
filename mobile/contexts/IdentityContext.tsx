@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useRouter, useSegments } from 'expo-router'
 import { apiFetch, clearToken, getToken } from '../lib/api'
 import { supabase } from '../lib/supabase'
+import { usePushNotifications } from '../hooks/usePushNotifications'
 
 interface UserIdentity {
   id: string
@@ -30,6 +31,8 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const segments = useSegments()
+
+  usePushNotifications(user?.id)
 
   const refresh = async () => {
     try {
