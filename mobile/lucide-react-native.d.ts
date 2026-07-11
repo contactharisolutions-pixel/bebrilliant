@@ -48,4 +48,7 @@ declare module 'lucide-react-native' {
   export const HelpCircle: Icon
   export const Phone: Icon
   export const Link: Icon
+  export const Copy: Icon
+  export const Share2: Icon
+  export const Play: Icon
 }

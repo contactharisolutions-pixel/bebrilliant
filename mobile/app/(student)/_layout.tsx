@@ -80,6 +80,22 @@ export default function StudentLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="materials/index"
+        options={{
+          href: null,
+          title: 'Study Materials',
+          headerTitle: 'Study Vault',
+        }}
+      />
+      <Tabs.Screen
+        name="live/index"
+        options={{
+          href: null,
+          title: 'Live Classroom',
+          headerTitle: 'Live Classes',
+        }}
+      />
     </Tabs>
   )
 }
