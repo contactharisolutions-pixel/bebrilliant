@@ -27,4 +27,25 @@ declare module 'lucide-react-native' {
   export const Wallet: Icon
   export const Video: Icon
   export const PlusCircle: Icon
+  export const Search: Icon
+  export const User: Icon
+  export const Check: Icon
+  export const X: Icon
+  export const Clock: Icon
+  export const FileText: Icon
+  export const Plus: Icon
+  export const File: Icon
+  export const Trash: Icon
+  export const Calendar: Icon
+  export const Radio: Icon
+  export const Sparkles: Icon
+  export const CheckCircle2: Icon
+  export const AlertCircle: Icon
+  export const CheckCircle: Icon
+  export const AlertTriangle: Icon
+  export const TrendingUp: Icon
+  export const DollarSign: Icon
+  export const HelpCircle: Icon
+  export const Phone: Icon
+  export const Link: Icon
 }

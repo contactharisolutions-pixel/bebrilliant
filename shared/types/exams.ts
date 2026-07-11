@@ -41,6 +41,8 @@ export interface Exam {
     end_time?: string | null
     duration?: number | null // in minutes
     allow_anytime: boolean
+    is_active: boolean
+    total_marks?: number
     created_by?: string | null
     created_at?: string
     updated_at?: string

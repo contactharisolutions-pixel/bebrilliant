@@ -30,6 +30,7 @@ export interface UserProfile {
     tenant_id: string | null
     is_active: boolean
     is_first_login: boolean
+    metadata?: any
     created_at: string
 }
 
