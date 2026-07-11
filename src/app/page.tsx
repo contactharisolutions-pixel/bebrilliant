@@ -535,9 +535,9 @@ export default function LandingPage() {
 
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', maxWidth: '1000px', margin: '0 auto' }}>
                             {[
-                                { role: 'Teacher Companion', desc: 'Create exams, track student attendance, grade submissions, and generate Gemini AI tests instantly.', link: '#', icon: UserCheck, color: '#004B93', label: 'Download APK' },
-                                { role: 'Student Companion', desc: 'Take online assessments, review question cards, track wallet credits, and view completed grades.', link: '#', icon: GraduationCap, color: '#1FAC63', label: 'Download APK' },
-                                { role: 'Parent Companion', desc: 'Switch child profiles, monitor class presence calendars, view test scores, and download payment invoices.', link: '#', icon: Target, color: '#7C3AED', label: 'Download APK' }
+                                { role: 'Teacher Companion', desc: 'Create exams, track student attendance, grade submissions, and generate Gemini AI tests instantly.', link: '/downloads/teacher-companion.apk', icon: UserCheck, color: '#004B93', label: 'Download APK' },
+                                { role: 'Student Companion', desc: 'Take online assessments, review question cards, track wallet credits, and view completed grades.', link: '/downloads/student-companion.apk', icon: GraduationCap, color: '#1FAC63', label: 'Download APK' },
+                                { role: 'Parent Companion', desc: 'Switch child profiles, monitor class presence calendars, view test scores, and download payment invoices.', link: '/downloads/parent-companion.apk', icon: Target, color: '#7C3AED', label: 'Download APK' }
                             ].map(({ role, desc, link, icon: Icon, color, label }) => (
                                 <div key={role} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 24, padding: 32, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'all 0.3s' }}
                                     onMouseEnter={e => {
@@ -558,7 +558,7 @@ export default function LandingPage() {
                                         <h3 style={{ fontSize: 18, fontWeight: 800, color: '#111827', marginBottom: 10, fontFamily: 'var(--font-manrope, sans-serif)' }}>{role}</h3>
                                         <p style={{ fontSize: 13, color: '#6b7280', fontWeight: 500, lineHeight: 1.6, marginBottom: 24 }}>{desc}</p>
                                     </div>
-                                    <a href={link} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: color, color: '#fff', borderRadius: 14, padding: '12px 20px', fontSize: 13, fontWeight: 700, textDecoration: 'none', gap: 8, transition: 'opacity 0.2s' }}
+                                    <a href={link} download style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: color, color: '#fff', borderRadius: 14, padding: '12px 20px', fontSize: 13, fontWeight: 700, textDecoration: 'none', gap: 8, transition: 'opacity 0.2s' }}
                                         onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
                                         onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                                     >
