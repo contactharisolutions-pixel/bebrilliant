@@ -14,31 +14,29 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
         <div className="auth-layout" style={{ display: 'flex', minHeight: '100vh', background: '#fff' }}>
             <style>{`
                 .glass-premium {
-                    background: rgba(255, 255, 255, 0.03);
-                    backdrop-filter: blur(12px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
                     border-radius: 20px;
                     padding: 24px;
                     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 }
-                .glass-premium:hover {
-                    background: rgba(255, 255, 255, 0.08);
-                    transform: translateY(-5px);
-                    border-color: rgba(255, 255, 255, 0.2);
-                    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-                }
-                .mesh-bg {
+                .glass-premium.card-0 { background: #052e22; border: 1px solid #0d4d3a; }
+                .glass-premium.card-0:hover { background: #0a3d2e; border-color: #12634c; transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35); }
+
+                .glass-premium.card-1 { background: #351c04; border: 1px solid #59310c; }
+                .glass-premium.card-1:hover { background: #452607; border-color: #703f13; transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35); }
+
+                .glass-premium.card-2 { background: #092e59; border: 1px solid #11427c; }
+                .glass-premium.card-2:hover { background: #0d3b6f; border-color: #175aa6; transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35); }
+
+                .glass-premium.card-3 { background: #22123b; border: 1px solid #3b2061; }
+                .glass-premium.card-3:hover { background: #2f194f; border-color: #4e2b7e; transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35); }
+
+                .edu-bg {
                     position: absolute;
                     inset: 0;
-                    background-color: #004B93;
-                    background-image: 
-                        radial-gradient(at 0% 0%, #004B93 0, transparent 50%), 
-                        radial-gradient(at 50% 0%, #1FAC63 0, transparent 50%), 
-                        radial-gradient(at 100% 0%, #00366A 0, transparent 50%), 
-                        radial-gradient(at 0% 50%, #00366A 0, transparent 50%), 
-                        radial-gradient(at 100% 100%, #1FAC63 0, transparent 50%), 
-                        radial-gradient(at 0% 100%, #004B93 0, transparent 50%);
-                    opacity: 0.95;
+                    background-image: linear-gradient(135deg, rgba(0, 75, 147, 0.45) 0%, rgba(31, 172, 99, 0.42) 100%), url('/images/indian_classroom.png');
+                    background-size: cover;
+                    background-position: center;
+                    background-repeat: no-repeat;
                 }
                 .floating {
                     animation: float 6s ease-in-out infinite;
@@ -64,17 +62,17 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
                 padding: '60px 80px',
                 color: '#fff',
             }} className="branding-panel">
-                <div className="mesh-bg" />
+                <div className="edu-bg" />
                 
                 {/* Decorative Blobs */}
-                <div style={{ position: 'absolute', top: '10%', right: '-10%', width: 400, height: 400, background: '#1FAC63', filter: 'blur(150px)', opacity: 0.2, borderRadius: '50%' }} />
-                <div style={{ position: 'absolute', bottom: '10%', left: '-10%', width: 400, height: 400, background: '#F0A026', filter: 'blur(150px)', opacity: 0.15, borderRadius: '50%' }} />
+                <div style={{ position: 'absolute', top: '10%', right: '-10%', width: 400, height: 400, background: '#1FAC63', filter: 'blur(150px)', opacity: 0.15, borderRadius: '50%' }} />
+                <div style={{ position: 'absolute', bottom: '10%', left: '-10%', width: 400, height: 400, background: '#F0A026', filter: 'blur(150px)', opacity: 0.1, borderRadius: '50%' }} />
 
                 <div style={{ position: 'relative', zIndex: 10 }}>
                     {/* Logo */}
                     <div style={{ marginBottom: 40 }} className="fade-in-up">
                         <img 
-                            src="https://bfzlkdurgggzytegvvrw.supabase.co/storage/v1/object/public/bebrilliant/Logo2.jpeg" 
+                            src="https://bebrilliant.in/uploads/Logo2.jpeg" 
                             alt="BeBrilliant Logo" 
                             style={{ 
                                 height: 50, 
@@ -97,13 +95,13 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
                     
                     <p style={{ 
                         fontSize: 18, 
-                        opacity: 0.8, 
+                        opacity: 0.85, 
                         maxWidth: 480, 
                         lineHeight: 1.6, 
                         marginBottom: 48,
                         fontWeight: 500
                     }} className="fade-in-up fade-in-up-delay-1">
-                        The ultimate high-fidelity ERP infrastructure for leading academic institutions worldwide.
+                        The ultimate high-fidelity ERP infrastructure for leading academic institutions.
                     </p>
 
                     {/* Feature Matrix */}
@@ -114,12 +112,12 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
                         width: '100%' 
                     }} className="fade-in-up fade-in-up-delay-2">
                         {[
-                            { icon: Building, title: 'Multi-Tenant ERP', desc: 'Secure institutional silos.', color: '#1FAC63' },
-                            { icon: ShieldCheck, title: 'AI Proctored Exams', desc: 'Enterprise examination core.', color: '#F0A026' },
-                            { icon: BarChart3, title: 'Live Analytics', desc: '360° student telemetry.', color: '#60A5FA' },
-                            { icon: Users, title: 'Global CRM', desc: 'Admissions & lead logic.', color: '#A78BFA' }
+                            { icon: Building, title: 'Campus Management', desc: 'Secure institutional structures.', color: '#1FAC63' },
+                            { icon: ShieldCheck, title: 'Simple Assessments', desc: 'Secure evaluation console.', color: '#F0A026' },
+                            { icon: BarChart3, title: 'Student Reports', desc: 'Growth tracking & performance.', color: '#60A5FA' },
+                            { icon: Users, title: 'Enrollment & Admission', desc: 'Inquiries & onboarding checklists.', color: '#A78BFA' }
                         ].map((f, i) => (
-                            <div key={i} className="glass-premium">
+                            <div key={i} className={`glass-premium card-${i}`}>
                                 <div style={{ 
                                     width: 42, height: 42, 
                                     borderRadius: 12, 
@@ -131,7 +129,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
                                     <f.icon size={20} color={f.color} strokeWidth={2.5} />
                                 </div>
                                 <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>{f.title}</h3>
-                                <p style={{ fontSize: 12, opacity: 0.6, fontWeight: 600 }}>{f.desc}</p>
+                                <p style={{ fontSize: 12, opacity: 0.7, fontWeight: 600 }}>{f.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -142,11 +140,11 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
                     position: 'absolute', bottom: 40, left: 80, 
                     display: 'flex', alignItems: 'center', gap: 12,
                     padding: '8px 16px', borderRadius: 100,
-                    background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)',
-                    fontSize: 12, fontWeight: 700, letterSpacing: '0.05em', opacity: 0.7
+                    background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
+                    fontSize: 12, fontWeight: 700, letterSpacing: '0.05em', opacity: 0.8
                 }}>
                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#1FAC63', boxShadow: '0 0 10px #1FAC63' }} />
-                    PHASE 2 DEPLOYED · GLOBAL NETWORK ACTIVE
+                    PLATFORM SYSTEM STABLE · GLOBAL NETWORK ACTIVE
                 </div>
             </div>
 

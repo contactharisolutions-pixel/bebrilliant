@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
-
-async function requireOwner() {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return null
-    const { data } = await supabaseAdmin.from('user_profiles').select('role').eq('id', user.id).single()
-    if (data?.role !== 'owner') return null
-    return user
-}
+import { verifyPlatformAccess } from '@/lib/platform-auth'
 
 // GET — fetch all tenant type wallet configs
 export async function GET() {
     try {
-        const owner = await requireOwner()
-        if (!owner) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        const user = await verifyPlatformAccess('payouts.manage')
+        if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
 
         const { data, error } = await supabaseAdmin
             .from('tenant_type_config')
@@ -32,8 +24,8 @@ export async function GET() {
 // PUT — update one or all tenant type wallet configs
 export async function PUT(req: NextRequest) {
     try {
-        const owner = await requireOwner()
-        if (!owner) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        const user = await verifyPlatformAccess('payouts.manage')
+        if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
         const updates: Array<{
             tenant_type: string
@@ -53,11 +45,12 @@ export async function PUT(req: NextRequest) {
                     credit_expiry_days: update.credit_expiry_days ?? null,
                     first_time_only: update.first_time_only,
                     is_active: update.is_active,
-                    updated_by: owner.id,
+                    updated_by: user.id,
                     updated_at: new Date().toISOString(),
                 }, { onConflict: 'tenant_type' })
                 .select()
                 .single()
+
 
             if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
             results.push(data)

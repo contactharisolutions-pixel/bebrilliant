@@ -7,10 +7,12 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import Script from 'next/script'
 import { formatDate, formatDateTime } from '@/lib/utils'
 export default function StudentExamsPortal() {
     const [exams, setExams] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [examLanguages, setExamLanguages] = useState<Record<string, string>>({})
     const router = useRouter()
     const fetchExams = async () => {
         try {
@@ -47,6 +49,57 @@ export default function StudentExamsPortal() {
         })
         if (res.ok) fetchExams()
     }
+    const handleBuyExam = async (exam: any) => {
+        try {
+            const orderRes = await fetch('/api/payments/create-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ exam_id: exam.id })
+            })
+            const orderData = await orderRes.json()
+            if (orderData.error) throw new Error(orderData.error)
+
+            const options = {
+                key: orderData.key_id,
+                amount: orderData.amount,
+                currency: orderData.currency,
+                name: "Exam Enrollment",
+                description: `Enroll in: ${exam.name}`,
+                order_id: orderData.id,
+                handler: async function (response: any) {
+                    const verifyRes = await fetch('/api/payments/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            tenant_id: exam.tenant_id
+                        })
+                    })
+                    const verifyData = await verifyRes.json()
+                    if (verifyRes.ok) {
+                        alert('Payment Verified! Enrolled Successfully.')
+                        fetchExams()
+                    } else {
+                        alert(verifyData.error || 'Verification failed.')
+                    }
+                },
+                prefill: {
+                    name: "",
+                    email: ""
+                },
+                theme: { color: "var(--color-primary)" }
+            }
+            const rzp = new (window as any).Razorpay(options)
+            rzp.on('payment.failed', function (response: any) {
+                alert('Payment Failed: ' + response.error.description)
+            })
+            rzp.open()
+        } catch (error: any) {
+            alert(error.message || 'Failed to initiate purchase.')
+        }
+    }
     if (loading) return (
         <div style={{ padding: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <Loader2 size={32} color="var(--color-primary)" style={{ animation: 'spin 1s linear infinite' }} />
@@ -54,6 +107,7 @@ export default function StudentExamsPortal() {
     )
     return (
         <div style={{ padding: '32px 40px', background: '#F8FAFC', minHeight: '100%' }}>
+            <Script src="https://checkout.razorpay.com/v1/checkout.js" />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
                 <div>
                    <h1 style={{ fontSize: 32, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.03em' }}>Assessments & Exams</h1>
@@ -65,7 +119,7 @@ export default function StudentExamsPortal() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 32 }}>
                 {exams.map(ex => (
-                    <ExamCard key={ex.id} exam={ex} onEnroll={handleEnroll} onAddToCart={handleAddToCart} />
+                    <ExamCard key={ex.id} exam={ex} onEnroll={handleEnroll} onAddToCart={handleAddToCart} onBuyExam={handleBuyExam} examLanguages={examLanguages} setExamLanguages={setExamLanguages} />
                 ))}
             </div>
             {exams.length === 0 && (
@@ -77,7 +131,7 @@ export default function StudentExamsPortal() {
         </div>
     )
 }
-function ExamCard({ exam, onEnroll, onAddToCart }: { exam: any, onEnroll: any, onAddToCart: any }) {
+function ExamCard({ exam, onEnroll, onAddToCart, onBuyExam, examLanguages, setExamLanguages }: { exam: any, onEnroll: any, onAddToCart: any, onBuyExam: any, examLanguages: Record<string, string>, setExamLanguages: React.Dispatch<React.SetStateAction<Record<string, string>>> }) {
     const router = useRouter()
     const [timeLeft, setTimeLeft] = useState('')
     const isLive = !exam.allow_anytime
@@ -176,9 +230,21 @@ function ExamCard({ exam, onEnroll, onAddToCart }: { exam: any, onEnroll: any, o
             )}
             {/* ACTIONS */}
             <div style={{ marginTop: 'auto', paddingTop: 28 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 16 }}>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: '#64748B' }}>EXAM LANGUAGE:</span>
+                    <select 
+                        value={examLanguages[exam.id] || 'en'} 
+                        onChange={(e) => setExamLanguages(prev => ({ ...prev, [exam.id]: e.target.value }))}
+                        style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '6px 12px', fontSize: 13, fontWeight: 700, color: '#0F172A', outline: 'none', cursor: 'pointer' }}
+                    >
+                        <option value="en">English</option>
+                        <option value="hi">Hindi (हिंदी)</option>
+                        <option value="gu">Gujarati (ગુજરાતી)</option>
+                    </select>
+                </div>
                 {!isEnrolled ? (
                     isPaid ? (
-                        <button style={{ width: '100%', padding: '16px', borderRadius: 16, border: 'none', background: '#0F172A', color: '#FFF', fontSize: 15, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                        <button onClick={() => onBuyExam(exam)} style={{ width: '100%', padding: '16px', borderRadius: 16, border: 'none', background: '#0F172A', color: '#FFF', fontSize: 15, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
                              <CreditCard size={18} /> Buy Now & Enroll
                         </button>
                     ) : (
@@ -189,7 +255,7 @@ function ExamCard({ exam, onEnroll, onAddToCart }: { exam: any, onEnroll: any, o
                 ) : (
                     <button 
                         disabled={!canStart}
-                        onClick={() => router.push(`/dashboard/student/exams/attempt/${exam.id}`)}
+                        onClick={() => router.push(`/dashboard/student/exams/attempt/${exam.id}?lang=${examLanguages[exam.id] || 'en'}`)}
                         style={{ 
                             width: '100%', padding: '16px', borderRadius: 16, border: 'none', 
                             background: canStart ? '#10B981' : '#F1F5F9', 

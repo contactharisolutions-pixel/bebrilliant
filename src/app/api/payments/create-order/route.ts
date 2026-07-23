@@ -86,6 +86,7 @@ export async function POST(request: Request) {
             id: rpOrder.id,
             amount: rpOrder.amount,
             currency: rpOrder.currency,
+            key_id: process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
             breakdown
         })
 

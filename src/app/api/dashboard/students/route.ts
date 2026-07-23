@@ -203,8 +203,30 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, results })
         }
 
+        if (action === 'DELETE_STUDENT') {
+            const { id } = payload
+            
+            // Delete student profile first (due to foreign keys)
+            const { error: profileError } = await supabaseAdmin
+                .from('user_profiles')
+                .delete()
+                .eq('id', id)
+                .eq('tenant_id', tenant_id)
+
+            if (profileError) throw profileError
+
+            // Also delete the auth user
+            const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id)
+            if (authError) {
+                console.error('[DELETE_STUDENT] Auth User Delete Error:', authError.message)
+            }
+
+            return NextResponse.json({ success: true })
+        }
+
         return NextResponse.json({ error: 'Invalid action payload logic' }, { status: 400 })
     } catch (error: any) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
+

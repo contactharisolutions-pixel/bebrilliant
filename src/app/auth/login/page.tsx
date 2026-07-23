@@ -66,11 +66,45 @@ export default function LoginPage() {
 
     return (
         <AuthLayout title="Platform Login" subtitle="Enter your credentials to access your dashboard.">
+            <style>{`
+                .premium-input {
+                    width: 100%;
+                    padding: 14px 16px 14px 48px;
+                    border-radius: 12px;
+                    border: 1.5px solid #E5E7EB;
+                    font-size: 15px;
+                    color: #111827;
+                    outline: none;
+                    transition: all 0.2s ease;
+                    background: #F9FAFB;
+                }
+                .premium-input:focus {
+                    border-color: #004B93;
+                    background: #fff;
+                    box-shadow: 0 0 0 4px rgba(0, 75, 147, 0.12);
+                }
+                .premium-input-pass {
+                    width: 100%;
+                    padding: 14px 48px;
+                    border-radius: 12px;
+                    border: 1.5px solid #E5E7EB;
+                    font-size: 15px;
+                    color: #111827;
+                    outline: none;
+                    transition: all 0.2s ease;
+                    background: #F9FAFB;
+                }
+                .premium-input-pass:focus {
+                    border-color: #004B93;
+                    background: #fff;
+                    box-shadow: 0 0 0 4px rgba(0, 75, 147, 0.12);
+                }
+            `}</style>
             <div className="fade-in-up fade-in-up-delay-1" style={{ width: '100%' }}>
                 {serverError && (
-                    <div className="alert alert-error" role="alert" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="alert alert-error" role="alert" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#B91C1C', padding: '12px 16px', borderRadius: '12px', marginBottom: '20px' }}>
                         <AlertCircle size={18} />
-                        <span style={{ fontWeight: 600 }}>{serverError}</span>
+                        <span style={{ fontWeight: 600, fontSize: '13px' }}>{serverError}</span>
                     </div>
                 )}
 
@@ -79,22 +113,12 @@ export default function LoginPage() {
                     <div style={{ marginBottom: 20 }}>
                         <label style={{ fontSize: 12, fontWeight: 800, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>Email Address</label>
                         <div style={{ position: 'relative' }}>
-                            <Mail size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                            <Mail size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', zIndex: 5 }} />
                             <input
                                 id="login-email"
                                 type="email"
                                 placeholder="name@institute.com"
-                                style={{
-                                    width: '100%',
-                                    padding: '14px 16px 14px 48px',
-                                    borderRadius: 12,
-                                    border: '1.5px solid #F3F4F6',
-                                    fontSize: 15,
-                                    color: '#111827',
-                                    outline: 'none',
-                                    transition: 'all 0.2s',
-                                    background: '#F9FAFB'
-                                }}
+                                className="premium-input"
                                 {...register('email')}
                             />
                         </div>
@@ -105,28 +129,18 @@ export default function LoginPage() {
                     <div style={{ marginBottom: 20 }}>
                         <label style={{ fontSize: 12, fontWeight: 800, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>Password</label>
                         <div style={{ position: 'relative' }}>
-                            <Lock size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                            <Lock size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', zIndex: 5 }} />
                             <input
                                 id="login-password"
                                 type={showPassword ? 'text' : 'password'}
                                 placeholder="••••••••••••"
-                                style={{
-                                    width: '100%',
-                                    padding: '14px 48px',
-                                    borderRadius: 12,
-                                    border: '1.5px solid #F3F4F6',
-                                    fontSize: 15,
-                                    color: '#111827',
-                                    outline: 'none',
-                                    transition: 'all 0.2s',
-                                    background: '#F9FAFB'
-                                }}
+                                className="premium-input-pass"
                                 {...register('password')}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
+                                style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', zIndex: 5 }}
                             >
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>

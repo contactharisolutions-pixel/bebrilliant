@@ -196,7 +196,7 @@ async function generateAIContent(attrs) {
     if (genAI) {
         try {
             const aiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-            const prompt = `You are a premium eyewear product copywriter for BlinkOpticals, an Indian optical retailer.
+            const prompt = `You are a premium eyewear product copywriter for BeBrilliant, an Indian optical retailer.
 
 Product details:
 - Brand: ${brand || 'Unknown'}
@@ -217,8 +217,8 @@ Return ONLY a valid JSON object (no markdown, no code fences):
 {
   "product_name": "${productName}",
   "short_description": "1-2 punchy sentences, USP-focused, max 120 chars",
-  "description": "3-4 paragraphs: 1) Style & design overview 2) Materials & comfort 3) Occasion & lifestyle fit 4) BlinkOpticals promise. Use plain text only.",
-  "seo_title": "50-60 chars. Format: Brand Model – Shape Category for Gender | BlinkOpticals",
+  "description": "3-4 paragraphs: 1) Style & design overview 2) Materials & comfort 3) Occasion & lifestyle fit 4) BeBrilliant promise. Use plain text only.",
+  "seo_title": "50-60 chars. Format: Brand Model – Shape Category for Gender | BeBrilliant",
   "seo_description": "130-155 chars meta description with brand, key feature, and CTA",
   "keywords": "8-12 comma-separated keywords: brand, model, shape, material, gender, category variations"
 }`;
@@ -239,15 +239,15 @@ Return ONLY a valid JSON object (no markdown, no code fences):
     }
 
     // Template fallback
-    const G = gender || 'Unisex', B = brand || 'BlinkOpticals', Mod = model || '';
+    const G = gender || 'Unisex', B = brand || 'BeBrilliant', Mod = model || '';
     const S = shape || '', C = category || 'Eyewear', Mat = material || '';
     return {
         product_name: productName,
         short_description: `${B} ${Mod} — stylish ${S} ${C.toLowerCase()} crafted for the modern ${G.toLowerCase()}.`,
-        description: `Introducing the ${B} ${Mod}, a sophisticated eyewear piece for the discerning ${G.toLowerCase()}. The ${S} silhouette blends classic style with contemporary design, making it suitable for any occasion.\n\nCrafted from premium ${Mat || 'quality'} material, these frames deliver exceptional durability without compromising on comfort. The ${frameType || ''} design ensures a secure all-day fit.\n\n${lensColorway ? `The ${lensColorway} lens colorway offers an added touch of personality and style.` : ''} Whether for vision correction or as a fashion statement, the ${B} ${Mod} excels on every front.\n\nAvailable exclusively at BlinkOpticals — India's trusted eyewear destination. Authentic products, expert fitting, and free home delivery.`,
-        seo_title: `${B} ${Mod} ${S} ${C} for ${G} | BlinkOpticals`,
-        seo_description: `Shop ${B} ${Mod} ${C.toLowerCase()} at BlinkOpticals. ${Mat ? `Premium ${Mat} frames. ` : ''}Perfect for the modern ${G.toLowerCase()}. Free shipping & expert consultation.`,
-        tags: `${B}, ${Mod}, ${S} ${C.toLowerCase()}, ${G.toLowerCase()} eyewear, ${Mat} frames, ${C.toLowerCase()} online, buy glasses india, BlinkOpticals`,
+        description: `Introducing the ${B} ${Mod}, a sophisticated eyewear piece for the discerning ${G.toLowerCase()}. The ${S} silhouette blends classic style with contemporary design, making it suitable for any occasion.\n\nCrafted from premium ${Mat || 'quality'} material, these frames deliver exceptional durability without compromising on comfort. The ${frameType || ''} design ensures a secure all-day fit.\n\n${lensColorway ? `The ${lensColorway} lens colorway offers an added touch of personality and style.` : ''} Whether for vision correction or as a fashion statement, the ${B} ${Mod} excels on every front.\n\nAvailable exclusively at BeBrilliant — India's trusted eyewear destination. Authentic products, expert fitting, and free home delivery.`,
+        seo_title: `${B} ${Mod} ${S} ${C} for ${G} | BeBrilliant`,
+        seo_description: `Shop ${B} ${Mod} ${C.toLowerCase()} at BeBrilliant. ${Mat ? `Premium ${Mat} frames. ` : ''}Perfect for the modern ${G.toLowerCase()}. Free shipping & expert consultation.`,
+        tags: `${B}, ${Mod}, ${S} ${C.toLowerCase()}, ${G.toLowerCase()} eyewear, ${Mat} frames, ${C.toLowerCase()} online, buy glasses india, BeBrilliant`,
     };
 }
 

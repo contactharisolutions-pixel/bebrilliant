@@ -1,20 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
-
-async function verifyOwner() {
-    const supabase = await createClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error || !user) return null
-    const { data: profile } = await supabaseAdmin
-        .from('user_profiles').select('role').eq('id', user.id).single()
-    return (profile?.role === 'owner' || profile?.role === 'admin') ? user : null
-}
+import { verifyPlatformAccess } from '@/lib/platform-auth'
 
 /** GET /api/owner/sales/stats - Full Sales & Marketing dashboard metrics */
 export async function GET(request: NextRequest) {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('crm.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
 
     const { searchParams } = new URL(request.url)
     const range = searchParams.get('range') || '30' // days

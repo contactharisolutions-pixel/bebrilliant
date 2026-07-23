@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { useRouter } from 'expo-router'
-import { VictoryLine, VictoryBar, VictoryChart, VictoryAxis, VictoryTooltip, VictoryVoronoiContainer } from 'victory-native'
+import { CartesianChart, Line, Bar } from 'victory-native'
 import { useIdentity } from '../../../contexts/IdentityContext'
 import { Award, Users, Video, BookOpen, Sparkles, TrendingUp, Calendar } from 'lucide-react-native'
 import { apiFetch } from '../../../lib/api'
@@ -21,7 +21,7 @@ interface AnalyticsData {
 export default function TeacherDashboard() {
   const router = useRouter()
   const { user } = useIdentity()
-  
+
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -30,7 +30,7 @@ export default function TeacherDashboard() {
     try {
       const [statsData, analyticsData] = await Promise.all([
         apiFetch('/api/teacher/dashboard-summary'),
-        apiFetch('/api/teacher/analytics')
+        apiFetch('/api/teacher/analytics'),
       ])
       setStats(statsData)
       setAnalytics(analyticsData)
@@ -52,6 +52,22 @@ export default function TeacherDashboard() {
       </View>
     )
   }
+
+  // Normalize exam performance data for CartesianChart
+  const examChartData =
+    analytics?.examPerformance.map((ep, idx) => ({
+      x: idx,
+      y: Math.round(ep.avg_score),
+      label: ep.name,
+    })) ?? []
+
+  // Normalize attendance trend data for CartesianChart
+  const attendanceChartData =
+    analytics?.attendanceTrend.map((at, idx) => ({
+      x: idx,
+      y: at.present,
+      label: at.date.substring(5), // MM-DD
+    })) ?? []
 
   return (
     <ScrollView className="flex-1 bg-bg-card2 px-5 py-6">
@@ -131,90 +147,69 @@ export default function TeacherDashboard() {
         </View>
       </View>
 
-      {/* Analytics Section */}
+      {/* Analytics Section — victory-native v41 CartesianChart API */}
       {analytics && (
-        <View className="mt-4 pb-12 space-y-6">
-          {/* Exam Scores Performance Line Chart */}
-          {analytics.examPerformance.length > 0 && (
+        <View className="mt-4 pb-12">
+          {/* Exam Scores Line Chart */}
+          {examChartData.length > 1 && (
             <View className="rounded-3xl bg-white border border-border p-5 shadow-sm mb-6">
-              <View className="flex-row items-center mb-3">
+              <View className="flex-row items-center mb-4">
                 <TrendingUp size={16} color="#004B93" />
-                <Text className="text-sm font-black text-text-primary ml-2">Average Exam Scores</Text>
+                <Text className="text-sm font-black text-text-primary ml-2">
+                  Average Exam Scores
+                </Text>
               </View>
-              <View className="align-center justify-center">
-                <VictoryChart
-                  height={200}
-                  padding={{ top: 20, bottom: 40, left: 40, right: 20 }}
-                  containerComponent={<VictoryVoronoiContainer />}
-                >
-                  <VictoryAxis
-                    tickFormat={(x: any) => {
-                      const examName = analytics.examPerformance[x - 1]?.name || ''
-                      return examName.length > 8 ? `${examName.substring(0, 8)}...` : examName
-                    }}
-                    style={{
-                      tickLabels: { fontSize: 8, fill: '#6B7280' }
-                    }}
+              <CartesianChart
+                data={examChartData}
+                xKey="x"
+                yKeys={['y']}
+                axisOptions={{
+                  tickCount: { x: Math.min(examChartData.length, 5), y: 5 },
+                  labelStyle: { fontSize: 9, color: '#9CA3AF' },
+                }}
+                style={{ height: 200 }}
+              >
+                {({ points }) => (
+                  <Line
+                    points={points.y}
+                    color="#004B93"
+                    strokeWidth={3}
+                    animate={{ type: 'timing', duration: 400 }}
                   />
-                  <VictoryAxis
-                    dependentAxis
-                    style={{
-                      tickLabels: { fontSize: 8, fill: '#6B7280' }
-                    }}
-                  />
-                  <VictoryLine
-                    data={analytics.examPerformance.map((ep, idx) => ({
-                      x: idx + 1,
-                      y: ep.avg_score,
-                      label: `${ep.avg_score.toFixed(0)}%`
-                    }))}
-                    style={{
-                      data: { stroke: '#004B93', strokeWidth: 3 }
-                    }}
-                  />
-                </VictoryChart>
-              </View>
+                )}
+              </CartesianChart>
             </View>
           )}
 
           {/* Daily Attendance Bar Chart */}
-          {analytics.attendanceTrend.length > 0 && (
+          {attendanceChartData.length > 0 && (
             <View className="rounded-3xl bg-white border border-border p-5 shadow-sm mb-6">
-              <View className="flex-row items-center mb-3">
+              <View className="flex-row items-center mb-4">
                 <Calendar size={16} color="#10B981" />
-                <Text className="text-sm font-black text-text-primary ml-2">Daily Attendance Trends</Text>
+                <Text className="text-sm font-black text-text-primary ml-2">
+                  Daily Attendance Trends
+                </Text>
               </View>
-              <View className="align-center justify-center">
-                <VictoryChart
-                  height={200}
-                  padding={{ top: 20, bottom: 40, left: 40, right: 20 }}
-                >
-                  <VictoryAxis
-                    tickFormat={(x: any) => {
-                      const dateStr = analytics.attendanceTrend[x - 1]?.date || ''
-                      return dateStr.substring(5) // MM-DD
-                    }}
-                    style={{
-                      tickLabels: { fontSize: 8, fill: '#6B7280' }
-                    }}
+              <CartesianChart
+                data={attendanceChartData}
+                xKey="x"
+                yKeys={['y']}
+                axisOptions={{
+                  tickCount: { x: Math.min(attendanceChartData.length, 7), y: 5 },
+                  labelStyle: { fontSize: 9, color: '#9CA3AF' },
+                }}
+                style={{ height: 200 }}
+              >
+                {({ points, chartBounds }) => (
+                  <Bar
+                    points={points.y}
+                    chartBounds={chartBounds}
+                    color="#10B981"
+                    roundedCorners={{ topLeft: 4, topRight: 4 }}
+                    animate={{ type: 'timing', duration: 400 }}
                   />
-                  <VictoryAxis
-                    dependentAxis
-                    style={{
-                      tickLabels: { fontSize: 8, fill: '#6B7280' }
-                    }}
-                  />
-                  <VictoryBar
-                    data={analytics.attendanceTrend.map((at, idx) => ({
-                      x: idx + 1,
-                      y: at.present
-                    }))}
-                    style={{
-                      data: { fill: '#10B981', width: 12 }
-                    }}
-                  />
-                </VictoryChart>
-              </View>
+                )}
+              </CartesianChart>
             </View>
           )}
         </View>

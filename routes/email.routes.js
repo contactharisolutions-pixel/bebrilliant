@@ -22,7 +22,7 @@ router.post('/send', auth, async (req, res) => {
 
     try {
         const info = await transporter.sendMail({
-            from: `"BlinkOpticals" <${process.env.SMTP_USER}>`,
+            from: `"BeBrilliant" <${process.env.SMTP_USER}>`,
             to, subject, html, text
         });
         res.json({ success: true, messageId: info.messageId });
@@ -41,7 +41,7 @@ router.post('/invoice', auth, async (req, res) => {
 
     const html = `
     <div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;padding:30px;border:1px solid #eee">
-      <h2 style="color:#000">BlinkOpticals Invoice</h2>
+      <h2 style="color:#000">BeBrilliant Invoice</h2>
       <p>Dear ${customer_name}, thank you for your purchase!</p>
       <p><strong>Invoice #:</strong> ${invoice_number} &nbsp; <strong>Status:</strong> ${payment_status}</p>
       <table style="width:100%;border-collapse:collapse;margin-top:20px">
@@ -55,13 +55,13 @@ router.post('/invoice', auth, async (req, res) => {
       </table>
       <p style="margin-top:20px;font-size:1.2rem"><strong>Total: ₹${total_amount}</strong></p>
       <hr/>
-      <p style="color:#999;font-size:0.8rem">Visit us at blinkopticals.com</p>
+      <p style="color:#999;font-size:0.8rem">Visit us at bebrilliant.in</p>
     </div>`;
 
     try {
         await transporter.sendMail({
-            from: `"BlinkOpticals" <${process.env.SMTP_USER}>`,
-            to, subject: `Invoice ${invoice_number} - BlinkOpticals`, html
+            from: `"BeBrilliant" <${process.env.SMTP_USER}>`,
+            to, subject: `Invoice ${invoice_number} - BeBrilliant`, html
         });
         res.json({ success: true });
     } catch (err) {

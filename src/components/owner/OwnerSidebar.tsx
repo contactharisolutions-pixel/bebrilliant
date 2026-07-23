@@ -20,75 +20,114 @@ import {
     Settings2, 
     LogOut, 
     Zap, 
-    Wallet, 
     School, 
     UserPlus, 
     Receipt,
-    Printer,
-    ScanLine
+    Wallet,
+    MessageSquare,
+    Megaphone
 } from 'lucide-react'
 
 const NAV_GROUPS = [
     {
-        title: 'Platform Statistics',
+        title: 'Dashboard & Reports',
         items: [
             { label: 'Dashboard', icon: LayoutDashboard, href: '/owner/dashboard' },
-            { label: 'Reports & Analytics', icon: BarChart4, href: '/owner/analytics' },
+            { label: 'Reports & Insights', icon: BarChart4, href: '/owner/analytics', permission: 'analytics.view' },
         ]
     },
     {
         title: 'Institute Management',
         items: [
-            { label: 'My Institutes', icon: School, href: '/owner/tenants' },
-            { label: 'Inquiries (CRM)', icon: UserPlus, href: '/owner/crm' },
-            { label: 'Business Growth', icon: TrendingUp, href: '/owner/sales' },
+            { label: 'My Institutes', icon: School, href: '/owner/tenants', permission: 'settings.manage' },
+            { label: 'Admission Enquiries', icon: UserPlus, href: '/owner/crm', permission: 'crm.manage' },
+            { label: 'Onboarding Status', icon: ShieldCheck, href: '/owner/onboarding', permission: 'crm.manage' },
+            { label: 'Sales & Growth', icon: TrendingUp, href: '/owner/sales', permission: 'crm.manage' },
         ]
     },
     {
-        title: 'Fees & Payments',
+        title: 'Fees & Finance',
         items: [
-            { label: 'Revenue Ledger', icon: Receipt, href: '/owner/payments' },
-            { label: 'Institute Wallet', icon: Zap, href: '/owner/finance' },
-            { label: 'Payouts', icon: Wallet, href: '/owner/finance/payouts' },
-            { label: 'Wallet Credit Settings', icon: CreditCard, href: '/owner/wallet-config' },
+            { label: 'Subscription Payments', icon: Receipt, href: '/owner/payments', permission: 'payouts.manage' },
+            { label: 'Institute Balances', icon: Zap, href: '/owner/finance', permission: 'payouts.manage' },
+            { label: 'Withdrawal Requests', icon: Wallet, href: '/owner/finance/payouts', permission: 'payouts.manage' },
+            { label: 'Wallet Settings', icon: CreditCard, href: '/owner/wallet-config', permission: 'payouts.manage' },
         ]
     },
     {
-        title: 'Academic Material',
+        title: 'Syllabus & Exams',
         items: [
-            { label: 'Master Syllabus', icon: BookOpenCheck, href: '/owner/syllabus' },
-            { label: 'Paper Pattern Templates', icon: ScrollText, href: '/owner/exams/templates' },
-            { label: 'Master Question Bank', icon: ScrollText, href: '/owner/exams' },
+            { label: 'Course Syllabus', icon: BookOpenCheck, href: '/owner/syllabus', permission: 'settings.manage' },
+            { label: 'Exam Formats', icon: ScrollText, href: '/owner/exams/templates', permission: 'settings.manage' },
+            { label: 'Question Bank', icon: ScrollText, href: '/owner/exams', permission: 'settings.manage' },
         ]
     },
     {
-        title: 'Infrastructure',
+        title: 'Settings & Control',
         items: [
-            { label: 'Website CMS',          icon: Globe,        href: '/owner/cms' },
-            { label: 'Panel Automation',      icon: Bot,          href: '/owner/automation' },
-            { label: 'Commission Rules',      icon: ShieldCheck,  href: '/owner/settings/finance' },
-            { label: 'Price Plans',           icon: CreditCard,   href: '/owner/settings/plans' },
-            { label: 'WhatsApp Templates',    icon: Share2,       href: '/owner/whatsapp-config' },
-            { label: 'Affiliates',            icon: Users,        href: '/owner/settings/affiliate' },
-            { label: 'Global Settings',       icon: Settings2,    href: '/owner/settings' },
+            { label: 'Website Manager',       icon: Globe,         href: '/owner/cms',            permission: 'cms.manage' },
+            { label: 'Message Templates',    icon: MessageSquare, href: '/owner/communications', permission: 'automation.manage' },
+            { label: 'Bulk Messages',        icon: Megaphone,     href: '/owner/marketing',      permission: 'automation.manage' },
+            { label: 'Commission Settings',  icon: ShieldCheck,   href: '/owner/settings/finance', permission: 'settings.manage' },
+            { label: 'Subscription Plans',   icon: CreditCard,    href: '/owner/settings/plans', permission: 'settings.manage' },
+            { label: 'Partner Rewards',      icon: Users,         href: '/owner/settings/affiliate', permission: 'settings.manage' },
+            { label: 'Staff Permissions',    icon: ShieldCheck,   href: '/owner/rbac',           permission: 'settings.manage' },
+            { label: 'System Settings',      icon: Settings2,     href: '/owner/settings',       permission: 'settings.manage' },
         ]
     }
 ]
 
-// PALETTE: #FEFEFE | #E8E8E8 | #F0A026 | #A5A2A6 | #004B93 | #1B1D21
 export function OwnerSidebar() {
     const pathname = usePathname()
     const router = useRouter()
     const supabase = createClient()
+    const [permissions, setPermissions] = React.useState<string[]>([])
+    const [role, setRole] = React.useState<string>('owner')
+    const [loading, setLoading] = React.useState<boolean>(true)
+
+    React.useEffect(() => {
+        const fetchRbac = async () => {
+            try {
+                const res = await fetch('/api/owner/rbac/me')
+                if (res.ok) {
+                    const data = await res.json()
+                    setPermissions(data.permissions || [])
+                    setRole(data.role || '')
+                }
+            } catch (err) {
+                console.error('Sidebar RBAC error:', err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchRbac()
+    }, [])
 
     const handleLogout = async () => {
         try {
+            await fetch('/api/auth/signout', { method: 'POST' })
             await supabase.auth.signOut()
-            router.push('/auth/login')
-            router.refresh()
+            window.location.href = '/auth/login'
         } catch (error) {
             console.error('Logout failed:', error)
         }
+    }
+
+    if (loading) {
+        return (
+            <aside style={{
+                width: 280,
+                minWidth: 280,
+                height: '100vh',
+                background: '#FEFEFE',
+                borderRight: '1px solid #E5E7EB',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
+                <span style={{ fontSize: 13, color: '#9CA3AF', fontWeight: 600 }}>Loading navigation...</span>
+            </aside>
+        )
     }
 
     return (
@@ -119,7 +158,7 @@ export function OwnerSidebar() {
                 backdropFilter: 'blur(10px)'
             }}>
                 <img 
-                    src="https://bfzlkdurgggzytegvvrw.supabase.co/storage/v1/object/public/bebrilliant/Logo2.jpeg" 
+                    src="https://bebrilliant.in/uploads/Logo2.jpeg" 
                     alt="BeBrilliant Logo" 
                     style={{ height: 38, width: 'auto', maxWidth: '100%', objectFit: 'contain' }} 
                 />
@@ -133,53 +172,65 @@ export function OwnerSidebar() {
                     textTransform: 'uppercase',
                     opacity: 0.8
                 }}>
-                    Super Admin Panel
+                    {role === 'owner' ? 'Super Admin Panel' : 'Platform Staff Portal'}
                 </div>
             </div>
 
             {/* ── NAV ITEMS ── */}
             <nav style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 28 }}>
-                {NAV_GROUPS.map((group, groupIdx) => (
-                    <div key={groupIdx}>
-                        <div style={{ fontSize: 10, fontWeight: 900, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.12em', padding: '0 12px 12px', opacity: 0.8 }}>
-                            {group.title}
+                {NAV_GROUPS.map((group, groupIdx) => {
+                    const visibleItems = group.items.filter(item => {
+                        if (!item.permission) return true
+                        return permissions.includes(item.permission)
+                    })
+
+                    if (visibleItems.length === 0) return null
+
+                    return (
+                        <div key={groupIdx}>
+                            <div style={{ fontSize: 10, fontWeight: 900, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.12em', padding: '0 12px 12px', opacity: 0.8 }}>
+                                {group.title}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                {visibleItems.map(item => {
+                                    const active = item.href === '/owner/exams' 
+                                        ? pathname === '/owner/exams' 
+                                        : item.href === '/owner/finance'
+                                        ? (pathname === '/owner/finance' || (pathname?.startsWith('/owner/finance/') && !pathname?.startsWith('/owner/finance/payouts')))
+                                        : item.href === '/owner/settings'
+                                        ? pathname === '/owner/settings'
+                                        : (pathname === item.href || pathname?.startsWith(item.href + '/'))
+                                    return (
+                                        <Link key={item.href} href={item.href} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 12,
+                                            padding: '12px 16px',
+                                            borderRadius: 14,
+                                            textDecoration: 'none',
+                                            background: active ? '#004B93' : 'transparent',
+                                            color: active ? '#fff' : '#4B5563',
+                                            fontWeight: active ? 700 : 600,
+                                            fontSize: 13,
+                                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            boxShadow: active ? '0 10px 20px rgba(0,75,147,0.15)' : 'none',
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                        }}
+                                            className="nav-link-premium"
+                                        >
+                                            <item.icon size={18} color={active ? '#fff' : '#9CA3AF'} strokeWidth={active ? 2.5 : 2} style={{ flexShrink: 0 }} />
+                                            <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
+                                            {active && (
+                                                <div style={{ position: 'absolute', left: 0, top: '20%', bottom: '20%', width: 4, background: '#F0A026', borderRadius: '0 4px 4px 0' }} />
+                                            )}
+                                        </Link>
+                                    )
+                                })}
+                            </div>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                            {group.items.map(item => {
-                                // Fix: Use exact match for '/owner/exams' to avoid collision with '/owner/exams/templates'
-                                const active = item.href === '/owner/exams' 
-                                    ? pathname === '/owner/exams' 
-                                    : (pathname === item.href || pathname?.startsWith(item.href + '/'))
-                                return (
-                                    <Link key={item.href} href={item.href} style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 12,
-                                        padding: '12px 16px',
-                                        borderRadius: 14,
-                                        textDecoration: 'none',
-                                        background: active ? '#004B93' : 'transparent',
-                                        color: active ? '#fff' : '#4B5563',
-                                        fontWeight: active ? 700 : 600,
-                                        fontSize: 13,
-                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        boxShadow: active ? '0 10px 20px rgba(0,75,147,0.15)' : 'none',
-                                        position: 'relative',
-                                        overflow: 'hidden'
-                                    }}
-                                        className="nav-link-premium"
-                                    >
-                                        <item.icon size={18} color={active ? '#fff' : '#9CA3AF'} strokeWidth={active ? 2.5 : 2} style={{ flexShrink: 0 }} />
-                                        <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
-                                        {active && (
-                                            <div style={{ position: 'absolute', left: 0, top: '20%', bottom: '20%', width: 4, background: '#F0A026', borderRadius: '0 4px 4px 0' }} />
-                                        )}
-                                    </Link>
-                                )
-                            })}
-                        </div>
-                    </div>
-                ))}
+                    )
+                })}
             </nav>
 
             {/* ── USER FOOTER ── */}
@@ -212,8 +263,10 @@ export function OwnerSidebar() {
                         boxShadow: '0 4px 10px rgba(0,75,147,0.1)'
                     }}>R</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Super Admin</div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Platform Owner</div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Platform User</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            {role === 'owner' ? 'Platform Owner' : 'Platform Staff'}
+                        </div>
                     </div>
                     <LogOut size={16} color="#9CA3AF" style={{ flexShrink: 0 }} />
                 </div>

@@ -5,12 +5,13 @@ import Link from 'next/link'
 import { ArrowRight, Menu, X, User } from 'lucide-react'
 
 const NAV = [
-    { label: 'Features',   href: '/features' },
-    { label: 'Technology', href: '/technology' },
-    { label: 'Pricing',    href: '/pricing' },
-    { label: 'FAQ',        href: '/faq' },
-    { label: 'About',      href: '/about' },
-    { label: 'Contact',    href: '/contact' },
+    { label: 'Features',     href: '/features' },
+    { label: 'Technology',   href: '/technology' },
+    { label: 'Case Studies', href: '/case-studies' },
+    { label: 'Pricing',      href: '/pricing' },
+    { label: 'FAQ',          href: '/faq' },
+    { label: 'About',        href: '/about' },
+    { label: 'Contact',      href: '/contact' },
 ]
 
 export const PublicHeader = () => {
@@ -43,21 +44,21 @@ export const PublicHeader = () => {
                 {/* Logo */}
                 <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
                     <img
-                        src="/images/blinkopticals-logo.png"
-                        alt="BlinkOpticals"
-                        style={{ height: 40, width: 'auto', objectFit: 'contain', display: 'block', borderRadius: '8px' }}
+                        src="https://bebrilliant.in/uploads/Logo2.jpeg"
+                        alt="BeBrilliant"
+                        style={{ height: 40, width: 'auto', borderRadius: 8, objectFit: 'contain', display: 'block' }}
                     />
                 </Link>
 
                 {/* Centre nav — hidden on mobile */}
-                <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="bb-desktop-nav">
+                <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="bb-desktop-nav font-worksans">
                     {NAV.map(({ label, href }) => (
                         <Link
                             key={href}
                             href={href}
-                            style={{ padding: '6px 14px', fontSize: 13.5, fontWeight: 500, color: '#4b5563', textDecoration: 'none', borderRadius: 8, transition: 'background 0.15s, color 0.15s' }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f3f4f6'; (e.currentTarget as HTMLElement).style.color = '#004B93' }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#4b5563' }}
+                            style={{ padding: '6px 14px', fontSize: 13.5, fontWeight: 600, color: '#191c20', textDecoration: 'none', borderRadius: 8, transition: 'background 0.15s, color 0.15s' }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f3f3fa'; (e.currentTarget as HTMLElement).style.color = '#00356a' }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#191c20' }}
                         >
                             {label}
                         </Link>
@@ -65,14 +66,14 @@ export const PublicHeader = () => {
                 </nav>
 
                 {/* Right actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }} className="font-worksans">
                     {/* Sign in — hidden on mobile */}
                     <Link
                         href="/auth/login"
                         className="bb-sign-in"
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 600, color: '#374151', textDecoration: 'none', padding: '6px 12px', borderRadius: 8, transition: 'color 0.15s' }}
-                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#004B93'}
-                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#374151'}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 700, color: '#191c20', textDecoration: 'none', padding: '6px 12px', borderRadius: 8, transition: 'color 0.15s' }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#00356a'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#191c20'}
                     >
                         <User size={15} /> Sign In
                     </Link>
@@ -80,10 +81,10 @@ export const PublicHeader = () => {
                     {/* CTA */}
                     <Link
                         href="/request-demo"
-                        className="bb-cta"
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#004B93', color: '#fff', padding: '8px 18px', borderRadius: 10, fontSize: 13.5, fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 12px rgba(0,75,147,0.22)', transition: 'transform 0.15s, box-shadow 0.15s' }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px rgba(0,75,147,0.28)' }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,75,147,0.22)' }}
+                        className="bb-cta font-manrope"
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'linear-gradient(135deg, #00356a 0%, #004b93 100%)', color: '#fff', padding: '8px 18px', borderRadius: 10, fontSize: 13.5, fontWeight: 800, textDecoration: 'none', boxShadow: '0 4px 12px rgba(0,27,60,0.15)', transition: 'transform 0.15s, box-shadow 0.15s' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px rgba(0,27,60,0.22)' }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,27,60,0.15)' }}
                     >
                         Request Demo <ArrowRight size={13} />
                     </Link>
@@ -92,7 +93,7 @@ export const PublicHeader = () => {
                     <button
                         className="bb-hamburger"
                         onClick={() => setOpen(v => !v)}
-                        style={{ display: 'none', width: 38, height: 38, alignItems: 'center', justifyContent: 'center', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, cursor: 'pointer', color: '#374151' }}
+                        style={{ display: 'none', width: 38, height: 38, alignItems: 'center', justifyContent: 'center', background: '#f3f3fa', border: 'none', borderRadius: 8, cursor: 'pointer', color: '#191c20' }}
                         aria-label="Menu"
                     >
                         {open ? <X size={18} /> : <Menu size={18} />}
@@ -102,14 +103,14 @@ export const PublicHeader = () => {
 
             {/* ── Mobile drawer ── */}
             <div
-                className="bb-mobile-nav"
+                className="bb-mobile-nav font-worksans"
                 style={{
                     overflow: 'hidden',
                     maxHeight: open ? 600 : 0,
                     opacity: open ? 1 : 0,
                     transition: 'max-height 0.3s ease, opacity 0.2s ease',
-                    borderTop: open ? '1px solid #f3f4f6' : 'none',
-                    background: '#fff',
+                    borderTop: open ? '1px solid #ededf4' : 'none',
+                    background: '#ffffff',
                 }}
             >
                 <div style={{ padding: '20px 5%', display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -118,16 +119,16 @@ export const PublicHeader = () => {
                             key={href}
                             href={href}
                             onClick={() => setOpen(false)}
-                            style={{ padding: '12px 4px', fontSize: 15, fontWeight: 600, color: '#111827', textDecoration: 'none', borderBottom: '1px solid #f9fafb' }}
+                            style={{ padding: '12px 4px', fontSize: 15, fontWeight: 700, color: '#191c20', textDecoration: 'none', borderBottom: '1px solid #f3f3fa' }}
                         >
                             {label}
                         </Link>
                     ))}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 20 }}>
-                        <Link href="/auth/login" onClick={() => setOpen(false)} style={{ textAlign: 'center', padding: '12px', fontSize: 14, fontWeight: 700, color: '#374151', border: '1.5px solid #e5e7eb', borderRadius: 12, textDecoration: 'none' }}>
+                        <Link href="/auth/login" onClick={() => setOpen(false)} style={{ textAlign: 'center', padding: '12px', fontSize: 14, fontWeight: 800, color: '#191c20', border: '1.5px solid #c2c6d2', borderRadius: 12, textDecoration: 'none' }}>
                             Sign In
                         </Link>
-                        <Link href="/request-demo" onClick={() => setOpen(false)} style={{ textAlign: 'center', padding: '12px', fontSize: 14, fontWeight: 700, background: '#004B93', color: '#fff', borderRadius: 12, textDecoration: 'none' }}>
+                        <Link href="/request-demo" onClick={() => setOpen(false)} style={{ textAlign: 'center', padding: '12px', fontSize: 14, fontWeight: 800, background: 'linear-gradient(135deg, #00356a 0%, #004b93 100%)', color: '#ffffff', borderRadius: 12, textDecoration: 'none' }}>
                             Book a Free Demo
                         </Link>
                     </div>

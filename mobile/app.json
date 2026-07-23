@@ -27,7 +27,24 @@
     "scheme": "bebrilliant",
     "plugins": [
       "expo-router",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#004B93"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#004B93"
+        }
+      ],
+      "expo-web-browser"
     ],
     "extra": {
       "router": {},

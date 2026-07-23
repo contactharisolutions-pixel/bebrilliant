@@ -106,7 +106,7 @@ router.get('/:order_id', auth, async (req, res) => {
             success: true,
             invoice_data: {
                 business: {
-                    name:    biz.business_name || 'BlinkOpticals',
+                    name:    biz.business_name || 'BeBrilliant',
                     address: biz.address       || '',
                     city:    biz.city          || '',
                     state:   biz.state         || '',

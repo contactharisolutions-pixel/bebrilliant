@@ -115,6 +115,20 @@ export default function StudentDirectoryPage() {
             }
         } finally { setSaving(false) }
     }
+    const handleDeleteStudent = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this student profile permanently?')) return
+        setSaving(true)
+        try {
+            const res = await fetch('/api/dashboard/students', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'DELETE_STUDENT', payload: { id } })
+            })
+            if (res.ok) {
+                showToast('Student Profile Deleted', true)
+                fetchStudents()
+            }
+        } finally { setSaving(false) }
+    }
     return (
         <div style={{ padding: '48px 56px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
             {toast && <AppToast msg={toast.msg} ok={toast.ok} onClose={() => setToast(null)} />}
@@ -248,7 +262,7 @@ export default function StudentDirectoryPage() {
                                     <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                                         <Link href={`/dashboard/faculty/analytics/results-360?student_id=${s.id}`} style={{ padding: 10, border: '1px solid #F1F5F9', borderRadius: 12, color: COLORS.primary }} className="action-btn" title="View Report Card"><Activity size={18} /></Link>
                                         <button onClick={() => handleToggleStatus(s.id, s.is_active)} style={{ padding: 10, border: '1px solid #F1F5F9', borderRadius: 12, color: COLORS.slate }} className="action-btn" title="Manage Access"><Lock size={18} /></button>
-                                        <button style={{ padding: 10, border: '1px solid #F1F5F9', borderRadius: 12, color: COLORS.danger }} className="action-btn" title="Delete Student"><Trash2 size={18} /></button>
+                                        <button onClick={() => handleDeleteStudent(s.id)} style={{ padding: 10, border: '1px solid #F1F5F9', borderRadius: 12, color: COLORS.danger }} className="action-btn" title="Delete Student"><Trash2 size={18} /></button>
                                     </div>
                                 </td>
                             </tr>

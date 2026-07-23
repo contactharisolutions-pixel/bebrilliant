@@ -1,5 +1,5 @@
 /**
- * BlinkOpticals — Production API Server
+ * BeBrilliant — Production API Server
  * Architecture: Modular Express, Connection Pooling (pg), JWT Auth
  */
 'use strict';
@@ -140,18 +140,17 @@ process.on('unhandledRejection', (reason) => console.error('[UNHANDLED REJECTION
 process.on('uncaughtException',  (err)    => { console.error('[UNCAUGHT EXCEPTION]', err); process.exit(1); });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
-if (process.env.NODE_ENV !== 'production') {
-    app.listen(PORT, () => {
-        console.log(`
+app.listen(PORT, () => {
+    console.log(`
     ╔═══════════════════════════════════════╗
-    ║  BlinkOpticals API v3.0 — PORT ${PORT}  ║
+    ║  BeBrilliant API v3.0 — PORT ${PORT}   ║
     ║  ENV: ${(process.env.NODE_ENV || 'development').padEnd(28)}║
     ║  Routes: Public, Auth, Master,        ║
     ║          Products, Orders, Customers  ║
     ║          Inventory, CRM, AI Filler    ║
     ╚═══════════════════════════════════════╝`);
-    });
-}
+});
 
 module.exports = app;
+
 

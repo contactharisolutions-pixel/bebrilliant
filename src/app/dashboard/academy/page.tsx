@@ -6,6 +6,7 @@ import {
     Search, Filter, GraduationCap, LayoutPanelLeft, 
     Link as LinkIcon, UserPlus, MapPin
 } from 'lucide-react'
+import { useIdentity } from '@/contexts/IdentityContext'
 const COLORS = {
     primary: '#004B93',
     primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
@@ -17,6 +18,8 @@ const COLORS = {
     background: '#F8FAFC'
 }
 export default function AcademySetupPage() {
+    const { identity } = useIdentity()
+    const tenantType = identity?.tenant?.tenant_type || 'institute'
     const [activeTab, setActiveTab] = useState('classes') 
     const [loading, setLoading] = useState(true)
     const [classes, setClasses] = useState<any[]>([])
@@ -43,12 +46,14 @@ export default function AcademySetupPage() {
     const fetchData = useCallback(async () => {
         setLoading(true)
         try {
-            const [clsRes, facRes, mapRes, clsSubRes] = await Promise.all([
+            const isIndy = tenantType === 'independent_teacher'
+            const fetches = [
                 fetch('/api/dashboard/tenant/classes'),
-                fetch('/api/dashboard/teachers'), 
-                fetch('/api/dashboard/tenant/structure/mapping?type=teacher-subject'),
+                isIndy ? Promise.resolve({ json: () => ({ teachers: [], subjects: [] }) }) : fetch('/api/dashboard/teachers'), 
+                isIndy ? Promise.resolve({ json: () => ({ mapping: [] }) }) : fetch('/api/dashboard/tenant/structure/mapping?type=teacher-subject'),
                 fetch('/api/dashboard/tenant/structure/mapping?type=class-subject')
-            ])
+            ]
+            const [clsRes, facRes, mapRes, clsSubRes] = await Promise.all(fetches as any[])
             const clsData = await clsRes.json()
             const facData = await facRes.json() 
             const mapData = await mapRes.json()
@@ -63,7 +68,7 @@ export default function AcademySetupPage() {
         } finally {
             setLoading(false)
         }
-    }, [])
+    }, [tenantType])
     useEffect(() => { fetchData() }, [fetchData])
     const handleCreateClass = async () => {
         if (!classForm.name) return
@@ -144,6 +149,39 @@ export default function AcademySetupPage() {
             }
         } catch (e) { showToast('Failed to update subjects', false) }
     }
+    const handleDeleteSubject = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this custom subject? All mapped records might be impacted.')) return
+        try {
+            const res = await fetch('/api/dashboard/teachers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'DELETE_SUBJECT', payload: { id } })
+            })
+            if (res.ok) {
+                showToast('Subject deleted successfully', true)
+                fetchData()
+            } else {
+                const err = await res.json()
+                showToast(err.error || 'Failed to delete subject', false)
+            }
+        } catch (e) {
+            showToast('Failed to delete subject', false)
+        }
+    }
+    const handleDeleteMapping = async (id: string) => {
+        if (!confirm('Are you sure you want to revoke this teacher assignment?')) return
+        try {
+            const res = await fetch(`/api/dashboard/tenant/structure/mapping?type=teacher-subject&id=${id}`, {
+                method: 'DELETE'
+            })
+            if (res.ok) {
+                showToast('Assignment revoked', true)
+                fetchData()
+            }
+        } catch (e) {
+            showToast('Failed to revoke assignment', false)
+        }
+    }
     return (
         <div style={{ padding: '40px 48px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
              {/* TOAST PANEL */}
@@ -168,7 +206,7 @@ export default function AcademySetupPage() {
                     { id: 'classes', label: 'Classes & Sections', icon: Layers },
                     { id: 'subjects', label: 'Subjects Management', icon: BookOpen },
                     { id: 'mapping', label: 'Teacher Mapping', icon: GraduationCap }
-                ].map(tab => (
+                ].filter(t => t.id !== 'mapping' || tenantType !== 'independent_teacher').map(tab => (
                     <button 
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
@@ -287,7 +325,9 @@ export default function AcademySetupPage() {
                                                 </td>
                                                 <td style={{ padding: '24px 32px', textAlign: 'right' }}>
                                                     <button style={{ padding: 8, borderRadius: 10, border: 'none', background: 'transparent', cursor: 'pointer', color: '#94A3B8' }}><Edit3 size={18} /></button>
-                                                    <button style={{ padding: 8, borderRadius: 10, border: 'none', background: 'transparent', cursor: 'pointer', color: COLORS.danger }}><Trash2 size={18} /></button>
+                                                    {sub.tenant_id && (
+                                                        <button onClick={() => handleDeleteSubject(sub.id)} style={{ padding: 8, borderRadius: 10, border: 'none', background: 'transparent', cursor: 'pointer', color: COLORS.danger }} title="Delete Subject"><Trash2 size={18} /></button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}
@@ -323,7 +363,7 @@ export default function AcademySetupPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <button style={{ padding: 8, height: 'fit-content', borderRadius: 10, border: 'none', background: 'transparent', cursor: 'pointer', color: COLORS.danger }}>
+                                        <button onClick={() => handleDeleteMapping(map.id)} style={{ padding: 8, height: 'fit-content', borderRadius: 10, border: 'none', background: 'transparent', cursor: 'pointer', color: COLORS.danger }} title="Delete Assignment">
                                             <Trash2 size={18} />
                                         </button>
                                     </div>

@@ -144,6 +144,13 @@ const NAV_GROUPS = [
         tenantTypes: ["institute", "school"],
       },
       {
+        label: "Staff Directory",
+        icon: Users,
+        href: "/dashboard/staff",
+        roles: ["tenant_admin", "owner"],
+        tenantTypes: ["institute", "school"],
+      },
+      {
         label: "Payments & Fees",
         icon: Wallet,
         href: "/dashboard/wallet",
@@ -318,7 +325,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   };
   const logoUrl =
     identityLocal?.tenant?.logo_url ||
-    "https://bfzlkdurgggzytegvvrw.supabase.co/storage/v1/object/public/bebrilliant/Logo2.jpeg";
+    "https://bebrilliant.in/uploads/Logo2.jpeg";
   const instituteName =
     identityLocal?.tenant?.name || (identityLocal ? "Hub" : "Loading...");
   const userName =

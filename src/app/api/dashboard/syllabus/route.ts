@@ -19,7 +19,7 @@ async function verifyTenantAdmin() {
         return null
     }
 
-    if (profile.tenant_id && ['tenant_admin', 'admin', 'owner', 'teacher'].includes(profile.role)) {
+    if (profile.tenant_id && ['tenant_admin', 'admin', 'owner', 'teacher', 'student', 'parent'].includes(profile.role)) {
         return { user, tenant_id: profile.tenant_id, role: profile.role }
     }
     return null
@@ -147,7 +147,10 @@ export async function POST(request: NextRequest) {
     const session = await verifyTenantAdmin()
     if (!session) return NextResponse.json({ error: 'Unauthorized Action' }, { status: 403 })
 
-    const { tenant_id, user } = session
+    const { tenant_id, user, role } = session
+    if (role === 'student' || role === 'parent') {
+        return NextResponse.json({ error: 'Forbidden: Students and parents cannot modify syllabus' }, { status: 403 })
+    }
     const body = await request.json()
     const { action, payload } = body
 

@@ -1,569 +1,1016 @@
 'use client'
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
     Search, Plus, RefreshCw, X, Loader2, CheckCircle, XCircle,
-    AlertTriangle, ChevronLeft, ChevronRight, Mail, Phone,
-    Calendar, Clock, Building2, User, Filter, MoreVertical,
-    Trash2, Pencil, Eye, ArrowRight, Tag, Download,
-    PhoneCall, Video, StickyNote, CheckCheck, Ban, Trophy,
-    Sparkles, ArrowUpRight, Zap, Target, History, ShieldCheck,
-    Layers, Layout, PieChart as PieIcon, Activity, Heart,
-    Globe, PhoneForwarded, MessageSquare, Users
+    ChevronLeft, ChevronRight, Mail, Phone, Calendar, Clock,
+    Building2, User, Filter, Trash2, Pencil, Download, Upload,
+    PhoneCall, Video, StickyNote, Trophy, Ban, Sparkles,
+    ArrowUpRight, Target, History, Layers, LayoutGrid, BarChart2,
+    Globe, MessageSquare, Users, Star, Flame, Zap, TrendingUp,
+    CheckCheck, AlertCircle, MoreHorizontal, Send, Paperclip,
+    Bell, Tag, ChevronDown, Activity, DollarSign, Percent, Save,
 } from 'lucide-react'
-// â”€â”€ PALETTE â”” MATCHING INSTITUTIONAL SYSTEM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+// ── PALETTE ──────────────────────────────────────────────────────────────────
 const P = {
     bg: '#F7F8FA', card: '#FEFEFE', border: '#E8E8E8',
-    brand: '#004B93', brandBg: '#004B9315', brandHover: '#003A72',
-    cta: '#F0A026', ctaBg: '#FFF4E5',
+    brand: '#004B93', brandBg: '#EEF4FF',
+    cta: '#F0A026', ctaBg: '#FFF7E6',
     dark: '#1B1D21', text: '#5A5A5A', muted: '#A5A2A6', hover: '#F1F2F4',
-    success: '#1FAC63', successBg: '#1FAC6310',
-    warning: '#F59E0B', warningBg: '#FFFBEB',
-    error: '#EF4444', errorBg: '#FEF2F2',
-    info: '#3B82F6', infoBg: '#EFF6FF',
+    success: '#059669', successBg: '#ECFDF5',
+    warning: '#D97706', warningBg: '#FFFBEB',
+    error: '#DC2626', errorBg: '#FEF2F2',
+    info: '#2563EB', infoBg: '#EFF6FF',
+    purple: '#7C3AED', purpleBg: '#F5F3FF',
 }
-// ——————————————————————————————————————————————————————————————————————————————
-const STATUSES = [
-    { key: 'new', label: 'New Lead', color: '#1FAC63', bg: '#1FAC6310', icon: Sparkles },
-    { key: 'contacted', label: 'Contacted', color: '#F0A026', bg: '#F0A02610', icon: PhoneForwarded },
-    { key: 'demo_scheduled', label: 'Demo Set', color: '#004B93', bg: '#004B9310', icon: Calendar },
-    { key: 'demo_completed', label: 'Qualified', color: '#7C3AED', bg: '#7C3AED10', icon: Video },
-    { key: 'converted', label: 'Partner', color: '#059669', bg: '#05966915', icon: Trophy },
-    { key: 'lost', label: 'Lost', color: '#EF4444', bg: '#EF444410', icon: Ban },
+
+// ── PIPELINE STAGES ───────────────────────────────────────────────────────────
+const DEFAULT_STAGES = [
+    { key: 'new',           label: 'New Lead',       color: '#059669', bg: '#ECFDF5', icon: Sparkles },
+    { key: 'contacted',     label: 'Contacted',      color: '#D97706', bg: '#FFFBEB', icon: PhoneCall },
+    { key: 'demo_scheduled',label: 'Demo Set',       color: '#2563EB', bg: '#EFF6FF', icon: Calendar },
+    { key: 'demo_completed',label: 'Demo Done',      color: '#7C3AED', bg: '#F5F3FF', icon: Video },
+    { key: 'converted',     label: 'Won',            color: '#059669', bg: '#ECFDF5', icon: Trophy },
+    { key: 'lost',          label: 'Lost',           color: '#DC2626', bg: '#FEF2F2', icon: Ban },
 ]
-const SOURCES = ['Website', 'Referral', 'Cold Call', 'LinkedIn', 'Conference', 'Google Ads', 'Manual', 'Other']
-type Demo = { id: string; scheduled_at: string; status: string; notes: string }
-type Lead = {
-    id: string; name: string; organization: string; email: string
-    phone?: string; source?: string; status: string; type?: string
-    created_at: string; updated_at: string; demos?: Demo[]
+
+const SOURCES = ['Website', 'Referral', 'Cold Call', 'LinkedIn', 'Conference', 'Google Ads', 'Manual', 'Import', 'Other']
+const PRIORITY_CONFIG = {
+    low:    { label: 'Low',    color: P.muted,   bg: P.hover },
+    medium: { label: 'Medium', color: P.warning, bg: P.warningBg },
+    high:   { label: 'High',   color: P.error,   bg: P.errorBg },
+    urgent: { label: 'Urgent', color: P.purple,  bg: P.purpleBg },
 }
-function statusMeta(key: string) {
-    return STATUSES.find(s => s.key === key) ?? STATUSES[0]
+
+function stageOf(key: string) { return DEFAULT_STAGES.find(s => s.key === key) ?? DEFAULT_STAGES[0] }
+function scoreColor(s: number) { return s >= 70 ? P.error : s >= 40 ? P.warning : P.muted }
+function scoreBg(s: number)    { return s >= 70 ? P.errorBg : s >= 40 ? P.warningBg : P.hover }
+function scoreLabel(s: number) { return s >= 70 ? '🔥 Hot' : s >= 40 ? '☀️ Warm' : '❄️ Cold' }
+
+// ── SHARED COMPONENTS ─────────────────────────────────────────────────────────
+function Pill({ label, color, bg }: { label: string; color: string; bg: string }) {
+    return <span style={{ background: bg, color, borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{label}</span>
 }
-// â”€â”€ TOAST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function useToast() {
-    const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-    const show = (msg: string, ok: boolean) => {
-        setToast({ msg, ok })
-        setTimeout(() => setToast(null), 3000)
-    }
-    return { toast, show }
+
+function Toast({ msg, ok, action }: { msg: string; ok: boolean; action?: { label: string; onClick: () => void } }) {
+    return (
+        <div style={{ position: 'fixed', bottom: 28, right: 28, background: ok ? P.success : P.error, color: '#fff', borderRadius: 12, padding: '12px 20px', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.18)', zIndex: 9999, animation: 'slideUp 0.3s ease' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {ok ? <CheckCircle size={16} /> : <XCircle size={16} />} <span>{msg}</span>
+            </div>
+            {action && (
+                <button type="button" onClick={action.onClick} style={{ background: '#fff', color: ok ? P.success : P.error, border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 800, cursor: 'pointer', marginLeft: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                    {action.label}
+                </button>
+            )}
+        </div>
+    )
 }
-// â”€â”€ ADD LEAD MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function AddLeadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-    const [form, setForm] = useState({ name: '', organization: '', email: '', phone: '', source: 'Website', status: 'new', type: 'INSTITUTE' })
+
+// ── ADD LEAD MODAL ────────────────────────────────────────────────────────────
+function AddLeadModal({ onClose, onSuccess, staffList }: { onClose: () => void; onSuccess: () => void; staffList: any[] }) {
+    const [form, setForm] = useState({ name: '', organization: '', email: '', phone: '', source: 'Website', status: 'new', type: 'INSTITUTE', priority: 'medium', lead_score: 0, expected_value: '', assigned_to: '' })
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
-    const submit = async () => {
+
+    async function submit() {
         if (!form.name || !form.organization || !form.email) { setError('Name, Organization and Email are required.'); return }
         setLoading(true)
         try {
-            const res = await fetch('/api/owner/crm/leads', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form),
-            })
-            const json = await res.json()
-            if (!res.ok) { setError(json.error || 'Failed to initialize lead'); return }
+            const res = await fetch('/api/owner/crm/leads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, expected_value: form.expected_value ? parseFloat(form.expected_value) : null }) })
+            if (!res.ok) { const j = await res.json(); setError(j.error || 'Failed'); return }
             onSuccess(); onClose()
         } finally { setLoading(false) }
     }
-    const field = (label: string, key: keyof typeof form, type = 'text') => (
-        <div style={{ marginBottom: 18 }}>
-            <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
-            <input type={type} value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                style={{ width: '100%', padding: '12px 16px', border: `1px solid ${P.border}`, borderRadius: 12, fontSize: 14, color: P.dark, background: '#fff', outline: 'none', boxSizing: 'border-box', fontWeight: 650, transition: 'all 0.2s' }} className="focus-ring" />
-        </div>
-    )
+
     return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(10, 20, 40, 0.4)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
-            <div className="glass-card" style={{ borderRadius: 28, width: '100%', maxWidth: 540, boxShadow: '0 40px 120px rgba(0,0,0,0.3)', border: `1px solid ${P.border}`, overflow: 'hidden', animation: 'scaleUp 0.3s ease' }}>
-                <style>{`
-                    @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-                `}</style>
-                <div style={{ padding: '32px 40px', borderBottom: `1px solid ${P.border}`, background: P.bg, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                        <div style={{ width: 44, height: 44, borderRadius: 12, background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 8px 16px ${P.brand}15` }}>
-                            <Plus size={22} color={P.brand} strokeWidth={3} />
-                        </div>
-                        <div>
-                            <h2 style={{ fontSize: 20, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.02em' }}>Initialize Lead Node</h2>
-                            <p style={{ fontSize: 13, color: P.muted, margin: '4px 0 0', fontWeight: 600 }}>Add new lead into the partner pipeline</p>
-                        </div>
-                    </div>
-                    <button onClick={onClose} style={{ background: P.hover, border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer', display: 'flex' }}><X size={20} color={P.muted} /></button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+            <div style={{ background: P.card, borderRadius: 20, padding: 32, width: '100%', maxWidth: 560, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={18} color={P.brand} /></div>
+                    <div><div style={{ fontSize: 16, fontWeight: 800, color: P.dark }}>Add New Lead</div><div style={{ fontSize: 12, color: P.muted }}>Enter lead details and pipeline info</div></div>
+                    <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} color={P.muted} /></button>
                 </div>
-                <div style={{ padding: '32px 40px', background: '#fff' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                        {field('Identity Identity', 'name')}
-                        {field('Organization Logic', 'organization')}
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                        {field('Primary Comms', 'email', 'email')}
-                        {field('Secondary Link', 'phone', 'tel')}
-                    </div>
-                    <div style={{ marginBottom: 24 }}>
-                        <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Node Architecture Type</div>
-                        <div style={{ display: 'flex', gap: 12 }}>
-                            {[
-                                { key: 'INSTITUTE', label: 'Enterprise Node' },
-                                { key: 'PERSONAL_TEACHER', label: 'Edge Pro Node' }
-                            ].map(opt => (
-                                <button key={opt.key} onClick={() => setForm(f => ({ ...f, type: opt.key }))} style={{
-                                    flex: 1, padding: '14px', borderRadius: 14, border: `2px solid ${form.type === opt.key ? P.brand : P.border}`,
-                                    background: form.type === opt.key ? P.brandBg : '#fff', color: form.type === opt.key ? P.brand : P.muted,
-                                    fontSize: 13, fontWeight: 900, cursor: 'pointer', transition: 'all 0.2s', textAlign: 'center'
-                                }}>{opt.label}</button>
-                            ))}
+                {error && <div style={{ background: P.errorBg, color: P.error, borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 13, fontWeight: 700 }}>{error}</div>}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    {[['Contact Name *', 'name'], ['Organization *', 'organization']].map(([l, k]) => (
+                        <div key={k}>
+                            <label style={{ fontSize: 11, fontWeight: 700, color: P.muted, display: 'block', marginBottom: 5 }}>{l}</label>
+                            <input value={(form as any)[k]} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, boxSizing: 'border-box', outline: 'none' }} />
                         </div>
-                    </div>
-                    {error && (
-                        <div style={{ background: P.errorBg, border: `1px solid ${P.error}30`, borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                            <AlertTriangle size={18} color={P.error} /><span style={{ fontSize: 13, color: P.error, fontWeight: 750 }}>{error}</span>
-                        </div>
-                    )}
-                    <div style={{ display: 'flex', gap: 14 }}>
-                        <button onClick={onClose} style={{ flex: 1, padding: '14px 0', borderRadius: 14, border: `1px solid ${P.border}`, background: P.bg, color: P.dark, fontSize: 14, fontWeight: 850, cursor: 'pointer' }}>Cancel</button>
-                        <button onClick={submit} disabled={loading} className="hover-lift" style={{ flex: 2, padding: '14px 0', borderRadius: 14, border: 'none', background: P.brand, color: '#fff', fontSize: 14, fontWeight: 950, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, boxShadow: `0 8px 24px ${P.brand}30` }}>
-                            {loading ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
-                            {loading ? 'Processing...' : 'Provision Node'}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
-// â”€â”€ SCHEDULE DEMO MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function ScheduleDemoModal({ lead, onClose, onSuccess }: { lead: Lead; onClose: () => void; onSuccess: () => void }) {
-    const [scheduledAt, setScheduledAt] = useState('')
-    const [notes, setNotes] = useState('')
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState('')
-    const submit = async () => {
-        if (!scheduledAt) { setError('Select a sync time.'); return }
-        setLoading(true)
-        try {
-            const res = await fetch(`/api/owner/crm/leads/${lead.id}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ scheduled_at: scheduledAt, notes }),
-            })
-            if (!res.ok) throw new Error('Sync failed')
-            onSuccess(); onClose()
-        } catch (err) { setError('Failed to synchronize schedule.'); } finally { setLoading(false) }
-    }
-    return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(10, 20, 40, 0.4)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 20 }}>
-            <div className="glass-card" style={{ borderRadius: 28, width: '100%', maxWidth: 480, boxShadow: '0 40px 100px rgba(0,0,0,0.3)', border: `1px solid ${P.border}`, overflow: 'hidden' }}>
-                <div style={{ padding: '32px 36px', borderBottom: `1px solid ${P.border}`, background: P.bg }}>
-                    <h2 style={{ fontSize: 20, fontWeight: 950, color: P.dark, margin: 0 }}>Schedule Architecture Demo</h2>
-                    <p style={{ fontSize: 13, color: P.muted, margin: '6px 0 0', fontWeight: 650 }}>{lead.organization} Â· {lead.name}</p>
-                </div>
-                <div style={{ padding: '32px 36px', background: '#fff' }}>
-                    <div style={{ marginBottom: 20 }}>
-                        <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Synchronization Target</div>
-                        <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)}
-                            style={{ width: '100%', padding: '12px 16px', border: `1px solid ${P.border}`, borderRadius: 12, fontSize: 14, color: P.dark, background: P.bg, outline: 'none', boxSizing: 'border-box', fontWeight: 650 }} />
-                    </div>
-                    <div style={{ marginBottom: 24 }}>
-                        <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Discussion Notes</div>
-                        <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4} placeholder="Notes for the demonstration..."
-                            style={{ width: '100%', padding: '12px 16px', border: `1px solid ${P.border}`, borderRadius: 12, fontSize: 14, color: P.dark, background: P.bg, outline: 'none', resize: 'none', boxSizing: 'border-box', fontWeight: 600, lineHeight: 1.5 }} />
-                    </div>
-                    {error && <div style={{ background: P.errorBg, border: `1px solid ${P.error}30`, borderRadius: 12, padding: '12px 16px', marginBottom: 20, color: P.error, fontSize: 13, fontWeight: 750 }}>{error}</div>}
-                    <div style={{ display: 'flex', gap: 14 }}>
-                        <button onClick={onClose} style={{ flex: 1, padding: '14px 0', borderRadius: 12, border: `1px solid ${P.border}`, background: P.bg, color: P.dark, fontSize: 14, fontWeight: 850 }}>Cancel</button>
-                        <button onClick={submit} disabled={loading} style={{ flex: 2, padding: '14px 0', borderRadius: 12, background: P.brand, color: '#fff', border: 'none', fontSize: 14, fontWeight: 950, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                            {loading ? <Loader2 size={18} className="animate-spin" /> : <Calendar size={18} />} Schedule Node Sync
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
-// ——————————————————————————————————————————————————————————————————————————————
-function LeadDrawer({ lead, onClose, onRefresh }: { lead: Lead; onClose: () => void; onRefresh: () => void }) {
-    const [activeTab, setActiveTab] = useState<'overview' | 'demos' | 'update'>('overview')
-    const [newStatus, setNewStatus] = useState(lead.status)
-    const [loading, setLoading] = useState<string | null>(null)
-    const { toast, show: showToast } = useToast()
-    const [scheduleOpen, setScheduleOpen] = useState(false)
-    const updateStatus = async () => {
-        setLoading('status')
-        try {
-            const res = await fetch(`/api/owner/crm/leads/${lead.id}`, {
-                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus }),
-            })
-            if (res.ok) { showToast('Pipeline status synced.', true); onRefresh() }
-            else throw new Error('Sync failed')
-        } catch (err) { showToast('Sync failed.', false) } finally { setLoading(null) }
-    }
-    const deleteLead = async () => {
-        if (!confirm('Execute node expungement?')) return
-        setLoading('delete')
-        try {
-            const res = await fetch(`/api/owner/crm/leads/${lead.id}`, { method: 'DELETE' })
-            if (res.ok) { showToast('Lead removed.', true); onClose(); onRefresh() }
-            else throw new Error('Purge failed')
-        } catch (err) { showToast('Purge interrupted.', false) } finally { setLoading(null) }
-    }
-    const sm = statusMeta(lead.status)
-    return (
-        <>
-            {scheduleOpen && <ScheduleDemoModal lead={lead} onClose={() => setScheduleOpen(false)} onSuccess={() => { setScheduleOpen(false); onRefresh() }} />}
-            {/* Side Drawer */}
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(10, 20, 40, 0.4)', backdropFilter: 'blur(8px)', zIndex: 990, animation: 'fadeIn 0.3s ease' }} onClick={onClose} />
-            <div style={{ position: 'fixed', top: 0, right: 0, width: 540, height: '100vh', background: P.card, boxShadow: '-20px 0 60px rgba(0,0,0,0.15)', zIndex: 995, display: 'flex', flexDirection: 'column', animation: 'slideRight 0.4s cubic-bezier(0.2, 0, 0, 1)', borderLeft: `1px solid ${P.border}` }}>
-                <style>{`
-                    @keyframes slideRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
-                    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                `}</style>
-                {toast && (
-                    <div style={{ position: 'fixed', top: 32, right: 572, background: toast.ok ? P.successBg : P.errorBg, border: `1px solid ${toast.ok ? P.success : P.error}40`, borderRadius: 14, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 12px 30px rgba(0,0,0,0.1)', zIndex: 9999, backdropFilter: 'blur(10px)' }}>
-                        {toast.ok ? <CheckCircle size={18} color={P.success} /> : <XCircle size={18} color={P.error} />}
-                        <span style={{ fontSize: 13, fontWeight: 900, color: toast.ok ? P.success : P.error, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{toast.msg}</span>
-                    </div>
-                )}
-                {/* Drawer Header */}
-                <div style={{ padding: '40px 48px', borderBottom: `1px solid ${P.border}`, background: P.bg }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
-                        <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-                            <div style={{ width: 64, height: 64, borderRadius: 18, background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 950, color: P.brand, boxShadow: `0 12px 24px ${P.brand}15` }}>
-                                {lead.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                                <h2 style={{ margin: 0, fontSize: 24, fontWeight: 950, color: P.dark, letterSpacing: '-0.02em' }}>{lead.name}</h2>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
-                                    <Building2 size={16} color={P.muted} />
-                                    <span style={{ fontSize: 14, color: P.muted, fontWeight: 700 }}>{lead.organization}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <button onClick={onClose} className="hover-lift" style={{ background: '#fff', border: `1px solid ${P.border}`, borderRadius: 12, padding: 10, cursor: 'pointer', display: 'flex', color: P.muted }}><X size={20} /></button>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                        <span style={{ background: sm.bg, color: sm.color, padding: '8px 18px', borderRadius: 12, fontSize: 12, fontWeight: 950, border: `1px solid ${sm.color}30`, display: 'inline-flex', alignItems: 'center', gap: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            <sm.icon size={16} strokeWidth={2.5} /> {sm.label}
-                        </span>
-                        <span style={{ background: '#fff', color: P.muted, padding: '8px 16px', borderRadius: 12, fontSize: 12, fontWeight: 850, border: `1px solid ${P.border}`, display: 'inline-flex', alignItems: 'center', gap: 8 }}><Globe size={16} /> {lead.source || 'Direct Node'}</span>
-                    </div>
-                </div>
-                {/* Tabs */}
-                <div style={{ padding: '8px 48px', background: '#fff', borderBottom: `1px solid ${P.border}`, display: 'flex', gap: 10 }}>
-                    {[
-                        { key: 'overview', label: 'Details', icon: StickyNote },
-                        { key: 'demos', label: `Sync Logs (${lead.demos?.length ?? 0})`, icon: Video },
-                        { key: 'update', label: 'Operations', icon: Zap },
-                    ].map(t => (
-                        <button key={t.key} onClick={() => setActiveTab(t.key as any)} style={{
-                            padding: '12px 20px', borderRadius: 0, border: 'none',
-                            background: 'transparent', borderBottom: `3px solid ${activeTab === t.key ? P.brand : 'transparent'}`,
-                            color: activeTab === t.key ? P.brand : P.muted,
-                            fontSize: 13, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'all 0.2s'
-                        }}>
-                           <t.icon size={16} strokeWidth={activeTab === t.key ? 3 : 2} /> {t.label}
-                        </button>
                     ))}
+                    <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: P.muted, display: 'block', marginBottom: 5 }}>Email *</label>
+                        <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, boxSizing: 'border-box', outline: 'none' }} />
+                    </div>
+                    <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: P.muted, display: 'block', marginBottom: 5 }}>Phone</label>
+                        <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, boxSizing: 'border-box', outline: 'none' }} />
+                    </div>
+                    <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: P.muted, display: 'block', marginBottom: 5 }}>Source</label>
+                        <select value={form.source} onChange={e => setForm(f => ({ ...f, source: e.target.value }))} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, outline: 'none' }}>
+                            {SOURCES.map(s => <option key={s}>{s}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: P.muted, display: 'block', marginBottom: 5 }}>Priority</label>
+                        <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, outline: 'none' }}>
+                            {Object.entries(PRIORITY_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: P.muted, display: 'block', marginBottom: 5 }}>Lead Score (0-100)</label>
+                        <input type="number" min={0} max={100} value={form.lead_score} onChange={e => setForm(f => ({ ...f, lead_score: parseInt(e.target.value) || 0 }))} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, boxSizing: 'border-box', outline: 'none' }} />
+                    </div>
+                    <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: P.muted, display: 'block', marginBottom: 5 }}>Expected Value (₹)</label>
+                        <input type="number" value={form.expected_value} onChange={e => setForm(f => ({ ...f, expected_value: e.target.value }))} placeholder="0.00" style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, boxSizing: 'border-box', outline: 'none' }} />
+                    </div>
+                    <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: P.muted, display: 'block', marginBottom: 5 }}>Assign To</label>
+                        <select value={form.assigned_to} onChange={e => setForm(f => ({ ...f, assigned_to: e.target.value }))} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, outline: 'none' }}>
+                            <option value="">— Unassigned —</option>
+                            {staffList.map(s => <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>)}
+                        </select>
+                    </div>
                 </div>
-                {/* Tab Content */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '40px 48px', background: '#fff' }}>
-                    {activeTab === 'overview' && (
-                        <div style={{ display: 'grid', gap: 16 }}>
-                            {[
-                                { icon: User, label: 'Contact Name', val: lead.name },
-                                { icon: Building2, label: 'Architecture Entity', val: lead.organization },
-                                { icon: Mail, label: 'Comm Channel 1', val: lead.email },
-                                { icon: Phone, label: 'Comm Channel 2', val: lead.phone || 'N/A' },
-                                { icon: Clock, label: 'Initialization', val: new Date(lead.created_at).toLocaleDateString(undefined, { dateStyle: 'long' }) },
-                            ].map(row => (
-                                <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '18px 24px', background: P.bg, borderRadius: 18, border: `1px solid ${P.border}` }}>
-                                    <div style={{ width: 44, height: 44, borderRadius: 14, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 10px rgba(0,0,0,0.03)' }}>
-                                        <row.icon size={20} color={P.brand} strokeWidth={2.5} />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{row.label}</div>
-                                        <div style={{ fontSize: 16, fontWeight: 800, color: P.dark, marginTop: 2 }}>{row.val}</div>
-                                    </div>
-                                </div>
-                            ))}
+                <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                    <button onClick={onClose} style={{ flex: 1, padding: '10px 0', border: '1px solid ' + P.border, borderRadius: 10, fontWeight: 700, cursor: 'pointer', background: P.bg, fontSize: 13 }}>Cancel</button>
+                    <button onClick={submit} disabled={loading} style={{ flex: 2, padding: '10px 0', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', background: P.brand, color: '#fff', fontSize: 13, opacity: loading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        {loading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Adding...</> : <><Plus size={14} /> Add Lead</>}
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ── ACTIVITY LOG MODAL ────────────────────────────────────────────────────────
+// ── DETAIL DRAWER (LEAD / INQUIRY / DEMO ASSIGNMENT) ──────────────────────────
+function LeadDetailDrawer({ lead, staffList, onClose, onSuccess }: { lead: any; staffList: any[]; onClose: () => void; onSuccess: () => void }) {
+    const [tab, setTab] = useState<'info' | 'demos' | 'activities'>('info')
+    const [fullLead, setFullLead] = useState<any>(lead)
+    const [demos, setDemos] = useState<any[]>(lead.demos || [])
+    const [activities, setActivities] = useState<any[]>([])
+    const [loadingDemos, setLoadingDemos] = useState(false)
+    const [loadingActivities, setLoadingActivities] = useState(true)
+
+    // Details Tab Form
+    const [formInfo, setFormInfo] = useState({
+        name: lead.name || '',
+        organization: lead.organization || '',
+        email: lead.email || '',
+        phone: lead.phone || '',
+        source: lead.source || 'Website',
+        priority: lead.priority || 'medium',
+        lead_score: lead.lead_score || 0,
+        expected_value: lead.expected_value || '',
+        assigned_to: lead.assigned_to || ''
+    })
+
+    // Demo Scheduling Form
+    const [demoForm, setDemoForm] = useState({
+        scheduled_at: '',
+        conducted_by: '',
+        notes: ''
+    })
+
+    // Activity logging Form
+    const [actForm, setActForm] = useState({ type: 'note', content: '' })
+
+    const [saving, setSaving] = useState(false)
+    const [scheduling, setScheduling] = useState(false)
+    const [logging, setLogging] = useState(false)
+
+    // Load full details & demos
+    const fetchLeadDetails = useCallback(async () => {
+        setLoadingDemos(true)
+        try {
+            const res = await fetch(`/api/owner/crm/leads/${lead.id}`)
+            if (res.ok) {
+                const d = await res.json()
+                setFullLead(d.lead)
+                setDemos(d.lead.demos || [])
+            }
+        } finally {
+            setLoadingDemos(false)
+        }
+    }, [lead.id])
+
+    // Load activities
+    const fetchActivities = useCallback(async () => {
+        setLoadingActivities(true)
+        try {
+            const res = await fetch(`/api/owner/crm/leads/${lead.id}/activities`)
+            if (res.ok) {
+                const d = await res.json()
+                setActivities(d.activities ?? [])
+            }
+        } finally {
+            setLoadingActivities(false)
+        }
+    }, [lead.id])
+
+    useEffect(() => {
+        fetchLeadDetails()
+        fetchActivities()
+    }, [fetchLeadDetails, fetchActivities])
+
+    // Sync form info with loaded lead details
+    useEffect(() => {
+        if (fullLead) {
+            setFormInfo({
+                name: fullLead.name || '',
+                organization: fullLead.organization || '',
+                email: fullLead.email || '',
+                phone: fullLead.phone || '',
+                source: fullLead.source || 'Website',
+                priority: fullLead.priority || 'medium',
+                lead_score: fullLead.lead_score || 0,
+                expected_value: fullLead.expected_value || '',
+                assigned_to: fullLead.assigned_to || ''
+            })
+        }
+    }, [fullLead])
+
+    // Save lead attributes
+    async function handleSaveDetails() {
+        setSaving(true)
+        try {
+            const res = await fetch(`/api/owner/crm/leads/${lead.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...formInfo,
+                    expected_value: formInfo.expected_value ? parseFloat(formInfo.expected_value) : null,
+                    assigned_to: formInfo.assigned_to || null
+                })
+            })
+            if (res.ok) {
+                onSuccess()
+                fetchLeadDetails()
+            }
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    // Schedule new demo
+    async function handleScheduleDemo() {
+        if (!demoForm.scheduled_at) return
+        setScheduling(true)
+        try {
+            const res = await fetch(`/api/owner/crm/leads/${lead.id}/demo`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    scheduled_at: new Date(demoForm.scheduled_at).toISOString(),
+                    notes: demoForm.notes,
+                    conducted_by: demoForm.conducted_by || null
+                })
+            })
+            if (res.ok) {
+                setDemoForm({ scheduled_at: '', conducted_by: '', notes: '' })
+                fetchLeadDetails()
+                fetchActivities()
+                onSuccess()
+            }
+        } finally {
+            setScheduling(false)
+        }
+    }
+
+    // Add activity timeline note
+    async function handleAddActivity() {
+        if (!actForm.content.trim()) return
+        setLogging(true)
+        const res = await fetch(`/api/owner/crm/leads/${lead.id}/activities`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(actForm)
+        })
+        if (res.ok) {
+            setActForm(f => ({ ...f, content: '' }))
+            fetchActivities()
+        }
+        setLogging(false)
+    }
+
+    const ACTIVITY_TYPES = [
+        { key: 'note', label: 'Note', icon: StickyNote, color: P.info },
+        { key: 'call', label: 'Call', icon: PhoneCall, color: P.success },
+        { key: 'email', label: 'Email', icon: Mail, color: P.purple },
+        { key: 'meeting', label: 'Meeting', icon: Video, color: P.warning },
+    ]
+
+    return (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 950, display: 'flex', justifyContent: 'flex-end' }}>
+            {/* Backdrop */}
+            <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)' }} />
+            
+            {/* Side Panel */}
+            <div style={{ position: 'relative', width: 520, background: P.card, height: '100%', overflowY: 'auto', boxShadow: '-20px 0 60px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column' }}>
+                {/* Header */}
+                <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid ' + P.border, background: P.card }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 18, fontWeight: 900, color: P.dark }}>{fullLead.name}</div>
+                            <div style={{ fontSize: 12, color: P.muted, marginTop: 2 }}>{fullLead.organization} · {fullLead.email}</div>
                         </div>
-                    )}
-                    {activeTab === 'demos' && (
-                        <div>
-                             {(!lead.demos || lead.demos.length === 0) ? (
-                                <div style={{ textAlign: 'center', padding: '60px 0' }}>
-                                    <div style={{ width: 64, height: 64, borderRadius: 20, background: P.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                                        <Video size={32} color={P.muted} />
-                                    </div>
-                                    <h3 style={{ fontSize: 18, fontWeight: 950, color: P.dark, margin: 0 }}>No architecture demo logs</h3>
-                                    <p style={{ fontSize: 14, color: P.muted, margin: '10px 0 24px', fontWeight: 650 }}>Authorize a product demonstration to synchronize this node.</p>
-                                    <button onClick={() => setScheduleOpen(true)} style={{ background: P.brand, color: '#fff', border: 'none', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 950, cursor: 'pointer', boxShadow: `0 8px 20px ${P.brand}30` }}>Initialize Demo Path</button>
+                        <span style={{ background: scoreBg(fullLead.lead_score || 0), color: scoreColor(fullLead.lead_score || 0), borderRadius: 6, padding: '4px 9px', fontSize: 11, fontWeight: 800 }}>
+                            Score: {fullLead.lead_score || 0}
+                        </span>
+                        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}><X size={18} color={P.muted} /></button>
+                    </div>
+                    
+                    {/* Tabs */}
+                    <div style={{ display: 'flex', borderBottom: '1px solid ' + P.border, padding: '0 8px', marginTop: 12 }}>
+                        {[
+                            { key: 'info', label: 'Lead Attributes', icon: User },
+                            { key: 'demos', label: 'Demos & Presentations', icon: Video },
+                            { key: 'activities', label: 'Activity Log', icon: History }
+                        ].map(t => (
+                            <button
+                                key={t.key}
+                                onClick={() => setTab(t.key as any)}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: 6,
+                                    padding: '10px 14px', background: 'none', border: 'none',
+                                    cursor: 'pointer', fontWeight: 700, fontSize: 12,
+                                    color: tab === t.key ? P.brand : P.muted,
+                                    borderBottom: tab === t.key ? '2px solid ' + P.brand : '2px solid transparent',
+                                    marginBottom: -1, transition: 'all 0.15s'
+                                }}
+                            >
+                                <t.icon size={13} /> {t.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Content Panel */}
+                <div style={{ flex: 1, padding: '20px 24px', overflowY: 'auto' }}>
+                    {/* TAB 1: DETAILS & ATTRIBUTES */}
+                    {tab === 'info' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                <div>
+                                    <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 5 }}>Contact Name</label>
+                                    <input value={formInfo.name} onChange={e => setFormInfo({ ...formInfo, name: e.target.value })} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, outline: 'none' }} />
                                 </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                    {lead.demos.map(demo => {
-                                        const dStatus = demo.status === 'scheduled' ? { color: P.brand, bg: P.brandBg }
-                                            : demo.status === 'completed' ? { color: P.success, bg: P.successBg }
-                                                : { color: P.error, bg: P.errorBg }
-                                        return (
-                                            <div key={demo.id} style={{ border: `1px solid ${P.border}`, borderRadius: 20, padding: 24, background: P.bg }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                        <Calendar size={18} color={P.brand} strokeWidth={2.5} />
-                                                        <span style={{ fontSize: 15, fontWeight: 900, color: P.dark }}>{new Date(demo.scheduled_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                                                    </div>
-                                                    <span style={{ background: dStatus.bg, color: dStatus.color, padding: '5px 14px', borderRadius: 10, fontSize: 11, fontWeight: 950, textTransform: 'uppercase' }}>{demo.status}</span>
-                                                </div>
-                                                <p style={{ fontSize: 14, color: P.text, margin: 0, fontWeight: 600, lineHeight: 1.6 }}>{demo.notes || 'No notes provided.'}</p>
-                                            </div>
-                                        )
-                                    })}
+                                <div>
+                                    <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 5 }}>Organization</label>
+                                    <input value={formInfo.organization} onChange={e => setFormInfo({ ...formInfo, organization: e.target.value })} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, outline: 'none' }} />
                                 </div>
-                            )}
-                        </div>
-                    )}
-                    {activeTab === 'update' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                            {lead.status !== 'converted' ? (
-                                <div className="glass-card" style={{ background: `linear-gradient(135deg, ${P.brand}, ${P.brandHover})`, borderRadius: 24, padding: 32, color: '#fff', boxShadow: `0 20px 40px ${P.brand}30` }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-                                        <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <Trophy size={28} />
-                                        </div>
-                                        <div>
-                                            <h3 style={{ margin: 0, fontSize: 20, fontWeight: 950 }}>Provision Node</h3>
-                                            <p style={{ margin: '4px 0 0', fontSize: 13, opacity: 0.8, fontWeight: 700 }}>Initialize full institutional partnership.</p>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => window.location.href = `/owner/tenants?provision=${lead.id}`} style={{ width: '100%', padding: '16px', borderRadius: 14, border: 'none', background: '#fff', color: P.brand, fontSize: 15, fontWeight: 950, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, boxShadow: '0 8px 20px rgba(0,0,0,0.1)' }}>
-                                        Begin Onboarding <ArrowRight size={18} />
-                                    </button>
-                                </div>
-                            ) : (
-                                <div style={{ background: P.successBg, border: `1px solid ${P.success}20`, borderRadius: 24, padding: 24, display: 'flex', alignItems: 'center', gap: 18 }}>
-                                    <div style={{ width: 48, height: 48, borderRadius: 14, background: P.success, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 8px 20px ${P.success}30` }}>
-                                        <CheckCheck size={24} strokeWidth={3} />
-                                    </div>
-                                    <div>
-                                        <h4 style={{ fontSize: 16, fontWeight: 950, color: P.success, margin: 0 }}>ENTITY INTEGRATED</h4>
-                                        <p style={{ fontSize: 13, color: P.muted, fontWeight: 700, margin: '4px 0 0' }}>This node is active and providing updates.</p>
-                                    </div>
-                                </div>
-                            )}
-                            <div>
-                                <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Pipeline Life-Cycle Stage</div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                    {STATUSES.map(s => (
-                                        <button key={s.key} onClick={() => setNewStatus(s.key)} style={{
-                                            padding: '14px', borderRadius: 16, border: `2px solid ${newStatus === s.key ? s.color : P.bg}`,
-                                            background: newStatus === s.key ? s.bg : '#fff', color: newStatus === s.key ? s.color : P.muted,
-                                            fontSize: 13, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'all 0.2s', textAlign: 'left'
-                                        }}>
-                                            <s.icon size={16} /> {s.label}
-                                        </button>
-                                    ))}
-                                </div>
-                                <button onClick={updateStatus} disabled={loading === 'status' || newStatus === lead.status} style={{ width: '100%', padding: '16px', borderRadius: 14, border: 'none', background: newStatus === lead.status ? P.bg : P.brand, color: newStatus === lead.status ? P.muted : '#fff', fontSize: 15, fontWeight: 950, marginTop: 16, cursor: 'pointer', boxShadow: newStatus !== lead.status ? `0 8px 24px ${P.brand}30` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                                    {loading === 'status' ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />} Synchronize State
-                                </button>
                             </div>
-                            <button onClick={deleteLead} disabled={loading === 'delete'} style={{ marginTop: 'auto', padding: '16px', borderRadius: 14, border: `1px solid ${P.error}30`, background: P.errorBg, color: P.error, fontSize: 14, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                                {loading === 'delete' ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />} Expunge Entity Logic
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                <div>
+                                    <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 5 }}>Email Address</label>
+                                    <input value={formInfo.email} onChange={e => setFormInfo({ ...formInfo, email: e.target.value })} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, outline: 'none' }} />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 5 }}>Phone Number</label>
+                                    <input value={formInfo.phone} onChange={e => setFormInfo({ ...formInfo, phone: e.target.value })} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, outline: 'none' }} />
+                                </div>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid ' + P.border, paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                                <div>
+                                    <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 5 }}>Assign To Staff Member</label>
+                                    <select value={formInfo.assigned_to} onChange={e => setFormInfo({ ...formInfo, assigned_to: e.target.value })} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, outline: 'none', fontWeight: 600 }}>
+                                        <option value="">— Unassigned —</option>
+                                        {staffList.map(s => (
+                                            <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                    <div>
+                                        <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 5 }}>Priority</label>
+                                        <select value={formInfo.priority} onChange={e => setFormInfo({ ...formInfo, priority: e.target.value })} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, outline: 'none', fontWeight: 600 }}>
+                                            {Object.entries(PRIORITY_CONFIG).map(([k, v]) => (
+                                                <option key={k} value={k}>{v.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 5 }}>Lead Score (0-100)</label>
+                                        <input type="number" min={0} max={100} value={formInfo.lead_score} onChange={e => setFormInfo({ ...formInfo, lead_score: parseInt(e.target.value) || 0 })} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, outline: 'none' }} />
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                    <div>
+                                        <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 5 }}>Expected Value (₹)</label>
+                                        <input type="number" value={formInfo.expected_value} onChange={e => setFormInfo({ ...formInfo, expected_value: e.target.value })} placeholder="0.00" style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, outline: 'none' }} />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 5 }}>Lead Source</label>
+                                        <select value={formInfo.source} onChange={e => setFormInfo({ ...formInfo, source: e.target.value })} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, outline: 'none', fontWeight: 600 }}>
+                                            {SOURCES.map(s => <option key={s}>{s}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button onClick={handleSaveDetails} disabled={saving} style={{ padding: '11px', background: P.brand, color: '#fff', border: 'none', borderRadius: 9, cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12 }}>
+                                {saving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={16} />} Save Attributes
                             </button>
                         </div>
                     )}
+
+                    {/* TAB 2: DEMOS */}
+                    {tab === 'demos' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                            {/* Schedule form */}
+                            <div style={{ background: P.bg, border: '1px solid ' + P.border, borderRadius: 12, padding: 16 }}>
+                                <div style={{ fontSize: 13, fontWeight: 800, color: P.dark, marginBottom: 12 }}>Schedule New Demo / Presentation</div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                                        <div>
+                                            <label style={{ fontSize: 10, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 4 }}>Date & Time</label>
+                                            <input type="datetime-local" value={demoForm.scheduled_at} onChange={e => setDemoForm({ ...demoForm, scheduled_at: e.target.value })} style={{ width: '100%', padding: '7px 10px', border: '1px solid ' + P.border, borderRadius: 8, fontSize: 12, background: P.card, outline: 'none' }} />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: 10, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 4 }}>Assign Conductor Staff</label>
+                                            <select value={demoForm.conducted_by} onChange={e => setDemoForm({ ...demoForm, conducted_by: e.target.value })} style={{ width: '100%', padding: '7px 10px', border: '1px solid ' + P.border, borderRadius: 8, fontSize: 12, background: P.card, outline: 'none', fontWeight: 600 }}>
+                                                <option value="">— Unassigned —</option>
+                                                {staffList.map(s => (
+                                                    <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: 10, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 4 }}>Demo Description / Notes</label>
+                                        <textarea value={demoForm.notes} onChange={e => setDemoForm({ ...demoForm, notes: e.target.value })} rows={2} placeholder="Add demo details..." style={{ width: '100%', padding: '7px 10px', border: '1px solid ' + P.border, borderRadius: 8, fontSize: 12, background: P.card, outline: 'none', resize: 'none', boxSizing: 'border-box' }} />
+                                    </div>
+                                    <button onClick={handleScheduleDemo} disabled={scheduling || !demoForm.scheduled_at} style={{ padding: '8px 12px', background: P.brand, color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: !demoForm.scheduled_at ? 0.6 : 1 }}>
+                                        {scheduling ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Video size={13} />} Schedule Demo
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Demos List */}
+                            <div>
+                                <div style={{ fontSize: 12, fontWeight: 800, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Scheduled Demos ({demos.length})</div>
+                                {loadingDemos ? (
+                                    <div style={{ textAlign: 'center', padding: 20 }}><Loader2 size={20} color={P.brand} style={{ animation: 'spin 1s linear infinite' }} /></div>
+                                ) : demos.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: 20, color: P.muted, fontSize: 12 }}>No demos scheduled yet. Schedule one above.</div>
+                                ) : demos.map(d => {
+                                    const cond = staffList.find(s => s.id === d.conducted_by)
+                                    return (
+                                        <div key={d.id} style={{ background: P.bg, border: '1px solid ' + P.border, borderRadius: 10, padding: 12, marginBottom: 8 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                                <span style={{ fontSize: 12, fontWeight: 700, color: P.dark }}>{new Date(d.scheduled_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                                                <span style={{ background: d.status === 'completed' ? P.successBg : P.warningBg, color: d.status === 'completed' ? P.success : P.warning, padding: '2px 6px', borderRadius: 5, fontSize: 9, fontWeight: 800 }}>{d.status.toUpperCase()}</span>
+                                            </div>
+                                            {d.notes && <div style={{ fontSize: 12, color: P.text, marginBottom: 6 }}>{d.notes}</div>}
+                                            {cond && (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: P.muted }}>
+                                                    <div style={{ width: 16, height: 16, borderRadius: '50%', background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 800, color: P.brand }}>{cond.first_name?.[0]}</div>
+                                                    Conducted by: {cond.first_name} {cond.last_name}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* TAB 3: ACTIVITIES */}
+                    {tab === 'activities' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            {/* Log Note */}
+                            <div style={{ background: P.bg, borderRadius: 12, padding: 14, border: '1px solid ' + P.border }}>
+                                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                                    {ACTIVITY_TYPES.map(t => (
+                                        <button key={t.key} onClick={() => setActForm(f => ({ ...f, type: t.key }))}
+                                            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 8, border: '1px solid ' + (actForm.type === t.key ? t.color : P.border), background: actForm.type === t.key ? t.color + '20' : 'transparent', cursor: 'pointer', fontSize: 11, fontWeight: 700, color: actForm.type === t.key ? t.color : P.muted }}>
+                                            <t.icon size={11} /> {t.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <input value={actForm.content} onChange={e => setActForm(f => ({ ...f, content: e.target.value }))} onKeyDown={e => e.key === 'Enter' && handleAddActivity()} placeholder="Log an activity or note..." style={{ flex: 1, padding: '8px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card, outline: 'none' }} />
+                                    <button onClick={handleAddActivity} disabled={logging || !actForm.content.trim()} style={{ padding: '8px 14px', borderRadius: 9, border: 'none', background: P.brand, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 700, fontSize: 12, opacity: actForm.content.trim() && !logging ? 1 : 0.6 }}>
+                                        {logging ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={12} />} Log
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Timeline */}
+                            <div style={{ flex: 1 }}>
+                                {loadingActivities ? (
+                                    <div style={{ textAlign: 'center', padding: 40 }}><Loader2 size={24} color={P.brand} style={{ animation: 'spin 1s linear infinite' }} /></div>
+                                ) : activities.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: 40, color: P.muted, fontSize: 13 }}>No activities yet. Log the first one above.</div>
+                                ) : activities.map((a, i) => {
+                                    const t = ACTIVITY_TYPES.find(t => t.key === a.type) ?? ACTIVITY_TYPES[0]
+                                    return (
+                                        <div key={a.id} style={{ display: 'flex', gap: 12, paddingBottom: i < activities.length - 1 ? 16 : 0, marginBottom: i < activities.length - 1 ? 16 : 0, borderBottom: i < activities.length - 1 ? '1px solid ' + P.border : 'none' }}>
+                                            <div style={{ width: 30, height: 30, borderRadius: '50%', background: t.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}><t.icon size={13} color={t.color} /></div>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                                                    <Pill label={t.label} color={t.color} bg={t.color + '20'} />
+                                                    <span style={{ fontSize: 11, color: P.muted }}>{new Date(a.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                                                </div>
+                                                <div style={{ fontSize: 13, color: P.text, lineHeight: 1.5 }}>{a.content}</div>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
-        </>
+        </div>
     )
 }
-// ——————————————————————————————————————————————————————————————————————————————
-export default function CrmDemoPage() {
-    const [leads, setLeads] = useState<Lead[]>([])
-    const [total, setTotal] = useState(0)
-    const [page, setPage] = useState(1)
-    const pageSize = 25
-    const [statusFilter, setStatusFilter] = useState('all')
-    const [classificationFilter, setClassificationFilter] = useState('all')
-    const [search, setSearch] = useState('')
-    const [debouncedSearch, setDebouncedSearch] = useState('')
+
+// ── KANBAN CARD ───────────────────────────────────────────────────────────────
+function KanbanCard({ lead, onDragStart, onClick, onStageChange, stages, staffList }: any) {
+    const stage = stageOf(lead.status)
+    const priority = PRIORITY_CONFIG[lead.priority as keyof typeof PRIORITY_CONFIG] ?? PRIORITY_CONFIG.medium
+    const assigned = staffList.find((s: any) => s.id === lead.assigned_to)
+    return (
+        <div
+            draggable
+            onDragStart={e => onDragStart(e, lead)}
+            onClick={() => onClick(lead)}
+            style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 12, padding: 14, cursor: 'pointer', transition: 'all 0.15s', marginBottom: 10, userSelect: 'none' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'; (e.currentTarget as HTMLElement).style.borderColor = stage.color }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.borderColor = P.border }}
+        >
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+                <div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: P.dark, marginBottom: 2 }}>{lead.name}</div>
+                    <div style={{ fontSize: 11, color: P.muted, display: 'flex', alignItems: 'center', gap: 4 }}><Building2 size={10} /> {lead.organization}</div>
+                </div>
+                <div style={{ background: scoreBg(lead.lead_score || 0), color: scoreColor(lead.lead_score || 0), borderRadius: 6, padding: '2px 7px', fontSize: 10, fontWeight: 800 }}>
+                    {lead.lead_score || 0}
+                </div>
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                <Pill label={priority.label} color={priority.color} bg={priority.bg} />
+                {lead.expected_value && <Pill label={'₹' + Number(lead.expected_value).toLocaleString('en-IN')} color={P.success} bg={P.successBg} />}
+                {lead.source && <Pill label={lead.source} color={P.muted} bg={P.hover} />}
+            </div>
+            
+            {assigned && (
+                <div style={{ marginTop: 10, fontSize: 11, color: P.muted, display: 'flex', alignItems: 'center', gap: 5, background: P.bg, padding: '4px 8px', borderRadius: 6, width: 'fit-content' }}>
+                    <div style={{ width: 14, height: 14, borderRadius: '50%', background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 900, color: P.brand }}>
+                        {assigned.first_name?.[0] || '?'}
+                    </div>
+                    <span>{assigned.first_name} {assigned.last_name}</span>
+                </div>
+            )}
+
+            <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 11, color: P.muted }}>{new Date(lead.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+                {lead.status === 'converted' && (
+                    <button type="button" onClick={(e) => { e.stopPropagation(); window.location.href = `/owner/tenants?provision=true&leadId=${lead.id}`; }}
+                        style={{ padding: '3px 8px', border: 'none', borderRadius: 6, background: P.brand, color: '#fff', fontSize: 10, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <ArrowUpRight size={10} /> Provision
+                    </button>
+                )}
+            </div>
+        </div>
+    )
+}
+
+// ── ANALYTICS PANEL ───────────────────────────────────────────────────────────
+function AnalyticsPanel({ onClose }: { onClose: () => void }) {
+    const [analytics, setAnalytics] = useState<any>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        fetch('/api/owner/crm/analytics?days=30')
+            .then(r => r.json()).then(d => { setAnalytics(d); setLoading(false) })
+    }, [])
+
+    if (loading) return (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: P.card, borderRadius: 20, padding: 40, textAlign: 'center' }}>
+                <Loader2 size={32} color={P.brand} style={{ animation: 'spin 1s linear infinite', marginBottom: 12 }} />
+                <div style={{ color: P.muted, fontWeight: 600 }}>Loading analytics...</div>
+            </div>
+        </div>
+    )
+
+    const s = analytics?.summary ?? {}
+
+    return (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', padding: 20 }}>
+            <div style={{ background: P.card, borderRadius: 20, padding: 28, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 10, background: P.purpleBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><BarChart2 size={16} color={P.purple} /></div>
+                    <div><div style={{ fontSize: 15, fontWeight: 800, color: P.dark }}>CRM Analytics (30 days)</div></div>
+                    <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} color={P.muted} /></button>
+                </div>
+
+                {/* KPI Row */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 20 }}>
+                    {[
+                        { label: 'Total Leads',     value: s.totalLeads ?? 0,     icon: Users,     color: P.brand,   bg: P.brandBg },
+                        { label: 'Converted',       value: s.convertedLeads ?? 0, icon: Trophy,    color: P.success, bg: P.successBg },
+                        { label: 'Conversion Rate', value: (s.conversionRate ?? 0) + '%', icon: Percent, color: P.purple, bg: P.purpleBg },
+                        { label: 'Pipeline Value',  value: '₹' + Number(s.pipelineValue ?? 0).toLocaleString('en-IN'), icon: DollarSign, color: P.warning, bg: P.warningBg },
+                    ].map(k => (
+                        <div key={k.label} style={{ background: k.bg, borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <k.icon size={18} color={k.color} />
+                            <div>
+                                <div style={{ fontSize: 18, fontWeight: 800, color: P.dark }}>{k.value}</div>
+                                <div style={{ fontSize: 11, color: P.muted, fontWeight: 600 }}>{k.label}</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Funnel */}
+                <div style={{ background: P.bg, borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Pipeline Funnel</div>
+                    {(analytics?.funnel ?? []).map((f: any) => {
+                        const st = stageOf(f.status)
+                        const max = Math.max(...(analytics?.funnel ?? []).map((x: any) => x.count), 1)
+                        const width = Math.round((f.count / max) * 100)
+                        return (
+                            <div key={f.status} style={{ marginBottom: 10 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: st.color }}>{st.label}</span>
+                                    <span style={{ fontSize: 12, fontWeight: 800, color: P.dark }}>{f.count}</span>
+                                </div>
+                                <div style={{ height: 8, background: P.border, borderRadius: 4, overflow: 'hidden' }}>
+                                    <div style={{ height: '100%', width: width + '%', background: st.color, borderRadius: 4, transition: 'width 0.6s ease' }} />
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+
+                {/* Activity Breakdown */}
+                <div style={{ background: P.bg, borderRadius: 12, padding: 16 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Activity Breakdown</div>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        {(analytics?.activityBreakdown ?? []).map((a: any) => (
+                            <div key={a.type} style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 10, padding: '10px 14px', textAlign: 'center' }}>
+                                <div style={{ fontSize: 20, fontWeight: 900, color: P.dark }}>{a.count}</div>
+                                <div style={{ fontSize: 11, color: P.muted, fontWeight: 700, textTransform: 'capitalize' }}>{a.type}s</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ── MAIN PAGE ─────────────────────────────────────────────────────────────────
+export default function CRMPage() {
+    const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list')
+    const [leads, setLeads] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
-    const [showAdd, setShowAdd] = useState(false)
-    const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
-    const [scheduleOpen, setScheduleOpen] = useState<{ open: boolean, lead: Lead | null }>({ open: false, lead: null })
-    const { toast, show: showToast } = useToast()
-    useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(search), 400)
-        return () => clearTimeout(t)
-    }, [search])
+    const [total, setTotal] = useState(0)
+
+    // Filters
+    const [search, setSearch] = useState('')
+    const [statusFilter, setStatusFilter] = useState('all')
+    const [priorityFilter, setPriorityFilter] = useState('all')
+    const [page, setPage] = useState(1)
+    const [selected, setSelected] = useState<Set<string>>(new Set())
+
+    // UI state
+    const [showAddModal, setShowAddModal] = useState(false)
+    const [activityLead, setActivityLead] = useState<any>(null)
+    const [showAnalytics, setShowAnalytics] = useState(false)
+    const [staffList, setStaffList] = useState<any[]>([])
+    const [stages, setStages] = useState(DEFAULT_STAGES)
+    const [dragOver, setDragOver] = useState<string | null>(null)
+    const [toast, setToast] = useState<{ msg: string; ok: boolean; action?: { label: string; onClick: () => void } } | null>(null)
+
+    function showToast(msg: string, ok = true, action?: { label: string; onClick: () => void }) {
+        setToast({ msg, ok, action })
+        setTimeout(() => setToast(null), action ? 8000 : 3000)
+    }
+
     const fetchLeads = useCallback(async (isRefresh = false) => {
         if (isRefresh) setRefreshing(true); else setLoading(true)
         try {
-            const params = new URLSearchParams({ 
-                page: String(page), limit: String(pageSize), 
-                status: statusFilter, classification: classificationFilter,
-                ...(debouncedSearch && { search: debouncedSearch }) 
-            })
+            const params = new URLSearchParams({ search, status: statusFilter, page: String(page), limit: '25' })
             const res = await fetch(`/api/owner/crm/leads?${params}`)
-            const json = await res.json()
-            if (res.ok) { setLeads(json.leads ?? []); setTotal(json.total ?? 0) }
+            if (res.ok) { const d = await res.json(); setLeads(d.leads ?? []); setTotal(d.total ?? 0) }
         } finally { setLoading(false); setRefreshing(false) }
-    }, [page, statusFilter, classificationFilter, debouncedSearch])
+    }, [search, statusFilter, page])
+
     useEffect(() => { fetchLeads() }, [fetchLeads])
-    const totalPages = Math.max(1, Math.ceil(total / pageSize))
+    useEffect(() => {
+        // Load only platform staff roles for assignment dropdowns
+        fetch('/api/owner/rbac?role=staff').then(r => r.json()).then(d => setStaffList(d.users ?? []))
+    }, [])
+
+    // ── Kanban drag/drop ────────────────────────────────────────
+    function handleDragStart(e: React.DragEvent, lead: any) {
+        e.dataTransfer.setData('leadId', lead.id)
+    }
+
+    async function handleDrop(e: React.DragEvent, targetStatus: string) {
+        e.preventDefault()
+        const leadId = e.dataTransfer.getData('leadId')
+        setDragOver(null)
+        if (!leadId) return
+        const lead = leads.find(l => l.id === leadId)
+        if (!lead || lead.status === targetStatus) return
+
+        // Optimistic update
+        setLeads(ls => ls.map(l => l.id === leadId ? { ...l, status: targetStatus } : l))
+
+        try {
+            await fetch(`/api/owner/crm/leads/bulk`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'status_change', lead_ids: [leadId], payload: { status: targetStatus } })
+            })
+            if (targetStatus === 'converted') {
+                showToast('Lead converted to WON! Ready for onboarding.', true, {
+                    label: 'Provision Now',
+                    onClick: () => {
+                        window.location.href = `/owner/tenants?provision=true&leadId=${leadId}`
+                    }
+                })
+            } else {
+                showToast(`Moved to ${stageOf(targetStatus).label}`)
+            }
+        } catch {
+            setLeads(ls => ls.map(l => l.id === leadId ? { ...l, status: lead.status } : l))
+            showToast('Failed to update status', false)
+        }
+    }
+
+    async function handleStatusChange(leadId: string, newStatus: string) {
+        setLeads(ls => ls.map(l => l.id === leadId ? { ...l, status: newStatus } : l))
+        try {
+            await fetch(`/api/owner/crm/leads/bulk`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'status_change', lead_ids: [leadId], payload: { status: newStatus } })
+            })
+            if (newStatus === 'converted') {
+                showToast('Lead converted to WON! Ready for onboarding.', true, {
+                    label: 'Provision Now',
+                    onClick: () => {
+                        window.location.href = `/owner/tenants?provision=true&leadId=${leadId}`
+                    }
+                })
+            } else {
+                showToast(`Moved to ${stageOf(newStatus).label}`)
+            }
+        } catch {
+            showToast('Failed to update status', false)
+        }
+    }
+
+    // Direct Lead Assignment from List View Dropdown
+    async function handleAssignTo(leadId: string, staffId: string) {
+        setLeads(ls => ls.map(l => l.id === leadId ? { ...l, assigned_to: staffId || null } : l))
+        try {
+            const res = await fetch(`/api/owner/crm/leads/${leadId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ assigned_to: staffId || null })
+            })
+            if (!res.ok) throw new Error()
+            showToast('Lead assigned successfully')
+        } catch {
+            showToast('Failed to assign lead', false)
+            fetchLeads(true)
+        }
+    }
+
+    async function handleExport() {
+        const params = new URLSearchParams({ search, status: statusFilter })
+        window.open(`/api/owner/crm/leads/export?${params}`, '_blank')
+    }
+
+    const totalPages = Math.ceil(total / 25)
+    const filtered = leads.filter(l => priorityFilter === 'all' || l.priority === priorityFilter)
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+                <div style={{ textAlign: 'center' }}>
+                    <Loader2 size={36} color={P.brand} style={{ animation: 'spin 1s linear infinite', marginBottom: 12 }} />
+                    <div style={{ color: P.muted, fontWeight: 600 }}>Loading CRM pipeline...</div>
+                </div>
+            </div>
+        )
+    }
+
     return (
-        <div style={{ background: P.bg, minHeight: '100vh', padding: '40px 48px', position: 'relative' }}>
-            {showAdd && <AddLeadModal onClose={() => setShowAdd(false)} onSuccess={() => { showToast('Lead entry initialized.', true); fetchLeads(true) }} />}
-            {selectedLead && <LeadDrawer lead={selectedLead} onClose={() => setSelectedLead(null)} onRefresh={() => { fetchLeads(true); setSelectedLead(null) }} />}
-            {scheduleOpen.open && scheduleOpen.lead && (
-                <ScheduleDemoModal 
-                    lead={scheduleOpen.lead} 
-                    onClose={() => setScheduleOpen({ open: false, lead: null })} 
-                    onSuccess={() => { showToast('Architecture demo synchronized.', true); fetchLeads(true) }} 
-                />
-            )}
-            {toast && !selectedLead && (
-                <div style={{ position: 'fixed', top: 32, right: 32, background: toast.ok ? P.successBg : P.errorBg, border: `1px solid ${toast.ok ? P.success : P.error}40`, borderRadius: 14, padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 12px 30px rgba(0,0,0,0.15)', zIndex: 9000, backdropFilter: 'blur(10px)' }}>
-                    {toast.ok ? <CheckCircle size={18} color={P.success} /> : <XCircle size={18} color={P.error} />}
-                    <span style={{ fontSize: 13, fontWeight: 900, color: toast.ok ? P.success : P.error, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{toast.msg}</span>
-                </div>
-            )}
-            {/* HEADER */}
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40 }}>
+        <div style={{ minHeight: '100vh', background: P.bg, padding: '28px 32px', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } } * { box-sizing: border-box; }`}</style>
+            {toast && <Toast msg={toast.msg} ok={toast.ok} />}
+            {showAddModal && <AddLeadModal onClose={() => setShowAddModal(false)} onSuccess={() => fetchLeads(true)} staffList={staffList} />}
+            {activityLead && <LeadDetailDrawer lead={activityLead} staffList={staffList} onClose={() => setActivityLead(null)} onSuccess={() => fetchLeads(true)} />}
+            {showAnalytics && <AnalyticsPanel onClose={() => setShowAnalytics(false)} />}
+
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
                 <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                        <div style={{ background: P.brandBg, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800, color: P.brand, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Partner Acquisition</div>
-                    </div>
-                    <h1 style={{ fontSize: 32, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.03em' }}>CRM & Pipeline</h1>
-                    <p style={{ fontSize: 14, color: P.muted, margin: '6px 0 0', fontWeight: 600 }}>
-                        {loading ? 'Compiling pipeline data...' : `${total.toLocaleString()} leads identified in the institutional ecosystem`}
-                    </p>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: P.dark, letterSpacing: '-0.5px' }}>CRM & Pipeline</div>
+                    <div style={{ fontSize: 14, color: P.muted, marginTop: 4 }}>Lead management, activity tracking, and conversion analytics</div>
                 </div>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <button onClick={() => fetchLeads(true)} disabled={refreshing} className="hover-lift" style={{ display: 'flex', alignItems: 'center', gap: 10, background: P.card, border: `1px solid ${P.border}`, borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 850, color: P.dark, cursor: 'pointer' }}>
-                        <RefreshCw size={16} color={P.brand} className={refreshing ? 'animate-spin' : ''} /> Sync Pipeline
+                <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={() => fetchLeads(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 15px', background: P.card, border: '1px solid ' + P.border, borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 13, color: P.text }}>
+                        <RefreshCw size={14} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
                     </button>
-                    <button onClick={() => setShowAdd(true)} className="hover-lift" style={{ display: 'flex', alignItems: 'center', gap: 10, background: P.brand, color: '#fff', border: 'none', borderRadius: 12, padding: '12px 24px', fontSize: 14, fontWeight: 900, cursor: 'pointer', boxShadow: `0 10px 25px ${P.brand}30` }}>
-                        <Plus size={18} strokeWidth={3} /> Inject Lead
+                    <button onClick={() => setShowAnalytics(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 15px', background: P.purpleBg, border: '1px solid ' + P.purple + '40', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 13, color: P.purple }}>
+                        <BarChart2 size={14} /> Analytics
+                    </button>
+                    <button onClick={handleExport} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 15px', background: P.card, border: '1px solid ' + P.border, borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 13, color: P.text }}>
+                        <Download size={14} /> Export
+                    </button>
+                    <button onClick={() => setShowAddModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px', background: P.brand, border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#fff' }}>
+                        <Plus size={14} /> Add Lead
                     </button>
                 </div>
-            </header>
-            {/* STATUS SUMMARY SCROLL */}
-            <div style={{ display: 'flex', gap: 16, marginBottom: 32, overflowX: 'auto', paddingBottom: 10 }} className="hide-scrollbar">
-                {STATUSES.map(s => {
-                    const isActive = statusFilter === s.key
+            </div>
+
+            {/* KPI Strip */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 24 }}>
+                {DEFAULT_STAGES.map(s => {
+                    const count = leads.filter(l => l.status === s.key).length
                     return (
-                        <button key={s.key} onClick={() => { setStatusFilter(isActive ? 'all' : s.key); setPage(1) }} className="hover-lift" style={{ minWidth: 200, flexShrink: 0, padding: '24px', borderRadius: 24, border: `1px solid ${isActive ? s.color : P.border}`, background: isActive ? s.bg : P.card, textAlign: 'left', transition: 'all 0.2s', cursor: 'pointer', boxShadow: isActive ? `0 12px 24px ${s.color}15` : '0 4px 15px rgba(0,0,0,0.02)' }}>
-                            <div style={{ width: 44, height: 44, borderRadius: 12, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                                <s.icon size={22} color={s.color} strokeWidth={2.5} />
-                            </div>
-                            <div style={{ fontSize: 24, fontWeight: 950, color: P.dark }}>{leads.filter(l => l.status === s.key).length}</div>
-                            <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>{s.label}</div>
+                        <button key={s.key} onClick={() => { setStatusFilter(statusFilter === s.key ? 'all' : s.key); setPage(1) }}
+                            style={{ background: statusFilter === s.key ? s.bg : P.card, border: '1px solid ' + (statusFilter === s.key ? s.color : P.border), borderRadius: 12, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}>
+                            <div style={{ fontSize: 20, fontWeight: 900, color: s.color }}>{count}</div>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: s.color, marginTop: 2 }}>{s.label}</div>
                         </button>
                     )
                 })}
             </div>
-            {/* FILTERS */}
-            <div style={{ display: 'flex', gap: 20, marginBottom: 24, alignItems: 'center' }}>
-                <div style={{ position: 'relative', flex: 1 }}>
-                    <Search size={18} color={P.muted} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }} />
-                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Filter by name, entity, email, source..." className="focus-ring" style={{ width: '100%', padding: '14px 20px', paddingLeft: 48, border: `1px solid ${P.border}`, borderRadius: 16, fontSize: 14, color: P.dark, background: P.card, outline: 'none', fontWeight: 650 }} />
+
+            {/* Toolbar */}
+            <div style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 12, padding: '12px 16px', marginBottom: 20, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
+                    <Search size={14} color={P.muted} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)' }} />
+                    <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} placeholder="Search leads..." style={{ width: '100%', paddingLeft: 33, paddingRight: search ? 30 : 12, paddingTop: 8, paddingBottom: 8, border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, outline: 'none' }} />
+                    {search && <button onClick={() => { setSearch(''); setPage(1) }} style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}><X size={12} color={P.muted} /></button>}
                 </div>
-                <div style={{ display: 'flex', gap: 8, background: 'rgba(0,0,0,0.03)', padding: 6, borderRadius: 14 }}>
-                    {[
-                        { key: 'all', label: 'Ecosystem' },
-                        { key: 'institutional', label: 'Enterprise Nodes' },
-                        { key: 'independent', label: 'Edge Nodes' }
-                    ].map(f => (
-                        <button key={f.key} onClick={() => setClassificationFilter(f.key)} style={{ padding: '8px 18px', borderRadius: 10, fontSize: 12, fontWeight: 850, border: 'none', background: classificationFilter === f.key ? '#fff' : 'transparent', color: classificationFilter === f.key ? P.brand : P.muted, cursor: 'pointer', boxShadow: classificationFilter === f.key ? '0 4px 10px rgba(0,0,0,0.05)' : 'none' }}>
-                            {f.label}
+                <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)} style={{ padding: '8px 11px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.bg, outline: 'none', fontWeight: 600 }}>
+                    <option value="all">All Priority</option>
+                    {Object.entries(PRIORITY_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+                <span style={{ fontSize: 12, color: P.muted, fontWeight: 600 }}>{total} leads</span>
+                {/* View toggle */}
+                <div style={{ display: 'flex', background: P.bg, border: '1px solid ' + P.border, borderRadius: 9, overflow: 'hidden', marginLeft: 'auto' }}>
+                    {[{ m: 'list' as const, Icon: Layers, label: 'List' }, { m: 'kanban' as const, Icon: LayoutGrid, label: 'Board' }].map(({ m, Icon, label }) => (
+                        <button key={m} onClick={() => setViewMode(m)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, background: viewMode === m ? P.brand : 'transparent', color: viewMode === m ? '#fff' : P.muted, transition: 'all 0.15s' }}>
+                            <Icon size={13} /> {label}
                         </button>
                     ))}
                 </div>
             </div>
-            {/* GRID */}
-            <div className="glass-card" style={{ borderRadius: 24, border: `1px solid ${P.border}`, overflow: 'hidden', minHeight: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.03)' }}>
-                {loading ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 400 }}>
-                        <Loader2 size={40} color={P.brand} className="animate-spin" />
-                    </div>
-                ) : leads.length === 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 400 }}>
-                        <Users size={64} color={P.border} style={{ marginBottom: 20 }} />
-                        <h3 style={{ fontSize: 20, fontWeight: 950, color: P.dark }}>No leads identified</h3>
-                        <p style={{ fontSize: 14, color: P.muted, marginTop: 8, fontWeight: 650 }}>Adjust your search filters or inject a new lead.</p>
-                    </div>
-                ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                            <thead style={{ background: P.bg }}>
-                                <tr>
-                                    {['Node Identity', 'Entity Architecture', 'Sales Stage', 'Comm Link', 'Sync Logs', 'Actions'].map(h => (
-                                        <th key={h} style={{ padding: '16px 24px', fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{h}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {leads.map(lead => {
-                                    const sm = statusMeta(lead.status)
-                                    return (
-                                        <tr key={lead.id} onClick={() => setSelectedLead(lead)} className="hover-row" style={{ borderBottom: `1px solid ${P.bg}`, cursor: 'pointer', transition: 'all 0.2s' }}>
-                                            <td style={{ padding: '24px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                                                    <div style={{ width: 44, height: 44, borderRadius: 14, background: P.brandBg, color: P.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 950, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-                                                        {lead.name.charAt(0).toUpperCase()}
-                                                    </div>
-                                                    <div>
-                                                        <div style={{ fontSize: 15, fontWeight: 850, color: P.dark }}>{lead.name}</div>
-                                                        <div style={{ fontSize: 11, color: P.muted, fontWeight: 700, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}><Tag size={10} /> {lead.source || 'Direct Node'}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '24px' }}>
-                                                <div style={{ fontSize: 14, fontWeight: 800, color: P.text }}>{lead.organization}</div>
-                                                <div style={{ fontSize: 10, color: P.muted, fontWeight: 850, textTransform: 'uppercase', marginTop: 4, letterSpacing: '0.04em' }}>{lead.type?.replace('_', ' ') || 'ENTERPRISE'}</div>
-                                            </td>
-                                            <td style={{ padding: '24px' }}>
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 10, background: sm.bg, color: sm.color, fontSize: 11, fontWeight: 950, textTransform: 'uppercase', border: `1px solid ${sm.color}20` }}>
-                                                    <sm.icon size={13} strokeWidth={2.5} /> {sm.label}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '24px' }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                                    <span style={{ fontSize: 13, color: P.text, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}><Mail size={12} color={P.muted} /> {lead.email}</span>
-                                                    {lead.phone && <span style={{ fontSize: 12, color: P.muted, fontWeight: 650, display: 'flex', alignItems: 'center', gap: 6 }}><Phone size={12} /> {lead.phone}</span>}
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '24px' }}>
-                                                {lead.demos && lead.demos.length > 0 ? (
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: P.brand, fontWeight: 950, fontSize: 14 }}>
-                                                        <Video size={16} /> {lead.demos.length} Cycle(s)
-                                                    </div>
-                                                ) : <span style={{ color: P.muted, fontSize: 13, fontWeight: 600 }}>-</span>}
-                                            </td>
-                                            <td style={{ padding: '24px' }} onClick={e => e.stopPropagation()}>
-                                                <div style={{ display: 'flex', gap: 8 }}>
-                                                    <button onClick={() => setSelectedLead(lead)} className="hover-lift" style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${P.border}`, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: P.brand }}><Eye size={18} /></button>
-                                                    <button onClick={() => setScheduleOpen({ open: true, lead })} className="hover-lift" style={{ width: 36, height: 36, borderRadius: 10, border: 'none', background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: P.brand }}><Calendar size={18} /></button>
-                                                </div>
-                                            </td>
+
+            {/* ── LIST VIEW ──────────────────────────────────────────── */}
+            {viewMode === 'list' && (
+                <>
+                    <div style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 16, overflow: 'hidden' }}>
+                        {filtered.length === 0 ? (
+                            <div style={{ padding: 80, textAlign: 'center' }}>
+                                <Target size={48} color={P.border} style={{ marginBottom: 16 }} />
+                                <div style={{ fontSize: 16, fontWeight: 800, color: P.dark }}>No leads found</div>
+                                <div style={{ fontSize: 13, color: P.muted, marginTop: 6 }}>Adjust your filters or add a new lead.</div>
+                            </div>
+                        ) : (
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
+                                    <thead>
+                                        <tr style={{ background: P.bg, borderBottom: '1px solid ' + P.border }}>
+                                            {['Lead', 'Organization', 'Stage', 'Assigned To', 'Score', 'Priority', 'Value', 'Source', 'Actions'].map(h => (
+                                                <th key={h} style={{ padding: '11px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>{h}</th>
+                                            ))}
                                         </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
+                                    </thead>
+                                    <tbody>
+                                        {filtered.map((l: any, i) => {
+                                            const st = stageOf(l.status)
+                                            const pr = PRIORITY_CONFIG[l.priority as keyof typeof PRIORITY_CONFIG] ?? PRIORITY_CONFIG.medium
+                                            return (
+                                                <tr key={l.id} style={{ borderBottom: i < filtered.length - 1 ? '1px solid ' + P.border : 'none', transition: 'background 0.1s' }}
+                                                    onMouseEnter={e => (e.currentTarget.style.background = P.hover)}
+                                                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                                                    <td style={{ padding: '13px 16px' }}>
+                                                        <div style={{ fontSize: 13, fontWeight: 700, color: P.dark }}>{l.name}</div>
+                                                        <div style={{ fontSize: 11, color: P.muted }}>{l.email}</div>
+                                                    </td>
+                                                    <td style={{ padding: '13px 16px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                            <Building2 size={12} color={P.muted} />
+                                                            <span style={{ fontSize: 13, color: P.text, fontWeight: 600 }}>{l.organization}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td style={{ padding: '13px 16px' }}>
+                                                        <select value={l.status} onChange={e => handleStatusChange(l.id, e.target.value)}
+                                                            style={{ background: st.bg, color: st.color, border: 'none', borderRadius: 7, padding: '4px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer', outline: 'none' }}>
+                                                            {DEFAULT_STAGES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+                                                        </select>
+                                                    </td>
+                                                    <td style={{ padding: '13px 16px' }}>
+                                                        <select value={l.assigned_to || ''} onChange={e => handleAssignTo(l.id, e.target.value)}
+                                                            style={{ padding: '5px 10px', border: '1px solid ' + P.border, borderRadius: 8, fontSize: 12, background: P.bg, outline: 'none', fontWeight: 600 }}>
+                                                            <option value="">— Unassigned —</option>
+                                                            {staffList.map(s => (
+                                                                <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>
+                                                            ))}
+                                                        </select>
+                                                    </td>
+                                                    <td style={{ padding: '13px 16px' }}>
+                                                        <span style={{ background: scoreBg(l.lead_score || 0), color: scoreColor(l.lead_score || 0), borderRadius: 8, padding: '3px 8px', fontSize: 12, fontWeight: 800 }}>
+                                                            {l.lead_score || 0}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '13px 16px' }}><Pill label={pr.label} color={pr.color} bg={pr.bg} /></td>
+                                                    <td style={{ padding: '13px 16px', fontSize: 13, fontWeight: 700, color: l.expected_value ? P.success : P.muted }}>
+                                                        {l.expected_value ? '₹' + Number(l.expected_value).toLocaleString('en-IN') : '—'}
+                                                    </td>
+                                                    <td style={{ padding: '13px 16px' }}><Pill label={l.source || 'Manual'} color={P.muted} bg={P.hover} /></td>
+                                                    <td style={{ padding: '13px 16px' }}>
+                                                        <div style={{ display: 'flex', gap: 6 }}>
+                                                            <button title="View Activities" onClick={() => setActivityLead(l)}
+                                                                style={{ padding: '5px 9px', borderRadius: 8, border: '1px solid ' + P.border, background: P.bg, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: P.text }}>
+                                                                <History size={11} /> Log
+                                                            </button>
+                                                            {l.status === 'converted' && (
+                                                                <button type="button" onClick={() => window.location.href = `/owner/tenants?provision=true&leadId=${l.id}`}
+                                                                    style={{ padding: '5px 9px', borderRadius: 8, border: 'none', background: P.brand, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 800 }}>
+                                                                    <ArrowUpRight size={11} /> Provision
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
-                )}
-                <div style={{ padding: '24px 32px', borderTop: `1px solid ${P.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: P.bg }}>
-                    <div style={{ fontSize: 13, color: P.muted, fontWeight: 750 }}>Telemetric Page {page} of {totalPages} Â· {total} Records total</div>
-                    <div style={{ display: 'flex', gap: 10 }}>
-                        <button disabled={page === 1} onClick={() => setPage(p => p - 1)} style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${P.border}`, background: '#fff', color: P.dark, fontSize: 13, fontWeight: 850, cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.5 : 1 }}>Prev Cycle</button>
-                        <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${P.border}`, background: '#fff', color: P.dark, fontSize: 13, fontWeight: 850, cursor: page >= totalPages ? 'not-allowed' : 'pointer', opacity: page >= totalPages ? 0.5 : 1 }}>Next Cycle</button>
-                    </div>
+                    {totalPages > 1 && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 20 }}>
+                            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: '7px 14px', borderRadius: 9, border: '1px solid ' + P.border, background: P.card, cursor: page === 1 ? 'not-allowed' : 'pointer', fontWeight: 700, opacity: page === 1 ? 0.5 : 1 }}><ChevronLeft size={14} /></button>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: P.text }}>Page {page} of {totalPages}</span>
+                            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ padding: '7px 14px', borderRadius: 9, border: '1px solid ' + P.border, background: P.card, cursor: page === totalPages ? 'not-allowed' : 'pointer', fontWeight: 700, opacity: page === totalPages ? 0.5 : 1 }}><ChevronRight size={14} /></button>
+                        </div>
+                    )}
+                </>
+            )}
+
+            {/* ── KANBAN VIEW ────────────────────────────────────────── */}
+            {viewMode === 'kanban' && (
+                <div style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 20 }}>
+                    {DEFAULT_STAGES.map(stage => {
+                        const colLeads = filtered.filter(l => l.status === stage.key)
+                        const totalValue = colLeads.reduce((acc, l) => acc + (Number(l.expected_value) || 0), 0)
+                        return (
+                            <div key={stage.key}
+                                onDragOver={e => { e.preventDefault(); setDragOver(stage.key) }}
+                                onDragLeave={() => setDragOver(null)}
+                                onDrop={e => handleDrop(e, stage.key)}
+                                style={{ minWidth: 260, flex: '0 0 260px', background: dragOver === stage.key ? stage.bg : P.bg, border: '2px dashed ' + (dragOver === stage.key ? stage.color : P.border), borderRadius: 16, padding: 14, transition: 'all 0.15s', maxHeight: 'calc(100vh - 300px)', overflowY: 'auto' }}>
+                                {/* Column header */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, position: 'sticky', top: 0, background: 'inherit', paddingBottom: 10, borderBottom: '1px solid ' + P.border }}>
+                                    <stage.icon size={14} color={stage.color} />
+                                    <span style={{ fontSize: 12, fontWeight: 800, color: stage.color }}>{stage.label}</span>
+                                    <span style={{ marginLeft: 'auto', background: stage.color, color: '#fff', borderRadius: 12, padding: '1px 7px', fontSize: 10, fontWeight: 800 }}>{colLeads.length}</span>
+                                </div>
+                                {totalValue > 0 && (
+                                    <div style={{ fontSize: 11, color: P.muted, fontWeight: 700, marginBottom: 10 }}>
+                                        Pipeline: ₹{totalValue.toLocaleString('en-IN')}
+                                    </div>
+                                )}
+                                {colLeads.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '30px 10px', color: P.muted, fontSize: 12 }}>
+                                        Drop leads here
+                                    </div>
+                                ) : colLeads.map(lead => (
+                                    <KanbanCard key={lead.id} lead={lead} stages={stages}
+                                        onDragStart={handleDragStart}
+                                        onClick={(l: any) => setActivityLead(l)}
+                                        onStageChange={handleStatusChange}
+                                        staffList={staffList} />
+                                ))}
+                            </div>
+                        )
+                    })}
                 </div>
-            </div>
+            )}
         </div>
     )
 }

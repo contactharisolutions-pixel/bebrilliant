@@ -1,18 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
-
-async function verifyOwner() {
-    const supabase = await createClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error || !user) return null
-
-    const { data: profile } = await supabaseAdmin.from('user_profiles').select('role').eq('id', user.id).single()
-    return profile?.role === 'owner' ? user : null
-}
+import { verifyPlatformAccess } from '@/lib/platform-auth'
 
 export async function GET() {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('payouts.manage')
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
     try {
@@ -29,8 +20,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('payouts.manage')
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+
 
     const { type, payload } = await request.json()
 

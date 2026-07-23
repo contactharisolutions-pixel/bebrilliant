@@ -300,10 +300,10 @@ export default function InstitutionalAssetVault() {
                                 </div>
                             </div>
                             <div style={{ display: 'flex', gap: 10 }}>
-                                <button onClick={() => window.open(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/study-materials/${m.file_url}`, '_blank')} style={{ padding: '10px 18px', borderRadius: 12, background: COLORS.primary, color: '#FFF', border: 'none', fontSize: 12, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <button onClick={() => window.open(`${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://contactharisolutions-pixel.supabase.co'}/storage/v1/object/public/study-materials/${m.file_url}`, '_blank')} style={{ padding: '10px 18px', borderRadius: 12, background: COLORS.primary, color: '#FFF', border: 'none', fontSize: 12, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <MonitorPlay size={14} /> View
                                 </button>
-                                <button style={{ width: 40, height: 40, borderRadius: 12, background: '#F1F5F9', border: 'none', color: '#0F172A', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <button onClick={() => window.open(`${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://contactharisolutions-pixel.supabase.co'}/storage/v1/object/public/study-materials/${m.file_url}?download=`, '_blank')} style={{ width: 40, height: 40, borderRadius: 12, background: '#F1F5F9', border: 'none', color: '#0F172A', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Download Asset">
                                     <Download size={18} />
                                 </button>
                             </div>

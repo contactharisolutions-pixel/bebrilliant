@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
         if (tenant_id) {
             query = query.eq('tenant_id', tenant_id)
-        } else if (role !== 'owner' && role !== 'student') {
+        } else if (role !== 'owner' && role !== 'student' && role !== 'parent') {
             return NextResponse.json([])
         }
 

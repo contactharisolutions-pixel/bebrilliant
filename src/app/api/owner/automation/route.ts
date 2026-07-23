@@ -1,18 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
-
-async function verifyOwner() {
-    const supabase = await createClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error || !user) return null
-    const { data: p } = await supabaseAdmin.from('user_profiles').select('role').eq('id', user.id).single()
-    return p?.role === 'owner' ? user : null
-}
+import { verifyPlatformAccess } from '@/lib/platform-auth'
 
 /** GET /api/owner/automation - List all automation rules (owner-level + all tenant) */
 export async function GET(request: NextRequest) {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('automation.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { searchParams } = new URL(request.url)
@@ -72,7 +64,7 @@ export async function GET(request: NextRequest) {
 
 /** POST /api/owner/automation - Create a new automation rule */
 export async function POST(request: NextRequest) {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('automation.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { event, condition, action, is_active, tenant_id } = await request.json()
@@ -87,3 +79,4 @@ export async function POST(request: NextRequest) {
     if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     return NextResponse.json({ rule: data }, { status: 201 })
 }
+

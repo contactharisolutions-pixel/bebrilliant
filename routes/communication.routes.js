@@ -166,7 +166,7 @@ router.post('/campaigns/:id/execute', auth, commGuard, async (req, res) => {
         await db.query('UPDATE campaigns SET status = $1 WHERE campaign_id = $2', ['Running', id]);
 
         // Fetch template content
-        let templateContent = 'Hello {{name}}, you have a new notification from BlinkOpticals!';
+        let templateContent = 'Hello {{name}}, you have a new notification from BeBrilliant!';
         if (camp.template_id) {
             const tRes = await db.query('SELECT message_content FROM message_templates WHERE id = $1::int', [parseInt(camp.template_id, 10)]);
             if (tRes.rows.length) templateContent = tRes.rows[0].message_content;
@@ -175,7 +175,7 @@ router.post('/campaigns/:id/execute', auth, commGuard, async (req, res) => {
         // Metadata product links
         const meta          = camp.metadata || {};
         const productLinks  = (meta.product_ids || [])
-            .map(pid => `\n🔗 https://blinkopticals.com/shop/p/${pid}`)
+            .map(pid => `\n🔗 https://shop.bebrilliant.in/p/${pid}`)
             .join('');
 
         // Process each customer

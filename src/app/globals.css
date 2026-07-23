@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@theme {
+  --font-manrope: var(--font-manrope);
+  --font-worksans: var(--font-worksans);
+}
+
 /* ─── Institutional Design Tokens ─────────────────────────────────────────────── */
 :root {
   /* Brand Palette - Institutional Theme */
@@ -45,27 +50,309 @@
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────────────── */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: var(--font-inter), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+  }
+
+  body {
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 }
 
-html {
-  font-family: var(--font-inter), system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  background-color: var(--color-bg);
-  color: var(--color-text-primary);
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PUBLIC PAGE — GLOBAL LAYOUT SYSTEM
+   All layout-critical grids use plain CSS here so they are never broken
+   by Tailwind JIT missing arbitrary class compilations.
+═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Section wrapper ── */
+.pub-section {
+  padding-left: 5%;
+  padding-right: 5%;
+}
+.pub-content {
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-body {
-  min-height: 100vh;
-  overflow-x: hidden;
+/* ── Landing page hero section ── */
+.pub-hero-section {
+  position: relative;
+  padding: 140px 5% 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: #fff;
+  overflow: hidden;
+}
+
+/* ── Stats grid (4 cols → 2 cols → 1 col) ── */
+.pub-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ── Full Width Stats grid (6 cols → 3 cols → 2 cols → 1 col) ── */
+.pub-stats-grid-6 {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* ── Feature cards (3 cols → 2 cols → 1 col) ── */
+.pub-cards-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  width: 100%;
+}
+
+/* ── Two col (side-by-side content) ── */
+.pub-cards-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+  width: 100%;
+}
+
+/* ── Trust bar (horizontal flex, centered) ── */
+.pub-trust-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 40px 60px;
+  width: 100%;
+}
+
+/* ── Feature-row (text left, cards right) ── */
+.pub-feature-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 64px;
+}
+.pub-feature-row.reverse {
+  flex-direction: row-reverse;
+}
+.pub-feature-row .text-col {
+  width: 38%;
+  flex-shrink: 0;
+}
+.pub-feature-row .cards-col {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* ── Contact layout (2-col equal) ── */
+.pub-contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: start;
+}
+
+/* ── Infinite Scrolling Partners Marquee ── */
+@keyframes pub-logo-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.pub-logo-marquee-container {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+  background: #ffffff;
+  padding: 24px 0;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.pub-logo-marquee-track {
+  display: inline-flex;
+  gap: 72px;
+  animation: pub-logo-scroll 32s linear infinite;
+  will-change: transform;
+}
+.pub-logo-marquee-container:hover .pub-logo-marquee-track {
+  animation-play-state: paused;
+}
+.pub-logo-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-manrope, sans-serif);
+  font-weight: 800;
+  font-size: 15px;
+  color: #4b5563;
+  user-select: none;
+  opacity: 0.72;
+  transition: opacity 0.2s, color 0.2s;
+}
+.pub-logo-item:hover {
+  opacity: 1;
+  color: #004B93;
+}
+
+/* ── Infinite Scrolling Testimonials Marquee ── */
+@keyframes pub-testimonial-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.pub-testimonial-marquee-container {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+  position: relative;
+  padding: 32px 0;
+}
+.pub-testimonial-marquee-track {
+  display: inline-flex;
+  gap: 32px;
+  animation: pub-testimonial-scroll 60s linear infinite;
+  will-change: transform;
+}
+.pub-testimonial-marquee-container:hover .pub-testimonial-marquee-track {
+  animation-play-state: paused;
+}
+.pub-testimonial-card {
+  display: inline-block;
+  white-space: normal;
+  vertical-align: top;
+  width: 440px;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.03);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  text-align: left;
+}
+.pub-testimonial-card:hover {
+  border-color: #004B93;
+  box-shadow: 0 12px 30px rgba(0,75,147,0.06);
+}
+
+/* ── Trust & Compliance Grid ── */
+.pub-trust-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 24px;
+}
+.pub-trust-card {
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 20px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+.pub-trust-card:hover {
+  border-color: #004B93;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0,75,147,0.08);
+}
+@media (max-width: 1200px) {
+  .pub-trust-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .pub-trust-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+@media (max-width: 480px) {
+  .pub-trust-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── RESPONSIVE ─────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .pub-cards-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .pub-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .pub-stats-grid-6 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .pub-feature-row .text-col {
+    width: 42%;
+  }
+}
+
+@media (max-width: 768px) {
+  .pub-hero-section {
+    padding: 120px 5% 60px;
+  }
+  .pub-cards-3,
+  .pub-cards-2,
+  .pub-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .pub-stats-grid-6 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .pub-feature-row,
+  .pub-feature-row.reverse {
+    flex-direction: column;
+    gap: 32px;
+  }
+  .pub-feature-row .text-col {
+    width: 100%;
+  }
+  .pub-feature-row .cards-col {
+    grid-template-columns: 1fr;
+  }
+  .pub-contact-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .pub-trust-bar {
+    gap: 24px 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pub-stats-grid-6 {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ─── Auth Layout ────────────────────────────────────────────────────────────── */
+@layer components {
 .auth-layout {
   min-height: 100vh;
   display: grid;
@@ -798,10 +1085,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(0,0,0,0.15);
   border-radius: 3px;
 }
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
+} /* end @layer components */

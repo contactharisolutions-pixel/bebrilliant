@@ -509,7 +509,7 @@ export default function SalesMarketingPage() {
                                                         <td style={{ padding: '18px 20px' }}>
                                                             <span style={{ background: P.brandBg, color: P.brand, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800, border: '1px solid ' + P.brand + '15', textTransform: 'capitalize' }}>{s.plan_type}</span>
                                                         </td>
-                                                        <td style={{ padding: '18px 20px', fontSize: 15, fontWeight: 950, color: P.dark }}>\u20B9{Number(s.amount).toLocaleString('en-IN')}</td>
+                                                        <td style={{ padding: '18px 20px', fontSize: 15, fontWeight: 950, color: P.dark }}>₹{Number(s.amount).toLocaleString('en-IN')}</td>
                                                         <td style={{ padding: '18px 20px', fontSize: 13, fontWeight: 700, color: P.text, textTransform: 'capitalize' }}>{s.billing_cycle}</td>
                                                         <td style={{ padding: '18px 20px' }}>
                                                             <div style={{

@@ -8,8 +8,8 @@ async function verifySuperAdmin() {
     if (error || !user) return null
 
     const { data: profile } = await supabaseAdmin.from('user_profiles').select('role, tenant_id').eq('id', user.id).single()
-    // ONLY Admin or Owner can manage permissions/staff tiers
-    if (profile?.tenant_id && ['admin', 'owner'].includes(profile.role)) {
+    // ONLY Admin, Owner or Tenant Admin can manage permissions/staff tiers
+    if (profile?.tenant_id && ['tenant_admin', 'admin', 'owner'].includes(profile.role)) {
         return { user, tenant_id: profile.tenant_id }
     }
     return null
@@ -86,14 +86,15 @@ export async function POST(request: NextRequest) {
 
             const { error: profileError } = await supabaseAdmin
                 .from('user_profiles')
-                .update({
+                .upsert({
+                    id: authData.user.id,
+                    email,
                     first_name,
                     last_name,
                     is_active: true,
                     role,
                     tenant_id
                 })
-                .eq('id', authData.user.id)
 
             if (profileError) throw profileError
             return NextResponse.json({ success: true, id: authData.user.id })

@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { useRouter, useSegments } from 'expo-router'
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { useRouter, useSegments, SplashScreen } from 'expo-router'
+import { View, ActivityIndicator, Platform } from 'react-native'
 import { apiFetch, clearToken, getToken } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { usePushNotifications } from '../hooks/usePushNotifications'
@@ -34,15 +35,13 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
 
   usePushNotifications(user?.id)
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     try {
       const token = await getToken()
       if (!token) {
         setUser(null)
-        setLoading(false)
         return
       }
-
       const res = await apiFetch('/api/auth/me')
       setUser(res)
     } catch (e) {
@@ -52,7 +51,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   const logout = async () => {
     setLoading(true)
@@ -67,33 +66,50 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Bootstrap auth on first mount
   useEffect(() => {
     refresh()
   }, [])
 
-  // Navigation Guard / Role Routing
+  // Navigation Guard — only runs when auth is fully resolved (loading === false)
   useEffect(() => {
     if (loading) return
+
+    // Hide the splash screen now that we know the auth state (native only)
+    if (Platform.OS !== 'web') {
+      SplashScreen.hideAsync().catch(() => {})
+    }
 
     const inAuthGroup = segments[0] === '(auth)'
     const hasUser = !!user
 
-    if (!hasUser && !inAuthGroup) {
-      // Redirect to onboarding or login if unauthenticated
-      router.replace('/(auth)/onboarding')
-    } else if (hasUser && inAuthGroup) {
-      // Redirect to respective dashboard if authenticated
-      if (user.role === 'teacher') {
-        router.replace('/(teacher)/dashboard')
-      } else if (user.role === 'student') {
-        router.replace('/(student)/dashboard')
-      } else if (user.role === 'parent') {
-        router.replace('/(parent)/dashboard')
-      } else {
-        router.replace('/(teacher)/dashboard')
+    try {
+      if (!hasUser && !inAuthGroup) {
+        router.replace('/(auth)/onboarding')
+      } else if (hasUser && inAuthGroup) {
+        if (user.role === 'teacher' || user.role === 'owner' || user.role === 'tenant_admin') {
+          router.replace('/(teacher)/dashboard')
+        } else if (user.role === 'student') {
+          router.replace('/(student)/dashboard')
+        } else if (user.role === 'parent') {
+          router.replace('/(parent)/dashboard')
+        } else {
+          router.replace('/(teacher)/dashboard')
+        }
       }
+    } catch (e) {
+      console.warn('Navigation guard error:', e)
     }
   }, [user, segments, loading])
+
+  // While auth is resolving, show a branded loader.
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#004B93', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+      </View>
+    )
+  }
 
   return (
     <IdentityContext.Provider value={{ user, loading, logout, refresh }}>

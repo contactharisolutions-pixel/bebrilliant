@@ -1,52 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
+import jwt from 'jsonwebtoken'
+import { query } from '@/lib/db'
+
+const JWT_SECRET = process.env.JWT_SECRET || 'b77be88af20ed376b75eac250acf1392f31049e1a7f81d712ff214350a867f6e'
 
 export async function GET(request: NextRequest) {
     try {
-        const supabase = await createClient()
-        const { data: { user }, error } = await supabase.auth.getUser()
-        if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        const cookieStore = await cookies()
+        const token = cookieStore.get('bb_token')?.value || request.headers.get('authorization')?.split(' ')[1]
+        
+        if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-        // Optimized: single query with only needed columns (no SELECT *)
-        const { data: profile, error: profileError } = await supabaseAdmin
-            .from('user_profiles')
-            .select('role, first_name, last_name, tenant_id, is_first_login, tenants:tenant_id(name, logo, tenant_type)')
-            .eq('id', user.id)
-            .single()
+        const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string }
+        if (!decoded || !decoded.id) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
 
-        if (profileError || !profile) {
-            console.error('Profile Fetch Error:', profileError)
+        // Optimized query to fetch profile + tenant details
+        const { rows } = await query(
+            `SELECT up.role, up.first_name, up.last_name, up.tenant_id, up.is_first_login, 
+                    t.name as tenant_name, t.logo as tenant_logo, t.tenant_type
+             FROM public.user_profiles up
+             LEFT JOIN public.tenants t ON up.tenant_id = t.id
+             WHERE up.id = $1`,
+            [decoded.id]
+        )
+
+        const profile = rows[0]
+        if (!profile) {
             return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
         }
 
-        const rawTenant = (profile as any).tenants
-        const tenantData = Array.isArray(rawTenant) ? rawTenant[0] : rawTenant
-        
         let tenantBranding = null
-        if (tenantData) {
+        if (profile.tenant_id) {
             tenantBranding = {
-                name: tenantData.name,
-                logo_url: tenantData.logo || null,
-                tenant_type: tenantData.tenant_type
+                name: profile.tenant_name,
+                logo_url: profile.tenant_logo || null,
+                tenant_type: profile.tenant_type
             }
         } else if (profile.role === 'owner') {
             tenantBranding = { name: 'BrightBoard Enterprise Hub', logo_url: '/logo-master.png' }
         }
 
-        const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || user.email?.split('@')[0] || 'Unknown User'
+        const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || decoded.email?.split('@')[0] || 'Unknown User'
 
-        const response = NextResponse.json({
-            id: user.id,
-            email: user.email,
+        return NextResponse.json({
+            id: decoded.id,
+            email: decoded.email,
             role: profile.role,
             fullName,
             tenant_id: profile.tenant_id,
             tenant: tenantBranding,
             is_first_login: profile.is_first_login
         })
-        return response
     } catch (e: any) {
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        console.error('API /auth/me error:', e)
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 }
+

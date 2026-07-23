@@ -24,8 +24,9 @@ export async function POST(request: Request) {
             .eq('id', user.id)
             .single()
 
-        if (callerProfile?.role !== 'owner') {
-            return NextResponse.json({ error: 'Only owners can create tenants' }, { status: 403 })
+        const PLATFORM_ROLES = ['owner', 'sales_exec', 'demo_exec', 'onboarding_spec']
+        if (!callerProfile || !PLATFORM_ROLES.includes(callerProfile.role)) {
+            return NextResponse.json({ error: 'Level 1 Clearance Required' }, { status: 403 })
         }
 
         const body = await request.json()
@@ -39,10 +40,13 @@ export async function POST(request: Request) {
         }
 
         const { name, type, email, admin_first_name, admin_last_name, admin_password } = result.data
-        // tenant_type from body (not in Zod schema — pass through directly)
         const tenant_type = (body.tenant_type as string) || 'institute'
+        const rawSubdomain = (body.subdomain as string) || name.toLowerCase().replace(/[^a-z0-9]/g, '-')
+        // Clean subdomain to keep alphanumeric and dashes only
+        const subdomain = rawSubdomain.replace(/[^a-z0-9-]/g, '')
+        const lead_id = body.lead_id || null
 
-        // Create the tenant record first
+        // Create the tenant record first with subdomain and plan limits config
         const { data: tenant, error: tenantError } = await supabaseAdmin
             .from('tenants')
             .insert({
@@ -50,8 +54,12 @@ export async function POST(request: Request) {
                 type,
                 email,
                 tenant_type,
+                subdomain,
                 is_active: true,
                 subscription_status: 'active',
+                max_students: body.max_students || 100,
+                max_teachers: body.max_teachers || 10,
+                is_white_label: body.is_white_label || false
             })
             .select()
             .single()
@@ -73,10 +81,10 @@ export async function POST(request: Request) {
             },
         })
 
-        if (adminAuthError) {
+        if (adminAuthError || !adminAuth?.user) {
             // Rollback tenant
             await supabaseAdmin.from('tenants').delete().eq('id', tenant.id)
-            return NextResponse.json({ error: adminAuthError.message }, { status: 400 })
+            return NextResponse.json({ error: adminAuthError?.message || 'Failed to create admin user' }, { status: 400 })
         }
 
         // Create tenant admin profile
@@ -98,11 +106,56 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Failed to create admin profile' }, { status: 500 })
         }
 
+        // Handle CRM Lead conversion and create Onboarding Checklist
+        try {
+            let assignedStaffId = null
+            if (lead_id) {
+                const { data: leadData } = await supabaseAdmin
+                    .from('owner_leads')
+                    .select('assigned_to')
+                    .eq('id', lead_id)
+                    .single()
+                if (leadData?.assigned_to) {
+                    assignedStaffId = leadData.assigned_to
+                }
+
+                // Update Lead Status to converted
+                await supabaseAdmin
+                    .from('owner_leads')
+                    .update({ 
+                        tenant_id: tenant.id, 
+                        status: 'converted',
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', lead_id)
+            }
+
+            // Create Onboarding Checklist
+            await supabaseAdmin
+                .from('onboarding_checklists')
+                .insert({
+                    tenant_id: tenant.id,
+                    assigned_staff_id: assignedStaffId || user.id,
+                    tasks: [
+                        { title: "DNS & Domain Mapping Setup", completed: false },
+                        { title: "Institute Logo & Theme Selection", completed: false },
+                        { title: "Subscription/Billing Plan Configuration", completed: false },
+                        { title: "First Academic Year & Master Syllabus Initialization", completed: false },
+                        { title: "Payment Gateway Credentials Set", completed: false },
+                        { title: "Final Verification and Handover", completed: false }
+                    ],
+                    notes: lead_id ? `Provisioned from CRM lead: ${lead_id}` : 'Manually provisioned'
+                })
+        } catch (onboardingErr) {
+            console.error("Failed to execute onboarding lifecycle steps:", onboardingErr)
+        }
+
         sendTenantCreatedEmail({
             adminEmail: email,
             adminFirstName: admin_first_name,
             password: admin_password,
             tenantName: name,
+            subdomain: subdomain,
         }).catch(err => console.error('Failed to send tenant created email:', err))
 
         return NextResponse.json(
@@ -128,7 +181,6 @@ export async function POST(request: Request) {
 
 export async function GET() {
     try {
-        // Anyone can list active tenants (for signup forms)
         const { data, error } = await supabaseAdmin
             .from('tenants')
             .select('id, name, type')

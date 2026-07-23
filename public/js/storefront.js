@@ -1751,7 +1751,7 @@ window.shareProduct = function(platform, id) {
     const p = State.products.find(x => x.id === id);
     if(!p) return;
     const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(`Check out this ${p.name} at BlinkOpticals!`);
+    const text = encodeURIComponent(`Check out this ${p.name} at BeBrilliant!`);
     
     let shareUrl = '';
     switch(platform) {
@@ -1922,7 +1922,7 @@ window.processCheckout = async function() {
             "key": "rzp_test_placeholder", 
             "amount": finalTotal * 100,
             "currency": "INR",
-            "name": "Blink Opticals",
+            "name": "BeBrilliant",
             "description": "Premium Vision Products Checkout",
             "handler": async function (response) {
                 await fetch('/api/store-account/orders/verify-payment', {

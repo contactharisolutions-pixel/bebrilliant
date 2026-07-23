@@ -1,0 +1,25 @@
+# Exclude large zips and backups
+bebrilliant_codebase.zip
+bebrilliant_storage_migration.zip
+
+# Exclude dependencies and builds
+node_modules/
+mobile/node_modules/
+.next/
+.expo/
+dist/
+tmp/
+migration_storage/
+nginx/
+
+# Exclude logs
+*.log
+*.txt
+
+# Exclude environment configuration/cache
+.claude/
+.gemini/
+.git/
+.gsd/
+.agent/
+.agents/

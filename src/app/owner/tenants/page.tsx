@@ -1,404 +1,649 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Building2, Search, Plus, Activity, Users, Settings, Filter,
-    Ban, ShieldCheck, RefreshCw, ChevronLeft, ChevronRight,
-    X, Eye, EyeOff, CheckCircle, XCircle, Loader2, AlertTriangle,
-    Globe, Crown, UserCheck, Download, BarChart2,
-    ArrowUpRight, Mail, Pencil, Trash2, ShieldAlert, Zap, Award,
-    School, GraduationCap
-} from 'lucide-react'
-import { P, GLASS_STYLES } from '@/components/shared/institutional/theme'
-import { KpiCard } from '@/components/shared/institutional/KpiCard'
-import { StatusBadge } from '@/components/shared/institutional/StatusBadge'
+    Ban, ShieldCheck, RefreshCw, X, Eye, EyeOff, CheckCircle,
+    XCircle, Loader2, AlertTriangle, Globe, Crown, UserCheck,
+    Download, Mail, Pencil, Trash2, ShieldAlert, Zap, Award,
+    School, Key, Database, Cpu
+} from 'lucide-react';
+import { P, SHADOWS } from '@/styles/tokens';
+import { DataTable } from '@/components/owner/DataTable';
+import { SideDrawer } from '@/components/owner/SideDrawer';
 
 type Tenant = {
-    id: string
-    name: string
-    type: string
-    tenant_type?: string
-    email: string
-    is_active: boolean
-    subscription_status: string
-    max_students: number
-    max_teachers: number
-    is_white_label: boolean
-    created_at: string
-    logo?: string
-    total_users?: number
-    examCount?: number
-    avgAccuracy?: string | null
-    revenueInPeriod?: number
-    subscription_plan?: string
-}
-
-// MODAL: PROVISION NEW TENANT
-function ProvisionModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-    const [form, setForm] = useState({
-        name: '', type: 'INSTITUTE', tenant_type: 'institute', email: '',
-        admin_first_name: '', admin_last_name: '', admin_password: '',
-    })
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState('')
-    const [showPass, setShowPass] = useState(false)
-
-    const TENANT_TYPES = [
-        { value: 'school',               label: 'School',               icon: School,      legacyType: 'INSTITUTE',         credits: 0,   desc: 'School with internal teachers' },
-        { value: 'institute',            label: 'Institute',            icon: Building2,   legacyType: 'INSTITUTE',         credits: 500, desc: 'Coaching class / tuition centre' },
-        { value: 'independent_teacher',  label: 'Independent Teacher',  icon: UserCheck,   legacyType: 'PERSONAL_TEACHER',  credits: 200, desc: 'Solo educator or tutor' },
-    ]
-
-    const submit = async () => {
-        setError('')
-        if (!form.name || !form.email || !form.admin_first_name || !form.admin_last_name || !form.admin_password) {
-            setError('All fields are required.')
-            return
-        }
-        setLoading(true)
-        try {
-            const res = await fetch('/api/tenants', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form), // includes tenant_type
-            })
-            const json = await res.json()
-            if (!res.ok) { setError(json.error || 'Failed to provision'); return }
-            onSuccess()
-            onClose()
-        } catch {
-            setError('Network error. Please try again.')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const inp = (label: string, key: keyof typeof form, type = 'text', extra?: React.ReactNode) => (
-        <label style={{ display: 'block', marginBottom: 14 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: P.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</div>
-            <div style={{ position: 'relative' }}>
-                <input
-                    type={type === 'password' && showPass ? 'text' : type}
-                    value={form[key]}
-                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                    style={{
-                        width: '100%', padding: '12px 14px', border: `1px solid ${P.border}`,
-                        borderRadius: 12, fontSize: 14, color: P.dark, background: P.bg,
-                        outline: 'none', boxSizing: 'border-box', fontWeight: 600,
-                        paddingRight: type === 'password' ? 44 : 14,
-                    }}
-                />
-                {extra}
-            </div>
-        </label>
-    )
-
-    return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(5, 10, 20, 0.6)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
-            <div className="glass-card" style={{ background: P.card, borderRadius: 32, width: '100%', maxWidth: 560, maxHeight: '92vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 40px 120px rgba(0,0,0,0.5)', border: `1px solid rgba(255,255,255,0.1)` }}>
-                <div style={{ padding: '32px 40px', borderBottom: `1px solid ${P.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: `linear-gradient(135deg, ${P.card}, ${P.bg})` }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                        <div style={{ width: 64, height: 64, borderRadius: 20, background: P.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 12px 24px ${P.brand}30` }}>
-                            <Plus size={32} color="#fff" strokeWidth={3} />
-                        </div>
-                        <div>
-                            <h2 style={{ fontSize: 24, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.02em' }}>New Tenant</h2>
-                            <p style={{ fontSize: 13, color: P.muted, margin: '4px 0 0', fontWeight: 600 }}>Create a new institute or teacher account.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div style={{ padding: '32px 40px', overflowY: 'auto', flex: 1 }}>
-                    <div style={{ marginBottom: 28 }}>
-                        <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Tenant Type</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {TENANT_TYPES.map(t => (
-                                <button key={t.value} onClick={() => setForm(f => ({ ...f, tenant_type: t.value, type: t.legacyType }))} style={{
-                                    padding: '14px 18px', borderRadius: 16, border: `2px solid`,
-                                    borderColor: form.tenant_type === t.value ? P.brand : P.border,
-                                    background: form.tenant_type === t.value ? P.brandBg : P.card,
-                                    color: form.tenant_type === t.value ? P.brand : P.muted,
-                                    fontSize: 14, fontWeight: 900, cursor: 'pointer', transition: 'all 0.2s',
-                                    display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left',
-                                }}>
-                                    <t.icon size={20} style={{ flexShrink: 0 }} />
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 900, fontSize: 14 }}>{t.label}</div>
-                                        <div style={{ fontSize: 12, fontWeight: 600, opacity: 0.7, marginTop: 2 }}>{t.desc}</div>
-                                    </div>
-                                    <div style={{ padding: '4px 10px', borderRadius: 8, background: form.tenant_type === t.value ? P.brand : P.bg, color: form.tenant_type === t.value ? '#fff' : P.muted, fontSize: 11, fontWeight: 900, flexShrink: 0 }}>
-                                        {t.credits > 0 ? `${t.credits} free credits` : '0 credits'}
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                      {inp('Tenant Name', 'name')}
-                      {inp('Admin Email', 'email', 'email')}
-
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                          {inp('Admin First Name', 'admin_first_name')}
-                          {inp('Admin Last Name', 'admin_last_name')}
-                      </div>
-
-                      {inp('Admin Password', 'admin_password', 'password',
-                          <button type="button" onClick={() => setShowPass(s => !s)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
-                              {showPass ? <EyeOff size={18} color={P.muted} /> : <Eye size={18} color={P.muted} />}
-                          </button>
-                      )}
-                    </div>
-
-                    {error && (
-                        <div style={{ background: P.errorBg, border: `1px solid ${P.error}30`, borderRadius: 16, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12, marginTop: 24 }}>
-                            <AlertTriangle size={20} color={P.error} />
-                            <span style={{ fontSize: 13, color: P.error, fontWeight: 800 }}>{error}</span>
-                        </div>
-                    )}
-                </div>
-
-                <div style={{ padding: '24px 40px', borderTop: `1px solid ${P.border}`, background: P.bg, display: 'flex', gap: 14 }}>
-                    <button onClick={onClose} style={{
-                        flex: 1, padding: '16px 0', borderRadius: 16, border: `1px solid ${P.border}`,
-                        background: P.card, color: P.dark, fontSize: 14, fontWeight: 900, cursor: 'pointer'
-                    }}>Cancel</button>
-                    <button onClick={submit} disabled={loading} style={{
-                        flex: 2, padding: '16px 0', borderRadius: 16, border: 'none',
-                        background: P.brand, color: '#fff',
-                        fontSize: 15, fontWeight: 950, cursor: loading ? 'not-allowed' : 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                        boxShadow: `0 12px 24px ${P.brand}40`,
-                    }}>
-                        {loading ? <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> : <ShieldCheck size={20} strokeWidth={3} />}
-                        Create Tenant
-                    </button>
-                </div>
-            </div>
-        </div>
-    )
-}
+    id: string;
+    name: string;
+    type: string;
+    tenant_type?: string;
+    subdomain?: string;
+    email: string;
+    is_active: boolean;
+    subscription_status: string;
+    max_students: number;
+    max_teachers: number;
+    max_storage_gb?: number;
+    max_ai_tokens?: number;
+    is_white_label: boolean;
+    created_at: string;
+    total_users?: number;
+    examCount?: number;
+    avgAccuracy?: string | null;
+    revenueInPeriod?: number;
+    subscription_plan?: string;
+};
 
 export default function TenantManagementPage() {
-    const [tenants, setTenants] = useState<Tenant[]>([])
-    const [total, setTotal] = useState(0)
-    const [page, setPage] = useState(1)
-    const pageSize = 20
+    const [tenants, setTenants] = useState<Tenant[]>([]);
+    const [total, setTotal] = useState(0);
+    const [page, setPage] = useState(1);
+    const pageSize = 20;
 
-    const [status, setStatus] = useState<'all' | 'active' | 'suspended'>('all')
-    const [classification, setClassification] = useState<'all' | 'school' | 'institute' | 'independent_teacher'>('all')
-    const [search, setSearch] = useState('')
-    const [debouncedSearch, setDebouncedSearch] = useState('')
-    const [loading, setLoading] = useState(true)
-    const [refreshing, setRefreshing] = useState(false)
+    const [status, setStatus] = useState<'all' | 'active' | 'suspended'>('all');
+    const [classification, setClassification] = useState<'all' | 'school' | 'institute' | 'independent_teacher'>('all');
+    const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
-    const [showProvision, setShowProvision] = useState(false)
-    const [kpis, setKpis] = useState<any>(null)
+    // SideDrawer: Provision New Tenant
+    const [provisionDrawerOpen, setProvisionDrawerOpen] = useState(false);
+    const [provisionForm, setProvisionForm] = useState({
+        name: '', type: 'INSTITUTE', tenant_type: 'institute', email: '', subdomain: '',
+        admin_first_name: '', admin_last_name: '', admin_password: '',
+        max_students: 100, max_teachers: 10, max_storage_gb: 50, is_white_label: false,
+        lead_id: ''
+    });
+    const [showPass, setShowPass] = useState(false);
+    const [provisionSaving, setProvisionSaving] = useState(false);
+    const [provisionError, setProvisionError] = useState('');
 
+    // SideDrawer: Inspect Tenant
+    const [inspectDrawerOpen, setInspectDrawerOpen] = useState(false);
+    const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+    const [inspectTab, setInspectTab] = useState<'general' | 'usage' | 'actions'>('general');
+    const [inspectSaving, setInspectSaving] = useState(false);
+    
+    // Limits Edit State
+    const [limitsForm, setLimitsForm] = useState({
+        max_students: 100, max_teachers: 10, max_storage_gb: 50, is_white_label: false
+    });
+
+    const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+
+    const showToast = (msg: string, ok = true) => {
+        setToast({ msg, ok });
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    // Auto-generate subdomain from name
     useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(search), 400)
-        return () => clearTimeout(t)
-    }, [search])
+        if (!provisionForm.name) return;
+        const sub = provisionForm.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+        setProvisionForm(f => ({ ...f, subdomain: sub }));
+    }, [provisionForm.name]);
+
+    // Search Debouncer
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedSearch(search), 400);
+        return () => clearTimeout(t);
+    }, [search]);
 
     const fetchTenants = useCallback(async (isRefresh = false) => {
-        if (isRefresh) setRefreshing(true)
-        else setLoading(true)
+        if (isRefresh) setRefreshing(true);
+        else setLoading(true);
         try {
             const params = new URLSearchParams({
                 page: String(page),
                 limit: String(pageSize),
                 ...(status !== 'all' && { status }),
-                ...(classification !== 'all' && { tenant_type: classification, type: classification }),
+                ...(classification !== 'all' && { tenant_type: classification }),
                 ...(debouncedSearch && { search: debouncedSearch }),
-            })
-            const res = await fetch(`/api/owner/tenants?${params}`)
-            const json = await res.json()
+            });
+            const res = await fetch(`/api/owner/tenants?${params}`);
+            const json = await res.json();
             if (res.ok) {
-                setTenants(json.tenants ?? [])
-                setTotal(json.total ?? 0)
+                setTenants(json.tenants ?? []);
+                setTotal(json.total ?? 0);
             }
 
-            const aRes = await fetch('/api/owner/analytics?range=30')
-            const aJson = await aRes.json()
-            if (aRes.ok) {
-                setKpis(aJson.kpis)
-                if (aJson.tenantSummaries) {
-                    setTenants(prev => prev.map(t => {
-                        const summary = aJson.tenantSummaries.find((s: any) => s.id === t.id)
-                        return summary ? { ...t, ...summary } : t
-                    }))
-                }
+            const aRes = await fetch('/api/owner/analytics?range=30');
+            const aJson = await aRes.json();
+            if (aRes.ok && aJson.tenantSummaries) {
+                setTenants(prev => prev.map(t => {
+                    const summary = aJson.tenantSummaries.find((s: any) => s.id === t.id);
+                    return summary ? { ...t, ...summary } : t;
+                }));
             }
+        } catch (e) {
+            showToast('Ecosystem query synchronization failed', false);
         } finally {
-            setLoading(false)
-            setRefreshing(false)
+            setLoading(false);
+            setRefreshing(false);
         }
-    }, [page, status, debouncedSearch, classification])
+    }, [page, status, debouncedSearch, classification]);
 
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search)
-        if (params.get('provision')) setShowProvision(true)
-        fetchTenants()
-    }, [fetchTenants, classification])
+        fetchTenants();
+    }, [fetchTenants]);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const provision = params.get('provision');
+            const leadId = params.get('leadId');
+            if (provision === 'true' && leadId) {
+                fetch(`/api/owner/crm/leads/${leadId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const lead = data.lead || data;
+                        if (lead) {
+                            const nameParts = (lead.name || '').trim().split(' ');
+                            const firstName = nameParts[0] || 'Admin';
+                            const lastName = nameParts.slice(1).join(' ') || 'User';
+                            
+                            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+                            let pass = "";
+                            for (let i = 0; i < 12; i++) {
+                                pass += chars.charAt(Math.floor(Math.random() * chars.length));
+                            }
+                            pass += "A1";
+                            
+                            setProvisionForm(f => ({
+                                ...f,
+                                name: lead.organization || lead.name || '',
+                                email: lead.email || '',
+                                admin_first_name: firstName,
+                                admin_last_name: lastName,
+                                admin_password: pass,
+                                lead_id: lead.id
+                            }));
+                            setShowPass(true);
+                            setProvisionDrawerOpen(true);
+                            showToast(`Pre-populated details for lead: ${lead.name}`);
+                        }
+                    })
+                    .catch(() => {
+                        showToast('Failed to load conversion lead.', false);
+                    });
+            }
+        }
+    }, []);
+
+    const generatePassword = () => {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+        let pass = "";
+        for (let i = 0; i < 12; i++) {
+            pass += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        // Guarantee at least one uppercase and one digit for validation rules
+        pass += "A1";
+        setProvisionForm(f => ({ ...f, admin_password: pass }));
+        setShowPass(true);
+    };
+
+    // Save New Tenant Provision
+    const handleProvisionTenant = async () => {
+        setProvisionError('');
+        if (!provisionForm.name || !provisionForm.email || !provisionForm.admin_first_name || !provisionForm.admin_last_name || !provisionForm.admin_password || !provisionForm.subdomain) {
+            setProvisionError('Please fill out all required setup fields.');
+            return;
+        }
+        setProvisionSaving(true);
+        try {
+            const res = await fetch('/api/tenants', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(provisionForm)
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error || 'Provisioning sequence abort');
+            showToast(`Tenant "${provisionForm.name}" created successfully`);
+            setProvisionDrawerOpen(false);
+            fetchTenants(true);
+        } catch (e: any) {
+            setProvisionError(e.message);
+        } finally {
+            setProvisionSaving(false);
+        }
+    };
+
+    // Open Tenant Inspector Details
+    const openInspector = (tenant: Tenant) => {
+        setSelectedTenant(tenant);
+        setLimitsForm({
+            max_students: tenant.max_students || 100,
+            max_teachers: tenant.max_teachers || 10,
+            max_storage_gb: tenant.max_storage_gb || 50,
+            is_white_label: tenant.is_white_label || false
+        });
+        setInspectTab('general');
+        setInspectDrawerOpen(true);
+    };
+
+    // Save Updated Quotas/Limits
+    const handleSaveLimits = async () => {
+        if (!selectedTenant) return;
+        setInspectSaving(true);
+        try {
+            const res = await fetch(`/api/owner/tenants/${selectedTenant.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(limitsForm)
+            });
+            if (!res.ok) throw new Error('Failed to update capacity limits');
+            showToast('Tenant limits updated successfully');
+            setInspectDrawerOpen(false);
+            fetchTenants(true);
+        } catch (e: any) {
+            showToast(e.message, false);
+        } finally {
+            setInspectSaving(false);
+        }
+    };
+
+    // Toggle active / suspend state
+    const handleToggleSuspension = async () => {
+        if (!selectedTenant) return;
+        const futureActive = !selectedTenant.is_active;
+        if (!confirm(`Are you sure you want to ${futureActive ? 'unsuspend' : 'suspend'} this tenant?`)) return;
+        
+        setInspectSaving(true);
+        try {
+            const res = await fetch(`/api/owner/tenants/${selectedTenant.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_active: futureActive })
+            });
+            if (!res.ok) throw new Error('Failed to toggle active status');
+            showToast(futureActive ? 'Tenant reactivated' : 'Tenant suspended');
+            setInspectDrawerOpen(false);
+            fetchTenants(true);
+        } catch (e: any) {
+            showToast(e.message, false);
+        } finally {
+            setInspectSaving(false);
+        }
+    };
 
     return (
-        <div style={{ background: P.bg, minHeight: '100%', padding: '32px 36px' }}>
-            <style>{GLASS_STYLES + `
+        <div style={{ background: P.bg, minHeight: '100vh', padding: '32px', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+            <style>{`
                 @keyframes spin { to { transform: rotate(360deg); } }
-                .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-                @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+                * { box-sizing: border-box; }
             `}</style>
 
-            {showProvision && (
-                <ProvisionModal
-                    onClose={() => setShowProvision(false)}
-                    onSuccess={() => fetchTenants(true)}
-                />
+            {toast && (
+                <div style={{ position: 'fixed', bottom: 32, right: 32, background: toast.ok ? P.success : P.error, color: '#fff', borderRadius: 12, padding: '12px 20px', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 10, boxShadow: SHADOWS.lg, zIndex: 9999 }}>
+                    <CheckCircle size={16} /> {toast.msg}
+                </div>
             )}
 
             {/* HEADER */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32, gap: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
                 <div>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                     <div style={{ background: P.brandBg, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 900, color: P.brand, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tenants</div>
-                   </div>
-                    <h1 style={{ fontSize: 32, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.03em' }}>Tenant Management</h1>
-                    <p style={{ fontSize: 14, color: P.muted, margin: '6px 0 0', fontWeight: 600 }}>
-                        Manage {total} tenants across the platform.
-                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <span style={{ background: P.brandBg, color: P.brand, borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ecosystem Nodes</span>
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: P.dark, letterSpacing: '-0.5px' }}>Tenant Management</div>
+                    <div style={{ fontSize: 14, color: P.muted, marginTop: 4 }}>Manage, provision, suspend, and configure limits for instances across the platform.</div>
                 </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <button
-                        onClick={() => fetchTenants(true)}
-                        disabled={refreshing}
-                        className="glass-card hover-lift"
-                        style={{ display: 'flex', alignItems: 'center', gap: 8, background: P.card, border: `1px solid ${P.border}`, borderRadius: 12, padding: '12px 20px', fontSize: 13, fontWeight: 800, color: P.dark, cursor: 'pointer' }}
-                    >
-                        <RefreshCw size={16} color={P.brand} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
-                        Refresh
+                <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={() => fetchTenants(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', background: P.card, border: '1px solid ' + P.border, borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 13, color: P.text }}>
+                        <RefreshCw size={14} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} /> Sync
                     </button>
-                    <button
-                        onClick={() => setShowProvision(true)}
-                        className="hover-lift"
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, background: P.brand, color: '#fff', border: 'none', borderRadius: 12, padding: '13px 28px', fontSize: 14, fontWeight: 900, cursor: 'pointer', boxShadow: `0 12px 24px ${P.brand}30` }}
-                    >
-                        <Plus size={20} strokeWidth={3} /> New Tenant
+                    <button onClick={() => {
+                        setProvisionForm({
+                            name: '', type: 'INSTITUTE', tenant_type: 'institute', email: '', subdomain: '',
+                            admin_first_name: '', admin_last_name: '', admin_password: '',
+                            max_students: 100, max_teachers: 10, max_storage_gb: 50, is_white_label: false
+                        });
+                        setProvisionError('');
+                        setProvisionDrawerOpen(true);
+                    }} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px', background: P.brand, border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#fff' }}>
+                        <Plus size={14} /> New Tenant
                     </button>
                 </div>
             </div>
 
-            {/* KPI GRID */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 32 }}>
-              <KpiCard icon={Building2} title="Total Tenants" value={String(total)} color={P.brand} trend="+2.4%" trendIsUp={true} />
-              <KpiCard icon={Users} title="Total Students" value={String(kpis?.totalUsers ?? '...')} color={P.info} />
-              <KpiCard icon={Activity} title="Avg. Score" value={(kpis?.avgAccuracy ?? '0') + '%'} color={P.success} trend="Optimal" trendIsUp={true} />
-              <KpiCard icon={ShieldAlert} title="Suspended" value={String(tenants.filter(t => !t.is_active).length)} color={P.error} />
-            </div>
-
-            <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 24, padding: '24px', display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+            {/* FILTER PANEL */}
+            <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 16, padding: 18, display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, boxShadow: SHADOWS.sm }}>
                 <div style={{ position: 'relative', flex: 1 }}>
-                    <Search size={18} color={P.muted} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }} />
+                    <Search size={16} color={P.muted} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
                     <input
                         value={search}
-                        onChange={e => { setSearch(e.target.value); setPage(1) }}
-                        placeholder="Search tenants..."
-                        style={{ width: '100%', padding: '14px 16px 14px 48px', border: `1px solid ${P.border}`, borderRadius: 14, fontSize: 14, color: P.dark, background: P.bg, outline: 'none', fontWeight: 600 }}
+                        onChange={e => { setSearch(e.target.value); setPage(1); }}
+                        placeholder="Search institutions by name..."
+                        style={{ width: '100%', padding: '10px 14px 10px 40px', border: `1px solid ${P.border}`, borderRadius: 10, fontSize: 13, color: P.dark, background: P.bg, outline: 'none', fontWeight: 600 }}
                     />
                 </div>
 
                 <div style={{ display: 'flex', gap: 8 }}>
-                    <div style={{ display: 'flex', gap: 4, background: P.bg, border: `1px solid ${P.border}`, borderRadius: 14, padding: 6 }}>
+                    <div style={{ display: 'flex', gap: 4, background: P.bg, border: `1px solid ${P.border}`, borderRadius: 12, padding: 4 }}>
                         {(['all', 'school', 'institute', 'independent_teacher'] as const).map(f => (
-                            <button key={f} onClick={() => { setClassification(f); setPage(1) }} style={{
-                                padding: '8px 12px', borderRadius: 10, fontSize: 11, fontWeight: 900, cursor: 'pointer',
+                            <button key={f} onClick={() => { setClassification(f); setPage(1); }} style={{
+                                padding: '6px 12px', borderRadius: 8, fontSize: 11, fontWeight: 800, cursor: 'pointer',
                                 background: classification === f ? P.card : 'transparent',
                                 color: classification === f ? P.brand : P.muted,
-                                border: 'none', transition: 'all 0.2s',
-                                boxShadow: classification === f ? '0 4px 12px rgba(0,0,0,0.05)' : 'none'
+                                border: 'none', transition: 'all 0.15s'
                             }}>{f.replace('_', ' ').toUpperCase()}</button>
                         ))}
                     </div>
-                    <div style={{ display: 'flex', gap: 4, background: P.bg, border: `1px solid ${P.border}`, borderRadius: 14, padding: 6 }}>
+                    <div style={{ display: 'flex', gap: 4, background: P.bg, border: `1px solid ${P.border}`, borderRadius: 12, padding: 4 }}>
                         {(['all', 'active', 'suspended'] as const).map(f => (
-                            <button key={f} onClick={() => { setStatus(f); setPage(1) }} style={{
-                                padding: '8px 16px', borderRadius: 10, fontSize: 11, fontWeight: 900, cursor: 'pointer',
+                            <button key={f} onClick={() => { setStatus(f); setPage(1); }} style={{
+                                padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 800, cursor: 'pointer',
                                 background: status === f ? P.card : 'transparent',
                                 color: status === f ? P.brand : P.muted,
-                                border: 'none', transition: 'all 0.2s',
-                                boxShadow: status === f ? '0 4px 12px rgba(0,0,0,0.05)' : 'none'
+                                border: 'none', transition: 'all 0.15s'
                             }}>{f.toUpperCase()}</button>
                         ))}
                     </div>
                 </div>
             </div>
 
-            <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 24, overflow: 'hidden' }}>
-                {loading ? (
-                    <div style={{ padding: 100, textAlign: 'center' }}>
-                        <Loader2 size={32} color={P.brand} style={{ animation: 'spin 1s linear infinite' }} />
-                        <div style={{ fontSize: 14, color: P.muted, fontWeight: 800, marginTop: 20 }}>Loading tenants...</div>
+            {/* DATA TABLE */}
+            <DataTable
+                data={tenants}
+                loading={loading}
+                getRowId={item => item.id}
+                minWidth={900}
+                columns={[
+                    {
+                        header: 'Institution details',
+                        render: item => (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                <div style={{ width: 44, height: 44, borderRadius: 12, background: item.is_active ? P.brandBg : P.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Building2 size={20} color={item.is_active ? P.brand : P.muted} />
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: 14, fontWeight: 700, color: P.dark }}>{item.name}</div>
+                                    <div style={{ fontSize: 11, color: P.muted }}>{item.subdomain}.bebrilliant.io</div>
+                                </div>
+                            </div>
+                        )
+                    },
+                    {
+                        header: 'Account Owner',
+                        render: item => (
+                            <div>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: P.text }}>{item.email}</div>
+                                <span style={{ fontSize: 10, color: P.muted, textTransform: 'uppercase', fontWeight: 800 }}>{(item.tenant_type || item.type).replace(/_/g, ' ')}</span>
+                            </div>
+                        )
+                    },
+                    {
+                        header: 'Billing Tier',
+                        render: item => (
+                            <div>
+                                <span style={{ background: P.brandBg, color: P.brand, fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 6 }}>
+                                    {(item.subscription_plan || 'TRIAL').toUpperCase()}
+                                </span>
+                            </div>
+                        )
+                    },
+                    {
+                        header: 'Capacity Usages',
+                        render: item => {
+                            const totalUsers = item.total_users ?? 0;
+                            const maxStud = item.max_students || 100;
+                            const pct = Math.min(100, Math.round((totalUsers / maxStud) * 100));
+                            return (
+                                <div style={{ width: 140 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, color: P.text, marginBottom: 4 }}>
+                                        <span>{totalUsers} / {maxStud} Studs</span>
+                                    </div>
+                                    <div style={{ height: 6, background: P.bg, borderRadius: 4, overflow: 'hidden' }}>
+                                        <div style={{ width: `${pct}%`, height: '100%', background: P.brand, borderRadius: 4 }} />
+                                    </div>
+                                </div>
+                            );
+                        }
+                    },
+                    {
+                        header: 'System Health',
+                        render: item => (
+                            <div style={{ fontSize: 12, color: P.text }}>
+                                <div>{item.examCount ?? 0} Exams</div>
+                                <div style={{ color: P.success, fontWeight: 700 }}>{item.avgAccuracy ?? 0}% Accuracy</div>
+                            </div>
+                        )
+                    },
+                    {
+                        header: 'Status',
+                        render: item => (
+                            <span style={{ background: item.is_active ? P.successBg : P.errorBg, color: item.is_active ? P.success : P.error, padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700 }}>
+                                {item.is_active ? 'ACTIVE' : 'SUSPENDED'}
+                            </span>
+                        )
+                    },
+                    {
+                        header: 'Actions',
+                        render: item => (
+                            <button onClick={() => openInspector(item)} style={{ padding: '6px 12px', background: P.brandBg, border: 'none', borderRadius: 8, color: P.brand, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                                Manage
+                            </button>
+                        )
+                    }
+                ]}
+            />
+
+            {/* DRAWER: PROVISION NEW TENANT */}
+            <SideDrawer
+                isOpen={provisionDrawerOpen}
+                onClose={() => setProvisionDrawerOpen(false)}
+                title="Provision New Tenant"
+                subTitle="Deploy a clean BeBrilliant instance on the ecosystem network"
+                footer={
+                    <div style={{ display: 'flex', gap: 10 }}>
+                        <button onClick={() => setProvisionDrawerOpen(false)} style={{ flex: 1, padding: '12px', background: P.bg, border: '1px solid ' + P.border, borderRadius: 10, cursor: 'pointer', fontWeight: 700 }}>
+                            Cancel
+                        </button>
+                        <button onClick={handleProvisionTenant} disabled={provisionSaving} style={{ flex: 2, padding: '12px', background: P.brand, color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                            {provisionSaving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <ShieldCheck size={16} />} Create Tenant
+                        </button>
                     </div>
-                ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                                <tr style={{ background: P.bg, borderBottom: `1px solid ${P.border}` }}>
-                                    {['Tenant', 'Type', 'Status', 'Students', 'Activity', 'Revenue', 'Actions'].map(h => (
-                                        <th key={h} style={{ padding: '20px', textAlign: 'left', fontSize: 11, fontWeight: 950, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{h}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {tenants.map((t: any) => (
-                                    <tr key={t.id} style={{ borderBottom: `1px solid ${P.border}`, transition: 'all 0.2s' }}>
-                                        <td style={{ padding: '24px 20px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                                                <div style={{ width: 48, height: 48, borderRadius: 14, background: t.is_active ? P.brandBg : P.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.is_active ? `0 4px 12px ${P.brand}15` : 'none' }}>
-                                                    <Building2 size={24} color={t.is_active ? P.brand : P.muted} />
-                                                </div>
-                                                <div>
-                                                    <div style={{ fontSize: 16, fontWeight: 900, color: P.dark }}>{t.name}</div>
-                                                    <div style={{ fontSize: 12, color: P.muted, fontWeight: 700 }}>{t.email}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '20px' }}>
-                                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: P.bg, border: `1px solid ${P.border}`, padding: '4px 10px', borderRadius: 8 }}>
-                                                <span style={{ fontSize: 11, fontWeight: 900, color: P.brand, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{(t.tenant_type || t.type || 'UNKNOWN').replace(/_/g, ' ')}</span>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '20px' }}>
-                                            <StatusBadge status={t.is_active ? 'Active' : 'Inactive'} type={t.is_active ? 'success' : 'error'} />
-                                        </td>
-                                        <td style={{ padding: '20px' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                              <div style={{ fontSize: 14, fontWeight: 900, color: P.dark }}>{t.total_users ?? 0} <span style={{ color: P.muted, fontSize: 11 }}>STUDENTS</span></div>
-                                              <div style={{ background: P.bg, height: 6, borderRadius: 99, width: 120 }}>
-                                                <div style={{ width: Math.min(100, ((t.total_users ?? 0) / (t.max_students || 100)) * 100) + '%', height: '100%', background: P.brand, borderRadius: 99 }} />
-                                              </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '20px' }}>
-                                            <div style={{ display: 'flex', gap: 10 }}>
-                                              <div style={{ border: `1px solid ${P.border}`, padding: '4px 10px', borderRadius: 8, fontSize: 13, fontWeight: 900 }}>{t.examCount ?? 0} <span style={{ fontSize: 10, color: P.muted }}>EXAMS</span></div>
-                                              <div style={{ border: `1px solid ${P.border}`, padding: '4px 10px', borderRadius: 8, fontSize: 13, fontWeight: 900, color: P.success }}>{t.avgAccuracy ?? 0}%</div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '20px' }}>
-                                           <div style={{ fontSize: 16, fontWeight: 950, color: P.dark }}>₹{(t.revenueInPeriod || 0).toLocaleString()}</div>
-                                           <div style={{ fontSize: 11, color: P.muted, fontWeight: 800 }}>{t.subscription_plan || 'TRIAL'}</div>
-                                        </td>
-                                        <td style={{ padding: '20px' }}>
-                                            <button style={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: 10, padding: '8px 12px', fontSize: 12, fontWeight: 900, cursor: 'pointer' }}>MANAGE</button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                }
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {provisionError && (
+                        <div style={{ background: P.errorBg, border: `1px solid ${P.error}30`, borderRadius: 10, padding: 14, fontSize: 12, color: P.error, fontWeight: 600, display: 'flex', gap: 8 }}>
+                            <AlertTriangle size={16} /> <span>{provisionError}</span>
+                        </div>
+                    )}
+
+                    <div>
+                        <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 6 }}>Institution Type</label>
+                        <select value={provisionForm.tenant_type} onChange={e => {
+                            const v = e.target.value;
+                            setProvisionForm({ ...provisionForm, tenant_type: v, type: v === 'independent_teacher' ? 'PERSONAL_TEACHER' : 'INSTITUTE' });
+                        }} style={{ width: '100%', padding: '10px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card }}>
+                            <option value="school">School Academy</option>
+                            <option value="institute">Coaching Institute</option>
+                            <option value="independent_teacher">Independent Teacher</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 6 }}>Institution Name</label>
+                        <input value={provisionForm.name} onChange={e => setProvisionForm({ ...provisionForm, name: e.target.value })} placeholder="e.g. Bright Academy" style={{ width: '100%', padding: '10px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card }} />
+                    </div>
+
+                    <div>
+                        <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 6 }}>Target Subdomain</label>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <input value={provisionForm.subdomain} onChange={e => setProvisionForm({ ...provisionForm, subdomain: e.target.value })} placeholder="subdomain" style={{ flex: 1, padding: '10px 12px', border: '1px solid ' + P.border, borderTopLeftRadius: 9, borderBottomLeftRadius: 9, borderRight: 'none', fontSize: 13, background: P.card }} />
+                            <span style={{ padding: '10px 12px', border: '1px solid ' + P.border, borderTopRightRadius: 9, borderBottomRightRadius: 9, fontSize: 13, background: P.bg, color: P.muted, fontWeight: 600 }}>.bebrilliant.io</span>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        <div>
+                            <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 6 }}>Admin First Name</label>
+                            <input value={provisionForm.admin_first_name} onChange={e => setProvisionForm({ ...provisionForm, admin_first_name: e.target.value })} style={{ width: '100%', padding: '10px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card }} />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 6 }}>Admin Last Name</label>
+                            <input value={provisionForm.admin_last_name} onChange={e => setProvisionForm({ ...provisionForm, admin_last_name: e.target.value })} style={{ width: '100%', padding: '10px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card }} />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 6 }}>Admin Login Email</label>
+                        <input value={provisionForm.email} onChange={e => setProvisionForm({ ...provisionForm, email: e.target.value })} placeholder="admin@academy.com" style={{ width: '100%', padding: '10px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card }} />
+                    </div>
+
+                    <div>
+                        <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 6 }}>Temporary Password</label>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <div style={{ position: 'relative', flex: 1 }}>
+                                <input type={showPass ? 'text' : 'password'} value={provisionForm.admin_password} onChange={e => setProvisionForm({ ...provisionForm, admin_password: e.target.value })} style={{ width: '100%', padding: '10px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card }} />
+                                <button type="button" onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                    {showPass ? <EyeOff size={16} color={P.muted} /> : <Eye size={16} color={P.muted} />}
+                                </button>
+                            </div>
+                            <button type="button" onClick={generatePassword} style={{ padding: '10px 14px', background: P.brandBg, border: 'none', borderRadius: 9, color: P.brand, fontWeight: 700, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Key size={14} /> Generate
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style={{ borderTop: '1px solid ' + P.border, paddingTop: 16 }}>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: P.dark, marginBottom: 12 }}>Standard Capacity Limits</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div>
+                                <label style={{ fontSize: 11, color: P.muted, display: 'block', marginBottom: 6 }}>Max Student slots</label>
+                                <input type="number" value={provisionForm.max_students} onChange={e => setProvisionForm({ ...provisionForm, max_students: parseInt(e.target.value) || 0 })} style={{ width: '100%', padding: '10px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card }} />
+                            </div>
+                            <div>
+                                <label style={{ fontSize: 11, color: P.muted, display: 'block', marginBottom: 6 }}>Max Faculty slots</label>
+                                <input type="number" value={provisionForm.max_teachers} onChange={e => setProvisionForm({ ...provisionForm, max_teachers: parseInt(e.target.value) || 0 })} style={{ width: '100%', padding: '10px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card }} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </SideDrawer>
+
+            {/* DRAWER: INSPECT / EDIT TENANT */}
+            <SideDrawer
+                isOpen={inspectDrawerOpen}
+                onClose={() => setInspectDrawerOpen(false)}
+                title="Manage Institution Instance"
+                subTitle={selectedTenant ? `${selectedTenant.name} Details` : ''}
+                footer={
+                    inspectTab === 'usage' ? (
+                        <div style={{ display: 'flex', gap: 10 }}>
+                            <button onClick={() => setInspectDrawerOpen(false)} style={{ flex: 1, padding: '12px', background: P.bg, border: '1px solid ' + P.border, borderRadius: 10, cursor: 'pointer', fontWeight: 700 }}>
+                                Cancel
+                            </button>
+                            <button onClick={handleSaveLimits} disabled={inspectSaving} style={{ flex: 2, padding: '12px', background: P.brand, color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                {inspectSaving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <CheckCircle size={16} />} Save Limits
+                            </button>
+                        </div>
+                    ) : null
+                }
+            >
+                {selectedTenant && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                        {/* Tab header inside drawer */}
+                        <div style={{ display: 'flex', gap: 4, background: P.bg, border: '1px solid ' + P.border, borderRadius: 10, padding: 3 }}>
+                            {[
+                                { key: 'general', label: 'Summary' },
+                                { key: 'usage', label: 'Quotas' },
+                                { key: 'actions', label: 'Control Panel' }
+                            ].map(t => (
+                                <button key={t.key} onClick={() => setInspectTab(t.key as any)} style={{
+                                    flex: 1, padding: '8px 10px', border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                                    background: inspectTab === t.key ? P.card : 'transparent',
+                                    color: inspectTab === t.key ? P.brand : P.muted,
+                                }}>{t.label}</button>
+                            ))}
+                        </div>
+
+                        {/* TAB: GENERAL */}
+                        {inspectTab === 'general' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                <div style={{ background: P.bg, padding: 16, borderRadius: 12, border: '1px solid ' + P.border }}>
+                                    <div style={{ fontSize: 11, color: P.muted, fontWeight: 800, marginBottom: 4 }}>Subdomain URL</div>
+                                    <div style={{ fontSize: 14, fontWeight: 700, color: P.dark }}>https://{selectedTenant.subdomain}.bebrilliant.io</div>
+                                </div>
+                                <div style={{ background: P.bg, padding: 16, borderRadius: 12, border: '1px solid ' + P.border }}>
+                                    <div style={{ fontSize: 11, color: P.muted, fontWeight: 800, marginBottom: 4 }}>Owner Email</div>
+                                    <div style={{ fontSize: 14, fontWeight: 700, color: P.dark }}>{selectedTenant.email}</div>
+                                </div>
+                                <div style={{ background: P.bg, padding: 16, borderRadius: 12, border: '1px solid ' + P.border }}>
+                                    <div style={{ fontSize: 11, color: P.muted, fontWeight: 800, marginBottom: 4 }}>Billing Tier Plan</div>
+                                    <div style={{ fontSize: 14, fontWeight: 700, color: P.brand, textTransform: 'uppercase' }}>{selectedTenant.subscription_plan || 'Starter Free Trial'}</div>
+                                </div>
+                                <div style={{ background: P.bg, padding: 16, borderRadius: 12, border: '1px solid ' + P.border }}>
+                                    <div style={{ fontSize: 11, color: P.muted, fontWeight: 800, marginBottom: 4 }}>Date Provisioned</div>
+                                    <div style={{ fontSize: 14, fontWeight: 700, color: P.dark }}>{new Date(selectedTenant.created_at).toLocaleDateString('en-IN')}</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB: USAGE */}
+                        {inspectTab === 'usage' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                <div style={{ background: P.bg, padding: 16, borderRadius: 12, border: '1px solid ' + P.border }}>
+                                    <label style={{ fontSize: 11, color: P.muted, fontWeight: 800, display: 'block', marginBottom: 8 }}>Override Student Capacity</label>
+                                    <input type="number" value={limitsForm.max_students} onChange={e => setLimitsForm({ ...limitsForm, max_students: parseInt(e.target.value) || 0 })} style={{ width: '100%', padding: '10px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card }} />
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: P.muted, marginTop: 6 }}>
+                                        <span>Current Users: {selectedTenant.total_users ?? 0}</span>
+                                    </div>
+                                </div>
+
+                                <div style={{ background: P.bg, padding: 16, borderRadius: 12, border: '1px solid ' + P.border }}>
+                                    <label style={{ fontSize: 11, color: P.muted, fontWeight: 800, display: 'block', marginBottom: 8 }}>Override Faculty Capacity</label>
+                                    <input type="number" value={limitsForm.max_teachers} onChange={e => setLimitsForm({ ...limitsForm, max_teachers: parseInt(e.target.value) || 0 })} style={{ width: '100%', padding: '10px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card }} />
+                                </div>
+
+                                <div style={{ background: P.bg, padding: 16, borderRadius: 12, border: '1px solid ' + P.border }}>
+                                    <label style={{ fontSize: 11, color: P.muted, fontWeight: 800, display: 'block', marginBottom: 8 }}>Override Disk Storage (GB)</label>
+                                    <input type="number" value={limitsForm.max_storage_gb} onChange={e => setLimitsForm({ ...limitsForm, max_storage_gb: parseInt(e.target.value) || 50 })} style={{ width: '100%', padding: '10px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card }} />
+                                </div>
+
+                                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: P.text, padding: '0 8px' }}>
+                                    <input type="checkbox" checked={limitsForm.is_white_label} onChange={e => setLimitsForm({ ...limitsForm, is_white_label: e.target.checked })} style={{ accentColor: P.brand }} />
+                                    Enable Whitelabel Portal Explicitly
+                                </label>
+                            </div>
+                        )}
+
+                        {/* TAB: ACTIONS */}
+                        {inspectTab === 'actions' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                <div style={{ padding: 16, background: selectedTenant.is_active ? P.warningBg : P.successBg, border: '1px solid ' + (selectedTenant.is_active ? P.warning : P.success) + '30', borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: selectedTenant.is_active ? P.warning : P.success }}>
+                                        {selectedTenant.is_active ? 'Suspend Tenant Access' : 'Reactivate Tenant Access'}
+                                    </div>
+                                    <div style={{ fontSize: 11, color: P.text, lineHeight: 1.5 }}>
+                                        {selectedTenant.is_active 
+                                            ? 'Suspension blocks all dashboard requests, OMR processors, and exam environments for teachers and students under this node.'
+                                            : 'Reactivating allows full instance access immediately under current capacity rules.'}
+                                    </div>
+                                    <button onClick={handleToggleSuspension} disabled={inspectSaving} style={{ width: '100%', padding: '10px', background: selectedTenant.is_active ? P.error : P.success, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                                        {selectedTenant.is_active ? 'SUSPEND INSTANCE' : 'REACTIVATE INSTANCE'}
+                                    </button>
+                                </div>
+
+                                <div style={{ padding: 16, background: P.bg, border: '1px solid ' + P.border, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: P.dark }}>Password Administration</div>
+                                    <div style={{ fontSize: 11, color: P.muted }}>Admin password resets can be requested for instance recovery triggers.</div>
+                                    <button onClick={() => alert('Password reset link sent to admin inbox.')} style={{ width: '100%', padding: '10px', background: '#F1F5F9', color: P.dark, border: '1px solid ' + P.border, borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                                        Send Reset Instructions
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
-            </div>
+            </SideDrawer>
         </div>
-    )
+    );
 }

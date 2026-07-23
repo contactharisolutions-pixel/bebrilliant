@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import Papa from 'papaparse'
 import { createClient } from '@/lib/supabase/client'
+import { useIdentity } from '@/contexts/IdentityContext'
 // ── TYPES ────────────────────────────────────────────────
 type NodeType = 'board' | 'class' | 'subject' | 'chapter' | 'topic'
 type SyllabusNode = {
@@ -77,7 +78,7 @@ function Modal({ title, onClose, children, onSubmit, saving, saveText = 'Save' }
     )
 }
 // ── TREE NODE COMPONENT ──────────────────────────
-function TreeNode({ node, nodes, onEdit, onDelete, onAddChild, onToggle, onAIGen, level = 0 }: any) {
+function TreeNode({ node, nodes, onEdit, onDelete, onAddChild, onToggle, onAIGen, level = 0, readOnly = false }: any) {
     const [expanded, setExpanded] = useState(false) // Default minimized
     const [generating, setGenerating] = useState(false)
     const children = useMemo(() => nodes.filter((n: SyllabusNode) => n.parent_id === node.id), [nodes, node.id])
@@ -101,27 +102,29 @@ function TreeNode({ node, nodes, onEdit, onDelete, onAddChild, onToggle, onAIGen
                         <Layers size={12} /> {children.length} Sequences
                     </div>
                 )}
-                <div style={{ display: 'flex', gap: 8, marginLeft: 16 }}>
-                    {!node.is_master && (
-                        <>
-                            <button onClick={async () => { setGenerating(true); await onAIGen(node); setGenerating(false) }} className="control-btn" title="AI Generate Child Sequence" style={{ color: COLORS.warning }}>
-                                {generating ? <Loader2 size={16} className="spin" /> : <Sparkles size={16} />}
-                            </button>
-                            <button onClick={() => onToggle(node)} className="control-btn" title="Toggle Signal State">{node.is_active ? <Eye size={16} /> : <EyeOff size={16} />}</button>
-                            <button onClick={() => onAddChild(node)} className="control-btn" title="Provision Child Node" style={{ color: COLORS.primary }}><PlusCircle size={16} /></button>
-                            <button onClick={() => onEdit(node)} className="control-btn" title="Edit Node Architecture"><Edit3 size={16} /></button>
-                            <button onClick={() => onDelete(node)} className="control-btn" title="Purge Node" style={{ color: COLORS.danger }}><Trash2 size={16} /></button>
-                        </>
-                    )}
-                    {node.is_master && (
-                        <button onClick={() => onToggle(node)} className="control-btn" title="Toggle Active State">{node.is_active ? <CheckCircle2 size={16} color={COLORS.success} /> : <EyeOff size={16} />}</button>
-                    )}
-                </div>
+                {!readOnly && (
+                    <div style={{ display: 'flex', gap: 8, marginLeft: 16 }}>
+                        {!node.is_master && (
+                            <>
+                                <button onClick={async () => { setGenerating(true); await onAIGen(node); setGenerating(false) }} className="control-btn" title="AI Generate Child Sequence" style={{ color: COLORS.warning }}>
+                                    {generating ? <Loader2 size={16} className="spin" /> : <Sparkles size={16} />}
+                                </button>
+                                <button onClick={() => onToggle(node)} className="control-btn" title="Toggle Signal State">{node.is_active ? <Eye size={16} /> : <EyeOff size={16} />}</button>
+                                <button onClick={() => onAddChild(node)} className="control-btn" title="Provision Child Node" style={{ color: COLORS.primary }}><PlusCircle size={16} /></button>
+                                <button onClick={() => onEdit(node)} className="control-btn" title="Edit Node Architecture"><Edit3 size={16} /></button>
+                                <button onClick={() => onDelete(node)} className="control-btn" title="Purge Node" style={{ color: COLORS.danger }}><Trash2 size={16} /></button>
+                            </>
+                        )}
+                        {node.is_master && (
+                            <button onClick={() => onToggle(node)} className="control-btn" title="Toggle Active State">{node.is_active ? <CheckCircle2 size={16} color={COLORS.success} /> : <EyeOff size={16} />}</button>
+                        )}
+                    </div>
+                )}
             </div>
             {expanded && children.length > 0 && (
                 <div style={{ borderLeft: `2px solid #F1F5F9`, marginLeft: 8, paddingLeft: 4 }}>
                     {children.map((child: SyllabusNode) => (
-                        <TreeNode key={child.id} node={child} nodes={nodes} level={level + 1} onEdit={onEdit} onDelete={onDelete} onAddChild={onAddChild} onToggle={onToggle} onAIGen={onAIGen} />
+                        <TreeNode key={child.id} node={child} nodes={nodes} level={level + 1} onEdit={onEdit} onDelete={onDelete} onAddChild={onAddChild} onToggle={onToggle} onAIGen={onAIGen} readOnly={readOnly} />
                     ))}
                 </div>
             )}
@@ -130,6 +133,10 @@ function TreeNode({ node, nodes, onEdit, onDelete, onAddChild, onToggle, onAIGen
 }
 // ── MAIN APPLICATION ─────────────────────────────
 export default function SyllabusManagement() {
+    const { identity } = useIdentity()
+    const role = identity?.role
+    const readOnly = role === 'student' || role === 'parent'
+
     const [tab, setTab] = useState('tree')
     const [nodes, setNodes] = useState<SyllabusNode[]>([])
     const [marketplace, setMarketplace] = useState<SyllabusPlan[]>([])
@@ -139,6 +146,35 @@ export default function SyllabusManagement() {
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
     const [nodeModal, setNodeModal] = useState<{ open: boolean; editing?: SyllabusNode; parent?: SyllabusNode; success?: boolean }>({ open: false })
     const [nodeForm, setNodeForm] = useState({ name: '', type: 'chapter' as NodeType })
+    const [bulkBoardName, setBulkBoardName] = useState('')
+    const [csvText, setCsvText] = useState('name,type\nGrade 10,class\nMathematics,subject\nAlgebra,chapter\nQuadratic Equations,topic')
+    const handleBulkUpload = async () => {
+        if (!bulkBoardName.trim()) return showToast('Please enter a Board/Syllabus name', false)
+        Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            complete: async (results) => {
+                const rows = results.data as any[]
+                if (!rows.length) return showToast('No rows found in CSV text', false)
+                const mappedNodes = rows.map(r => ({
+                    name: r.name || r.Name || '',
+                    type: (r.type || r.Type || 'chapter').toLowerCase().trim()
+                })).filter(n => n.name)
+                const res = await apiAction('BULK_UPLOAD_SYLLABUS', {
+                    name: bulkBoardName,
+                    nodes: mappedNodes
+                })
+                if (res && res.success) {
+                    showToast('Bulk Syllabus Uploaded and Linked!', true)
+                    setTab('tree')
+                    fetchHierarchy()
+                }
+            },
+            error: (err) => {
+                showToast(`CSV parse error: ${err.message}`, false)
+            }
+        })
+    }
     const fetchHierarchy = useCallback(async () => {
         setLoading(true)
         try {
@@ -214,9 +250,11 @@ export default function SyllabusManagement() {
                     <button onClick={fetchHierarchy} style={{ padding: '14px 24px', borderRadius: 16, background: '#FFF', border: '2px solid #F1F5F9', color: COLORS.slate, fontSize: 13, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
                         <RefreshCcw size={16} className={loading ? 'spin' : ''} /> Refresh List
                     </button>
-                    <button onClick={() => { setNodeForm({ name: '', type: 'board' }); setNodeModal({ open: true }) }} style={{ padding: '14px 28px', borderRadius: 16, background: COLORS.primaryGradient, border: 'none', color: '#FFF', fontSize: 13, fontWeight: 1000, cursor: 'pointer', boxShadow: '0 10px 25px rgba(0,75,147,0.2)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <PlusCircle size={20} /> Add New Board
-                    </button>
+                    {!readOnly && (
+                        <button onClick={() => { setNodeForm({ name: '', type: 'board' }); setNodeModal({ open: true }) }} style={{ padding: '14px 28px', borderRadius: 16, background: COLORS.primaryGradient, border: 'none', color: '#FFF', fontSize: 13, fontWeight: 1000, cursor: 'pointer', boxShadow: '0 10px 25px rgba(0,75,147,0.2)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <PlusCircle size={20} /> Add New Board
+                        </button>
+                    )}
                 </div>
             </div>
             {/* SYLLABUS STATS */}
@@ -243,8 +281,10 @@ export default function SyllabusManagement() {
                 {[
                     { id: 'tree', label: 'My Syllabus', icon: Layers },
                     { id: 'acquired', label: 'Book Library', icon: Database },
-                    { id: 'market', label: 'Buy Books', icon: ShoppingBag },
-                    { id: 'bulk', label: 'Bulk Upload', icon: Upload }
+                    ...(!readOnly ? [
+                        { id: 'market', label: 'Buy Books', icon: ShoppingBag },
+                        { id: 'bulk', label: 'Bulk Upload', icon: Upload }
+                    ] : [])
                 ].map(t => (
                     <button key={t.id} onClick={() => setTab(t.id)} className={tab === t.id ? 'tab-active' : ''} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 24px', borderRadius: 18, border: 'none', background: 'transparent', color: '#64748B', fontSize: 13, fontWeight: 900, cursor: 'pointer', transition: '0.2s' }}>
                         <t.icon size={16} /> {t.label}
@@ -260,7 +300,7 @@ export default function SyllabusManagement() {
             ) : (
                 <div style={{ animation: 'float 0.4s ease-out' }}>
                     {tab === 'tree' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 350px', gap: 40 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: readOnly ? '1fr' : 'minmax(300px, 1fr) 350px', gap: 40 }}>
                             {/* MASTER HIERARCHY TREE */}
                             <div style={{ background: '#FFF', borderRadius: 32, padding: 40, border: '1px solid #E2E8F0', boxShadow: '0 20px 60px rgba(0,0,0,0.02)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
@@ -278,6 +318,7 @@ export default function SyllabusManagement() {
                                             onAddChild={openAddChild} 
                                             onToggle={(n: any) => apiAction('TOGGLE_NODE', { id: n.id, is_active: !n.is_active })} 
                                             onAIGen={handleAIGenNode}
+                                            readOnly={readOnly}
                                         />
                                     )) : (
                                         <div style={{ padding: 80, textAlign: 'center' }}>
@@ -288,62 +329,64 @@ export default function SyllabusManagement() {
                                 </div>
                             </div>
                              {/* INFORMATION SIDEBAR */}
-                             <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                                 <div style={{ background: COLORS.primaryGradient, borderRadius: 32, padding: 32, color: '#FFF', boxShadow: '0 20px 40px rgba(0,75,147,0.2)', position: 'relative', overflow: 'hidden' }}>
-                                     <Globe size={120} style={{ position: 'absolute', right: -20, bottom: -20, opacity: 0.1 }} />
-                                     <h3 style={{ margin: 0, fontSize: 18, fontWeight: 1000, marginBottom: 12, position: 'relative' }}>Provisioning Engine</h3>
-                                     <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600, lineHeight: 1.6, marginBottom: 24, position: 'relative' }}>
-                                         Instantiate authoritative board structures. Note: The system enforces an <b>Exclusive School Board</b> policy.
-                                     </p>
-                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, position: 'relative' }}>
-                                         {BOARD_GROUPS.map(group => (
-                                             <div key={group.label}>
-                                                 <div style={{ fontSize: 10, fontWeight: 1000, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 10, letterSpacing: '0.05em' }}>{group.label}</div>
-                                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                                     {group.items.map(b => {
-                                                         const exists = nodes.some(n => n.name === b && !n.parent_id);
-                                                         const active = nodes.some(n => n.name === b && !n.parent_id && n.is_active);
-                                                         return (
-                                                             <button 
-                                                                 key={b} 
-                                                                 disabled={exists || saving} 
-                                                                 onClick={() => {
-                                                                     const isSchool = SCHOOL_BOARDS.includes(b);
-                                                                     if (isSchool && nodes.some(n => !n.parent_id && n.is_active && SCHOOL_BOARDS.includes(n.name))) {
-                                                                         if (!confirm(`Provisioning "${b}" will deactivate your current active school board. Proceed?`)) return;
-                                                                     }
-                                                                     apiAction('CREATE_MANUAL_SYLLABUS', { name: b, type: 'board' })
-                                                                 }} 
-                                                                 style={{ 
-                                                                     padding: '8px 12px', borderRadius: 10, 
-                                                                     border: `1px solid rgba(255,255,255,${active ? 0.4 : 0.15})`, 
-                                                                     background: active ? 'rgba(255,255,255,0.15)' : exists ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.05)', 
-                                                                     color: exists ? 'rgba(255,255,255,0.4)' : '#FFF', 
-                                                                     fontSize: 10, fontWeight: 900, cursor: exists ? 'default' : 'pointer', 
-                                                                     transition: '0.2s', display: 'flex', alignItems: 'center', gap: 6
-                                                                 }}
-                                                             >
-                                                                 {b} {active && <CheckCheck size={12} />}
-                                                             </button>
-                                                         )
-                                                     })}
+                             {!readOnly && (
+                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                                     <div style={{ background: COLORS.primaryGradient, borderRadius: 32, padding: 32, color: '#FFF', boxShadow: '0 20px 40px rgba(0,75,147,0.2)', position: 'relative', overflow: 'hidden' }}>
+                                         <Globe size={120} style={{ position: 'absolute', right: -20, bottom: -20, opacity: 0.1 }} />
+                                         <h3 style={{ margin: 0, fontSize: 18, fontWeight: 1000, marginBottom: 12, position: 'relative' }}>Provisioning Engine</h3>
+                                         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600, lineHeight: 1.6, marginBottom: 24, position: 'relative' }}>
+                                             Instantiate authoritative board structures. Note: The system enforces an <b>Exclusive School Board</b> policy.
+                                         </p>
+                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 20, position: 'relative' }}>
+                                             {BOARD_GROUPS.map(group => (
+                                                 <div key={group.label}>
+                                                     <div style={{ fontSize: 10, fontWeight: 1000, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 10, letterSpacing: '0.05em' }}>{group.label}</div>
+                                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                                         {group.items.map(b => {
+                                                             const exists = nodes.some(n => n.name === b && !n.parent_id);
+                                                             const active = nodes.some(n => n.name === b && !n.parent_id && n.is_active);
+                                                             return (
+                                                                 <button 
+                                                                     key={b} 
+                                                                     disabled={exists || saving} 
+                                                                     onClick={() => {
+                                                                         const isSchool = SCHOOL_BOARDS.includes(b);
+                                                                         if (isSchool && nodes.some(n => !n.parent_id && n.is_active && SCHOOL_BOARDS.includes(n.name))) {
+                                                                             if (!confirm(`Provisioning "${b}" will deactivate your current active school board. Proceed?`)) return;
+                                                                         }
+                                                                         apiAction('CREATE_MANUAL_SYLLABUS', { name: b, type: 'board' })
+                                                                     }} 
+                                                                     style={{ 
+                                                                         padding: '8px 12px', borderRadius: 10, 
+                                                                         border: `1px solid rgba(255,255,255,${active ? 0.4 : 0.15})`, 
+                                                                         background: active ? 'rgba(255,255,255,0.15)' : exists ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.05)', 
+                                                                         color: exists ? 'rgba(255,255,255,0.4)' : '#FFF', 
+                                                                         fontSize: 10, fontWeight: 900, cursor: exists ? 'default' : 'pointer', 
+                                                                         transition: '0.2s', display: 'flex', alignItems: 'center', gap: 6
+                                                                     }}
+                                                                 >
+                                                                     {b} {active && <CheckCheck size={12} />}
+                                                                 </button>
+                                                             )
+                                                         })}
+                                                     </div>
                                                  </div>
-                                             </div>
-                                         ))}
+                                             ))}
+                                         </div>
+                                     </div>
+                                     <div style={{ background: '#FFF', borderRadius: 32, padding: 32, border: '1px solid #E2E8F0', borderTop: `4px solid ${COLORS.warning}` }}>
+                                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                                             <Shield size={18} color={COLORS.warning} />
+                                             <span style={{ fontSize: 12, fontWeight: 1000, color: '#1B1D21', textTransform: 'uppercase' }}>Concurrency Policy</span>
+                                         </div>
+                                         <p style={{ fontSize: 12, color: '#64748B', fontWeight: 600, lineHeight: 1.6 }}>
+                                             Activating a secondary school board will automatically archive current academic evaluators to prevent curriculum conflict.
+                                         </p>
                                      </div>
                                  </div>
-                                 <div style={{ background: '#FFF', borderRadius: 32, padding: 32, border: '1px solid #E2E8F0', borderTop: `4px solid ${COLORS.warning}` }}>
-                                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                                         <Shield size={18} color={COLORS.warning} />
-                                         <span style={{ fontSize: 12, fontWeight: 1000, color: '#1B1D21', textTransform: 'uppercase' }}>Concurrency Policy</span>
-                                     </div>
-                                     <p style={{ fontSize: 12, color: '#64748B', fontWeight: 600, lineHeight: 1.6 }}>
-                                         Activating a secondary school board will automatically archive current academic evaluators to prevent curriculum conflict.
-                                     </p>
-                                 </div>
-                             </div>
-                         </div>
-                     )}
+                             )}
+                        </div>
+                    )}
                     {tab === 'acquired' && (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
                             {activeSubscriptions.map((s: any) => (
@@ -399,6 +442,43 @@ export default function SyllabusManagement() {
                                      })()}
                                 </div>
                              ))}
+                        </div>
+                    )}
+                     {tab === 'bulk' && (
+                        <div style={{ maxWidth: 800, background: '#FFF', borderRadius: 32, padding: 40, border: '1px solid #E2E8F0', boxShadow: '0 20px 60px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: 28 }}>
+                            <div>
+                                <h3 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 1000, color: '#0F172A' }}>Bulk Import Syllabus Structure</h3>
+                                <p style={{ margin: 0, fontSize: 13, color: '#64748B', fontWeight: 600 }}>Create an entire school board, its classes, subjects, and topics instantly using standard CSV formatting.</p>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: 12, fontWeight: 900, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>New Board Name</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: '#F8FAFC', borderRadius: 18, border: '2px solid #F1F5F9' }}>
+                                    <Globe size={18} color="#94A3B8" />
+                                    <input value={bulkBoardName} onChange={e => setBulkBoardName(e.target.value)} placeholder="e.g. CBSE 2026 / ICSE Grade 1-10" style={{ flex: 1, background: 'transparent', border: 'none', fontSize: 15, fontWeight: 700, color: '#0F172A', outline: 'none' }} />
+                                </div>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: 12, fontWeight: 900, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>CSV Input Template (Copy-paste or Edit)</label>
+                                <textarea 
+                                    value={csvText} 
+                                    onChange={e => setCsvText(e.target.value)} 
+                                    style={{ width: '100%', height: 200, padding: 20, borderRadius: 18, border: '2px solid #F1F5F9', background: '#F8FAFC', color: '#0F172A', fontSize: 14, fontFamily: 'monospace', fontWeight: 600, outline: 'none', resize: 'vertical' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: 16, background: '#EFF6FF', border: '1px solid #BFDBFE', padding: 20, borderRadius: 20, alignItems: 'flex-start' }}>
+                                <Info size={20} color={COLORS.primary} style={{ marginTop: 2, flexShrink: 0 }} />
+                                <div style={{ fontSize: 13, color: '#1E3A8A', fontWeight: 600, lineHeight: 1.5 }}>
+                                    <strong>CSV Formatting Guidelines:</strong>
+                                    <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
+                                        <li>The first row must declare headers: <code>name,type</code>.</li>
+                                        <li>Valid types include: <code>class</code>, <code>subject</code>, <code>chapter</code>, and <code>topic</code>.</li>
+                                        <li>All nodes will be parsed and linked under the parent Board name automatically.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <button onClick={handleBulkUpload} disabled={saving} style={{ padding: '16px 32px', borderRadius: 16, background: COLORS.primaryGradient, border: 'none', color: '#FFF', fontSize: 14, fontWeight: 1000, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, boxShadow: '0 10px 25px rgba(0,75,147,0.2)' }}>
+                                {saving ? <Loader2 size={18} className="spin" /> : <Upload size={18} />} Run Bulk Upload Engine
+                            </button>
                         </div>
                     )}
                 </div>

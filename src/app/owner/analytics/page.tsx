@@ -379,7 +379,7 @@ export default function AnalyticsPage() {
                                                 </td>
                                                 <td style={{ padding: '20px 24px', fontSize: 15, fontWeight: 750, color: P.text }}>{t.studentCount.toLocaleString()}</td>
                                                 <td style={{ padding: '20px 24px', fontSize: 18, fontWeight: 950, color: t.revenueInPeriod > 0 ? P.success : P.muted }}>
-                                                    \u20B9{t.revenueInPeriod.toLocaleString('en-IN')}
+                                                    ₹{t.revenueInPeriod.toLocaleString('en-IN')}
                                                 </td>
                                             </tr>
                                         ))}

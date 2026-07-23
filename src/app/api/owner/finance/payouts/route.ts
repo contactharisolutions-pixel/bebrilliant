@@ -1,20 +1,9 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
-
-async function verifyOwner() {
-    const supabase = await createClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error || !user) return null
-    
-    const { data: profile } = await supabaseAdmin
-        .from('user_profiles').select('role').eq('id', user.id).single()
-    
-    return (profile?.role === 'owner' || profile?.role === 'admin') ? user : null
-}
+import { verifyPlatformAccess } from '@/lib/platform-auth'
 
 export async function GET() {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('payouts.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
@@ -36,8 +25,9 @@ export async function GET() {
  * Updating status to 'processed' or 'failed'.
  */
 export async function PATCH(request: Request) {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('payouts.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
 
     try {
         const body = await request.json()

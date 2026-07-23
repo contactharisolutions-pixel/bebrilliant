@@ -281,7 +281,9 @@ export default function AssessmentManagement() {
                                         <td style={{ padding: '20px 28px', textAlign: 'right' }}>
                                             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                                                 <button onClick={() => handleDelete(ex.id)} style={{ padding: 10, borderRadius: 10, background: P.errorBg, color: P.error, border: 'none', cursor: 'pointer' }} className="hover-lift"><Trash2 size={16} /></button>
-                                                <button style={{ padding: '10px 20px', background: P.brand, color: '#fff', border: 'none', borderRadius: 12, fontWeight: 850, fontSize: 13, cursor: 'pointer' }} className="hover-lift">Open Portal</button>
+                                                <Link href={`/dashboard/exams/online/${ex.id}`} style={{ textDecoration: 'none' }}>
+                                                    <button style={{ padding: '10px 20px', background: P.brand, color: '#fff', border: 'none', borderRadius: 12, fontWeight: 850, fontSize: 13, cursor: 'pointer' }} className="hover-lift">Open Portal</button>
+                                                </Link>
                                             </div>
                                         </td>
                                     </tr>

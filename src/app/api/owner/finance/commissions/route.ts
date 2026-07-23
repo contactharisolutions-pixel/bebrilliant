@@ -1,20 +1,9 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
-
-async function verifyOwner() {
-    const supabase = await createClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error || !user) return null
-    
-    const { data: profile } = await supabaseAdmin
-        .from('user_profiles').select('role').eq('id', user.id).single()
-    
-    return (profile?.role === 'owner' || profile?.role === 'admin') ? user : null
-}
+import { verifyPlatformAccess } from '@/lib/platform-auth'
 
 export async function GET() {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('settings.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
@@ -25,31 +14,55 @@ export async function GET() {
 
         if (error) throw error
 
-        return NextResponse.json({ rules: data })
+        return NextResponse.json({ rules: data || [] })
     } catch (e: any) {
         return NextResponse.json({ error: e.message }, { status: 400 })
     }
 }
 
 export async function POST(request: Request) {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('settings.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
         const body = await request.json()
-        const { type, tenant_id, category, percentage } = body
+        const { type, tenant_id, category, percentage, is_override, description } = body
 
         if (!type || percentage === undefined) {
             return NextResponse.json({ error: 'Type and percentage are required' }, { status: 400 })
+        }
+
+        // Validate duplicates
+        const formattedTenantId = tenant_id || null
+        const formattedCategory = category || 'default'
+
+        let query = supabaseAdmin
+            .from('commission_rules')
+            .select('id')
+            .eq('type', type)
+            .eq('category', formattedCategory)
+
+        if (formattedTenantId) {
+            query = query.eq('tenant_id', formattedTenantId)
+        } else {
+            query = query.is('tenant_id', null)
+        }
+
+        const { data: existing } = await query.maybeSingle()
+
+        if (existing) {
+            return NextResponse.json({ error: 'A rule configuration already exists for this tenant, type, and category.' }, { status: 400 })
         }
 
         const { data, error } = await supabaseAdmin
             .from('commission_rules')
             .insert([{
                 type,
-                tenant_id: tenant_id || null,
-                category: category || 'default',
-                percentage
+                tenant_id: formattedTenantId,
+                category: formattedCategory,
+                percentage,
+                is_override: !!is_override,
+                description: description || null
             }])
             .select()
             .single()
@@ -62,8 +75,42 @@ export async function POST(request: Request) {
     }
 }
 
+export async function PUT(request: Request) {
+    const user = await verifyPlatformAccess('settings.manage')
+    if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    try {
+        const body = await request.json()
+        const { id, type, tenant_id, category, percentage, is_override, description } = body
+
+        if (!id || !type || percentage === undefined) {
+            return NextResponse.json({ error: 'ID, type, and percentage are required' }, { status: 400 })
+        }
+
+        const { data, error } = await supabaseAdmin
+            .from('commission_rules')
+            .update({
+                type,
+                tenant_id: tenant_id || null,
+                category: category || 'default',
+                percentage,
+                is_override: !!is_override,
+                description: description || null
+            })
+            .eq('id', id)
+            .select()
+            .single()
+
+        if (error) throw error
+
+        return NextResponse.json({ rule: data })
+    } catch (e: any) {
+        return NextResponse.json({ error: e.message }, { status: 400 })
+    }
+}
+
 export async function DELETE(request: Request) {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('settings.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {

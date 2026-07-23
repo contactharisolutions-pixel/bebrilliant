@@ -1,30 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
-
-async function verifyOwner() {
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) return null
-
-    const { data: profile } = await supabaseAdmin
-        .from('user_profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-    if (profile?.role !== 'owner') return null
-    return { user }
-}
+import { verifyPlatformAccess } from '@/lib/platform-auth'
 
 export async function GET(request: NextRequest) {
-    const session = await verifyOwner()
-    if (!session) return NextResponse.json({ error: 'Unauthorized Access' }, { status: 403 })
+    const user = await verifyPlatformAccess('settings.manage')
+    if (!user) return NextResponse.json({ error: 'Unauthorized Access' }, { status: 403 })
 
     try {
         const { searchParams } = new URL(request.url)
         const status = searchParams.get('status')
-        const type = searchParams.get('type')
+        const tenant_type = searchParams.get('tenant_type')
         const search = searchParams.get('search') || ''
 
         let query = supabaseAdmin
@@ -32,13 +17,12 @@ export async function GET(request: NextRequest) {
             .select(`*, user_profiles!user_profiles_tenant_id_fkey(count)`, { count: 'exact' })
             .order('created_at', { ascending: false })
 
-        if (status === 'active') query = query.eq('subscription_status', 'active')
-        if (status === 'suspended') query = query.eq('subscription_status', 'suspended')
-        if (type && type !== 'all') query = query.eq('type', type)
+        if (status === 'active') query = query.eq('is_active', true)
+        if (status === 'suspended') query = query.eq('is_active', false)
+        if (tenant_type && tenant_type !== 'all') query = query.eq('tenant_type', tenant_type)
         if (search) query = query.ilike('name', `%${search}%`)
 
         const { data: tenants, error, count } = await query
-
         if (error) throw error
 
         // Enrich with user counts
@@ -49,13 +33,14 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({ tenants: enriched, total: count ?? 0 })
     } catch (error: any) {
+        console.error('Tenant list error:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
 export async function POST(request: NextRequest) {
-    const session = await verifyOwner()
-    if (!session) return NextResponse.json({ error: 'Unauthorized Action' }, { status: 403 })
+    const user = await verifyPlatformAccess('settings.manage')
+    if (!user) return NextResponse.json({ error: 'Unauthorized Action' }, { status: 403 })
 
     const body = await request.json()
     const { action, payload } = body
@@ -93,6 +78,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ error: 'Invalid action payload' }, { status: 400 })
     } catch (error: any) {
+        console.error('API Action Error:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

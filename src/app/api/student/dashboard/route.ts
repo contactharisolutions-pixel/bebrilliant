@@ -10,8 +10,20 @@ export async function GET(request: NextRequest) {
     const { data: profile } = await supabaseAdmin.from('user_profiles').select('role, tenant_id').eq('id', user.id).single()
     if (!profile || !['student', 'parent'].includes(profile.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const uid = user.id
+    let uid = user.id
     const tid = profile.tenant_id
+
+    if (profile.role === 'parent') {
+        const { data: childProfile } = await supabaseAdmin
+            .from('user_profiles')
+            .select('id')
+            .eq('parent_login_id', user.id)
+            .limit(1)
+            .single()
+        if (childProfile) {
+            uid = childProfile.id
+        }
+    }
 
     try {
         // Fire all DB queries in parallel — eliminates sequential waterfall

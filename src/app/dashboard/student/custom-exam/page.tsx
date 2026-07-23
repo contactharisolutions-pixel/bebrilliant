@@ -8,6 +8,7 @@ import {
 import Link from 'next/link'
 export default function CustomExamBuilder() {
     const [loading, setLoading] = useState(true)
+    const [examLanguages, setExamLanguages] = useState<Record<string, string>>({})
     const [creating, setCreating] = useState(false)
     const [wallet, setWallet] = useState({ balance: 0, transactions: [] })
     const [previousExams, setPreviousExams] = useState([])
@@ -291,14 +292,35 @@ export default function CustomExamBuilder() {
                                         <span>•</span>
                                         <span>{ex.difficulty}</span>
                                     </div>
-                                    {ex.status === 'ready' && (
+                                    {ex.status === 'ready' ? (
+                                        <div style={{ marginTop: 12 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                                                <span style={{ fontSize: 10, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>Language:</span>
+                                                <select
+                                                    value={examLanguages[ex.id] || 'en'}
+                                                    onChange={(e) => setExamLanguages(prev => ({ ...prev, [ex.id]: e.target.value }))}
+                                                    style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: '4px 8px', fontSize: 11, fontWeight: 700, color: '#0F172A', outline: 'none', cursor: 'pointer', flex: 1 }}
+                                                >
+                                                    <option value="en">English</option>
+                                                    <option value="hi">Hindi (हिंदी)</option>
+                                                    <option value="gu">Gujarati (ગુજરાતી)</option>
+                                                </select>
+                                            </div>
+                                            <button
+                                                onClick={() => window.location.href = `/dashboard/student/custom-exam/attempt/${ex.id}?lang=${examLanguages[ex.id] || 'en'}`}
+                                                style={{ width: '100%', padding: '10px', borderRadius: 10, background: '#FFF', border: '1px solid #E2E8F0', color: 'var(--color-primary)', fontSize: 12, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                                            >
+                                                START TEST <ArrowRight size={14} />
+                                            </button>
+                                        </div>
+                                    ) : ex.status === 'completed' ? (
                                         <button 
-                                             onClick={() => window.location.href = `/dashboard/student/custom-exam/attempt/${ex.id}`}
-                                            style={{ width: '100%', marginTop: 12, padding: '10px', borderRadius: 10, background: '#FFF', border: '1px solid #E2E8F0', color: 'var(--color-primary)', fontSize: 12, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                                             onClick={() => window.location.href = '/dashboard/student/analytics'}
+                                            style={{ width: '100%', marginTop: 12, padding: '10px', borderRadius: 10, background: '#F1F5F9', border: '1px solid #E2E8F0', color: '#475569', fontSize: 12, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                                         >
-                                            START AGAIN <ArrowRight size={14} />
+                                            VIEW REPORT <ArrowRight size={14} />
                                         </button>
-                                    )}
+                                    ) : null}
                                 </div>
                             )) : (
                                  <p style={{ fontSize: 13, color: '#94A3B8', textAlign: 'center' }}>Create your first personalized test now.</p>

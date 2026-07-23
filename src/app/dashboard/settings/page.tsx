@@ -422,7 +422,7 @@ export default function SettingsPage() {
                                         <Terminal size={18} color={COLORS.success} />
                                         <span style={{ fontSize: 12, fontWeight: 1000, letterSpacing: '0.1em' }}>DNS SETTINGS</span>
                                     </div>
-                                    <button style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#FFF', fontSize: 11, fontWeight: 900, cursor: 'pointer' }}>Add Domain</button>
+                                    <button onClick={() => alert('Custom domains are only available on the Enterprise subscription tier. Please upgrade to bind custom routes.')} style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#FFF', fontSize: 11, fontWeight: 900, cursor: 'pointer' }}>Add Domain</button>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'rgba(255,255,255,0.03)', padding: '20px 24px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.05)' }}>
                                     <div style={{ width: 12, height: 12, background: COLORS.success, borderRadius: '50%', boxShadow: `0 0 10px ${COLORS.success}` }} />

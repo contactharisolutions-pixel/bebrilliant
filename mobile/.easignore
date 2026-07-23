@@ -1,0 +1,8 @@
+# Exclude large folders not needed by EAS build
+node_modules/
+dist/
+.expo/
+*.log
+*.md
+.claude/
+.git/

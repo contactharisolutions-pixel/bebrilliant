@@ -23,6 +23,25 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
         }
 
+        // Duplicate into owner_leads so it is visible in the CRM pipeline
+        const { error: leadError } = await supabaseAdmin
+            .from('owner_leads')
+            .insert([
+                { 
+                    name, 
+                    organization, 
+                    email, 
+                    phone, 
+                    source: 'Website', 
+                    status: 'new',
+                    type: 'INSTITUTE'
+                }
+            ])
+
+        if (leadError) {
+            console.error("Failed to copy lead to owner_leads:", leadError)
+        }
+
         // AUTOMATION HOOK (Simulating email & sales notification via DB triggers or external calls)
         // Normally we might insert to a notifications table or call SendGrid here
         // For now, logging the successful funnel capture.

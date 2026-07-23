@@ -2,17 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
-async function verifyOwner() {
-    const supabase = await createClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error || !user) return null
-    const { data: p } = await supabaseAdmin.from('user_profiles').select('role').eq('id', user.id).single()
-    return p?.role === 'owner' ? user : null
-}
+import { verifyPlatformAccess } from '@/lib/platform-auth'
 
 /** GET /api/owner/rbac - Full RBAC data: roles, permissions, users, audit logs */
 export async function GET(request: NextRequest) {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('settings.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { searchParams } = new URL(request.url)
@@ -39,7 +33,11 @@ export async function GET(request: NextRequest) {
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
 
-    if (roleFilter !== 'all') usersQ = usersQ.eq('role', roleFilter)
+    if (roleFilter === 'staff') {
+        usersQ = usersQ.in('role', ['owner', 'platform_staff', 'sales_exec', 'demo_exec', 'onboarding_spec'])
+    } else if (roleFilter !== 'all') {
+        usersQ = usersQ.eq('role', roleFilter)
+    }
     if (tenantFilter !== 'all') usersQ = usersQ.eq('tenant_id', tenantFilter)
     if (search) usersQ = usersQ.or('email.ilike.%' + search + '%,first_name.ilike.%' + search + '%,last_name.ilike.%' + search + '%')
 
@@ -79,9 +77,65 @@ export async function GET(request: NextRequest) {
         tenants: tenantsRes.data ?? [],
         stats: {
             totalUsers: allUsers.length,
-            activeUsers: allUsers.filter(u => u.is_active).length,
+            activeUsers: allUsers.filter((u: any) => u.is_active).length,
             totalRoles: (rolesRes.data ?? []).length,
             totalPermissions: (permissionsRes.data ?? []).length,
         }
     })
+}
+
+/** POST /api/owner/rbac - Create a new platform staff user */
+export async function POST(request: NextRequest) {
+    const user = await verifyPlatformAccess('settings.manage')
+    if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    try {
+        const body = await request.json()
+        const { first_name, last_name, email, password, role } = body
+
+        if (!first_name || !last_name || !email || !password || !role) {
+            return NextResponse.json({ error: 'All fields are required.' }, { status: 400 })
+        }
+
+        const STAFF_ROLES = ['owner', 'platform_staff', 'sales_exec', 'demo_exec', 'onboarding_spec']
+        if (!STAFF_ROLES.includes(role)) {
+            return NextResponse.json({ error: 'Invalid platform staff role selected.' }, { status: 400 })
+        }
+
+        // Create auth user
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: { role, first_name, last_name }
+        })
+
+        if (authError || !authData?.user) {
+            return NextResponse.json({ error: authError?.message || 'Failed to create auth user.' }, { status: 400 })
+        }
+
+        // Create profile
+        const { error: profileError } = await supabaseAdmin
+            .from('user_profiles')
+            .insert({
+                id: authData.user.id,
+                email,
+                first_name,
+                last_name,
+                role,
+                tenant_id: null,
+                is_active: true
+            })
+
+        if (profileError) {
+            // Cleanup auth user
+            await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+            return NextResponse.json({ error: 'Failed to create user profile.' }, { status: 500 })
+        }
+
+        return NextResponse.json({ success: true, id: authData.user.id }, { status: 201 })
+    } catch (err: any) {
+        console.error("POST rbac API crashed:", err)
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 }

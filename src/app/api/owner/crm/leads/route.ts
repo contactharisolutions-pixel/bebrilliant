@@ -1,24 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
-
-async function verifyOwner() {
-    const supabase = await createClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error || !user) {
-        console.error('CRM API: No user found in session', error)
-        return null
-    }
-    const { data: profile } = await supabaseAdmin
-        .from('user_profiles').select('role').eq('id', user.id).single()
-    
-    console.log(`CRM API: User ${user.email} has role: ${profile?.role}`)
-    return (profile?.role === 'owner' || profile?.role === 'admin') ? user : null
-}
+import { verifyPlatformAccess } from '@/lib/platform-auth'
 
 /** GET /api/owner/crm/leads - List all owner leads with demos */
 export async function GET(request: NextRequest) {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('crm.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { searchParams } = new URL(request.url)
@@ -33,6 +19,7 @@ export async function GET(request: NextRequest) {
         .from('owner_leads')
         .select(`
       id, name, organization, email, phone, source, status, type,
+      assigned_to, allocated_at, tenant_id,
       created_at, updated_at,
       demos(id, scheduled_at, status, notes)
     `, { count: 'exact' })
@@ -55,11 +42,11 @@ export async function GET(request: NextRequest) {
 
 /** POST /api/owner/crm/leads - Create new lead */
 export async function POST(request: NextRequest) {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('crm.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await request.json()
-    const { name, organization, email, phone, source, status, type } = body
+    const { name, organization, email, phone, source, status, type, assigned_to } = body
 
     if (!name || !organization || !email) {
         return NextResponse.json({ error: 'name, organization and email are required' }, { status: 400 })
@@ -71,7 +58,9 @@ export async function POST(request: NextRequest) {
             name, organization, email, phone, 
             source: source || 'Manual', 
             status: status || 'new',
-            type: type || 'INSTITUTE'
+            type: type || 'INSTITUTE',
+            assigned_to: assigned_to || null,
+            allocated_at: assigned_to ? new Date().toISOString() : null
         })
         .select()
         .single()

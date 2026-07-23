@@ -14,7 +14,7 @@ async function verifyTenantStaff() {
         .single()
     if (!profile) return null
 
-    if (profile.tenant_id && ['admin', 'teacher', 'owner', 'tenant_admin'].includes(profile.role)) {
+    if (profile.tenant_id && ['admin', 'teacher', 'owner', 'tenant_admin', 'student', 'parent'].includes(profile.role)) {
         return { user, tenant_id: profile.tenant_id, role: profile.role, metadata: profile.metadata }
     }
     return null
@@ -91,3 +91,36 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
+
+export async function DELETE(request: NextRequest) {
+    const session = await verifyTenantStaff()
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+
+    const { tenant_id, user } = session
+    const url = new URL(request.url)
+    const groupId = url.searchParams.get('groupId')
+    const contactId = url.searchParams.get('contactId')
+
+    try {
+        let query = supabaseAdmin
+            .from('messages')
+            .delete()
+            .eq('tenant_id', tenant_id)
+
+        if (groupId) {
+            query = query.eq('group_id', groupId)
+        } else if (contactId) {
+            query = query.or(`and(sender_id.eq.${user.id},recipient_id.eq.${contactId}),and(sender_id.eq.${contactId},recipient_id.eq.${user.id})`)
+        } else {
+            return NextResponse.json({ error: 'Missing target parameters' }, { status: 400 })
+        }
+
+        const { error } = await query
+        if (error) throw error
+
+        return NextResponse.json({ success: true })
+    } catch (e: any) {
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+}
+

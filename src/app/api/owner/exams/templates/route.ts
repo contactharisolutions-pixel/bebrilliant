@@ -1,8 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { MasterTemplateEngine } from '@/lib/ai/template-engine';
+import { verifyPlatformAccess } from '@/lib/platform-auth';
 
 export async function GET(request: Request) {
+    const user = await verifyPlatformAccess('settings.manage');
+    if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
     try {
         const supabase = await createClient();
         const { searchParams } = new URL(request.url);
@@ -37,6 +41,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+    const user = await verifyPlatformAccess('settings.manage');
+    if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
     try {
         const supabase = await createClient();
         const body = await request.json();
@@ -44,8 +51,7 @@ export async function POST(request: Request) {
 
         if (action === 'GENERATE_QUESTIONS') {
             if (!templateId) throw new Error("Template ID required");
-            const { data: userData } = await supabase.auth.getUser();
-            const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', userData.user?.id).single();
+            const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
 
             const result = await MasterTemplateEngine.populateTemplateWithAI(
                 templateId, 
@@ -56,12 +62,10 @@ export async function POST(request: Request) {
         }
 
         if (action === 'CREATE_TEMPLATE') {
-            const { data: userData } = await supabase.auth.getUser();
-            
             // 1. Insert Template
             const { data: newTemplate, error: tError } = await supabase
                 .from('paper_templates')
-                .insert([{ ...template, created_by: userData.user?.id }])
+                .insert([{ ...template, created_by: user.id }])
                 .select()
                 .single();
 
@@ -117,3 +121,4 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
+

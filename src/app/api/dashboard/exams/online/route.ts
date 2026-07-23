@@ -60,61 +60,92 @@ export async function POST(request: NextRequest) {
             if (exErr) throw exErr
 
             // TRIGGER COMPILE LOGIC
-            const { data: template } = await supabaseAdmin
-                .from('paper_templates')
-                .select('*, sections:template_sections(*, rules:section_question_rules(*))')
-                .eq('id', payload.blueprint)
-                .single()
+            const isTemplateId = typeof payload.blueprint === 'string' && payload.blueprint.length === 36
+            
+            if (isTemplateId) {
+                const { data: template } = await supabaseAdmin
+                    .from('paper_templates')
+                    .select('*, sections:template_sections(*, rules:section_question_rules(*))')
+                    .eq('id', payload.blueprint)
+                    .single()
 
-            if (template) {
-                for (const section of template.sections) {
-                    for (const rule of section.rules) {
-                        const requiredSize = rule.num_questions
-                        
-                        // 1. SELECT FROM REPOSITORY (Objective Only for Online)
-                        const { data: existingQs } = await supabaseAdmin
-                            .from('questions')
-                            .select('id')
-                            .eq('type', 'objective')
-                            .eq('difficulty', rule.question_type.toLowerCase().includes('easy') ? 'easy' : rule.question_type.toLowerCase().includes('hard') ? 'hard' : 'medium')
-                            .limit(requiredSize)
+                if (template) {
+                    for (const section of template.sections) {
+                        for (const rule of section.rules) {
+                            const requiredSize = rule.num_questions
+                            
+                            // 1. SELECT FROM REPOSITORY (Objective Only for Online)
+                            const { data: existingQs } = await supabaseAdmin
+                                .from('questions')
+                                .select('id')
+                                .eq('type', 'objective')
+                                .eq('difficulty', rule.question_type.toLowerCase().includes('easy') ? 'easy' : rule.question_type.toLowerCase().includes('hard') ? 'hard' : 'medium')
+                                .limit(requiredSize)
 
-                        const selectedIds = (existingQs || []).map(q => q.id)
-                        
-                        // 2. AI FALLBACK
-                        if (selectedIds.length < requiredSize) {
-                            const neededCount = requiredSize - selectedIds.length
-                            const prompt = `Generate ${neededCount} objective MCQ questions of ${rule.question_type} difficulty for online academic testing. Return ONLY a JSON array of objects with question_text, options {A,B,C,D}, correct_answer, explanation.`
-                            const aiResponse = await generateQuestions(prompt)
-                            try {
-                                const parsed = JSON.parse(aiResponse?.replace(/```json|```/g, '') || '[]')
-                                for (const aiQ of parsed) {
-                                    const { data: newQ } = await supabaseAdmin.from('questions').insert([{
-                                        tenant_id,
-                                        type: 'objective',
-                                        question_text: { en: aiQ.question_text },
-                                        options: aiQ.options,
-                                        correct_answer: aiQ.correct_answer,
-                                        explanation: { en: aiQ.explanation },
-                                        difficulty: rule.question_type.toLowerCase().includes('easy') ? 'easy' : rule.question_type.toLowerCase().includes('hard') ? 'hard' : 'medium',
-                                        source: 'ai',
-                                        created_by: userId
-                                    }]).select().single()
-                                    if (newQ) selectedIds.push(newQ.id)
-                                }
-                            } catch (e) { console.error('AI Parse Failed', e) }
+                            const selectedIds = (existingQs || []).map(q => q.id)
+                            
+                            // 2. AI FALLBACK
+                            if (selectedIds.length < requiredSize) {
+                                const neededCount = requiredSize - selectedIds.length
+                                const prompt = `Generate ${neededCount} objective MCQ questions of ${rule.question_type} difficulty for online academic testing. Return ONLY a JSON array of objects with question_text, options {A,B,C,D}, correct_answer, explanation.`
+                                const aiResponse = await generateQuestions(prompt)
+                                try {
+                                    const parsed = JSON.parse(aiResponse?.replace(/```json|```/g, '') || '[]')
+                                    for (const aiQ of parsed) {
+                                        const { data: newQ } = await supabaseAdmin.from('questions').insert([{
+                                            tenant_id,
+                                            type: 'objective',
+                                            question_text: { en: aiQ.question_text },
+                                            options: aiQ.options,
+                                            correct_answer: aiQ.correct_answer,
+                                            explanation: { en: aiQ.explanation },
+                                            difficulty: rule.question_type.toLowerCase().includes('easy') ? 'easy' : rule.question_type.toLowerCase().includes('hard') ? 'hard' : 'medium',
+                                            source: 'ai',
+                                            created_by: userId
+                                        }]).select().single()
+                                        if (newQ) selectedIds.push(newQ.id)
+                                    }
+                                } catch (e) { console.error('AI Parse Failed', e) }
+                            }
+
+                            // 3. STORE MAPPING
+                            if (selectedIds.length > 0) {
+                                const mapping = selectedIds.map((qid) => ({
+                                    exam_id: exam.id,
+                                    question_id: qid,
+                                    section_name: section.section_name,
+                                    marks: rule.marks_per_question,
+                                    negative_marks: rule.negative_marks
+                                }))
+                                await supabaseAdmin.from('online_exam_questions').insert(mapping)
+                            }
                         }
+                    }
+                }
+            } else if (payload.blueprint && typeof payload.blueprint === 'object') {
+                const clientQuestions = payload.blueprint.questions
+                if (Array.isArray(clientQuestions) && clientQuestions.length > 0) {
+                    for (const cq of clientQuestions) {
+                        const { data: newQ } = await supabaseAdmin.from('questions').insert([{
+                            tenant_id,
+                            type: 'objective',
+                            question_text: { en: cq.text || cq.question_text },
+                            options: cq.options || [],
+                            correct_answer: cq.correct_answer || cq.answer,
+                            explanation: { en: cq.explanation || '' },
+                            difficulty: cq.difficulty || 'medium',
+                            source: 'ai',
+                            created_by: userId
+                        }]).select().single()
 
-                        // 3. STORE MAPPING
-                        if (selectedIds.length > 0) {
-                            const mapping = selectedIds.map((qid) => ({
+                        if (newQ) {
+                            await supabaseAdmin.from('online_exam_questions').insert([{
                                 exam_id: exam.id,
-                                question_id: qid,
-                                section_name: section.section_name,
-                                marks: rule.marks_per_question,
-                                negative_marks: rule.negative_marks
-                            }))
-                            await supabaseAdmin.from('online_exam_questions').insert(mapping)
+                                question_id: newQ.id,
+                                section_name: cq.section_name || 'Section A',
+                                marks: cq.marks || 4,
+                                negative_marks: cq.negative_marks || 1
+                            }])
                         }
                     }
                 }

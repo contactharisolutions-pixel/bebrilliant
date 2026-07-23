@@ -1,18 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
+import { verifyPlatformAccess } from '@/lib/platform-auth'
 
-async function verifyOwner() {
-    const supabase = await createClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error || !user) return null
-    const { data: profile } = await supabaseAdmin
-        .from('user_profiles').select('role').eq('id', user.id).single()
-    return (profile?.role === 'owner' || profile?.role === 'admin') ? user : null
-}
-
+/** GET /api/owner/finance/plans — List all plans sorted by price */
 export async function GET() {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('settings.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
@@ -23,19 +15,20 @@ export async function GET() {
 
         if (error) throw error
 
-        return NextResponse.json({ plans: data })
+        return NextResponse.json({ plans: data ?? [] })
     } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 400 })
+        return NextResponse.json({ error: e.message }, { status: 500 })
     }
 }
 
+/** POST /api/owner/finance/plans — Create a new plan tier with quotas */
 export async function POST(request: Request) {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('settings.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
         const body = await request.json()
-        const { name, type, price, billing_cycle, max_students, max_teachers, features, is_active } = body
+        const { name, type, price, billing_cycle, max_students, max_teachers, max_storage_gb, max_ai_tokens, features, is_active } = body
 
         if (!name || price === undefined) {
             return NextResponse.json({ error: 'Name and price are required' }, { status: 400 })
@@ -50,6 +43,8 @@ export async function POST(request: Request) {
                 billing_cycle: billing_cycle || 'monthly',
                 max_students: max_students || 0,
                 max_teachers: max_teachers || 0,
+                max_storage_gb: max_storage_gb || 50,
+                max_ai_tokens: max_ai_tokens || 1000000,
                 features: features || { ai_mentor: false, adaptive_exam: false, white_label: false },
                 is_active: is_active ?? true,
                 updated_at: new Date().toISOString()
@@ -59,14 +54,15 @@ export async function POST(request: Request) {
 
         if (error) throw error
 
-        return NextResponse.json({ plan: data })
+        return NextResponse.json({ plan: data }, { status: 201 })
     } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 400 })
+        return NextResponse.json({ error: e.message }, { status: 500 })
     }
 }
 
+/** PATCH /api/owner/finance/plans — Update plan config */
 export async function PATCH(request: Request) {
-    const user = await verifyOwner()
+    const user = await verifyPlatformAccess('settings.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
@@ -89,6 +85,6 @@ export async function PATCH(request: Request) {
 
         return NextResponse.json({ plan: data })
     } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 400 })
+        return NextResponse.json({ error: e.message }, { status: 500 })
     }
 }

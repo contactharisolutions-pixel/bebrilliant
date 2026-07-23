@@ -132,6 +132,9 @@ export class PaymentsEngine {
         else if (payment.type === 'wallet') {
             await this.creditStudentWallet(payment)
         }
+        else if (payment.type === 'exam') {
+            await this.enrollPaidExam(payment)
+        }
 
         // 4. Affiliate Reward Distribution (New)
         try {
@@ -256,5 +259,19 @@ export class PaymentsEngine {
             start_date: new Date().toISOString(),
             end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
         })
+    }
+
+    private static async enrollPaidExam(payment: any) {
+        const examId = payment.metadata?.exam_id || payment.metadata?.item_id
+        if (!examId) return
+
+        await supabaseAdmin
+            .from('exam_enrollments')
+            .insert({
+                student_id: payment.user_id,
+                exam_id: examId,
+                tenant_id: payment.tenant_id,
+                status: 'paid'
+            })
     }
 }

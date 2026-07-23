@@ -94,3 +94,42 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
+
+export async function DELETE(request: NextRequest) {
+    try {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+        const { data: profile } = await supabaseAdmin
+            .from('user_profiles')
+            .select('tenant_id, role')
+            .eq('id', user.id)
+            .single()
+
+        if (!profile || !['tenant_admin', 'owner'].includes(profile.role)) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+
+        const type = request.nextUrl.searchParams.get('type') // 'class-subject' or 'teacher-subject'
+        const id = request.nextUrl.searchParams.get('id')
+
+        if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
+
+        if (type === 'teacher-subject') {
+            const { error } = await supabaseAdmin
+                .from('teacher_subjects')
+                .delete()
+                .eq('id', id)
+                .eq('tenant_id', profile.tenant_id)
+
+            if (error) throw error
+            return NextResponse.json({ success: true })
+        }
+
+        return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
+    } catch (error: any) {
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+}
+

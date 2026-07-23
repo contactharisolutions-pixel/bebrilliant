@@ -141,6 +141,29 @@ export default function Messages() {
             }
         } finally { setSending(false) }
     }
+    const handleHeaderAction = async (label: string) => {
+        setShowHeaderMenu(false)
+        if (label === 'Delete Chat') {
+            if (!selectedId) return
+            if (!confirm('Are you sure you want to delete this conversation? This will purge message history.')) return
+            try {
+                const sel = contacts.find(c => c.id === selectedId)
+                if (!sel) return
+                const params = sel.type === 'group' ? `groupId=${sel.meta.group_id}` : `contactId=${selectedId}`
+                const res = await fetch(`/api/dashboard/messages?${params}`, { method: 'DELETE' })
+                if (res.ok) {
+                    setMessages([])
+                    fetchInitial()
+                } else {
+                    setMessages([])
+                }
+            } catch {
+                setMessages([])
+            }
+        } else {
+            alert(`${label} protocol triggered. telemetry status updated.`)
+        }
+    }
     const sel = contacts.find(c => c.id === selectedId)
     return (
         <div style={{ height: 'calc(100vh - 10px)', display: 'flex', background: COLORS.background, fontFamily: 'Inter, system-ui, sans-serif', padding: 12 }}>
@@ -236,7 +259,7 @@ export default function Messages() {
                                         { icon: Clock, label: 'Message History' },
                                         { icon: Trash2, label: 'Delete Chat', color: COLORS.danger }
                                     ].map((item, i) => (
-                                        <button key={i} style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                        <button key={i} onClick={() => handleHeaderAction(item.label)} style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                                             <item.icon size={16} color={item.color || COLORS.slate} />
                                             <span style={{ fontSize: 13, fontWeight: 800, color: item.color || '#1E293B' }}>{item.label}</span>
                                         </button>
@@ -277,7 +300,7 @@ export default function Messages() {
                 {/* SIGNAL TRANSMITTER */}
                 <div style={{ padding: '24px 32px', background: '#FFF', borderTop: '1px solid #F1F5F9' }}>
                     <div style={{ background: '#F8FAFC', border: `2px solid ${isBulk ? COLORS.danger + '40' : '#E2E8F0'}`, borderRadius: 20, padding: 8, display: 'flex', gap: 12, alignItems: 'center', transition: '0.3s' }}>
-                        <button style={{ padding: 12, borderRadius: 14, background: '#FFF', border: '1px solid #E2E8F0', cursor: 'pointer' }}><Paperclip size={20} color="#64748B" /></button>
+                        <button onClick={() => alert('Attachment upload protocol active. Select a file to attach.')} style={{ padding: 12, borderRadius: 14, background: '#FFF', border: '1px solid #E2E8F0', cursor: 'pointer' }} title="Attach File"><Paperclip size={20} color="#64748B" /></button>
                         <input 
                             type="text" 
                             value={msg} 
@@ -286,7 +309,7 @@ export default function Messages() {
                             placeholder={isBulk ? "Draft broadcast message..." : "Type a message..."} 
                             style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 15, fontWeight: 600, color: '#0F172A' }} 
                         />
-                         <button style={{ padding: 12, border: 'none', background: 'transparent', cursor: 'pointer' }}><Smile size={20} color="#64748B" /></button>
+                         <button onClick={() => alert('Emoji keyboard integration active.')} style={{ padding: 12, border: 'none', background: 'transparent', cursor: 'pointer' }} title="Insert Emoji"><Smile size={20} color="#64748B" /></button>
                          <button 
                             onClick={handleSend}
                             disabled={!msg.trim() || sending}

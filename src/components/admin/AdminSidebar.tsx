@@ -66,7 +66,7 @@ export function AdminSidebar() {
         fetch('/api/auth/me').then(res => res.json()).then(data => setIdentity(data))
     }, [])
 
-    const logoUrl = identity?.tenant?.logo_url || "https://bfzlkdurgggzytegvvrw.supabase.co/storage/v1/object/public/bebrilliant/Logo2.jpeg"
+    const logoUrl = identity?.tenant?.logo_url || "https://bebrilliant.in/uploads/Logo2.jpeg"
     const instituteName = identity?.tenant?.name || (identity ? "BeBrilliant Platform" : "Synchronizing Hub...")
     const userName = identity?.fullName || (identity ? "Authorized Staff" : "Verifying Identity...")
 
@@ -137,7 +137,9 @@ export function AdminSidebar() {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                             {group.items.map(item => {
-                                const active = pathname === item.href || pathname?.startsWith(item.href + '/')
+                                const active = item.href === '/dashboard/exams'
+                                    ? pathname === '/dashboard/exams'
+                                    : (pathname === item.href || pathname?.startsWith(item.href + '/'))
                                 return (
                                     <Link key={item.href} href={item.href} style={{
                                         display: 'flex',

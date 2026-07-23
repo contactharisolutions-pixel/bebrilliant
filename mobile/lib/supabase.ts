@@ -1,15 +1,34 @@
+import { Platform } from 'react-native'
 import * as SecureStore from 'expo-secure-store'
 import { createClient } from '@supabase/supabase-js'
 
 const ExpoSecureStoreAdapter = {
-  getItem: (key: string) => {
-    return SecureStore.getItemAsync(key)
+  getItem: async (key: string) => {
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined') {
+        return window.localStorage.getItem(key)
+      }
+      return null
+    }
+    return await SecureStore.getItemAsync(key)
   },
-  setItem: (key: string, value: string) => {
-    return SecureStore.setItemAsync(key, value)
+  setItem: async (key: string, value: string) => {
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(key, value)
+      }
+      return
+    }
+    await SecureStore.setItemAsync(key, value)
   },
-  removeItem: (key: string) => {
-    return SecureStore.deleteItemAsync(key)
+  removeItem: async (key: string) => {
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem(key)
+      }
+      return
+    }
+    await SecureStore.deleteItemAsync(key)
   },
 }
 

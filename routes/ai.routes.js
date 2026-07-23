@@ -19,7 +19,7 @@ router.post('/generate-content', auth, rbac('Admin', 'Manager'), async (req, res
                 short_description: `Stylish ${color} ${shape} ${category} made with premium ${material}. Optimized for ${gender}.`,
                 full_description: `Elevate your vision with these ${brand} ${model} ${category}. Crafted from high-quality ${material}, these ${shape} frames offer a perfect blend of style and comfort. The ${frame_type} design ensures durability, while the ${lens_color} ${lens_material} lenses provide superior optical clarity. Perfect for ${gender} who value both fashion and function.`,
                 tags: [brand, category, gender, shape, material].join(','),
-                seo_title: `Buy ${brand} ${model} - Classic ${shape} ${category} for ${gender} | BlinkOpticals`,
+                seo_title: `Buy ${brand} ${model} - Classic ${shape} ${category} for ${gender} | BeBrilliant`,
                 seo_description: `Shop the ${brand} ${model} ${category}. Featuring a ${shape} ${material} frame in ${color}. Free shipping on all orders.`,
                 seo_keywords: `${brand}, ${category}, ${shape} eyewear, ${gender} glasses, ${material} frames`
             }

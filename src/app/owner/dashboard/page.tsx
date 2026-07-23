@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import {
     School, Users, Zap, GraduationCap, DollarSign,
     Bell, Search, LayoutGrid, TrendingUp, CreditCard,
@@ -39,21 +40,28 @@ function Card({ children, style = {}, className = "" }: { children: React.ReactN
 }
 
 export default function OwnerDashboardPage() {
+    const router = useRouter()
     const [stats, setStats] = useState<any>(null)
     const [chartData, setChartData] = useState<any>(CHART)
     const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
+
+    const load = async () => {
+        setRefreshing(true)
+        try {
+            const res = await fetch('/api/owner/dashboard')
+            const json = await res.json()
+            if (res.ok) {
+                setStats(json.stats)
+                setChartData(json.chartData)
+            }
+        } finally {
+            setLoading(false)
+            setRefreshing(false)
+        }
+    }
 
     useEffect(() => {
-        const load = async () => {
-            try {
-                const res = await fetch('/api/owner/dashboard')
-                const json = await res.json()
-                if (res.ok) {
-                    setStats(json.stats)
-                    setChartData(json.chartData)
-                }
-            } finally { setLoading(false) }
-        }
         load()
     }, [])
 
@@ -86,7 +94,7 @@ export default function OwnerDashboardPage() {
                         Platform Dashboard
                     </h1>
                     <p style={{ fontSize: 14, color: P.muted, margin: '6px 0 0', fontWeight: 600 }}>
-                        Manage your platform and all tenants.
+                        Manage your educational platform and registered institutes.
                     </p>
                 </div>
 
@@ -96,31 +104,34 @@ export default function OwnerDashboardPage() {
                         <input placeholder="Search platform..." style={{ padding: '12px 16px 12px 42px', borderRadius: 12, border: '1px solid ' + P.border, background: '#fff', fontSize: 13, width: 240, outline: 'none', fontWeight: 600 }} />
                     </div>
                     
-                    <button style={{
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        background: P.brand, color: '#fff', border: 'none',
-                        padding: '12px 24px', borderRadius: 12, fontSize: 14, fontWeight: 850,
-                        cursor: 'pointer', boxShadow: `0 8px 18px ${P.brand}35`,
-                    }}>
+                    <button 
+                        onClick={() => router.push('/owner/tenants?provision=true')}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            background: P.brand, color: '#fff', border: 'none',
+                            padding: '12px 24px', borderRadius: 12, fontSize: 14, fontWeight: 850,
+                            cursor: 'pointer', boxShadow: `0 8px 18px ${P.brand}35`,
+                        }}
+                    >
                         <LayoutGrid size={18} />
-                        Add Tenant
+                        Add Institute
                     </button>
                 </div>
             </div>
 
             {/* KPI GRID */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 20 }}>
-                <KpiCard icon={School} title="Total Tenants" value={String(stats.totalTenants)} color={P.brand} trend="12" trendIsUp={true} />
-                <KpiCard icon={Receipt} title="Revenue" value={stats.totalRevenue} color={P.success} trend="8.4" trendIsUp={true} />
-                <KpiCard icon={BarChart4} title="Profit" value={stats.netCommission} color={P.cta} trend="5.2" trendIsUp={true} />
-                <KpiCard icon={Users} title="Total Users" value={String(stats.ecosystemBase)} color={P.info} trend="24k" trendIsUp={true} />
+                <KpiCard icon={School} title="Total Institutes" value={String(stats.totalTenants)} color={P.brand} trend="12" trendIsUp={true} />
+                <KpiCard icon={Receipt} title="Total Income" value={`₹${Number(stats.totalRevenue).toLocaleString()}`} color={P.success} trend="8.4" trendIsUp={true} />
+                <KpiCard icon={BarChart4} title="Commissions Earned" value={`₹${Number(stats.netCommission).toLocaleString()}`} color={P.cta} trend="5.2" trendIsUp={true} />
+                <KpiCard icon={Users} title="All Registered Users" value={String(stats.ecosystemBase)} color={P.info} trend="24k" trendIsUp={true} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 32 }}>
-                <KpiCard icon={Activity} title="User Activity" value={stats.avgUsersPerNode} color={P.brand} trend="0.4" trendIsUp={true} />
-                <KpiCard icon={GraduationCap} title="Exams Done" value={stats.avgExamsPerNode} color={P.info} trend="1.2" trendIsUp={true} />
-                <KpiCard icon={UserPlus} title="CRM Leads" value={String(stats.activeLeads)} color={P.cta} trend="High" trendIsUp={true} />
-                <KpiCard icon={ShieldAlert} title="System Health" value={stats.criticalAlerts > 0 ? String(stats.criticalAlerts) : 'Stable'} color={stats.criticalAlerts > 0 ? P.error : P.success} />
+                <KpiCard icon={Activity} title="Active Users" value={String(stats.avgUsersPerNode)} color={P.brand} trend="0.4" trendIsUp={true} />
+                <KpiCard icon={GraduationCap} title="Exams Conducted" value={String(stats.avgExamsPerNode)} color={P.info} trend="1.2" trendIsUp={true} />
+                <KpiCard icon={UserPlus} title="Interested Leads" value={String(stats.activeLeads)} color={P.cta} trend="High" trendIsUp={true} />
+                <KpiCard icon={ShieldAlert} title="System Flags" value={stats.criticalAlerts > 0 ? String(stats.criticalAlerts) : 'Stable'} color={stats.criticalAlerts > 0 ? P.error : P.success} />
             </div>
 
             {/* MAIN ROW: CHART + SIDE */}
@@ -134,10 +145,13 @@ export default function OwnerDashboardPage() {
                             <div style={{ fontSize: 13, color: P.muted, marginTop: 4, fontWeight: 600 }}>Monthly revenue overview</div>
                         </div>
                         <div style={{ display: 'flex', gap: 10 }}>
-                            <button style={{
-                                background: P.bg, border: `1px solid ${P.border}`, borderRadius: 10,
-                                padding: '8px 16px', fontSize: 12, fontWeight: 800, color: P.dark, cursor: 'pointer',
-                            }}>View List</button>
+                            <button 
+                                onClick={() => router.push('/owner/payments')}
+                                style={{
+                                    background: P.bg, border: `1px solid ${P.border}`, borderRadius: 10,
+                                    padding: '8px 16px', fontSize: 12, fontWeight: 800, color: P.dark, cursor: 'pointer',
+                                }}
+                            >View List</button>
                         </div>
                     </div>
                     <div style={{ height: 350 }}>
@@ -161,16 +175,16 @@ export default function OwnerDashboardPage() {
                         </ResponsiveContainer>
                     </div>
                 </Card>
- 
+
                 {/* SIDE PANEL */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
- 
+
                     {/* ESCROW CARD */}
                     <Card style={{ 
-                        textAlign: 'center', 
-                        position: 'relative', 
-                        overflow: 'hidden',
-                        background: `linear-gradient(135deg, ${P.card} 0%, ${P.bg} 100%)` 
+                         textAlign: 'center', 
+                         position: 'relative', 
+                         overflow: 'hidden',
+                         background: `linear-gradient(135deg, ${P.card} 0%, ${P.bg} 100%)` 
                     }}>
                         <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: P.cta, opacity: 0.05, filter: 'blur(30px)' }} />
                         
@@ -182,18 +196,21 @@ export default function OwnerDashboardPage() {
                             <CreditCard size={30} color={P.cta} strokeWidth={2.5} />
                         </div>
                         <div style={{ fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Pending Payouts</div>
-                        <div style={{ fontSize: 40, fontWeight: 950, color: P.dark, letterSpacing: '-0.04em', marginBottom: 8 }}>{stats.pendingPayout}</div>
+                        <div style={{ fontSize: 40, fontWeight: 950, color: P.dark, letterSpacing: '-0.04em', marginBottom: 8 }}>₹{Number(stats.pendingPayout || 0).toLocaleString()}</div>
                         <div style={{ fontSize: 13, color: P.muted, fontWeight: 700, marginBottom: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                             <Clock size={14} /> {stats.pendingCount || 0} batches pending
                         </div>
-                        <button style={{
-                            width: '100%', background: P.dark, color: '#fff', border: 'none',
-                            borderRadius: 16, padding: '16px 0', fontWeight: 900, fontSize: 14,
-                            cursor: 'pointer', letterSpacing: '0.05em', boxShadow: `0 12px 30px rgba(0,0,0,0.15)`,
-                            transition: 'all 0.3s'
-                        }}>Pay Out Now</button>
+                        <button 
+                            onClick={() => router.push('/owner/finance/payouts')}
+                            style={{
+                                width: '100%', background: P.dark, color: '#fff', border: 'none',
+                                borderRadius: 16, padding: '16px 0', fontWeight: 900, fontSize: 14,
+                                cursor: 'pointer', letterSpacing: '0.05em', boxShadow: `0 12px 30px rgba(0,0,0,0.15)`,
+                                transition: 'all 0.3s'
+                            }}
+                        >Send Payouts Now</button>
                     </Card>
- 
+
                     {/* QUICK ACTIONS */}
                     <Card style={{ flex: 1, padding: '24px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -202,11 +219,32 @@ export default function OwnerDashboardPage() {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                             {[
-                                { icon: UserPlus, title: 'CRM Leads', sub: '8 leads pending', color: P.info, bg: P.infoBg },
-                                { icon: Zap, title: 'Sync Status', sub: 'Systems connected', color: P.brand, bg: P.brandBg },
-                                { icon: ShieldAlert, title: 'Health Audit', sub: 'Everything OK', color: P.error, bg: P.errorBg },
+                                { 
+                                    icon: UserPlus, 
+                                    title: 'Pending Enquiries', 
+                                    sub: `${stats.activeLeads || 0} enquiries awaiting`, 
+                                    color: P.info, 
+                                    bg: P.infoBg, 
+                                    action: () => router.push('/owner/crm') 
+                                },
+                                { 
+                                    icon: Zap, 
+                                    title: 'Sync Status', 
+                                    sub: refreshing ? 'Syncing...' : 'Systems connected', 
+                                    color: P.brand, 
+                                    bg: P.brandBg, 
+                                    action: () => load() 
+                                },
+                                { 
+                                    icon: ShieldAlert, 
+                                    title: 'System Flags', 
+                                    sub: stats.criticalAlerts > 0 ? `${stats.criticalAlerts} warnings` : 'Everything OK', 
+                                    color: P.error, 
+                                    bg: P.errorBg, 
+                                    action: () => router.push('/owner/analytics') 
+                                },
                             ].map(op => (
-                                <button key={op.title} className="hover-lift" style={{
+                                <button key={op.title} onClick={op.action} className="hover-lift" style={{
                                     display: 'flex', alignItems: 'center', gap: 14,
                                     padding: '12px 16px', borderRadius: 16, background: P.bg,
                                     border: `1px solid ${P.border}`, cursor: 'pointer',

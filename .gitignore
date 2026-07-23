@@ -57,3 +57,6 @@ next-env.d.ts
 # mobile apks
 public/downloads/*.apk
 
+# backups and archives
+*.zip
+

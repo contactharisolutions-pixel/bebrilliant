@@ -13,9 +13,23 @@ export async function GET(request: NextRequest) {
     try {
         let studentClass = '';
         let studentDivision = '';
+        let resolvedStudentId = session.user?.id;
+
         if (role === 'student' && metadata) {
             studentClass = (metadata as any).school_class || (metadata as any).class || '';
             studentDivision = (metadata as any).division || (metadata as any).section || '';
+        } else if (role === 'parent' && session.user?.id) {
+            const { data: child } = await supabaseAdmin
+                .from('user_profiles')
+                .select('id, metadata')
+                .eq('parent_login_id', session.user.id)
+                .limit(1)
+                .single()
+            if (child) {
+                resolvedStudentId = child.id
+                studentClass = (child.metadata as any)?.school_class || (child.metadata as any)?.class || '';
+                studentDivision = (child.metadata as any)?.division || (child.metadata as any)?.section || '';
+            }
         }
 
         let queryExams = supabaseAdmin
@@ -27,13 +41,13 @@ export async function GET(request: NextRequest) {
         // If an owner has NO tenant_id, show everything (global admin view)
         if (tenant_id) {
             queryExams = queryExams.eq('tenant_id', tenant_id)
-        } else if (role !== 'owner' && role !== 'student') {
+        } else if (role !== 'owner' && role !== 'student' && role !== 'parent') {
              // Non-owner with no TID. Block them.
              return NextResponse.json({ error: 'Tenant isolation violation. Node unassigned.' }, { status: 403 })
         }
 
-        // Student Privacy: Only show active exams
-        if (role === 'student') {
+        // Student/Parent Privacy: Only show active exams
+        if (role === 'student' || role === 'parent') {
             queryExams = queryExams.eq('is_active', true)
         }
 
@@ -47,10 +61,10 @@ export async function GET(request: NextRequest) {
         // Student-specific context: Enrollments & Cart
         let enrollments: any[] = []
         let cartItems: any[] = []
-        if (role === 'student' && session.user?.id) {
+        if ((role === 'student' || role === 'parent') && resolvedStudentId) {
             const [enrRes, cartRes] = await Promise.all([
-                supabaseAdmin.from('exam_enrollments').select('*').eq('student_id', session.user.id),
-                supabaseAdmin.from('cart_items').select('*').eq('student_id', session.user.id).eq('item_type', 'exam')
+                supabaseAdmin.from('exam_enrollments').select('*').eq('student_id', resolvedStudentId),
+                supabaseAdmin.from('cart_items').select('*').eq('student_id', resolvedStudentId).eq('item_type', 'exam')
             ])
             enrollments = enrRes.data || []
             cartItems = cartRes.data || []
@@ -94,7 +108,7 @@ export async function GET(request: NextRequest) {
                 targetSections: meta.targetSections || meta.targetDivisions || []
             }
         }).filter(ex => {
-            if (role === 'student') {
+            if (role === 'student' || role === 'parent') {
                 if (ex.mode === 'offline') return false;
                 
                 // Cohort Enforcers

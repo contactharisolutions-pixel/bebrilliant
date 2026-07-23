@@ -1,19 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
-
-async function verifyOwner() {
-    const supabase = await createClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error || !user) return null
-    const { data: p } = await supabaseAdmin.from('user_profiles').select('role').eq('id', user.id).single()
-    return p?.role === 'owner' ? user : null
-}
+import { verifyPlatformAccess } from '@/lib/platform-auth'
 
 /** GET /api/owner/whatsapp-templates — list all global (platform) templates */
 export async function GET() {
-    const owner = await verifyOwner()
-    if (!owner) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    const user = await verifyPlatformAccess('automation.manage')
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
     const { data, error } = await supabaseAdmin
         .from('whatsapp_templates')
@@ -27,8 +19,8 @@ export async function GET() {
 
 /** PUT /api/owner/whatsapp-templates — upsert multiple global templates */
 export async function PUT(req: NextRequest) {
-    const owner = await verifyOwner()
-    if (!owner) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    const user = await verifyPlatformAccess('automation.manage')
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
     const templates = await req.json() as Array<{
         template_key: string; template_text: string; is_active: boolean
@@ -53,3 +45,4 @@ export async function PUT(req: NextRequest) {
     if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     return NextResponse.json({ success: true })
 }
+
