@@ -58,7 +58,7 @@ def trigger_vps_deployment():
         commands = [
             "mkdir -p /var/www/bebrilliant",
             "if [ ! -d /var/www/bebrilliant/.git ]; then cd /var/www/bebrilliant && git init && (git remote add origin https://github.com/contactharisolutions-pixel/bebrilliant.git || git remote set-url origin https://github.com/contactharisolutions-pixel/bebrilliant.git); fi",
-            "cd /var/www/bebrilliant && git fetch origin main && git checkout -B main origin/main && git reset --hard origin/main",
+            "cd /var/www/bebrilliant && git fetch origin main && git checkout -f -B main origin/main && git reset --hard origin/main",
             "chmod +x /var/www/bebrilliant/scripts/vps-git-deploy.sh || true",
             "bash /var/www/bebrilliant/scripts/vps-git-deploy.sh"
         ]
