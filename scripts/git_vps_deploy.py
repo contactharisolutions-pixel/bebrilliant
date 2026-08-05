@@ -56,8 +56,11 @@ def trigger_vps_deployment():
         print("[OK] Connected to VPS via SSH.")
         
         commands = [
+            "mkdir -p /var/www/bebrilliant",
+            "if [ ! -d /var/www/bebrilliant/.git ]; then cd /var/www/bebrilliant && git init && (git remote add origin https://github.com/contactharisolutions-pixel/bebrilliant.git || git remote set-url origin https://github.com/contactharisolutions-pixel/bebrilliant.git); fi",
+            "cd /var/www/bebrilliant && git fetch origin main && git checkout -B main origin/main && git reset --hard origin/main",
             "chmod +x /var/www/bebrilliant/scripts/vps-git-deploy.sh || true",
-            "if [ -f /var/www/bebrilliant/scripts/vps-git-deploy.sh ]; then bash /var/www/bebrilliant/scripts/vps-git-deploy.sh; else echo 'Initial setup: cloning repository...'; mkdir -p /var/www/bebrilliant && git clone https://github.com/contactharisolutions-pixel/bebrilliant.git /var/www/bebrilliant && bash /var/www/bebrilliant/scripts/vps-git-deploy.sh; fi"
+            "bash /var/www/bebrilliant/scripts/vps-git-deploy.sh"
         ]
         
         for cmd in commands:

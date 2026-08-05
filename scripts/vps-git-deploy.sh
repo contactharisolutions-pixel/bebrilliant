@@ -16,14 +16,17 @@ REPO_URL="https://github.com/contactharisolutions-pixel/bebrilliant.git"
 BRANCH="main"
 
 # 1. Ensure Target Directory & Git Repo
-if [ ! -d "$APP_DIR" ]; then
-    echo "[+] Creating application directory: $APP_DIR"
-    mkdir -p "$APP_DIR"
-    echo "[+] Cloning repository from GitHub ($BRANCH branch)..."
-    git clone -b "$BRANCH" "$REPO_URL" "$APP_DIR"
-fi
-
+mkdir -p "$APP_DIR"
 cd "$APP_DIR"
+
+if [ ! -d "$APP_DIR/.git" ]; then
+    echo "[+] Initializing Git repository in $APP_DIR..."
+    git init
+    git remote add origin "$REPO_URL" || git remote set-url origin "$REPO_URL"
+    git fetch origin "$BRANCH"
+    git checkout -B "$BRANCH" "origin/$BRANCH"
+    git branch --set-upstream-to="origin/$BRANCH" "$BRANCH"
+fi
 
 # 2. Sync Git Repo
 echo "[+] Fetching latest updates from GitHub..."
