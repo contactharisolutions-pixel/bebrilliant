@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         // ── Parallel DB queries ──────────────────────────────────────────────
         const [perfRes, examsRes, recentRaw, upcomingRaw, attendanceRes, walletRes, materialsRes] = await Promise.all([
             supabaseAdmin.from('student_performance')
-                .select('marks_obtained, total_marks, percentage, subject_name, chapter, topic')
+                .select('marks_obtained, total_marks, percentage, subject, chapter, topic')
                 .eq('student_id', uid),
             supabaseAdmin.from('exams')
                 .select('id', { count: 'exact', head: true })
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
         // ── Subject Mastery ──────────────────────────────────────────────────
         const subjectMap: Record<string, { total: number; count: number }> = {}
         performances.forEach(p => {
-            const s = (p as any).subject_name || (p as any).subject || 'General'
+            const s = (p as any).subject || 'General'
             if (!subjectMap[s]) subjectMap[s] = { total: 0, count: 0 }
             subjectMap[s].total += Number(p.percentage || 0)
             subjectMap[s].count++
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
         // ── Weak Areas ───────────────────────────────────────────────────────
         const areaMap: Record<string, { total: number; count: number; subject: string; chapter: string; topic: string }> = {}
         performances.forEach(p => {
-            const subject = (p as any).subject_name || (p as any).subject || 'General'
+            const subject = (p as any).subject || 'General'
             const chapter = p.chapter || 'Foundations'
             const topic = p.topic || 'Core Concepts'
             const key = `${subject}|${chapter}|${topic}`

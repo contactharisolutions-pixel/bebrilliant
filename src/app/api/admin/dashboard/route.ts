@@ -126,15 +126,15 @@ export async function GET(request: NextRequest) {
         try {
             const { data: spData } = await supabaseAdmin
                 .from('student_performance')
-                .select('subject_name, mastery_score')
+                .select('subject, percentage')
                 .eq('tenant_id', tenant_id)
                 .limit(20)
             if (spData && spData.length > 0) {
                 const grouped: Record<string, number[]> = {}
                 for (const row of spData) {
-                    const s = row.subject_name || 'General'
+                    const s = row.subject || 'General'
                     if (!grouped[s]) grouped[s] = []
-                    grouped[s].push(Number(row.mastery_score || 0))
+                    grouped[s].push(Number(row.percentage || 0))
                 }
                 subjectPerformance = Object.entries(grouped).slice(0, 6).map(([subject, scores]) => ({
                     subject,
