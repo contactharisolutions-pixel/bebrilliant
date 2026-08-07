@@ -162,11 +162,15 @@ export default function SubscriptionPage() {
                 setError(json.error || 'Signal Desynchronization Detected');
             }
 
-            // Load addons
-            const addonsRes = await fetch('/api/owner/billing');
-            const addonsJson = await addonsRes.json();
-            if (addonsRes.ok) {
-                setAddons(addonsJson.addons || []);
+            // Load addons safely
+            try {
+                const addonsRes = await fetch('/api/owner/billing');
+                if (addonsRes.ok) {
+                    const addonsJson = await addonsRes.json();
+                    setAddons(addonsJson.addons || []);
+                }
+            } catch {
+                setAddons([]);
             }
         } catch (e: any) {
             setError('Gateway Timeout: Connection failure');

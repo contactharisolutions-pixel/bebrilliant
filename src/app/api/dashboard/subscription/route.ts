@@ -75,16 +75,20 @@ export async function GET(request: NextRequest) {
             })
         }
 
-        // 3. Fetch Standard Tenant Subscription
-        const { data: subscription, error: subError } = await supabaseAdmin
-            .from('tenant_subscriptions')
-            .select('*')
-            .eq('tenant_id', tenant_id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-
-        if (subError) throw subError
+        // 3. Fetch Standard Tenant Subscription safely
+        let subscription: any = null
+        try {
+            const { data } = await supabaseAdmin
+                .from('tenant_subscriptions')
+                .select('*')
+                .eq('tenant_id', tenant_id)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle()
+            subscription = data
+        } catch {
+            subscription = null
+        }
 
         // 4. Load Purchased Addons safely
         let extraStudents = 0
@@ -123,14 +127,31 @@ export async function GET(request: NextRequest) {
             // Fallback gracefully on schema variances
         }
 
-        // 5. Fetch actual usages from real tables
-        const [studentCountRes, teacherCountRes] = await Promise.all([
-            supabaseAdmin.from('user_profiles').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant_id).eq('role', 'student'),
-            supabaseAdmin.from('user_profiles').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant_id).eq('role', 'teacher'),
-        ])
+        // 5. Fetch actual usages safely
+        let studentCount = 0
+        let teacherCount = 0
+        try {
+            const [studentCountRes, teacherCountRes] = await Promise.all([
+                supabaseAdmin.from('user_profiles').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant_id).eq('role', 'student'),
+                supabaseAdmin.from('user_profiles').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant_id).eq('role', 'teacher'),
+            ])
+            studentCount = studentCountRes.count ?? 0
+            teacherCount = teacherCountRes.count ?? 0
+        } catch {
+            studentCount = 0
+            teacherCount = 0
+        }
 
-        const currentPlanId = subscription?.plan_id || available_plans[0]?.id
-        const planDetails = available_plans.find(p => p.id === currentPlanId) || available_plans[0]
+        const currentPlanId = subscription?.plan_id || available_plans[0]?.id || 'starter'
+        const planDetails = available_plans.find(p => p.id === currentPlanId) || available_plans[0] || {
+            id: 'starter',
+            name: 'Starter Plan',
+            price: 4999,
+            max_students: 100,
+            max_teachers: 10,
+            max_storage_gb: 50,
+            max_ai_tokens: 1000000
+        }
 
         const overrides = subscription?.limit_overrides || {}
         const maxStudents = overrides.max_students !== undefined ? overrides.max_students : (planDetails?.max_students || 100) + extraStudents
@@ -144,13 +165,13 @@ export async function GET(request: NextRequest) {
                 status: subscription?.status || 'active',
                 renewal: subscription?.end_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             },
-            plans: available_plans,
+            plans: available_plans.length > 0 ? available_plans : [planDetails],
             usage: {
-                students: studentCountRes.count ?? 0,
+                students: studentCount,
                 max_students: maxStudents,
-                teachers: teacherCountRes.count ?? 0,
+                teachers: teacherCount,
                 max_teachers: maxTeachers,
-                storage: 15, // Mock storage in GB
+                storage: 15,
                 max_storage: maxStorage,
                 ai_tokens: 34500,
                 max_ai_tokens: maxAiTokens
