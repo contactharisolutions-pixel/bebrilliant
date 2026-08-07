@@ -34,32 +34,42 @@ export async function GET(request: NextRequest) {
 
         if (is_owner && tenant_id === 'platform') {
             // Platform owner: global stats across all tenants
-            const [sRes, aRes, tRes, eRes, pRes] = await Promise.all([
+            const [sRes, aRes, tRes, eRes] = await Promise.all([
                 supabaseAdmin.from('user_profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
                 supabaseAdmin.from('user_profiles').select('id', { count: 'exact', head: true }).eq('role', 'student').eq('is_active', true),
                 supabaseAdmin.from('user_profiles').select('id', { count: 'exact', head: true }).in('role', ['teacher', 'tenant_admin']),
                 supabaseAdmin.from('exams').select('id', { count: 'exact', head: true }),
-                supabaseAdmin.rpc('get_platform_revenue')
             ])
             sCount = sRes.count || 0
             aCount = aRes.count || 0
             tCount = tRes.count || 0
             eCount = eRes.count || 0
-            revenue = Number(pRes.data) || 0
+            try {
+                const { data } = await supabaseAdmin.rpc('get_platform_revenue')
+                revenue = Number(data) || 0
+            } catch {
+                revenue = 0
+            }
         } else {
             // Tenant admin: scoped to their tenant only
-            const [sRes, aRes, tRes, eRes, pRes] = await Promise.all([
+            const [sRes, aRes, tRes, eRes] = await Promise.all([
                 supabaseAdmin.from('user_profiles').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant_id).eq('role', 'student'),
                 supabaseAdmin.from('user_profiles').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant_id).eq('role', 'student').eq('is_active', true),
                 supabaseAdmin.from('user_profiles').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant_id).in('role', ['teacher', 'tenant_admin']),
                 supabaseAdmin.from('exams').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant_id),
-                supabaseAdmin.rpc('get_tenant_revenue', { p_tenant_id: tenant_id })
             ])
             sCount = sRes.count || 0
             aCount = aRes.count || 0
             tCount = tRes.count || 0
             eCount = eRes.count || 0
-            revenue = Number(pRes.data) || 0
+            try {
+                const { data, error } = await supabaseAdmin.rpc('get_tenant_revenue', { p_tenant_id: tenant_id })
+                if (!error && data !== null) {
+                    revenue = Number(data) || 0
+                }
+            } catch {
+                revenue = 0
+            }
         }
 
         const body = {
