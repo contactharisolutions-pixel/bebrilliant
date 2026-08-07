@@ -1029,8 +1029,16 @@ export default function PortalDashboard() {
                 : '/api/admin/dashboard'
             const dbRes = await fetch(dashboardUrl, { cache: 'no-store' })
             if (!dbRes.ok) {
-                const err = await dbRes.json()
-                throw { requiresBilling: err.requires_billing, message: err.error || 'Dashboard load failed' }
+                let errMessage = 'Dashboard load failed'
+                let reqBilling = false
+                try {
+                    const err = await dbRes.json()
+                    errMessage = err.error || errMessage
+                    reqBilling = !!err.requires_billing
+                } catch {
+                    errMessage = `Server error (${dbRes.status})`
+                }
+                throw { requiresBilling: reqBilling, message: errMessage }
             }
             return await dbRes.json()
         }

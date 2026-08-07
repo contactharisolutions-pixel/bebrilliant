@@ -3,26 +3,30 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
-    const supabase = await createClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-
-    const { data: profile } = await supabaseAdmin.from('user_profiles')
-        .select('role, tenant_id, full_name, email, class_id, division_id')
-        .eq('id', user.id).single()
-    if (!profile || !['student', 'parent'].includes(profile.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
-    let uid = user.id
-    const tid = profile.tenant_id
-
-    if (profile.role === 'parent') {
-        const { data: childProfile } = await supabaseAdmin
-            .from('user_profiles').select('id')
-            .eq('parent_login_id', user.id).limit(1).single()
-        if (childProfile) uid = childProfile.id
-    }
-
     try {
+        const supabase = await createClient()
+        const { data: { user }, error } = await supabase.auth.getUser()
+        if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+
+        const { data: profile } = await supabaseAdmin.from('user_profiles')
+            .select('role, tenant_id, first_name, last_name, email')
+            .eq('id', user.id).single()
+            
+        if (!profile || !['student', 'parent'].includes(profile.role)) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+
+        let uid = user.id
+        const tid = profile.tenant_id
+        const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Student'
+
+        if (profile.role === 'parent') {
+            const { data: childProfile } = await supabaseAdmin
+                .from('user_profiles').select('id')
+                .eq('parent_login_id', user.id).limit(1).single()
+            if (childProfile) uid = childProfile.id
+        }
+
         // ── Parallel DB queries ──────────────────────────────────────────────
         const [perfRes, examsRes, recentRaw, upcomingRaw, attendanceRes, walletRes, materialsRes] = await Promise.all([
             supabaseAdmin.from('student_performance')
@@ -160,7 +164,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             student: {
-                name: profile.full_name || 'Student',
+                name: fullName,
                 email: profile.email || '',
                 badge: achievementBadge,
             },
@@ -182,6 +186,6 @@ export async function GET(request: NextRequest) {
         })
     } catch (e: any) {
         console.error('Student Dashboard API Error:', e)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        return NextResponse.json({ error: e.message || 'Internal server error' }, { status: 500 })
     }
 }
