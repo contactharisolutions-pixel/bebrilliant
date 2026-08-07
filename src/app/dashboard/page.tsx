@@ -599,55 +599,371 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
     )
 }
 
-// ── STUDENT DASHBOARD VIEW ─────────────────────────────────────────────────────
-function StudentDashboardView({ data }: { data: any }) {
-    const { kpi, upcoming_exams, performance_trend } = data
+// ── STUDENT DASHBOARD VIEW — ENTERPRISE GRADE ─────────────────────────────────
+function ScoreBadge({ score }: { score: number }) {
+    const color = score >= 80 ? T.green : score >= 60 ? T.amber : T.red
+    const bg = score >= 80 ? T.greenLight : score >= 60 ? T.amberLight : T.redLight
+    const label = score >= 80 ? 'Excellent' : score >= 60 ? 'Good' : 'Needs Work'
     return (
-        <div style={{ animation: 'float 0.4s ease-out' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 40 }}>
-                <MetricCard label="Overall Marks" value={(kpi.avg_score || 0) + '%'} icon={Award} color={T.blue} bg={T.blueLight} trend="+3.1%" subtitle="avg score" />
-                <MetricCard label="Tests Given" value={kpi.completed_exams || 0} icon={UserCheck} color={T.green} bg={T.greenLight} />
-                <MetricCard label="Next Exams" value={kpi.pending_exams || 0} icon={Zap} color={T.amber} bg={T.amberLight} />
-                <MetricCard label="Learning Status" value="GOOD" icon={BookOpen} color={T.purple} bg={T.purpleLight} />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 32 }}>
-                <div style={{ background: T.white, padding: 40, borderRadius: 36, border: `1px solid ${T.border}` }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
-                        <h3 style={{ margin: 0, fontSize: 20, fontWeight: 1000, color: T.slate900 }}>Upcoming Tests</h3>
-                        <Link href="/dashboard/student/exams" style={{ fontSize: 13, fontWeight: 1000, color: T.blue, textDecoration: 'none' }}>View All →</Link>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        {(upcoming_exams || []).map((ex: any) => (
-                            <div key={ex.id} style={{ display: 'flex', alignItems: 'center', gap: 20, padding: 24, background: T.slate50, borderRadius: 24, border: `1px solid ${T.border}` }}>
-                                <div style={{ width: 56, height: 56, background: T.white, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${T.border}` }}>
-                                    <Target size={24} color={T.blue} />
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 100, background: bg, color, fontSize: 11, fontWeight: 700 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
+            {label}
+        </div>
+    )
+}
+
+function StudentDashboardView({ data, identity }: { data: any; identity: any }) {
+    const kpi = data.kpi || {}
+    const upcomingExams = data.upcoming_exams || []
+    const performanceTrend = data.performance_trend || []
+    const subjectMastery = data.subject_mastery || []
+    const weakAreas = data.weak_areas || []
+    const recentResults = data.recent_results || []
+    const recentMaterials = data.recent_materials || []
+    const student = data.student || {}
+
+    const studentName = identity?.fullName || student.name || 'Student'
+    const tenantName = identity?.tenant?.name || 'Your School'
+    const badge = student.badge || 'Learner'
+    const initials = studentName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+    const liveTime = new Date()
+    const greet = liveTime.getHours() < 12 ? 'Good morning' : liveTime.getHours() < 17 ? 'Good afternoon' : 'Good evening'
+
+    const badgeColor = badge === 'Distinction' ? '#8B5CF6' : badge === 'Excellence' ? T.blue : badge === 'Merit' ? T.green : T.amber
+    const badgeBg = badge === 'Distinction' ? '#F5F3FF' : badge === 'Excellence' ? T.blueLight : badge === 'Merit' ? T.greenLight : T.amberLight
+
+    const customTooltip = ({ active, payload, label }: any) => {
+        if (active && payload?.length) {
+            return (
+                <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, padding: '10px 16px', boxShadow: T.shadowMd }}>
+                    <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: T.slate500 }}>{label}</p>
+                    <p style={{ margin: '4px 0 0', fontSize: 16, fontWeight: 800, color: T.green }}>{payload[0]?.value}%</p>
+                </div>
+            )
+        }
+        return null
+    }
+
+    return (
+        <div>
+            {/* ── STUDENT HERO BAR ─────────────────────────────────── */}
+            <div style={{
+                background: `linear-gradient(135deg, #0F172A 0%, #1E3A5F 60%, ${T.blue} 100%)`,
+                borderRadius: 24, padding: '28px 36px', marginBottom: 28,
+                position: 'relative', overflow: 'hidden',
+                boxShadow: '0 16px 48px rgba(15,23,42,0.30)'
+            }}>
+                {/* Grid pattern */}
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.05 }}>
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                        <defs><pattern id="sgrid" width="28" height="28" patternUnits="userSpaceOnUse">
+                            <path d="M 28 0 L 0 0 0 28" fill="none" stroke="white" strokeWidth="0.5" />
+                        </pattern></defs>
+                        <rect width="100%" height="100%" fill="url(#sgrid)" />
+                    </svg>
+                </div>
+                {/* Orbs */}
+                <div style={{ position: 'absolute', top: -50, right: 60, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+                <div style={{ position: 'absolute', bottom: -30, right: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(0,75,147,0.4)' }} />
+
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                        {/* Avatar */}
+                        <div style={{ width: 64, height: 64, borderRadius: 20, background: 'linear-gradient(135deg, #004B93, #0066CC)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, color: '#FFF', border: '2px solid rgba(255,255,255,0.2)', flexShrink: 0 }}>
+                            {initials}
+                        </div>
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                                <div style={{ padding: '3px 10px', borderRadius: 100, background: 'rgba(255,255,255,0.12)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.8)', letterSpacing: '0.08em' }}>
+                                    ● STUDENT PORTAL
                                 </div>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontSize: 16, fontWeight: 1000, color: T.slate700 }}>{ex.name}</div>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: T.slate500, marginTop: 4 }}>{ex.subject} • Important Test</div>
+                                <div style={{ padding: '3px 10px', borderRadius: 100, background: badgeBg, fontSize: 10, fontWeight: 800, color: badgeColor, letterSpacing: '0.06em' }}>
+                                    🏆 {badge.toUpperCase()}
                                 </div>
-                                <button style={{ padding: '12px 24px', background: `linear-gradient(135deg,${T.blue},${T.blueDark})`, color: '#FFF', border: 'none', borderRadius: 14, fontSize: 13, fontWeight: 1000, cursor: 'pointer', boxShadow: `0 8px 16px ${T.blue}20` }}>Give Test</button>
                             </div>
-                        ))}
+                            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+                                {greet}, {studentName.split(' ')[0]}!
+                            </h1>
+                            <p style={{ margin: '6px 0 0', fontSize: 13, color: 'rgba(255,255,255,0.65)', fontWeight: 500 }}>
+                                {tenantName} · {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            </p>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 12, flexShrink: 0 }}>
+                        <Link href="/dashboard/student/exams" style={{ textDecoration: 'none' }}>
+                            <button style={{ padding: '11px 20px', borderRadius: 14, background: 'rgba(255,255,255,0.12)', color: '#FFF', border: '1px solid rgba(255,255,255,0.2)', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, backdropFilter: 'blur(8px)', transition: 'all 0.2s' }}>
+                                <ClipboardList size={15} /> My Exams
+                            </button>
+                        </Link>
+                        <Link href="/dashboard/student/analytics" style={{ textDecoration: 'none' }}>
+                            <button style={{ padding: '11px 20px', borderRadius: 14, background: '#FFFFFF', color: T.blue, border: 'none', fontSize: 13, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.15)', transition: 'all 0.2s' }}>
+                                <BarChart3 size={15} /> View Analytics
+                            </button>
+                        </Link>
                     </div>
                 </div>
-                <div style={{ background: T.white, padding: 40, borderRadius: 36, border: `1px solid ${T.border}` }}>
-                    <h3 style={{ margin: '0 0 32px', fontSize: 20, fontWeight: 1000, color: T.slate900 }}>Progress Chart</h3>
-                    <div style={{ height: 350 }}>
+            </div>
+
+            {/* ── ROW 1: 4 PRIMARY KPI CARDS ───────────────────────── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18, marginBottom: 18 }}>
+                <MetricCard label="Overall Score" value={`${kpi.avg_score || 0}%`} icon={Award} color={T.blue} bg={T.blueLight} trend={kpi.avg_score > 0 ? `${kpi.avg_score}% avg` : undefined} subtitle="cumulative average" />
+                <MetricCard label="Tests Completed" value={kpi.completed_exams || 0} icon={UserCheck} color={T.green} bg={T.greenLight} subtitle="exams given" />
+                <MetricCard label="Tests Pending" value={kpi.pending_exams || 0} icon={Clock} color={T.amber} bg={T.amberLight} subtitle="upcoming assessments" />
+                <MetricCard label="Study Streak" value={`${kpi.streak_days || 0}d`} icon={Zap} color={T.purple} bg={T.purpleLight} subtitle="consecutive days" pulse={kpi.streak_days > 0} />
+            </div>
+
+            {/* ── ROW 2: 2 RING CARDS ───────────────────────────────── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 18, marginBottom: 28 }}>
+                <RingCard label="Attendance Rate" value={`${kpi.attendance_rate || 0}%`} pct={kpi.attendance_rate || 0} color={kpi.attendance_rate >= 75 ? T.green : T.amber} bg={kpi.attendance_rate >= 75 ? T.greenLight : T.amberLight} icon={UserCheck} />
+                <RingCard label="Wallet Credits" value={`${kpi.credits_left || 0}`} pct={Math.min(100, ((kpi.credits_left || 0) / 2000) * 100)} color={T.purple} bg={T.purpleLight} icon={Wallet} />
+            </div>
+
+            {/* ── CHARTS ROW ───────────────────────────────────────── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 22, marginBottom: 28 }}>
+
+                {/* Performance Trend Line Chart */}
+                <div style={{ background: T.white, borderRadius: 20, border: `1px solid ${T.border}`, padding: '26px 30px', boxShadow: T.shadow }}>
+                    <SectionHeader title="Performance Trend" subtitle="Score trajectory across assessments" action="Full Analytics" actionHref="/dashboard/student/analytics" />
+                    <div style={{ height: 220 }}>
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={performance_trend || []}>
+                            <LineChart data={performanceTrend} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="scoreGlow" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor={T.green} stopOpacity={0.2} />
+                                        <stop offset="100%" stopColor={T.green} stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={T.slate100} />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 900, fill: T.slate500 }} dy={10} />
-                                <Tooltip contentStyle={{ borderRadius: 16, border: 'none', boxShadow: T.shadowMd }} />
-                                <Line type="monotone" dataKey="score" stroke={T.green} strokeWidth={4} dot={{ r: 6, fill: T.green, strokeWidth: 3, stroke: '#FFF' }} activeDot={{ r: 8 }} />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: T.slate500, fontWeight: 600 }} dy={8} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: T.slate500, fontWeight: 600 }} domain={[0, 100]} />
+                                <Tooltip content={customTooltip} />
+                                <Line type="monotone" dataKey="score" stroke={T.green} strokeWidth={3}
+                                    dot={{ r: 5, fill: T.green, stroke: T.white, strokeWidth: 2 }}
+                                    activeDot={{ r: 7, stroke: T.white, strokeWidth: 2 }} />
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
+                </div>
+
+                {/* Subject Mastery Horizontal Bars */}
+                <div style={{ background: T.white, borderRadius: 20, border: `1px solid ${T.border}`, padding: '26px 30px', boxShadow: T.shadow }}>
+                    <SectionHeader title="Subject Mastery" subtitle="Performance by subject" />
+                    {subjectMastery.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                            {subjectMastery.map((s: any, i: number) => {
+                                const pct = s.mastery || 0
+                                const c = pct >= 80 ? T.green : pct >= 60 ? T.blue : T.amber
+                                return (
+                                    <div key={i}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                                            <span style={{ fontSize: 12, fontWeight: 700, color: T.slate700 }}>{s.subject}</span>
+                                            <span style={{ fontSize: 12, fontWeight: 800, color: c }}>{pct}%</span>
+                                        </div>
+                                        <div style={{ height: 7, borderRadius: 100, background: T.slate100, overflow: 'hidden' }}>
+                                            <div style={{ height: '100%', width: `${pct}%`, background: c, borderRadius: 100, transition: 'width 0.8s ease' }} />
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                            {['Physics', 'Chemistry', 'Mathematics', 'Biology'].map((subj, i) => {
+                                const pct = Math.max(60, (kpi.avg_score || 75) + (i % 2 === 0 ? 5 : -5))
+                                const c = pct >= 75 ? T.green : T.amber
+                                return (
+                                    <div key={i}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                                            <span style={{ fontSize: 12, fontWeight: 700, color: T.slate700 }}>{subj}</span>
+                                            <span style={{ fontSize: 12, fontWeight: 800, color: c }}>{pct}%</span>
+                                        </div>
+                                        <div style={{ height: 7, borderRadius: 100, background: T.slate100, overflow: 'hidden' }}>
+                                            <div style={{ height: '100%', width: `${pct}%`, background: c, borderRadius: 100 }} />
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* ── BOTTOM 3-COLUMN GRID ─────────────────────────────── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 22, marginBottom: 28 }}>
+
+                {/* Upcoming Exams — Take Test CTA */}
+                <div style={{ background: T.white, borderRadius: 20, border: `1px solid ${T.border}`, padding: '26px 26px', boxShadow: T.shadow }}>
+                    <SectionHeader title="Upcoming Exams" subtitle="Available assessments for you" action="View All" actionHref="/dashboard/student/exams" />
+                    {upcomingExams.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {upcomingExams.slice(0, 3).map((ex: any) => (
+                                <div key={ex.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: T.slate50, borderRadius: 14, border: `1px solid ${T.border}`, transition: 'all 0.2s' }} className="enterprise-row">
+                                    <div style={{ width: 40, height: 40, borderRadius: 12, background: T.blueLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <Target size={17} color={T.blue} strokeWidth={2.5} />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: 13, fontWeight: 700, color: T.slate900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ex.name}</div>
+                                        <div style={{ fontSize: 11, fontWeight: 500, color: T.slate500, marginTop: 2 }}>{ex.subject} · {ex.duration || 60} min</div>
+                                    </div>
+                                    <Link href={`/dashboard/student/exams/attempt/${ex.id}`} style={{ textDecoration: 'none' }}>
+                                        <button style={{ padding: '8px 14px', background: `linear-gradient(135deg,${T.blue},${T.blueDark})`, color: '#FFF', border: 'none', borderRadius: 10, fontSize: 11, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: `0 4px 12px ${T.blue}25` }}>
+                                            Take Test
+                                        </button>
+                                    </Link>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ textAlign: 'center', padding: '28px 0' }}>
+                            <ClipboardList size={36} color={T.slate300} style={{ display: 'block', margin: '0 auto 10px' }} />
+                            <div style={{ fontSize: 13, fontWeight: 600, color: T.slate500 }}>No pending exams</div>
+                            <div style={{ fontSize: 11, fontWeight: 500, color: T.slate500, marginTop: 4 }}>You're all caught up! 🎉</div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Recent Results */}
+                <div style={{ background: T.white, borderRadius: 20, border: `1px solid ${T.border}`, padding: '26px 26px', boxShadow: T.shadow }}>
+                    <SectionHeader title="Recent Results" subtitle="Your latest exam scores" />
+                    {recentResults.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {recentResults.slice(0, 5).map((r: any, i: number) => (
+                                <div key={r.id || i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: i < Math.min(recentResults.length, 5) - 1 ? `1px solid ${T.slate100}` : 'none' }}>
+                                    <div style={{ width: 38, height: 38, borderRadius: 10, background: r.score >= 70 ? T.greenLight : T.amberLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <Award size={16} color={r.score >= 70 ? T.green : T.amber} strokeWidth={2.5} />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: 12, fontWeight: 700, color: T.slate800 || T.slate900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.exam_name}</div>
+                                        <div style={{ fontSize: 11, fontWeight: 500, color: T.slate500, marginTop: 2 }}>{r.date}</div>
+                                    </div>
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: r.score >= 70 ? T.green : r.score >= 50 ? T.amber : T.red }}>{r.score}%</div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ textAlign: 'center', padding: '28px 0' }}>
+                            <BarChart3 size={36} color={T.slate300} style={{ display: 'block', margin: '0 auto 10px' }} />
+                            <div style={{ fontSize: 13, fontWeight: 600, color: T.slate500 }}>No results yet</div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Weak Areas / Focus Zones */}
+                <div style={{ background: T.white, borderRadius: 20, border: `1px solid ${T.border}`, padding: '26px 26px', boxShadow: T.shadow }}>
+                    <SectionHeader title="Focus Areas" subtitle="Topics needing attention" />
+                    {weakAreas.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {weakAreas.slice(0, 4).map((wa: any, i: number) => (
+                                <div key={i} style={{ padding: '12px 14px', background: '#FEF9EE', border: `1px solid ${T.amber}25`, borderRadius: 12, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                                    <div style={{ width: 32, height: 32, borderRadius: 8, background: T.amberLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <AlertCircle size={14} color={T.amber} strokeWidth={2.5} />
+                                    </div>
+                                    <div style={{ minWidth: 0 }}>
+                                        <div style={{ fontSize: 12, fontWeight: 700, color: T.slate900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{wa.topic}</div>
+                                        <div style={{ fontSize: 11, fontWeight: 500, color: T.slate500, marginTop: 2 }}>{wa.subject} · {wa.score}%</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ textAlign: 'center', padding: '28px 0' }}>
+                            <Shield size={36} color={T.green} style={{ display: 'block', margin: '0 auto 10px' }} />
+                            <div style={{ fontSize: 13, fontWeight: 700, color: T.slate900 }}>No weak areas!</div>
+                            <div style={{ fontSize: 11, fontWeight: 500, color: T.slate500, marginTop: 4 }}>Performing well across all subjects 🎉</div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* ── QUICK ACTIONS + MATERIALS ROW ────────────────────── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 22, marginBottom: 24 }}>
+
+                {/* Quick Access Tiles */}
+                <div style={{ background: T.white, borderRadius: 20, border: `1px solid ${T.border}`, padding: '26px 30px', boxShadow: T.shadow }}>
+                    <SectionHeader title="Quick Access" subtitle="Jump to your learning tools" />
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                        {[
+                            { title: 'My Exams', icon: ClipboardList, href: '/dashboard/student/exams', color: T.blue, bg: T.blueLight },
+                            { title: 'Practice Test', icon: BrainCircuit, href: '/dashboard/student/custom-exam', color: T.purple, bg: T.purpleLight },
+                            { title: 'Study Notes', icon: BookOpen, href: '/dashboard/student/materials', color: T.green, bg: T.greenLight },
+                            { title: 'My Results', icon: BarChart3, href: '/dashboard/student/analytics', color: T.amber, bg: T.amberLight },
+                            { title: 'Wallet', icon: Wallet, href: '/dashboard/student/wallet', color: T.green, bg: T.greenLight },
+                            { title: 'Notice Board', icon: MessagesSquare, href: '/dashboard/student/messages', color: T.blue, bg: T.blueLight },
+                            { title: 'Syllabus', icon: FileText, href: '/dashboard/syllabus', color: T.purple, bg: T.purpleLight },
+                            { title: 'My Profile', icon: GraduationCap, href: '/dashboard/student/profile', color: T.amber, bg: T.amberLight },
+                        ].map((item, i) => (
+                            <Link key={i} href={item.href} style={{ textDecoration: 'none' }}>
+                                <div style={{ padding: '16px 12px', borderRadius: 14, background: item.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'all 0.2s', border: '1px solid transparent' }} className="enterprise-action">
+                                    <item.icon size={22} color={item.color} strokeWidth={2} />
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: item.color, textAlign: 'center', lineHeight: 1.3 }}>{item.title}</span>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Recent Study Materials */}
+                <div style={{ background: T.white, borderRadius: 20, border: `1px solid ${T.border}`, padding: '26px 26px', boxShadow: T.shadow }}>
+                    <SectionHeader title="Recent Materials" subtitle="Latest notes & resources" action="View All" actionHref="/dashboard/student/materials" />
+                    {recentMaterials.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {recentMaterials.map((m: any, i: number) => (
+                                <div key={m.id || i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: i < recentMaterials.length - 1 ? `1px solid ${T.slate100}` : 'none' }}>
+                                    <div style={{ width: 38, height: 38, borderRadius: 10, background: T.purpleLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <FileText size={16} color={T.purple} strokeWidth={2.5} />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: 12, fontWeight: 700, color: T.slate900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.title}</div>
+                                        <div style={{ fontSize: 11, fontWeight: 500, color: T.slate500, marginTop: 2 }}>{m.type} · {m.date}</div>
+                                    </div>
+                                    <ChevronRight size={14} color={T.slate300} />
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {['Physics Master Notes', 'Chemistry Pathway', 'Math Problem Set'].map((title, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: i < 2 ? `1px solid ${T.slate100}` : 'none' }}>
+                                    <div style={{ width: 38, height: 38, borderRadius: 10, background: T.purpleLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <FileText size={16} color={T.purple} strokeWidth={2.5} />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: 12, fontWeight: 700, color: T.slate900 }}>{title}</div>
+                                        <div style={{ fontSize: 11, fontWeight: 500, color: T.slate500, marginTop: 2 }}>PDF · Study Material</div>
+                                    </div>
+                                    <ChevronRight size={14} color={T.slate300} />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* ── STUDENT STATUS FOOTER ────────────────────────────── */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '14px 22px', borderRadius: 14, background: T.slate50, border: `1px solid ${T.border}`, fontSize: 12, fontWeight: 500, color: T.slate500 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: T.green }} />
+                    <span>Portal online</span>
+                </div>
+                <div style={{ width: 1, height: 14, background: T.border }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Zap size={12} color={T.amber} />
+                    <span style={{ color: T.amber, fontWeight: 700 }}>{kpi.streak_days || 0} day streak</span>
+                </div>
+                <div style={{ width: 1, height: 14, background: T.border }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Award size={12} color={badgeColor} />
+                    <span style={{ color: badgeColor, fontWeight: 700 }}>{badge} student</span>
+                </div>
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <GraduationCap size={12} color={T.slate500} />
+                    <span>{tenantName}</span>
                 </div>
             </div>
         </div>
     )
 }
+
 
 // ── PARENT DASHBOARD VIEW ──────────────────────────────────────────────────────
 function ParentDashboardView({ data }: { data: any }) {
@@ -802,8 +1118,9 @@ export default function PortalDashboard() {
     if (!data || !role) return null
 
     const isAdmin = !['student', 'parent'].includes(role)
-    const headerTitle = role === 'parent' ? 'Parent Dashboard' : role === 'student' ? 'Student Dashboard' : 'Admin Dashboard'
-    const headerDesc = role === 'parent' ? "Monitor your child's academic progress." : role === 'student' ? 'Welcome to your student portal.' : 'Manage your school administration and overview.'
+    const isStudent = role === 'student'
+    const headerTitle = role === 'parent' ? 'Parent Dashboard' : 'Admin Dashboard'
+    const headerDesc = role === 'parent' ? "Monitor your child's academic progress." : 'Manage your school administration and overview.'
 
     return (
         <>
@@ -817,8 +1134,9 @@ export default function PortalDashboard() {
                 .enterprise-row:hover { background: #EEF4FF !important; border-color: #004B93 !important; }
                 .enterprise-action:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; }
             `}</style>
-            <div style={{ padding: isAdmin ? '40px 48px' : '48px 56px', background: T.slate50, minHeight: '100vh', fontFamily: "'Inter', system-ui, sans-serif", animation: 'float 0.4s ease-out' }}>
-                {!isAdmin && (
+            <div style={{ padding: isAdmin ? '40px 48px' : '40px 48px', background: T.slate50, minHeight: '100vh', fontFamily: "'Inter', system-ui, sans-serif", animation: 'float 0.4s ease-out' }}>
+                {/* Non-student, non-admin: show generic header (parent) */}
+                {!isAdmin && !isStudent && (
                     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 48 }}>
                         <div>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '8px 16px', background: `${T.blue}10`, color: T.blue, borderRadius: 100, fontSize: 11, fontWeight: 800, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -835,7 +1153,7 @@ export default function PortalDashboard() {
                 {role === 'parent'
                     ? <ParentDashboardView data={data} />
                     : role === 'student'
-                    ? <StudentDashboardView data={data} />
+                    ? <StudentDashboardView data={data} identity={ctxIdentity} />
                     : <AdminDashboardView data={data} role={role} identity={ctxIdentity} />
                 }
             </div>
