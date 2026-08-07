@@ -86,27 +86,42 @@ export async function GET(request: NextRequest) {
 
         if (subError) throw subError
 
-        // 4. Load Purchased Addons and calculate limits offsets
-        const { data: purchasedAddons } = await supabaseAdmin
-            .from('tenant_purchased_addons')
-            .select('*, plan_addons:addon_id(*)')
-            .eq('tenant_id', tenant_id)
-            .eq('status', 'active')
-
+        // 4. Load Purchased Addons safely
         let extraStudents = 0
         let extraTeachers = 0
         let extraStorage = 0
         let extraAiTokens = 0
 
-        ;(purchasedAddons || []).forEach((pa: any) => {
-            const addon = pa.plan_addons
-            if (!addon) return
-            const val = (addon.resource_value || 0) * (pa.quantity || 1)
-            if (addon.resource_type === 'students') extraStudents += val
-            if (addon.resource_type === 'teachers') extraTeachers += val
-            if (addon.resource_type === 'storage_gb') extraStorage += val
-            if (addon.resource_type === 'ai_tokens') extraAiTokens += val
-        })
+        try {
+            const { data: purchasedAddons } = await supabaseAdmin
+                .from('tenant_purchased_addons')
+                .select('*')
+                .eq('tenant_id', tenant_id)
+                .eq('status', 'active')
+
+            if (purchasedAddons && purchasedAddons.length > 0) {
+                const addonIds = purchasedAddons.map(pa => pa.addon_id).filter(Boolean)
+                if (addonIds.length > 0) {
+                    const { data: addonsList } = await supabaseAdmin
+                        .from('plan_addons')
+                        .select('*')
+                        .in('id', addonIds)
+
+                    const addonsMap = new Map((addonsList || []).map(a => [a.id, a]))
+                    purchasedAddons.forEach((pa: any) => {
+                        const addon: any = addonsMap.get(pa.addon_id)
+                        if (!addon) return
+                        const val = (addon.resource_value || 0) * (pa.quantity || 1)
+                        if (addon.resource_type === 'students') extraStudents += val
+                        if (addon.resource_type === 'teachers') extraTeachers += val
+                        if (addon.resource_type === 'storage_gb') extraStorage += val
+                        if (addon.resource_type === 'ai_tokens') extraAiTokens += val
+                    })
+                }
+            }
+        } catch {
+            // Fallback gracefully on schema variances
+        }
 
         // 5. Fetch actual usages from real tables
         const [studentCountRes, teacherCountRes] = await Promise.all([
