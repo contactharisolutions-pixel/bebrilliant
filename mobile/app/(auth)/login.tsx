@@ -65,12 +65,9 @@ export default function LoginScreen() {
         <View className="mb-8 items-center">
           <Image
             source={require('../../assets/logo.png')}
-            style={{ width: 180, height: 90 }}
+            style={{ width: 250, height: 60 }}
             resizeMode="contain"
           />
-          <Text className="mt-2 text-3xl font-black tracking-tight text-text-primary">
-            BeBrilliant
-          </Text>
           <Text className="mt-2 text-center text-sm font-medium text-text-secondary">
             Empowering institutional excellence through technology
           </Text>
