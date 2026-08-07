@@ -5,165 +5,228 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
     LayoutDashboard, Users, UsersRound, ClipboardList, BookOpen, BrainCircuit,
-    Headset, Wallet, CreditCard, Share2, Globe, BellRing, BarChart2, Settings2, 
+    Headset, Wallet, CreditCard, Share2, Globe, BellRing, BarChart2, Settings2,
     Zap, LogOut, GraduationCap, School, Layers, Activity, Calendar, ScanLine, Printer,
-    Home, ShieldCheck
+    Home, ShieldCheck, ChevronRight, FileText, UploadCloud
 } from 'lucide-react'
 
 const NAV_GROUPS = [
     {
-        title: 'Institute Overview',
+        title: 'Overview',
         items: [
-            { label: 'Admin Dashboard', icon: LayoutDashboard, href: '/u-admin/dashboard' },
-            { label: 'Academic Reports', icon: Activity, href: '/u-admin/analytics' },
+            { label: 'Admin Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+            { label: 'Analytics & Reports', icon: Activity, href: '/dashboard/faculty/analytics/results-360' },
         ]
     },
     {
-        title: 'Academy Management',
+        title: 'Academic Operations',
         items: [
-            { label: 'Academy Setup', icon: School, href: '/u-admin/academy' },
-            { label: 'Academic Lifecycle', icon: Calendar, href: '/dashboard/tenant/academic-year' },
-            { label: 'Student List', icon: GraduationCap, href: '/u-admin/students' },
-            { label: 'Teacher List', icon: UsersRound, href: '/u-admin/teachers' },
-            { label: 'Help & Support', icon: Headset, href: '/u-admin/crm' },
+            { label: 'Academic Structure', icon: Calendar, href: '/dashboard/tenant/academic-year' },
+            { label: 'Course Syllabus', icon: Layers, href: '/dashboard/syllabus' },
+            { label: 'Study Materials', icon: BookOpen, href: '/dashboard/material' },
+            { label: 'Notice Board', icon: BellRing, href: '/dashboard/messages' },
         ]
     },
     {
-        title: 'Study Material',
+        title: 'Exam Management',
         items: [
-            { label: 'Exams & Questions', icon: ClipboardList, href: '/dashboard/exams' },
+            { label: 'All Exams', icon: ClipboardList, href: '/dashboard/exams' },
             { label: 'Online Exam Portal', icon: Zap, href: '/dashboard/exams/online' },
             { label: 'OMR Scanner Hub', icon: ScanLine, href: '/dashboard/exams/omr' },
             { label: 'Offline Paper Engine', icon: Printer, href: '/dashboard/exams/offline' },
-            { label: 'Master Knowledge Tree', icon: BookOpen, href: '/dashboard/syllabus' },
-            { label: 'AI Study Hub', icon: BrainCircuit, href: '/u-admin/ai' },
+            { label: 'Grade Answer Sheets', icon: FileText, href: '/dashboard/faculty/answer-grading' },
+            { label: 'AI Question Gen', icon: BrainCircuit, href: '/dashboard/ai' },
         ]
     },
     {
-        title: 'Accounts & Settings',
+        title: 'People',
         items: [
-            { label: 'Infrastructure', icon: Home, href: '/u-admin/dashboard' },
-            { label: 'Lead Management', icon: Users, href: '/u-admin/crm' },
-            { label: 'Master Syllabus', icon: Layers, href: '/u-admin/master-syllabus' },
-            { label: 'Access Control', icon: ShieldCheck, href: '/u-admin/roles' },
+            { label: 'Student Directory', icon: GraduationCap, href: '/dashboard/students' },
+            { label: 'Teacher Directory', icon: UsersRound, href: '/dashboard/teachers' },
+            { label: 'Staff Directory', icon: Users, href: '/dashboard/staff' },
         ]
     },
     {
-        title: 'Affiliate Network',
+        title: 'Administration',
         items: [
-            { label: 'Partner Teachers', icon: Users, href: '/dashboard/affiliates/teachers' },
-            { label: 'Student Referrals', icon: GraduationCap, href: '/dashboard/affiliates/students' },
+            { label: 'Academy Setup', icon: School, href: '/dashboard/academy' },
+            { label: 'Payments & Fees', icon: Wallet, href: '/dashboard/wallet' },
+            { label: 'Subscription', icon: CreditCard, href: '/dashboard/subscription' },
+            { label: 'Institute Settings', icon: Settings2, href: '/dashboard/settings' },
         ]
     }
 ]
 
-// PALETTE: #004B93 | #FEFEFE | #E8E8E8 | #F0A026 | #1FAC63
 export function AdminSidebar() {
     const pathname = usePathname()
     const [identity, setIdentity] = React.useState<any>(null)
+    const [collapsed, setCollapsed] = React.useState(false)
 
     React.useEffect(() => {
         fetch('/api/auth/me').then(res => res.json()).then(data => setIdentity(data))
     }, [])
 
-    const logoUrl = identity?.tenant?.logo_url || "/logo.png"
-    const instituteName = identity?.tenant?.name || (identity ? "BeBrilliant Platform" : "Synchronizing Hub...")
-    const userName = identity?.fullName || (identity ? "Authorized Staff" : "Verifying Identity...")
+    const logoUrl = identity?.tenant?.logo_url || '/logo.png'
+    const instituteName = identity?.tenant?.name || (identity ? 'BeBrilliant Platform' : 'Synchronizing...')
+    const userName = identity?.fullName || (identity ? 'Authorized Staff' : 'Verifying...')
+    const initials = userName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
 
     return (
         <aside style={{
-            width: 280,
-            minWidth: 280,
+            width: collapsed ? 72 : 268,
+            minWidth: collapsed ? 72 : 268,
             height: '100vh',
-            background: 'linear-gradient(180deg, #FEFEFE 0%, #F9FAFB 100%)',
-            borderRight: '1px solid #E5E7EB',
+            background: '#FFFFFF',
+            borderRight: '1px solid #E8ECF0',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            boxShadow: '4px 0 24px rgba(0,0,0,0.02)'
+            boxShadow: '2px 0 12px rgba(0,0,0,0.04)',
+            transition: 'width 0.25s cubic-bezier(0.4,0,0.2,1), min-width 0.25s cubic-bezier(0.4,0,0.2,1)',
+            position: 'relative',
+            zIndex: 10
         }}>
 
-            {/* ── BRAND ── */}
+            {/* ── BRAND HEADER ── */}
             <div style={{
-                height: 140,
-                padding: '0 28px',
+                padding: collapsed ? '20px 16px' : '20px 20px',
+                borderBottom: '1px solid #F1F5F9',
+                flexShrink: 0,
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'flex-start',
-                borderBottom: '1px solid rgba(0,0,0,0.05)',
-                flexShrink: 0,
-                gap: 12,
-                background: 'rgba(255,255,255,0.4)',
-                backdropFilter: 'blur(10px)'
+                gap: 14,
+                background: '#FAFBFC'
             }}>
-                <img 
-                    src={logoUrl} 
-                    alt="Institute Logo" 
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.png' }}
-                    style={{ width: '100%', height: 'auto', maxHeight: 60, objectFit: 'contain' }} 
-                />
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', gap: 2 }}>
-                    <div style={{ 
-                        fontSize: 12, 
-                        fontWeight: 900, 
-                        color: '#004B93', 
-                        letterSpacing: '-0.01em',
-                        width: '100%', 
-                        textAlign: 'right',
-                        textTransform: 'none'
-                    }}>
-                        {instituteName}
-                    </div>
-                    <div style={{ 
-                        fontSize: 10, 
-                        fontWeight: 700, 
-                        color: '#EF4444', 
-                        letterSpacing: '0.05em', 
-                        width: '100%', 
-                        textAlign: 'right',
-                        textTransform: 'uppercase'
-                    }}>
-                        {userName}
-                    </div>
+                {/* Logo + Collapse toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    {!collapsed && (
+                        <img
+                            src={logoUrl}
+                            alt="Institute Logo"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.png' }}
+                            style={{ height: 36, width: 'auto', maxWidth: 140, objectFit: 'contain' }}
+                        />
+                    )}
+                    <button
+                        onClick={() => setCollapsed(!collapsed)}
+                        style={{
+                            width: 28, height: 28, borderRadius: 8, border: '1px solid #E2E8F0',
+                            background: '#FFFFFF', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s',
+                            marginLeft: collapsed ? 'auto' : 0
+                        }}
+                        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                    >
+                        <ChevronRight size={14} color="#64748B" style={{ transform: collapsed ? 'none' : 'rotate(180deg)', transition: 'transform 0.25s' }} />
+                    </button>
                 </div>
+
+                {/* Institute identity pill */}
+                {!collapsed && (
+                    <div style={{
+                        padding: '10px 12px', borderRadius: 12,
+                        background: 'linear-gradient(135deg, #EEF4FF 0%, #F0F7FF 100%)',
+                        border: '1px solid #D1E3FF',
+                        display: 'flex', alignItems: 'center', gap: 10
+                    }}>
+                        {/* Avatar initials */}
+                        <div style={{
+                            width: 32, height: 32, borderRadius: 10,
+                            background: 'linear-gradient(135deg, #004B93 0%, #0066CC 100%)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 12, fontWeight: 800, color: '#FFFFFF', flexShrink: 0
+                        }}>
+                            {initials}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: '#004B93', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {instituteName}
+                            </div>
+                            <div style={{ fontSize: 10, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 1 }}>
+                                Tenant Admin
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {collapsed && (
+                    <div style={{
+                        width: 40, height: 40, borderRadius: 12, margin: '0 auto',
+                        background: 'linear-gradient(135deg, #004B93 0%, #0066CC 100%)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 13, fontWeight: 800, color: '#FFFFFF'
+                    }}>
+                        {initials}
+                    </div>
+                )}
             </div>
 
             {/* ── NAV ITEMS ── */}
-            <nav style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 28 }}>
+            <nav style={{ flex: 1, overflowY: 'auto', padding: collapsed ? '16px 10px' : '16px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {NAV_GROUPS.map((group, groupIdx) => (
-                    <div key={groupIdx}>
-                        <div style={{ fontSize: 10, fontWeight: 900, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.12em', padding: '0 12px 12px', opacity: 0.8 }}>
-                            {group.title}
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div key={groupIdx} style={{ marginBottom: 8 }}>
+                        {!collapsed && (
+                            <div style={{
+                                fontSize: 10, fontWeight: 700, color: '#94A3B8',
+                                textTransform: 'uppercase', letterSpacing: '0.1em',
+                                padding: '6px 12px', marginBottom: 4
+                            }}>
+                                {group.title}
+                            </div>
+                        )}
+                        {collapsed && groupIdx > 0 && (
+                            <div style={{ height: 1, background: '#F1F5F9', margin: '8px 4px 12px' }} />
+                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                             {group.items.map(item => {
-                                const active = item.href === '/dashboard/exams'
+                                const active = item.href === '/dashboard'
+                                    ? pathname === '/dashboard'
+                                    : item.href === '/dashboard/exams'
                                     ? pathname === '/dashboard/exams'
                                     : (pathname === item.href || pathname?.startsWith(item.href + '/'))
+
                                 return (
-                                    <Link key={item.href} href={item.href} style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 12,
-                                        padding: '12px 16px',
-                                        borderRadius: 14,
-                                        textDecoration: 'none',
-                                        background: active ? '#004B93' : 'transparent',
-                                        color: active ? '#fff' : '#4B5563',
-                                        fontWeight: active ? 700 : 600,
-                                        fontSize: 13,
-                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        boxShadow: active ? '0 10px 20px rgba(0,75,147,0.15)' : 'none',
-                                        position: 'relative',
-                                        overflow: 'hidden'
-                                    }}
-                                        className="nav-link-premium"
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        title={collapsed ? item.label : undefined}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: collapsed ? 0 : 10,
+                                            padding: collapsed ? '10px' : '9px 12px',
+                                            borderRadius: 10,
+                                            textDecoration: 'none',
+                                            background: active
+                                                ? 'linear-gradient(135deg, #004B93 0%, #0055AA 100%)'
+                                                : 'transparent',
+                                            color: active ? '#FFFFFF' : '#475569',
+                                            fontWeight: active ? 700 : 500,
+                                            fontSize: 13,
+                                            transition: 'all 0.18s cubic-bezier(0.4,0,0.2,1)',
+                                            boxShadow: active ? '0 4px 12px rgba(0,75,147,0.25)' : 'none',
+                                            justifyContent: collapsed ? 'center' : 'flex-start',
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                        }}
+                                        className="admin-nav-item"
                                     >
-                                        <item.icon size={18} color={active ? '#fff' : '#9CA3AF'} strokeWidth={active ? 2.5 : 2} style={{ flexShrink: 0 }} />
-                                        <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
-                                        {active && (
-                                            <div style={{ position: 'absolute', left: 0, top: '20%', bottom: '20%', width: 4, background: '#F0A026', borderRadius: '0 4px 4px 0' }} />
+                                        {/* Active left accent bar */}
+                                        {active && !collapsed && (
+                                            <div style={{
+                                                position: 'absolute', left: 0, top: '15%', bottom: '15%',
+                                                width: 3, background: '#F0A026', borderRadius: '0 3px 3px 0'
+                                            }} />
+                                        )}
+                                        <item.icon
+                                            size={17}
+                                            color={active ? '#FFFFFF' : '#94A3B8'}
+                                            strokeWidth={active ? 2.5 : 2}
+                                            style={{ flexShrink: 0 }}
+                                        />
+                                        {!collapsed && (
+                                            <span style={{ whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
+                                                {item.label}
+                                            </span>
                                         )}
                                     </Link>
                                 )
@@ -175,35 +238,35 @@ export function AdminSidebar() {
 
             {/* ── FOOTER ── */}
             <div style={{
-                padding: '20px 16px',
-                borderTop: '1px solid rgba(0,0,0,0.05)',
-                background: 'rgba(255,255,255,0.4)',
-                backdropFilter: 'blur(10px)',
-                flexShrink: 0,
+                padding: collapsed ? '12px 10px' : '12px 12px',
+                borderTop: '1px solid #F1F5F9',
+                background: '#FAFBFC',
+                flexShrink: 0
             }}>
-                <Link href="/dashboard" style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '12px',
-                    borderRadius: 14,
-                    textDecoration: 'none',
-                    background: '#fff',
-                    border: '1px solid #F3F4F6',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
-                }}>
-                    <div style={{
-                        width: 36, height: 36,
-                        borderRadius: 10,
-                        background: '#F1F2F4',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: '#64748B'
-                    }}><Zap size={18} /></div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: '#111827' }}>Exit Command</div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase' }}>To Launchpad</div>
-                    </div>
-                    <LogOut size={16} color="#9CA3AF" />
+                <Link href="/api/auth/logout" style={{
+                    display: 'flex', alignItems: 'center',
+                    gap: collapsed ? 0 : 10,
+                    padding: collapsed ? '10px' : '10px 12px',
+                    borderRadius: 10, textDecoration: 'none',
+                    color: '#64748B', fontSize: 13, fontWeight: 600,
+                    transition: 'all 0.18s',
+                    justifyContent: collapsed ? 'center' : 'flex-start',
+                    background: 'transparent'
+                }}
+                    className="admin-nav-item"
+                >
+                    <LogOut size={17} color="#94A3B8" style={{ flexShrink: 0 }} />
+                    {!collapsed && <span>Sign Out</span>}
                 </Link>
             </div>
+
+            <style>{`
+                .admin-nav-item:hover {
+                    background: #F8FAFC !important;
+                    color: #004B93 !important;
+                }
+                .admin-nav-item:hover svg { color: #004B93 !important; stroke: #004B93 !important; }
+            `}</style>
         </aside>
     )
 }
