@@ -44,7 +44,11 @@ export default function OnboardingScreen() {
     <View className="flex-1 bg-white justify-between px-6 py-16">
       {/* Top Header */}
       <View className="flex-row justify-between items-center">
-        <Text className="text-lg font-black tracking-tight text-primary">BB</Text>
+        <Image
+          source={require('../../assets/logo.png')}
+          style={{ width: 90, height: 36 }}
+          resizeMode="contain"
+        />
         <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
           <Text className="text-sm font-bold text-text-secondary">Skip</Text>
         </TouchableOpacity>

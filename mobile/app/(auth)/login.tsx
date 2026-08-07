@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react-native'
 import { apiFetch, setToken } from '../../lib/api'
@@ -62,11 +62,13 @@ export default function LoginScreen() {
       className="flex-1 bg-white"
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="justify-center px-6 py-12">
-        <View className="mb-10 items-center">
-          <View className="h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/30">
-            <Text className="text-2xl font-extrabold text-white">BB</Text>
-          </View>
-          <Text className="mt-6 text-3xl font-black tracking-tight text-text-primary">
+        <View className="mb-8 items-center">
+          <Image
+            source={require('../../assets/logo.png')}
+            style={{ width: 180, height: 90 }}
+            resizeMode="contain"
+          />
+          <Text className="mt-2 text-3xl font-black tracking-tight text-text-primary">
             BeBrilliant
           </Text>
           <Text className="mt-2 text-center text-sm font-medium text-text-secondary">

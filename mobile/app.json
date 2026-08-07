@@ -13,8 +13,9 @@
     "android": {
       "package": "in.bebrilliant.app",
       "versionCode": 1,
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -41,7 +42,7 @@
         {
           "image": "./assets/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#004B93"
+          "backgroundColor": "#FFFFFF"
         }
       ],
       "expo-web-browser"

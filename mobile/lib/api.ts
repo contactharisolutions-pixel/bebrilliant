@@ -1,7 +1,7 @@
 import { Platform } from 'react-native'
 import * as SecureStore from 'expo-secure-store'
 
-const SITE_URL = process.env.EXPO_PUBLIC_SITE_URL || 'http://localhost:3000'
+const SITE_URL = process.env.EXPO_PUBLIC_SITE_URL || 'https://bebrilliant.in'
 const TOKEN_KEY = 'bb_token'
 
 export async function setToken(token: string) {

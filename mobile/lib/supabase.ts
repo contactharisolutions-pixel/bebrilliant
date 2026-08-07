@@ -32,8 +32,8 @@ const ExpoSecureStoreAdapter = {
   },
 }
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || ''
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://supabase.bebrilliant.in'
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmemxrZHVyZ2dnenl0ZWd2dnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwOTI3NjcsImV4cCI6MjA4OTY2ODc2N30.HNfd1KC2BLM-BdMBRa5rNHaZYAzbRwtOacqjuNZuPdI'
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {

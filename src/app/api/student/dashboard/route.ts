@@ -26,20 +26,19 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // Fire all DB queries in parallel — eliminates sequential waterfall
+        // Fire DB queries in parallel
         const [perfRes, examsRes, recentRaw, upcomingRaw] = await Promise.all([
             supabaseAdmin.from('student_performance')
-                .select('marks_obtained, total_marks, percentage, exam_id, exam_date, subject, chapter, topic, exams(name)')
-                .eq('student_id', uid)
-                .order('exam_date', { ascending: true }),
+                .select('marks_obtained, total_marks, percentage, subject, chapter, topic')
+                .eq('student_id', uid),
             supabaseAdmin.from('exams')
                 .select('id', { count: 'exact', head: true })
                 .eq('tenant_id', tid)
                 .eq('is_active', true),
-            supabaseAdmin.from('student_performance')
-                .select('id, exam_id, marks_obtained, total_marks, exam_date, exams(name)')
+            supabaseAdmin.from('exam_results')
+                .select('id, exam_id, score, percentage, created_at')
                 .eq('student_id', uid)
-                .order('exam_date', { ascending: false })
+                .order('created_at', { ascending: false })
                 .limit(5),
             supabaseAdmin.from('exams')
                 .select('id, name, created_at, description')
@@ -52,20 +51,20 @@ export async function GET(request: NextRequest) {
         const totalPublished = examsRes.count || 0
 
         const avgScore = performances.length > 0
-            ? Math.round(performances.reduce((acc, p) => acc + Number(p.percentage), 0) / performances.length)
+            ? Math.round(performances.reduce((acc, p) => acc + Number(p.percentage || 0), 0) / performances.length)
             : 0
 
-        const completedCount = new Set(performances.map(p => p.exam_id)).size
+        const completedCount = new Set((recentRaw.data || []).map((r: any) => r.exam_id)).size
         const pendingCount = Math.max(0, totalPublished - completedCount)
 
-        // Recent results (already fetched in parallel above)
+        // Recent results
         const recentResults = (recentRaw.data || []).map((r: any) => ({
             id: r.id,
-            exam_name: r.exams?.name || 'Institutional Exam',
-            score: r.marks_obtained,
-            max: r.total_marks,
-            date: new Date(r.exam_date).toLocaleDateString(),
-            trend: r.marks_obtained / r.total_marks >= 0.7 ? 'up' : 'down'
+            exam_name: 'Institutional Exam',
+            score: r.score,
+            max: 100,
+            date: new Date(r.created_at || Date.now()).toLocaleDateString(),
+            trend: Number(r.percentage || 0) >= 70 ? 'up' : 'down'
         }))
 
         // 3. Subject Mastery
@@ -73,7 +72,7 @@ export async function GET(request: NextRequest) {
         performances.forEach(p => {
             const s = (p as any).subject || 'General'
             if (!subjectMap[s]) subjectMap[s] = { total: 0, count: 0 }
-            subjectMap[s].total += Number(p.percentage)
+            subjectMap[s].total += Number(p.percentage || 0)
             subjectMap[s].count++
         })
         const subjectMastery = Object.entries(subjectMap).map(([subject, stats]) => ({
@@ -81,27 +80,11 @@ export async function GET(request: NextRequest) {
             mastery: Math.round(stats.total / stats.count)
         })).slice(0, 4)
 
-        // 4. Performance Trend (Dynamically built from chronological exam history)
-        const perfByMonth: Record<string, { total: number, count: number }> = {}
-        performances.forEach(p => {
-            const dateStr = p.exam_date || new Date().toISOString()
-            const month = new Date(dateStr).toLocaleString('default', { month: 'short' })
-            if (!perfByMonth[month]) perfByMonth[month] = { total: 0, count: 0 }
-            perfByMonth[month].total += Number(p.percentage || 0)
-            perfByMonth[month].count++
-        })
-        
-        let performanceTrend = Object.entries(perfByMonth).map(([name, stats]) => ({
-            name,
-            score: Math.round(stats.total / stats.count)
-        }))
+        // 4. Performance Trend
+        let performanceTrend = [ { name: 'Active Session', score: avgScore || 0 } ]
 
-        if (performanceTrend.length === 0) {
-            performanceTrend = [ { name: 'Active Session', score: avgScore || 0 } ]
-        }
-
-        // Upcoming exams (already fetched in parallel above)
-        const completedIds = new Set(performances.map(p => p.exam_id))
+        // Upcoming exams
+        const completedIds = new Set((recentRaw.data || []).map((r: any) => r.exam_id))
         const upcomingExams = (upcomingRaw.data || [])
             .filter(e => !completedIds.has(e.id))
             .map(e => ({
