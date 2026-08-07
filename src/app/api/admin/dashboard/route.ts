@@ -158,25 +158,26 @@ export async function GET(request: NextRequest) {
         try {
             const { data: recentStudents } = await supabaseAdmin
                 .from('user_profiles')
-                .select('full_name, created_at')
+                .select('first_name, last_name, created_at')  // no full_name col; use first_name+last_name
                 .eq('tenant_id', tenant_id)
                 .eq('role', 'student')
                 .order('created_at', { ascending: false })
                 .limit(3)
             const { data: recentExams } = await supabaseAdmin
                 .from('exams')
-                .select('title, created_at')
+                .select('name, created_at')   // exams uses 'name' not 'title'
                 .eq('tenant_id', tenant_id)
                 .order('created_at', { ascending: false })
                 .limit(2)
             if (recentStudents) {
                 recentStudents.forEach((s: any) => {
-                    activityFeed.push({ type: 'student', label: `${s.full_name || 'New Student'} enrolled`, time: s.created_at, color: '#10B981' })
+                    const studentName = [s.first_name, s.last_name].filter(Boolean).join(' ') || 'New Student'
+                    activityFeed.push({ type: 'student', label: `${studentName} enrolled`, time: s.created_at, color: '#10B981' })
                 })
             }
             if (recentExams) {
                 recentExams.forEach((e: any) => {
-                    activityFeed.push({ type: 'exam', label: `Exam "${e.title}" created`, time: e.created_at, color: '#004B93' })
+                    activityFeed.push({ type: 'exam', label: `Exam "${e.name}" created`, time: e.created_at, color: '#004B93' })
                 })
             }
             activityFeed.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
@@ -184,21 +185,22 @@ export async function GET(request: NextRequest) {
         } catch { activityFeed = [] }
 
         // ── Upcoming Exams ──────────────────────────────────────────────────────
+        // exams cols: name (not title), is_active (not status), start_time (not scheduled_at)
         let upcomingExams: { id: string; title: string; subject: string; scheduled_at: string | null }[] = []
         try {
             const { data: exData } = await supabaseAdmin
                 .from('exams')
-                .select('id, title, subject_id, scheduled_at')
+                .select('id, name, start_time')
                 .eq('tenant_id', tenant_id)
-                .eq('status', 'active')
+                .eq('is_active', true)
                 .order('created_at', { ascending: false })
                 .limit(4)
             if (exData) {
                 upcomingExams = exData.map((e: any) => ({
                     id: e.id,
-                    title: e.title,
+                    title: e.name,           // map name → title for UI
                     subject: 'Assessment',
-                    scheduled_at: e.scheduled_at
+                    scheduled_at: e.start_time || null
                 }))
             }
         } catch { upcomingExams = [] }

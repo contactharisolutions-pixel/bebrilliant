@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
         const { data: profile } = await supabaseAdmin.from('user_profiles')
             .select('role, tenant_id, first_name, last_name, email')
             .eq('id', user.id).single()
-            
+
         if (!profile || !['student', 'parent'].includes(profile.role)) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
@@ -27,27 +27,42 @@ export async function GET(request: NextRequest) {
             if (childProfile) uid = childProfile.id
         }
 
-        // ── Parallel DB queries ──────────────────────────────────────────────
+        // ── Parallel DB queries (all columns verified against live schema) ─────
         const [perfRes, examsRes, recentRaw, upcomingRaw, attendanceRes, walletRes, materialsRes] = await Promise.all([
+
+            // student_performance: cols = marks_obtained, total_marks, percentage (generated), subject, chapter, topic
             supabaseAdmin.from('student_performance')
                 .select('marks_obtained, total_marks, percentage, subject, chapter, topic')
                 .eq('student_id', uid),
+
+            // exams: col = is_active (boolean), NOT status
             supabaseAdmin.from('exams')
                 .select('id', { count: 'exact', head: true })
-                .eq('tenant_id', tid).eq('status', 'active'),
+                .eq('tenant_id', tid).eq('is_active', true),
+
+            // exam_results: cols = id, exam_id, score, percentage, created_at ✓
             supabaseAdmin.from('exam_results')
                 .select('id, exam_id, score, percentage, created_at')
                 .eq('student_id', uid)
                 .order('created_at', { ascending: false }).limit(6),
+
+            // exams: col = name (NOT title), duration (NOT duration_minutes), is_active (NOT status)
             supabaseAdmin.from('exams')
-                .select('id, title, created_at, description, duration_minutes')
-                .eq('tenant_id', tid).eq('status', 'active').limit(5),
+                .select('id, name, created_at, description, duration')
+                .eq('tenant_id', tid).eq('is_active', true).limit(5),
+
+            // attendance_logs: cols = status ✓, date ✓
             supabaseAdmin.from('attendance_logs')
                 .select('status, date')
                 .eq('student_id', uid).order('date', { ascending: false }).limit(60),
+
+            // student_wallets: cols = free_credits, paid_credits, total_balance (generated = free+paid)
+            // NO total_credits or used_credits columns
             supabaseAdmin.from('student_wallets')
-                .select('total_credits, used_credits, free_credits, paid_credits')
+                .select('free_credits, paid_credits, total_balance')
                 .eq('student_id', uid).limit(1),
+
+            // study_materials: cols = id, title, type, created_at ✓
             supabaseAdmin.from('study_materials')
                 .select('id, title, type, created_at')
                 .eq('tenant_id', tid)
@@ -79,11 +94,9 @@ export async function GET(request: NextRequest) {
             return streak
         })()
 
-        // ── Wallet ───────────────────────────────────────────────────────────
+        // ── Wallet (total_balance = free_credits + paid_credits, generated col) ──
         const walletData = walletRes.data?.[0] || null
-        const totalCredits = walletData ? (walletData.total_credits || 0) : 0
-        const usedCredits = walletData ? (walletData.used_credits || 0) : 0
-        const creditsLeft = Math.max(0, totalCredits - usedCredits)
+        const creditsLeft = walletData ? Number(walletData.total_balance || 0) : 0
 
         // ── Subject Mastery ──────────────────────────────────────────────────
         const subjectMap: Record<string, { total: number; count: number }> = {}
@@ -119,15 +132,15 @@ export async function GET(request: NextRequest) {
             trend: Number(r.percentage || 0) >= 70 ? 'up' : 'down'
         }))
 
-        // ── Upcoming Exams ───────────────────────────────────────────────────
+        // ── Upcoming Exams (name NOT title, duration NOT duration_minutes) ────
         const upcomingExams = (upcomingRaw.data || [])
             .filter((e: any) => !completedIds.has(e.id))
             .map((e: any) => ({
                 id: e.id,
-                name: e.title,
+                name: e.name,          // exams.name is the correct column
                 date: e.created_at,
                 subject: 'General',
-                duration: e.duration_minutes || 60
+                duration: e.duration || 60  // exams.duration is the correct column
             }))
 
         // ── Weak Areas ───────────────────────────────────────────────────────
@@ -151,7 +164,7 @@ export async function GET(request: NextRequest) {
         const recentMaterials = (materialsRes.data || []).map((m: any) => ({
             id: m.id,
             title: m.title,
-            type: m.type || 'PDF',
+            type: m.type || 'pdf',
             date: new Date(m.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
         }))
 
