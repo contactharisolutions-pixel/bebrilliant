@@ -158,9 +158,10 @@ export function OwnerSidebar() {
                 backdropFilter: 'blur(10px)'
             }}>
                 <img 
-                    src="https://bebrilliant.in/uploads/Logo2.jpeg" 
+                    src="/logo.png" 
                     alt="BeBrilliant Logo" 
-                    style={{ height: 38, width: 'auto', maxWidth: '100%', objectFit: 'contain' }} 
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.png' }}
+                    style={{ height: 42, width: 'auto', maxWidth: '100%', objectFit: 'contain' }} 
                 />
                 <div style={{ 
                     fontSize: 10, 

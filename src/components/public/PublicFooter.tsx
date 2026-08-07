@@ -53,9 +53,10 @@ export const PublicFooter = () => {
                         <Link href="/" style={{ display: 'inline-flex', marginBottom: 24 }}>
                             <div style={{ background: '#fff', borderRadius: 12, padding: '8px 14px', display: 'inline-flex' }}>
                                 <img
-                                    src="https://bebrilliant.in/uploads/Logo2.jpeg"
+                                    src="/logo.png"
                                     alt="BeBrilliant"
-                                    style={{ height: 32, width: 'auto', borderRadius: 6, objectFit: 'contain', display: 'block' }}
+                                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.png' }}
+                                    style={{ height: 36, width: 'auto', borderRadius: 6, objectFit: 'contain', display: 'block' }}
                                 />
                             </div>
                         </Link>

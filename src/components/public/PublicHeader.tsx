@@ -44,9 +44,10 @@ export const PublicHeader = () => {
                 {/* Logo */}
                 <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
                     <img
-                        src="https://bebrilliant.in/uploads/Logo2.jpeg"
+                        src="/logo.png"
                         alt="BeBrilliant"
-                        style={{ height: 40, width: 'auto', borderRadius: 8, objectFit: 'contain', display: 'block' }}
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.png' }}
+                        style={{ height: 42, width: 'auto', borderRadius: 8, objectFit: 'contain', display: 'block' }}
                     />
                 </Link>
 

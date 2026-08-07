@@ -325,7 +325,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   };
   const logoUrl =
     identityLocal?.tenant?.logo_url ||
-    "https://bebrilliant.in/uploads/Logo2.jpeg";
+    "/logo.png";
   const instituteName =
     identityLocal?.tenant?.name || (identityLocal ? "Hub" : "Loading...");
   const userName =
@@ -370,6 +370,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             <img
               src={logoUrl}
               alt="Institute Logo"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.png' }}
               style={{
                 width: "100%",
                 height: "auto",

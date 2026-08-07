@@ -66,7 +66,7 @@ export function AdminSidebar() {
         fetch('/api/auth/me').then(res => res.json()).then(data => setIdentity(data))
     }, [])
 
-    const logoUrl = identity?.tenant?.logo_url || "https://bebrilliant.in/uploads/Logo2.jpeg"
+    const logoUrl = identity?.tenant?.logo_url || "/logo.png"
     const instituteName = identity?.tenant?.name || (identity ? "BeBrilliant Platform" : "Synchronizing Hub...")
     const userName = identity?.fullName || (identity ? "Authorized Staff" : "Verifying Identity...")
 
@@ -100,6 +100,7 @@ export function AdminSidebar() {
                 <img 
                     src={logoUrl} 
                     alt="Institute Logo" 
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.png' }}
                     style={{ width: '100%', height: 'auto', maxHeight: 60, objectFit: 'contain' }} 
                 />
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', gap: 2 }}>
