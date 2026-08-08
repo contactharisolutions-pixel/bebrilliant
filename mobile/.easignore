@@ -1,9 +1,6 @@
-node_modules/
-dist/
-.expo/
+node_modules
+.expo
+dist
+android
+ios
 *.log
-*.md
-.claude/
-.git/
-android/
-ios/
