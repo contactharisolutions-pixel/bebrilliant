@@ -34,6 +34,7 @@ export interface Exam {
     tenant_id: string
     name: string
     description?: string | null
+    subject?: string | null
     category_id?: string | null
     is_paid: boolean
     price: number

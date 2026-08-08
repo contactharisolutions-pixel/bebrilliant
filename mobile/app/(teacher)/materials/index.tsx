@@ -11,7 +11,7 @@ import {
   Book, UploadCloud, CheckCircle, ExternalLink, HardDrive, X, Filter,
 } from 'lucide-react-native'
 import { apiFetch } from '../../../lib/api'
-import { createClient } from '../../../lib/supabase'
+import { supabase } from '../../../lib/supabase'
 import { TeacherHeader } from '../../../components/teacher/TeacherHeader'
 
 interface Material {
@@ -79,7 +79,6 @@ export default function TeacherMaterials() {
     }
     setUploading(true)
     try {
-      const supabase = createClient()
       const ext = selectedFile.name.split('.').pop() || 'file'
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`
 

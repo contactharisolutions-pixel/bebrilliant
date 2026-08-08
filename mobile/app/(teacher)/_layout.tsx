@@ -79,7 +79,7 @@ export default function TeacherLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon icon={LayoutDashboard} label="Home" color={color} focused={focused} accentColor={ACCENT} />
+            <TabIcon icon={LayoutDashboard} label="Home" color={color as string} focused={focused} accentColor={ACCENT} />
           ),
         }}
       />
@@ -90,7 +90,7 @@ export default function TeacherLayout() {
         options={{
           title: 'Exams',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon icon={BookOpen} label="Exams" color={color} focused={focused} accentColor="#004B93" />
+            <TabIcon icon={BookOpen} label="Exams" color={color as string} focused={focused} accentColor="#004B93" />
           ),
         }}
       />
@@ -101,7 +101,7 @@ export default function TeacherLayout() {
         options={{
           title: 'Students',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon icon={Users} label="Students" color={color} focused={focused} accentColor="#059669" />
+            <TabIcon icon={Users} label="Students" color={color as string} focused={focused} accentColor="#059669" />
           ),
         }}
       />
@@ -112,7 +112,7 @@ export default function TeacherLayout() {
         options={{
           title: 'Analytics',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon icon={BarChart2} label="Analytics" color={color} focused={focused} accentColor="#F59E0B" />
+            <TabIcon icon={BarChart2} label="Analytics" color={color as string} focused={focused} accentColor="#F59E0B" />
           ),
         }}
       />
@@ -123,7 +123,7 @@ export default function TeacherLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon icon={UserCircle} label="Profile" color={color} focused={focused} accentColor="#EF4444" />
+            <TabIcon icon={UserCircle} label="Profile" color={color as string} focused={focused} accentColor="#EF4444" />
           ),
         }}
       />

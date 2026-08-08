@@ -76,7 +76,7 @@ export default function ParentProfile() {
                   onPress={() => router.push('/(parent)/children')}
                 >
                   <View style={s.childAvatar}>
-                    <Text style={s.childAvatarText}>{child.first_name.charAt(0)}</Text>
+                    <Text style={s.childAvatarText}>{(child.first_name ?? '?').charAt(0)}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={s.navText}>{child.first_name} {child.last_name || ''}</Text>

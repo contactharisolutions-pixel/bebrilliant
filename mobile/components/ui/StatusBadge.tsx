@@ -44,8 +44,8 @@ export function StatusBadge({ status, label, isLive = false }: StatusBadgeProps)
 
   // ── Resolve semantic color ──────────────────────────────────────────────
   let bgColor   = '#F3F4F6'
-  let textColor = C.textSecondary
-  let dotColor  = C.textMuted
+  let textColor: string = C.textSecondary
+  let dotColor: string  = C.textMuted
   let borderColor = '#E5E7EB'
 
   if (s === 'present' || s === 'active' || s === 'pass' || s === 'distinction' || s === 'excellence') {

@@ -61,7 +61,7 @@ export default function StudentLayout() {
             <TabIcon
               icon={LayoutDashboard}
               label="Home"
-              color={color}
+              color={color as string}
               focused={focused}
               accentColor="#004B93"
             />
@@ -78,7 +78,7 @@ export default function StudentLayout() {
             <TabIcon
               icon={BookOpen}
               label="Exams"
-              color={color}
+              color={color as string}
               focused={focused}
               accentColor="#7C3AED"
             />
@@ -95,7 +95,7 @@ export default function StudentLayout() {
             <TabIcon
               icon={BarChart2}
               label="Analytics"
-              color={color}
+              color={color as string}
               focused={focused}
               accentColor="#059669"
             />
@@ -112,7 +112,7 @@ export default function StudentLayout() {
             <TabIcon
               icon={Wallet}
               label="Wallet"
-              color={color}
+              color={color as string}
               focused={focused}
               accentColor="#F59E0B"
             />
@@ -129,7 +129,7 @@ export default function StudentLayout() {
             <TabIcon
               icon={UserCircle}
               label="Profile"
-              color={color}
+              color={color as string}
               focused={focused}
               accentColor="#EF4444"
             />

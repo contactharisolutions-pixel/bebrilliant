@@ -163,7 +163,7 @@ export default function ParentChildrenScreen() {
                   </View>
                 ))
               ) : (
-                <View style={{ py: 20, alignItems: 'center' }}>
+                <View style={{ paddingVertical: 20, alignItems: 'center' }}>
                   <Calendar size={28} color="#9CA3AF" />
                   <Text style={{ marginTop: 6, fontSize: 12, color: '#64748B' }}>No attendance logs recorded</Text>
                 </View>
@@ -194,7 +194,7 @@ export default function ParentChildrenScreen() {
                   </View>
                 ))
               ) : (
-                <View style={{ py: 20, alignItems: 'center' }}>
+                <View style={{ paddingVertical: 20, alignItems: 'center' }}>
                   <HelpCircle size={28} color="#9CA3AF" />
                   <Text style={{ marginTop: 6, fontSize: 12, color: '#64748B' }}>No grade reports available</Text>
                 </View>

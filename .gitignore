@@ -59,4 +59,9 @@ public/downloads/*.apk
 
 # backups and archives
 *.zip
+*.bin
 
+# EAS debug artifacts
+eas_raw_log.*
+eas_archive_test/
+scripts/*.py

@@ -11,6 +11,7 @@ import { C, GRADIENT, SHADOW, RADIUS } from '../../lib/theme'
 interface ParentHeaderProps {
   activeChildName?: string
   onSwitchChildPress?: () => void
+  showSearch?: boolean
 }
 
 export function ParentHeader({

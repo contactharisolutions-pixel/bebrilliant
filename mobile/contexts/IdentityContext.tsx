@@ -8,7 +8,7 @@ import { usePushNotifications } from '../hooks/usePushNotifications'
 interface UserIdentity {
   id: string
   email: string
-  role: 'owner' | 'tenant_admin' | 'teacher' | 'student' | 'parent'
+  role: 'owner' | 'tenant_admin' | 'teacher' | 'teacher_pending' | 'student' | 'parent'
   fullName: string
   tenant_id: string | null
   tenant?: {

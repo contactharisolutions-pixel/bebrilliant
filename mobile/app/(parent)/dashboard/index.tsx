@@ -133,7 +133,7 @@ export default function ParentDashboard() {
           )}
 
           {summaryLoading && selectedChildId ? (
-            <View style={{ py: 40, alignItems: 'center', marginTop: 24 }}>
+            <View style={{ paddingVertical: 40, alignItems: 'center', marginTop: 24 }}>
               <ActivityIndicator size="large" color={C.brandGreen} />
               <Text style={{ marginTop: 10, fontSize: 12, color: C.textSecondary, fontWeight: '600' }}>
                 Updating Child Progress…
@@ -303,7 +303,7 @@ export default function ParentDashboard() {
                     style={[s.childPickerItem, isSelected && s.childPickerItemActive]}
                   >
                     <View style={s.pickerAvatar}>
-                      <Text style={s.pickerAvatarText}>{item.first_name.charAt(0)}</Text>
+                      <Text style={s.pickerAvatarText}>{(item.first_name ?? '?').charAt(0)}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[s.pickerName, isSelected && { color: C.brandGreen }]}>
@@ -346,7 +346,7 @@ const s = StyleSheet.create({
   noChildText: { fontSize: 13, fontWeight: '700', color: C.textSecondary, marginTop: 8 },
 
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 },
-  kpiCard: { width: '48%', borderRadius: RADIUS.md, padding: 14, gap: 4, elevation: 2, borderWidth: 1, borderColor: C.border, ...SHADOW.card },
+  kpiCard: { width: '48%', borderRadius: RADIUS.md, padding: 14, gap: 4, borderWidth: 1, borderColor: C.border, ...SHADOW.card },
   kpiVal: { fontSize: 22, fontWeight: '900' },
   kpiLbl: { fontSize: 9, fontWeight: '700', color: C.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
 

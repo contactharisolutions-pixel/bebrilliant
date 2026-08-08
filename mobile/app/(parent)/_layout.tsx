@@ -73,7 +73,7 @@ export default function ParentLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon icon={LayoutDashboard} label="Home" color={color} focused={focused} accentColor={ACCENT} />
+            <TabIcon icon={LayoutDashboard} label="Home" color={color as string} focused={focused} accentColor={ACCENT} />
           ),
         }}
       />
@@ -84,7 +84,7 @@ export default function ParentLayout() {
         options={{
           title: 'Children',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon icon={Users} label="Children" color={color} focused={focused} accentColor="#004B93" />
+            <TabIcon icon={Users} label="Children" color={color as string} focused={focused} accentColor="#004B93" />
           ),
         }}
       />
@@ -95,7 +95,7 @@ export default function ParentLayout() {
         options={{
           title: 'Fees',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon icon={CreditCard} label="Fees" color={color} focused={focused} accentColor="#D97706" />
+            <TabIcon icon={CreditCard} label="Fees" color={color as string} focused={focused} accentColor="#D97706" />
           ),
         }}
       />
@@ -106,7 +106,7 @@ export default function ParentLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon icon={UserCircle} label="Profile" color={color} focused={focused} accentColor="#EF4444" />
+            <TabIcon icon={UserCircle} label="Profile" color={color as string} focused={focused} accentColor="#EF4444" />
           ),
         }}
       />
