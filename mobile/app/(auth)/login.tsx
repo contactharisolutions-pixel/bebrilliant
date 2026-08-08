@@ -35,8 +35,6 @@ import Animated, {
   withSequence,
   Easing,
 } from 'react-native-reanimated'
-import { apiFetch, setToken } from '../../lib/api'
-import { supabase } from '../../lib/supabase'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 
 const { width: SCREEN_W } = Dimensions.get('window')
