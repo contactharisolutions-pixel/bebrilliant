@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
                 tenant_type: profile.tenant_type
             }
         } else if (profile.role === 'owner') {
-            tenantBranding = { name: 'BrightBoard Enterprise Hub', logo_url: '/logo-master.png' }
+            tenantBranding = { name: 'BeBrilliant Enterprise Hub', logo_url: '/logo-master.png' }
         }
 
         const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || decoded.email?.split('@')[0] || 'Unknown User'

@@ -1,47 +1,64 @@
-import React, { useState } from 'react'
-import { View, Text, FlatList, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'
-import { Check, X, Clock, HelpCircle, Calendar, Award } from 'lucide-react-native'
+import React, { useState, useEffect } from 'react'
+import {
+  View, Text, FlatList, TouchableOpacity, ScrollView,
+  ActivityIndicator, StyleSheet,
+} from 'react-native'
+import { Check, X, Clock, HelpCircle, Calendar, Award, BookOpen, ChevronRight } from 'lucide-react-native'
 import { useParentChildren } from '../../../hooks/useParentChildren'
 import { useParentChildSummary } from '../../../hooks/useParentChildSummary'
+import { ParentHeader } from '../../../components/parent/ParentHeader'
 
-export default function ParentChildren() {
+export default function ParentChildrenScreen() {
   const { data: children, isLoading: childrenLoading } = useParentChildren()
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
 
-  // Auto-select first child
-  React.useEffect(() => {
+  useEffect(() => {
     if (children && children.length > 0 && !selectedChildId) {
       setSelectedChildId(children[0].id)
     }
   }, [children])
 
   const { data: summary, isLoading: summaryLoading } = useParentChildSummary(selectedChildId)
+  const activeChild = children?.find(c => c.id === selectedChildId)
+  const activeChildName = activeChild ? `${activeChild.first_name} ${activeChild.last_name || ''}` : 'Child'
+
+  const mockSubjectMastery = [
+    { subject: 'Mathematics', score: 92, target: 90 },
+    { subject: 'Physics', score: 85, target: 85 },
+    { subject: 'Chemistry', score: 78, target: 80 },
+    { subject: 'Biology', score: 88, target: 85 },
+    { subject: 'English', score: 90, target: 88 },
+  ]
 
   if (childrenLoading) {
     return (
-      <View className="flex-1 bg-bg-card2 items-center justify-center">
-        <ActivityIndicator size="large" color="#004B93" />
+      <View style={s.container}>
+        <ParentHeader showSearch={false} />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color="#004B93" />
+          <Text style={s.loadingText}>Loading Children Profiles…</Text>
+        </View>
       </View>
     )
   }
 
   return (
-    <View className="flex-1 bg-bg-card2">
-      {/* Horizontal Children selector */}
-      <View className="bg-white border-b border-border py-4 px-5">
-        <Text className="text-xs font-bold text-text-secondary uppercase mb-3">Linked Students</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-          {children?.map((child) => {
+    <View style={s.container}>
+      <ParentHeader activeChildName={activeChildName} />
+
+      {/* Horizontal Linked Children Chips Bar */}
+      <View style={s.chipsBar}>
+        <Text style={s.chipsTitle}>LINKED STUDENTS</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          {children?.map(child => {
             const isSelected = child.id === selectedChildId
             return (
               <TouchableOpacity
                 key={child.id}
                 onPress={() => setSelectedChildId(child.id)}
-                className={`px-5 py-2.5 rounded-full mr-3 border ${
-                  isSelected ? 'bg-primary border-primary' : 'bg-bg-card2 border-border'
-                }`}
+                style={[s.childChip, isSelected && s.childChipActive]}
               >
-                <Text className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-text-primary'}`}>
+                <Text style={[s.childChipText, isSelected && { color: '#FFFFFF' }]}>
                   {child.first_name} {child.last_name || ''}
                 </Text>
               </TouchableOpacity>
@@ -51,109 +68,135 @@ export default function ParentChildren() {
       </View>
 
       {summaryLoading && selectedChildId ? (
-        <View className="flex-1 items-center justify-center">
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color="#004B93" />
+          <Text style={s.loadingText}>Fetching Child Academic Summary…</Text>
         </View>
       ) : (
         summary && (
-          <ScrollView className="flex-1 p-5 space-y-6">
-            {/* Performance Stats */}
-            <View className="rounded-3xl bg-white border border-border p-5 shadow-sm mb-6">
-              <Text className="text-base font-black text-text-primary mb-4">Academic Summary</Text>
-              <View className="flex-row justify-between mb-4">
-                <View>
-                  <Text className="text-xs font-semibold text-text-muted">Attendance Rate</Text>
-                  <Text className="text-2xl font-black text-emerald-600 mt-1">{summary.attendanceRate}%</Text>
+          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
+            {/* Academic Summary Card */}
+            <View style={s.card}>
+              <Text style={s.cardTitle}>Academic Overview</Text>
+              <View style={s.summaryGrid}>
+                <View style={s.summaryItem}>
+                  <Text style={s.summaryLabel}>Attendance</Text>
+                  <Text style={[s.summaryVal, { color: '#059669' }]}>{summary.attendanceRate}%</Text>
                 </View>
-                <View className="border-l border-border pl-6">
-                  <Text className="text-xs font-semibold text-text-muted">Average Score</Text>
-                  <Text className="text-2xl font-black text-primary mt-1">{summary.avgScore}%</Text>
+                <View style={s.summaryDivider} />
+                <View style={s.summaryItem}>
+                  <Text style={s.summaryLabel}>Average Score</Text>
+                  <Text style={[s.summaryVal, { color: '#004B93' }]}>{summary.avgScore}%</Text>
                 </View>
-                <View className="border-l border-border pl-6">
-                  <Text className="text-xs font-semibold text-text-muted">Exams Done</Text>
-                  <Text className="text-2xl font-black text-text-primary mt-1">{summary.completedExams}</Text>
+                <View style={s.summaryDivider} />
+                <View style={s.summaryItem}>
+                  <Text style={s.summaryLabel}>Exams Done</Text>
+                  <Text style={[s.summaryVal, { color: '#7C3AED' }]}>{summary.completedExams}</Text>
                 </View>
               </View>
             </View>
 
-            {/* Attendance Log / Calendar Tracker */}
-            <View className="rounded-3xl bg-white border border-border p-5 shadow-sm mb-6">
-              <View className="flex-row items-center mb-4">
-                <Calendar size={18} color="#004B93" />
-                <Text className="text-base font-black text-text-primary ml-2">Recent Attendance Log</Text>
+            {/* Subject Mastery Progress Bars */}
+            <View style={[s.card, { marginTop: 12 }]}>
+              <Text style={s.sectionTitle}>SUBJECT MASTERY BREAKDOWN</Text>
+              {mockSubjectMastery.map(subj => (
+                <View key={subj.subject} style={s.subjectRow}>
+                  <View style={s.subjectHeader}>
+                    <Text style={s.subjectName}>{subj.subject}</Text>
+                    <Text style={s.subjectScore}>{subj.score}%</Text>
+                  </View>
+                  <View style={s.progressTrack}>
+                    <View
+                      style={[
+                        s.progressFill,
+                        {
+                          width: `${subj.score}%`,
+                          backgroundColor: subj.score >= 80 ? '#059669' : '#004B93',
+                        },
+                      ]}
+                    />
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            {/* Attendance Log Tracker */}
+            <View style={[s.card, { marginTop: 12 }]}>
+              <View style={s.rowBetween}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Calendar size={16} color="#004B93" />
+                  <Text style={s.cardTitle}>Attendance Log (30 Days)</Text>
+                </View>
               </View>
 
               {summary.attendanceLogs.length > 0 ? (
-                <View className="space-y-3">
-                  {summary.attendanceLogs.map((log, idx) => (
-                    <View key={idx} className="flex-row justify-between items-center py-2 border-b border-border last:border-b-0 mt-1">
-                      <Text className="text-xs font-semibold text-text-primary">
-                        {new Date(log.date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
-                      </Text>
-
-                      <View className="flex-row items-center">
-                        {log.status === 'present' && (
-                          <View className="flex-row items-center bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
-                            <Check size={12} color="#10B981" />
-                            <Text className="text-[10px] font-bold text-emerald-700 ml-1 uppercase">Present</Text>
-                          </View>
-                        )}
-                        {log.status === 'absent' && (
-                          <View className="flex-row items-center bg-red-50 border border-red-200 px-2.5 py-1 rounded-lg">
-                            <X size={12} color="#EF4444" />
-                            <Text className="text-[10px] font-bold text-red-700 ml-1 uppercase">Absent</Text>
-                          </View>
-                        )}
-                        {log.status === 'late' && (
-                          <View className="flex-row items-center bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
-                            <Clock size={12} color="#F59E0B" />
-                            <Text className="text-[10px] font-bold text-amber-700 ml-1 uppercase">Late</Text>
-                          </View>
-                        )}
-                      </View>
+                summary.attendanceLogs.slice(0, 10).map((log, idx) => (
+                  <View
+                    key={idx}
+                    style={[s.logRow, idx < summary.attendanceLogs.length - 1 && s.logBorder]}
+                  >
+                    <Text style={s.logDate}>
+                      {new Date(log.date).toLocaleDateString(undefined, {
+                        weekday: 'short', month: 'short', day: 'numeric',
+                      })}
+                    </Text>
+                    <View>
+                      {log.status === 'present' && (
+                        <View style={[s.statusPill, s.statusPresent]}>
+                          <Check size={10} color="#059669" />
+                          <Text style={[s.statusPillText, { color: '#059669' }]}>PRESENT</Text>
+                        </View>
+                      )}
+                      {log.status === 'absent' && (
+                        <View style={[s.statusPill, s.statusAbsent]}>
+                          <X size={10} color="#EF4444" />
+                          <Text style={[s.statusPillText, { color: '#EF4444' }]}>ABSENT</Text>
+                        </View>
+                      )}
+                      {log.status === 'late' && (
+                        <View style={[s.statusPill, s.statusLate]}>
+                          <Clock size={10} color="#D97706" />
+                          <Text style={[s.statusPillText, { color: '#D97706' }]}>LATE</Text>
+                        </View>
+                      )}
                     </View>
-                  ))}
-                </View>
+                  </View>
+                ))
               ) : (
-                <View className="items-center justify-center py-8">
-                  <Calendar size={24} color="#9CA3AF" />
-                  <Text className="text-xs text-text-secondary mt-2">No attendance logs logged</Text>
+                <View style={{ py: 20, alignItems: 'center' }}>
+                  <Calendar size={28} color="#9CA3AF" />
+                  <Text style={{ marginTop: 6, fontSize: 12, color: '#64748B' }}>No attendance logs recorded</Text>
                 </View>
               )}
             </View>
 
             {/* Historical Score Ledger */}
-            <View className="rounded-3xl bg-white border border-border p-5 shadow-sm mb-12">
-              <View className="flex-row items-center mb-4">
-                <Award size={18} color="#004B93" />
-                <Text className="text-base font-black text-text-primary ml-2">Historical Grades</Text>
+            <View style={[s.card, { marginTop: 12 }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                <Award size={16} color="#7C3AED" />
+                <Text style={s.cardTitle}>Historical Grade Ledger</Text>
               </View>
 
               {summary.recentScores.length > 0 ? (
-                summary.recentScores.map((score) => (
-                  <View key={score.id} className="flex-row justify-between items-center py-3 border-b border-border last:border-b-0">
-                    <View className="flex-1 pr-4">
-                      <Text className="text-xs font-bold text-text-primary" numberOfLines={1}>
-                        {score.exam_name}
-                      </Text>
-                      <Text className="text-[10px] text-text-muted mt-0.5">
-                        Subject: {score.subject} · {new Date(score.exam_date).toLocaleDateString()}
-                      </Text>
+                summary.recentScores.map((score, idx) => (
+                  <View
+                    key={score.id || idx}
+                    style={[s.ledgerRow, idx < summary.recentScores.length - 1 && s.ledgerBorder]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.ledgerName} numberOfLines={1}>{score.exam_name}</Text>
+                      <Text style={s.ledgerSub}>{score.subject} · {new Date(score.exam_date).toLocaleDateString()}</Text>
                     </View>
-                    <View className="items-end">
-                      <Text className="text-xs font-black text-primary">
-                        {score.marks_obtained}/{score.total_marks}
-                      </Text>
-                      <Text className="text-[9px] text-text-muted">
-                        {score.percentage}% grade
-                      </Text>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={s.ledgerScore}>{score.marks_obtained}/{score.total_marks}</Text>
+                      <Text style={s.ledgerPct}>{score.percentage}%</Text>
                     </View>
                   </View>
                 ))
               ) : (
-                <View className="items-center justify-center py-8">
-                  <HelpCircle size={24} color="#9CA3AF" />
-                  <Text className="text-xs text-text-secondary mt-2">No score reports available</Text>
+                <View style={{ py: 20, alignItems: 'center' }}>
+                  <HelpCircle size={28} color="#9CA3AF" />
+                  <Text style={{ marginTop: 6, fontSize: 12, color: '#64748B' }}>No grade reports available</Text>
                 </View>
               )}
             </View>
@@ -163,3 +206,42 @@ export default function ParentChildren() {
     </View>
   )
 }
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#EBF3FC' },
+  loadingText: { marginTop: 12, fontSize: 13, color: '#64748B', fontWeight: '600' },
+  chipsBar: { backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#EEF2F8' },
+  chipsTitle: { fontSize: 9, fontWeight: '900', color: '#64748B', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 },
+  childChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 99, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#EEF2F8' },
+  childChipActive: { backgroundColor: '#004B93', borderColor: '#004B93' },
+  childChipText: { fontSize: 12, fontWeight: '700', color: '#64748B' },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, shadowColor: '#004B93', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+  cardTitle: { fontSize: 15, fontWeight: '900', color: '#0F172A' },
+  summaryGrid: { flexDirection: 'row', alignItems: 'center', marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
+  summaryItem: { flex: 1, alignItems: 'center' },
+  summaryLabel: { fontSize: 9, fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 },
+  summaryVal: { fontSize: 22, fontWeight: '900', marginTop: 2 },
+  summaryDivider: { width: 1, height: 28, backgroundColor: '#F1F5F9' },
+  sectionTitle: { fontSize: 10, fontWeight: '900', letterSpacing: 1.4, color: '#64748B', textTransform: 'uppercase', marginBottom: 12 },
+  subjectRow: { marginBottom: 10 },
+  subjectHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  subjectName: { fontSize: 12, fontWeight: '700', color: '#0F172A' },
+  subjectScore: { fontSize: 12, fontWeight: '900', color: '#004B93' },
+  progressTrack: { height: 6, backgroundColor: '#F1F5F9', borderRadius: 99, overflow: 'hidden' },
+  progressFill: { height: 6, borderRadius: 99 },
+  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  logRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
+  logBorder: { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  logDate: { fontSize: 12, fontWeight: '700', color: '#0F172A' },
+  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  statusPresent: { backgroundColor: '#ECFDF5' },
+  statusAbsent: { backgroundColor: '#FEF2F2' },
+  statusLate: { backgroundColor: '#FFFBEB' },
+  statusPillText: { fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
+  ledgerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
+  ledgerBorder: { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  ledgerName: { fontSize: 13, fontWeight: '800', color: '#0F172A' },
+  ledgerSub: { fontSize: 10, color: '#94A3B8', fontWeight: '500', marginTop: 2 },
+  ledgerScore: { fontSize: 13, fontWeight: '900', color: '#7C3AED' },
+  ledgerPct: { fontSize: 10, fontWeight: '700', color: '#64748B', marginTop: 2 },
+})

@@ -15,31 +15,33 @@ import {
 } from 'recharts'
 import { useIdentity } from '@/contexts/IdentityContext'
 import Link from 'next/link'
+import { C, GRADIENT, getRoleAccent } from '@/lib/theme'
 
 // ── DESIGN TOKENS ─────────────────────────────────────────────────────────────
 const T = {
-    blue: '#004B93',
-    blueDark: '#003A73',
-    blueLight: '#EEF4FF',
-    green: '#10B981',
-    greenLight: '#ECFDF5',
-    amber: '#F59E0B',
-    amberLight: '#FFFBEB',
-    red: '#EF4444',
-    redLight: '#FEF2F2',
-    purple: '#8B5CF6',
-    purpleLight: '#F5F3FF',
-    slate900: '#0F172A',
-    slate700: '#334155',
-    slate500: '#64748B',
-    slate300: '#CBD5E1',
-    slate100: '#F1F5F9',
-    slate50: '#F8FAFC',
+    blue: '#2563EB',            // Accent / interactive blue (official)
+    blueDark: '#1E3A8A',        // Brand primary (deep navy)
+    blueLight: '#EFF6FF',       // AI block / blue bg
+    green: '#0CA35C',           // Official brand green
+    greenLight: '#DCFCE7',      // Official success bg
+    amber: '#F59E0B',           // Official warning (unchanged)
+    amberLight: '#FEF3C7',      // Official warning bg
+    red: '#DC2626',             // Official error
+    redLight: '#FEE2E2',        // Official error bg
+    purple: '#672AEA',          // Official AI purple
+    purpleLight: '#F5F3FF',     // Purple bg (unchanged)
+    slate900: '#111827',        // Primary text (official)
+    slate700: '#374151',        // Semi-dark text
+    slate500: '#6B7280',        // Secondary text (official)
+    slate300: '#D1D5DB',        // Hover border
+    slate100: '#F3F4F6',        // Skeleton loader
+    slate50: '#F7F8FA',         // Secondary background (official)
     white: '#FFFFFF',
-    border: '#E2E8F0',
+    border: '#E5E7EB',          // Official border
     shadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
     shadowMd: '0 4px 12px rgba(0,0,0,0.08)',
-    shadowLg: '0 12px 32px rgba(0,0,0,0.08)',
+    shadowLg: '0 10px 24px rgba(0,0,0,0.06)',
+    shadowBrand: '0 10px 15px -3px rgba(30,58,138,0.20)',
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -833,7 +835,7 @@ function StudentDashboardView({ data, identity }: { data: any; identity: any }) 
                                         <Award size={16} color={r.score >= 70 ? T.green : T.amber} strokeWidth={2.5} />
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: 12, fontWeight: 700, color: T.slate800 || T.slate900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.exam_name}</div>
+                                        <div style={{ fontSize: 12, fontWeight: 700, color: T.slate900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.exam_name}</div>
                                         <div style={{ fontSize: 11, fontWeight: 500, color: T.slate500, marginTop: 2 }}>{r.date}</div>
                                     </div>
                                     <div style={{ fontSize: 14, fontWeight: 800, color: r.score >= 70 ? T.green : r.score >= 50 ? T.amber : T.red }}>{r.score}%</div>

@@ -56,7 +56,7 @@ export default function RequestDemoPage() {
                 bgImage="/request_demo_hero.png"
             >
                 <div className="max-w-[1440px] mx-auto px-6 py-32 text-center">
-                    <div className="w-24 h-24 rounded-full bg-[#1FAC63]/10 flex items-center justify-center mx-auto mb-10 text-[#1FAC63]">
+                    <div className="w-24 h-24 rounded-full bg-[#0CA35C]/10 flex items-center justify-center mx-auto mb-10 text-[#0CA35C]">
                         <CheckCircle2 size={48} />
                     </div>
                     <h2 className="text-4xl font-[950] text-[#111827] mb-6">You're on the list!</h2>
@@ -65,7 +65,7 @@ export default function RequestDemoPage() {
                     </p>
                     <button 
                         onClick={() => window.location.href = '/'}
-                        className="bg-[#004B93] text-white py-5 px-12 rounded-2xl text-lg font-black shadow-xl shadow-blue-900/40 hover:scale-105 transition-all cursor-pointer"
+                        className="bg-[#1E3A8A] text-white py-5 px-12 rounded-2xl text-lg font-black shadow-xl shadow-blue-900/40 hover:scale-105 transition-all cursor-pointer"
                     >
                         Return Home
                     </button>
@@ -193,7 +193,7 @@ export default function RequestDemoPage() {
                         <button 
                             type="submit" 
                             disabled={submitting}
-                            className="w-full bg-gradient-to-br from-[#006d3b] to-[#1FAC63] text-white py-6 rounded-2xl text-lg font-black shadow-xl shadow-green-900/10 hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-4 font-manrope cursor-pointer border-none disabled:opacity-50"
+                            className="w-full bg-gradient-to-br from-[#152A6E] to-[#0CA35C] text-white py-6 rounded-2xl text-lg font-black shadow-xl shadow-blue-900/10 hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-4 font-manrope cursor-pointer border-none disabled:opacity-50"
                         >
                             {submitting ? 'Submitting...' : 'Schedule Assessment Workshop'} <ArrowRight size={22} />
                         </button>

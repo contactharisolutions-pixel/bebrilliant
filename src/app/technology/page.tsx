@@ -259,7 +259,7 @@ export default function TechnologyPage() {
 
                 {/* ─── FULL STACK ARCHITECTURE TIMELINE ───────────────────── */}
                 <div className="text-center mb-12">
-                    <span className="text-xs font-extrabold uppercase tracking-widest text-[#004B93] bg-[#004B93]/08 px-4 py-1.5 rounded-full border border-[#004B93]/20">
+                    <span className="text-xs font-extrabold uppercase tracking-widest text-[#1E3A8A] bg-[#1E3A8A]/08 px-4 py-1.5 rounded-full border border-[#1E3A8A]/20">
                         COMPLETE TECHNOLOGY STACK
                     </span>
                     <h3 className="text-3xl md:text-4xl font-extrabold text-slate-900 font-manrope mt-5 mb-2">
@@ -428,7 +428,7 @@ export default function TechnologyPage() {
                         Our engineering team provides a dedicated technical onboarding session for institutional IT heads and CTO teams.
                     </p>
                     <div className="flex items-center justify-center gap-4 flex-wrap">
-                        <Link href="/request-demo" className="inline-flex items-center gap-3 bg-[#004B93] text-white px-8 py-4 rounded-2xl text-sm font-extrabold hover:bg-[#003a75] transition-all shadow-xl shadow-blue-900/20 font-manrope">
+                        <Link href="/request-demo" className="inline-flex items-center gap-3 bg-[#1E3A8A] text-white px-8 py-4 rounded-2xl text-sm font-extrabold hover:bg-[#152A6E] transition-all shadow-xl shadow-blue-900/20 font-manrope">
                             Request Architecture Demo <ArrowRight size={16} />
                         </Link>
                         <Link href="/contact" className="inline-flex items-center gap-3 bg-white text-slate-700 px-8 py-4 rounded-2xl text-sm font-extrabold border border-slate-200 hover:bg-slate-50 transition-all font-manrope">

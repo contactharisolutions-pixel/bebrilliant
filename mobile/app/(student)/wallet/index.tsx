@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Share } from 'react-native'
-import { Wallet, Copy, Share2, TrendingUp, Sparkles } from 'lucide-react-native'
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Share, StyleSheet } from 'react-native'
+import { Wallet, Share2, TrendingUp, Sparkles } from 'lucide-react-native'
 import { useIdentity } from '../../../contexts/IdentityContext'
 import { apiFetch } from '../../../lib/api'
+import { StudentHeader } from '../../../components/student/StudentHeader'
 
 interface Transaction {
   id: string
@@ -55,14 +56,19 @@ export default function StudentWallet() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-bg-card2 items-center justify-center">
-        <ActivityIndicator size="large" color="#004B93" />
+      <View style={{ flex: 1, backgroundColor: '#F0F6FF' }}>
+        <StudentHeader />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color="#F59E0B" />
+        </View>
       </View>
     )
   }
 
   return (
-    <ScrollView className="flex-1 bg-bg-card2 px-5 py-6">
+    <View style={{ flex: 1, backgroundColor: '#F0F6FF' }}>
+      <StudentHeader />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
       {/* Wallet Balance Card */}
       <View className="rounded-3xl bg-primary p-6 shadow-lg shadow-primary/20 border border-primary/10">
         <View className="flex-row items-center justify-between">
@@ -141,6 +147,7 @@ export default function StudentWallet() {
           )}
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   )
 }

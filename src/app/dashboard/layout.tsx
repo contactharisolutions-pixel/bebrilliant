@@ -34,6 +34,7 @@ import {
   Printer,
 } from "lucide-react";
 import { IdentityProvider, useIdentity } from "@/contexts/IdentityContext";
+import { C, GRADIENT, getRoleAccent } from "@/lib/theme";
 // NAVIGATION STRUCTURE
 const NAV_GROUPS = [
   {
@@ -390,7 +391,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 style={{
                   fontSize: 13,
                   fontWeight: 900,
-                  color: "#004B93",
+                  color: C.primaryBlue,                  /* official: #1E3A8A */
                   textAlign: "right",
                 }}
               >
@@ -400,7 +401,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 style={{
                   fontSize: 10,
                   fontWeight: 700,
-                  color: "#EF4444",
+                  color: C.textSecondary,                /* role label — muted, not red */
                   textTransform: "uppercase",
                   textAlign: "right",
                 }}
@@ -568,9 +569,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 gap: 10,
                 padding: "12px",
                 borderRadius: 12,
-                border: "none",
-                background: "#FEF2F2",
-                color: "#EF4444",
+                border: "1px solid #FECACA",             /* official error border */
+                background: C.errorBg,                   /* official #FEE2E2 */
+                color: C.error,                          /* official #DC2626 */
                 fontSize: 14,
                 fontWeight: 700,
                 cursor: "pointer",

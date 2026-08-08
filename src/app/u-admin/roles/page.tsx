@@ -69,7 +69,7 @@ export default function RoleManagementPage() {
         <div className="min-h-screen bg-[#0A0B14] text-[#F0F2FF] p-8 font-sans">
             <div className="max-w-6xl mx-auto space-y-8">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight mb-2 bg-gradient-to-r from-[#672AEA] to-[#1FAC63] text-transparent bg-clip-text">
+                    <h1 className="text-3xl font-bold tracking-tight mb-2 bg-gradient-to-r from-[#672AEA] to-[#0CA35C] text-transparent bg-clip-text">
                         Roles & Permissions Grid
                     </h1>
                     <p className="text-[#9CA3C7]">Configure granular role-based access control matching your operational domain rules.</p>
@@ -119,7 +119,7 @@ export default function RoleManagementPage() {
                                                             peer-checked:after:translate-x-full peer-checked:after:border-white 
                                                             after:content-[''] after:absolute after:top-[2px] after:left-[2px] 
                                                             after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 
-                                                            after:transition-all ${isChecked ? 'bg-gradient-to-r from-[#672AEA] to-[#1FAC63]' : ''}`}>
+                                                            after:transition-all ${isChecked ? 'bg-gradient-to-r from-[#672AEA] to-[#0CA35C]' : ''}`}>
                                                         </div>
                                                     </label>
                                                 </td>

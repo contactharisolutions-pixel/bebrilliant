@@ -19,9 +19,9 @@ const PLANS = [
         annual: '999',
         period: 'month',
         icon: Zap,
-        color: '#004B93',
-        accent: '#38BDF8',
-        accentBg: 'rgba(56, 189, 248, 0.1)',
+        color: '#1E3A8A',
+        accent: '#2563EB',
+        accentBg: 'rgba(37, 99, 235, 0.1)',
         features: [
             '1 Teacher Account',
             '500 Student Capacity',
@@ -52,9 +52,9 @@ const PLANS = [
         annual: '3,749',
         period: 'month',
         icon: Target,
-        color: '#1FAC63',
-        accent: '#34D399',
-        accentBg: 'rgba(52, 211, 153, 0.1)',
+        color: '#0CA35C',
+        accent: '#16A34A',
+        accentBg: 'rgba(22, 163, 74, 0.1)',
         features: [
             '10 Teacher Accounts',
             '2,500 Student Capacity',
@@ -84,9 +84,9 @@ const PLANS = [
         annual: 'Custom',
         period: 'quote',
         icon: Star,
-        color: '#7C3AED',
-        accent: '#A78BFA',
-        accentBg: 'rgba(167, 139, 250, 0.1)',
+        color: '#672AEA',
+        accent: '#8B5CF6',
+        accentBg: 'rgba(139, 92, 246, 0.1)',
         features: [
             'Unlimited Teacher Accounts',
             'Unlimited Student Capacity',
@@ -198,7 +198,7 @@ export default function PricingPage() {
                     <button
                         onClick={() => setIsAnnual(v => !v)}
                         className="relative w-14 h-7 rounded-full transition-all duration-300 cursor-pointer"
-                        style={{ background: isAnnual ? '#004B93' : '#E2E8F0' }}
+                        style={{ background: isAnnual ? '#1E3A8A' : '#E5E7EB' }}
                     >
                         <span
                             className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300"
@@ -222,7 +222,7 @@ export default function PricingPage() {
                                 className="relative rounded-[32px] overflow-hidden flex flex-col"
                                 style={{
                                     background: plan.popular ? '#0C1829' : '#FFFFFF',
-                                    border: plan.popular ? `1.5px solid ${plan.accent}40` : '1px solid #E2E8F0',
+                                    border: plan.popular ? `1.5px solid ${plan.accent}40` : '1px solid #E5E7EB',
                                     boxShadow: plan.popular ? `0 30px 60px -20px rgba(12,24,41,0.5)` : '0 4px 16px rgba(0,0,0,0.03)',
                                     transform: plan.popular ? 'scale(1.03)' : 'none',
                                     zIndex: plan.popular ? 10 : 1
@@ -323,7 +323,7 @@ export default function PricingPage() {
                 {/* ─── FULL COMPARISON MATRIX ─────────────────────────────── */}
                 <div className="mb-24">
                     <div className="text-center mb-12">
-                        <span className="text-xs font-extrabold uppercase tracking-widest text-[#004B93] bg-[#004B93]/08 px-4 py-1.5 rounded-full border border-[#004B93]/20">
+                        <span className="text-xs font-extrabold uppercase tracking-widest text-[#1E3A8A] bg-[#1E3A8A]/08 px-4 py-1.5 rounded-full border border-[#1E3A8A]/20">
                             PLAN COMPARISON
                         </span>
                         <h3 className="text-3xl md:text-4xl font-extrabold text-slate-900 font-manrope mt-5 mb-2">
@@ -405,7 +405,7 @@ export default function PricingPage() {
                 {/* ─── ADD-ONS BENTO ──────────────────────────────────────── */}
                 <div className="mb-24">
                     <div className="text-center mb-10">
-                        <span className="text-xs font-extrabold uppercase tracking-widest text-[#1FAC63] bg-[#1FAC63]/08 px-4 py-1.5 rounded-full border border-[#1FAC63]/20">
+                        <span className="text-xs font-extrabold uppercase tracking-widest text-[#0CA35C] bg-[#0CA35C]/08 px-4 py-1.5 rounded-full border border-[#0CA35C]/20">
                             MODULAR ADD-ONS
                         </span>
                         <h3 className="text-3xl font-extrabold text-slate-900 font-manrope mt-5 mb-2">Scale exactly what you need.</h3>
@@ -414,9 +414,9 @@ export default function PricingPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         {[
-                            { label: 'Extra Teacher Account', price: '₹199', period: '/mo per seat', icon: Users, color: '#004B93', bg: '#EBF3FC', desc: 'Add individual teacher logins without upgrading your base plan.' },
-                            { label: '500 Extra Students', price: '₹499', period: '/mo', icon: TrendingUp, color: '#1FAC63', bg: '#ECFDF5', desc: 'Expand student capacity in increments of 500 on any plan tier.' },
-                            { label: 'Bulk WhatsApp Package', price: '₹999', period: '/mo', icon: MessageSquare, color: '#7C3AED', bg: '#F3E8FF', desc: '10,000 WhatsApp message credits for notifications, alerts, and referrals.' },
+                            { label: 'Extra Teacher Account', price: '₹199', period: '/mo per seat', icon: Users, color: '#1E3A8A', bg: '#EFF6FF', desc: 'Add individual teacher logins without upgrading your base plan.' },
+                            { label: '500 Extra Students', price: '₹499', period: '/mo', icon: TrendingUp, color: '#0CA35C', bg: '#DCFCE7', desc: 'Expand student capacity in increments of 500 on any plan tier.' },
+                            { label: 'Bulk WhatsApp Package', price: '₹999', period: '/mo', icon: MessageSquare, color: '#672AEA', bg: '#F3E8FF', desc: '10,000 WhatsApp message credits for notifications, alerts, and referrals.' },
                         ].map((addon, i) => {
                             const AIcon = addon.icon
                             return (
@@ -445,7 +445,7 @@ export default function PricingPage() {
                     className="relative rounded-[40px] overflow-hidden p-10 md:p-16"
                     style={{ background: 'linear-gradient(135deg, #060E1C 0%, #0D1F3C 60%, #0F2A1E 100%)', border: '1px solid rgba(255,255,255,0.06)' }}
                 >
-                    <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 80% 50%, rgba(31,172,99,0.12), transparent 50%)' }} />
+                    <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 80% 50%, rgba(12,163,92,0.12), transparent 50%)' }} />
 
                     <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
                         <div className="max-w-xl">
@@ -468,7 +468,7 @@ export default function PricingPage() {
                         </div>
 
                         <div className="flex flex-col gap-3 flex-shrink-0">
-                            <Link href="/request-demo" className="inline-flex items-center gap-3 bg-[#1FAC63] text-white px-7 py-4 rounded-2xl text-sm font-extrabold hover:bg-[#199453] hover:scale-105 transition-all font-manrope shadow-xl shadow-emerald-900/30">
+                            <Link href="/request-demo" className="inline-flex items-center gap-3 bg-[#0CA35C] text-white px-7 py-4 rounded-2xl text-sm font-extrabold hover:bg-[#098048] hover:scale-105 transition-all font-manrope shadow-xl shadow-emerald-900/30">
                                 Schedule a Live Demo <ArrowRight size={16} />
                             </Link>
                             <Link href="/faq" className="inline-flex items-center gap-3 bg-white/08 text-slate-300 px-7 py-4 rounded-2xl text-sm font-extrabold border border-white/10 hover:bg-white/12 transition-all font-manrope">

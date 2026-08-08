@@ -43,23 +43,23 @@ function CountUp({ end, suffix = '' }: { end: number; suffix?: string }) {
 
 /* ── Data ──────────────────────────────────────────────────────────────────── */
 const FEATURES = [
-    { icon: ShieldCheck, title: 'Anti-Cheat Exam Engine', desc: 'AI-backed proctoring, tab-switch detection, and randomised question pools keep every exam fair.', color: '#004B93', bgSolid: '#B3C9DF', bgSolidHover: '#A0BDD8' },
-    { icon: BarChart3,   title: '360° Learning Analytics', desc: 'Real-time dashboards from cohort performance to individual learning trajectories for every role.', color: '#1FAC63', bgSolid: '#BCE6D0', bgSolidHover: '#A6DDBE' },
+    { icon: ShieldCheck, title: 'Anti-Cheat Exam Engine', desc: 'AI-backed proctoring, tab-switch detection, and randomised question pools keep every exam fair.', color: '#1E3A8A', bgSolid: '#B3C9DF', bgSolidHover: '#A0BDD8' },
+    { icon: BarChart3,   title: '360° Learning Analytics', desc: 'Real-time dashboards from cohort performance to individual learning trajectories for every role.', color: '#0CA35C', bgSolid: '#BCE6D0', bgSolidHover: '#A6DDBE' },
     { icon: Wallet,      title: 'Secure Fee Collection',   desc: 'Razorpay-powered payments with instant settlements, auto-receipts, and full audit trails.', color: '#F0A026', bgSolid: '#FBE3BE', bgSolidHover: '#F9D9A5' },
     { icon: MessageSquare, title: 'WhatsApp Growth Engine', desc: 'Recruit students via WhatsApp affiliate links with automated referral tracking and payouts.', color: '#25D366', bgSolid: '#BEF2D1', bgSolidHover: '#A8ECBF' },
-    { icon: BrainCircuit, title: 'AI Question Builder',  desc: 'Generate, import, and organise question banks by subject and difficulty with Gemini AI.', color: '#7C3AED', bgSolid: '#D8C4FA', bgSolidHover: '#C6ABF7' },
-    { icon: Bell,         title: 'Smart Notifications',  desc: 'Automated alerts for exam schedules, result releases, payment due dates, and milestones.', color: '#004B93', bgSolid: '#B3C9DF', bgSolidHover: '#A0BDD8' },
-    { icon: Globe,        title: 'Multi-Tenant Architecture', desc: 'Fully isolated per-institution environments with custom branding, domain, and roles.', color: '#1FAC63', bgSolid: '#BCE6D0', bgSolidHover: '#A6DDBE' },
-    { icon: Activity,     title: 'Real-Time Monitoring', desc: 'Live exam supervision, submission tracking, and instant result computation.', color: '#EF4444', bgSolid: '#FAC7C7', bgSolidHover: '#F7AFAF' },
+    { icon: BrainCircuit, title: 'AI Question Builder',  desc: 'Generate, import, and organise question banks by subject and difficulty with Gemini AI.', color: '#672AEA', bgSolid: '#D8C4FA', bgSolidHover: '#C6ABF7' },
+    { icon: Bell,         title: 'Smart Notifications',  desc: 'Automated alerts for exam schedules, result releases, payment due dates, and milestones.', color: '#1E3A8A', bgSolid: '#B3C9DF', bgSolidHover: '#A0BDD8' },
+    { icon: Globe,        title: 'Multi-Tenant Architecture', desc: 'Fully isolated per-institution environments with custom branding, domain, and roles.', color: '#0CA35C', bgSolid: '#BCE6D0', bgSolidHover: '#A6DDBE' },
+    { icon: Activity,     title: 'Real-Time Monitoring', desc: 'Live exam supervision, submission tracking, and instant result computation.', color: '#DC2626', bgSolid: '#FAC7C7', bgSolidHover: '#F7AFAF' },
     { icon: Lock,         title: 'Enterprise Security',  desc: 'Row-level data isolation, DPDP-compliant storage, encrypted credentials, full audit logs.', color: '#F0A026', bgSolid: '#FBE3BE', bgSolidHover: '#F9D9A5' },
 ]
 
 const ROLES = [
-    { icon: Building,      role: 'Institution Owner', desc: 'Run your entire coaching empire from one place. Track revenue, growth, staff, and students.', perks: ['Multi-branch management', 'Subscription & billing control', 'WhatsApp affiliate tracking', 'Revenue & growth analytics'], color: '#004B93', bgSolid: '#B3C9DF', bgSolidHover: '#A0BDD8' },
-    { icon: School,        role: 'Admin',             desc: 'Streamline operations, manage teachers, configure exams, and handle academic logistics.', perks: ['Teacher & class management', 'Bulk question import (CSV)', 'Automated result sharing', 'Fee collection oversight'], color: '#7C3AED', bgSolid: '#D8C4FA', bgSolidHover: '#C6ABF7' },
-    { icon: UserCheck,     role: 'Teacher',           desc: 'Create rich assessments, track your students\' growth, and share insights with parents.', perks: ['Question bank builder', 'Live exam monitoring', 'Per-student performance view', 'Automated result reports'], color: '#1FAC63', bgSolid: '#BCE6D0', bgSolidHover: '#A6DDBE' },
+    { icon: Building,      role: 'Institution Owner', desc: 'Run your entire coaching empire from one place. Track revenue, growth, staff, and students.', perks: ['Multi-branch management', 'Subscription & billing control', 'WhatsApp affiliate tracking', 'Revenue & growth analytics'], color: '#1E3A8A', bgSolid: '#B3C9DF', bgSolidHover: '#A0BDD8' },
+    { icon: School,        role: 'Admin',             desc: 'Streamline operations, manage teachers, configure exams, and handle academic logistics.', perks: ['Teacher & class management', 'Bulk question import (CSV)', 'Automated result sharing', 'Fee collection oversight'], color: '#672AEA', bgSolid: '#D8C4FA', bgSolidHover: '#C6ABF7' },
+    { icon: UserCheck,     role: 'Teacher',           desc: 'Create rich assessments, track your students\' growth, and share insights with parents.', perks: ['Question bank builder', 'Live exam monitoring', 'Per-student performance view', 'Automated result reports'], color: '#0CA35C', bgSolid: '#BCE6D0', bgSolidHover: '#A6DDBE' },
     { icon: GraduationCap, role: 'Student',           desc: 'Take timed exams, review answers, track scores, and stay on top of upcoming assessments.', perks: ['Clean exam interface', 'Instant result & solutions', 'Progress timeline', 'Leaderboard & rankings'], color: '#F0A026', bgSolid: '#FBE3BE', bgSolidHover: '#F9D9A5' },
-    { icon: Target,        role: 'Parent',            desc: 'Stay informed about your child\'s academic journey — scores, attendance, fee status.', perks: ['Real-time score alerts', 'Fee payment history', 'Exam schedule notifications', 'Teacher communication'], color: '#EF4444', bgSolid: '#FAC7C7', bgSolidHover: '#F7AFAF' },
+    { icon: Target,        role: 'Parent',            desc: 'Stay informed about your child\'s academic journey — scores, attendance, fee status.', perks: ['Real-time score alerts', 'Fee payment history', 'Exam schedule notifications', 'Teacher communication'], color: '#DC2626', bgSolid: '#FAC7C7', bgSolidHover: '#F7AFAF' },
     { icon: Trophy,        role: 'Affiliate',         desc: 'Earn commissions by referring students through your unique WhatsApp sharing links.', perks: ['Unique referral link', 'Real-time earnings tracker', 'WhatsApp quick-share', 'Withdrawal dashboard'], color: '#25D366', bgSolid: '#BEF2D1', bgSolidHover: '#A8ECBF' },
 ]
 
@@ -96,9 +96,9 @@ function SyllabusInteractiveShowcase() {
             title: 'National Boards (CBSE & ICSE)',
             subtitle: 'Complete Class 1-12 NCERT-Mapped Question Banks',
             desc: 'Topic-wise assessment modules aligned directly with NCERT textbooks. Includes 10+ years of previous year board exam questions (PYQs), chapter-end quizzes, and term-end mock papers.',
-            color: '#004B93',
-            bgAccent: '#EBF3FC',
-            gradient: 'linear-gradient(135deg, #004B93 0%, #0077CC 100%)',
+            color: '#1E3A8A',
+            bgAccent: '#EFF6FF',
+            gradient: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%)',
             image: '/student_achievement.png',
             stats: [
                 { label: 'Question Bank', val: '45,000+' },
@@ -116,9 +116,9 @@ function SyllabusInteractiveShowcase() {
             title: 'JEE Main, Advanced & NEET UG',
             subtitle: 'High-Yield Mock Tests & Numerical Practice Engine',
             desc: 'Built for engineering & medical aspirants with chapter-wise worksheets, line-by-line NCERT Biology assessments, physics & chemistry numerical setups, and full NTA pattern mocks.',
-            color: '#7C3AED',
+            color: '#672AEA',
             bgAccent: '#F3E8FF',
-            gradient: 'linear-gradient(135deg, #7C3AED 0%, #9333EA 100%)',
+            gradient: 'linear-gradient(135deg, #672AEA 0%, #9333EA 100%)',
             image: '/images/indian_classroom.png',
             stats: [
                 { label: 'Question Bank', val: '60,000+' },
@@ -136,9 +136,9 @@ function SyllabusInteractiveShowcase() {
             title: 'Major State Boards',
             subtitle: 'Maharashtra, UP, Karnataka & Regional Mediums',
             desc: 'Customized content structures engineered to match State Board syllabus guidelines of Maharashtra (SSC/HSC), Uttar Pradesh (UP Board), Karnataka (SSLC/PUC), and regional mediums.',
-            color: '#1FAC63',
-            bgAccent: '#ECFDF5',
-            gradient: 'linear-gradient(135deg, #1FAC63 0%, #10B981 100%)',
+            color: '#0CA35C',
+            bgAccent: '#DCFCE7',
+            gradient: 'linear-gradient(135deg, #0CA35C 0%, #16A34A 100%)',
             image: '/indian_edu_hero.png',
             stats: [
                 { label: 'Question Bank', val: '35,000+' },
@@ -406,9 +406,9 @@ function EnterpriseCapabilityShowcase() {
             title: 'Assessment & Anti-Cheat Engine',
             badge: 'Proctoring & AI Builder',
             icon: ShieldCheck,
-            color: '#004B93',
-            bgAccent: '#EBF3FC',
-            gradient: 'linear-gradient(135deg, #004B93 0%, #0077CC 100%)',
+            color: '#1E3A8A',
+            bgAccent: '#EFF6FF',
+            gradient: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%)',
             image: '/tech_hero.png',
             headline: 'AI Proctoring, Question Generators & Live Supervision',
             desc: 'Eliminate exam malpractice with AI-backed tab-switch tracking, randomized question pools, and instant Gemini question generation by subject and difficulty.',
@@ -428,9 +428,9 @@ function EnterpriseCapabilityShowcase() {
             title: '360° Intelligence & Analytics',
             badge: 'Cohort Trajectories & Alerts',
             icon: BarChart3,
-            color: '#1FAC63',
-            bgAccent: '#ECFDF5',
-            gradient: 'linear-gradient(135deg, #1FAC63 0%, #10B981 100%)',
+            color: '#0CA35C',
+            bgAccent: '#DCFCE7',
+            gradient: 'linear-gradient(135deg, #0CA35C 0%, #16A34A 100%)',
             image: '/features_hero.png',
             headline: 'Complete Visibility From Student Growth to Institution KPIs',
             desc: 'Empower educators, admins, and parents with real-time performance dashboards, score trajectories, automated alerts, and per-student weakness analysis.',
@@ -969,9 +969,9 @@ function EnterpriseTestimonialShowcase() {
             org: 'Vidyamandir Classes, Pune',
             metric: '70% Overhead Saved',
             metricIcon: TrendingUp,
-            color: '#004B93',
-            badgeBg: '#EBF3FC',
-            avatarBg: 'linear-gradient(135deg, #004B93, #0077CC)'
+            color: '#1E3A8A',
+            badgeBg: '#EFF6FF',
+            avatarBg: 'linear-gradient(135deg, #1E3A8A, #2563EB)'
         },
         {
             quote: 'The WhatsApp affiliate feature brought us 340 new enrolments last month with zero marketing spend. Our students are now our best promoters.',
@@ -980,9 +980,9 @@ function EnterpriseTestimonialShowcase() {
             org: 'EduPath Academy, Kerala',
             metric: '+340 Enrolments',
             metricIcon: MessageSquare,
-            color: '#1FAC63',
-            badgeBg: '#ECFDF5',
-            avatarBg: 'linear-gradient(135deg, #1FAC63, #10B981)'
+            color: '#0CA35C',
+            badgeBg: '#DCFCE7',
+            avatarBg: 'linear-gradient(135deg, #0CA35C, #16A34A)'
         },
         {
             quote: 'Fee collection used to take 3 days of manual work. Now it is instant and fully automated — including receipts and reconciliation reports.',
@@ -1002,9 +1002,9 @@ function EnterpriseTestimonialShowcase() {
             org: 'Concept First, Ahmedabad',
             metric: '360° Trend Insights',
             metricIcon: BarChart3,
-            color: '#7C3AED',
+            color: '#672AEA',
             badgeBg: '#F3E8FF',
-            avatarBg: 'linear-gradient(135deg, #7C3AED, #9333EA)'
+            avatarBg: 'linear-gradient(135deg, #672AEA, #9333EA)'
         },
         {
             quote: 'My students love the clean exam interface. No confusion, no tech issues. They can focus entirely on the questions — that trust is priceless.',
@@ -1013,9 +1013,9 @@ function EnterpriseTestimonialShowcase() {
             org: 'Bright Minds, Kochi',
             metric: 'Zero Tech Issues',
             metricIcon: ShieldCheck,
-            color: '#004B93',
-            badgeBg: '#EBF3FC',
-            avatarBg: 'linear-gradient(135deg, #004B93, #1FAC63)'
+            color: '#1E3A8A',
+            badgeBg: '#EFF6FF',
+            avatarBg: 'linear-gradient(135deg, #1E3A8A, #0CA35C)'
         },
         {
             quote: 'Setting up our entire institute took less than 24 hours. The onboarding flow is exceptional — even our non-technical admin team managed it.',
@@ -1024,9 +1024,9 @@ function EnterpriseTestimonialShowcase() {
             org: 'Zenith Institute, Surat',
             metric: '< 24h Setup Time',
             metricIcon: Zap,
-            color: '#EF4444',
+            color: '#DC2626',
             badgeBg: '#FEE2E2',
-            avatarBg: 'linear-gradient(135deg, #EF4444, #F87171)'
+            avatarBg: 'linear-gradient(135deg, #DC2626, #EF4444)'
         }
     ]
 
@@ -1036,9 +1036,9 @@ function EnterpriseTestimonialShowcase() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 40 }}>
                 {[
                     { val: '4.95 / 5', label: 'Average Educator Rating', icon: Star, color: '#F0A026' },
-                    { val: '500+ Institutions', label: 'Coaching Centers & Schools', icon: Building, color: '#004B93' },
-                    { val: '4.8M+ Exams', label: 'Successfully Delivered', icon: GraduationCap, color: '#1FAC63' },
-                    { val: '99.4% CSAT', label: 'Admin & Teacher Satisfaction', icon: ShieldCheck, color: '#7C3AED' }
+                    { val: '500+ Institutions', label: 'Coaching Centers & Schools', icon: Building, color: '#1E3A8A' },
+                    { val: '4.8M+ Exams', label: 'Successfully Delivered', icon: GraduationCap, color: '#0CA35C' },
+                    { val: '99.4% CSAT', label: 'Admin & Teacher Satisfaction', icon: ShieldCheck, color: '#672AEA' }
                 ].map((st, i) => {
                     const SIcon = st.icon
                     return (
@@ -1203,7 +1203,7 @@ export default function LandingPage() {
             <main>
 
                 {/* ─── ANNOUNCEMENT ──────────────────────────────────── */}
-                <div style={{ background: 'linear-gradient(90deg,#004B93,#0077CC,#1FAC63)', color: '#fff', textAlign: 'center', padding: '10px 16px', fontSize: '13px', fontWeight: 600, lineHeight: 1.4 }}>
+                <div style={{ background: 'linear-gradient(90deg,#1E3A8A,#2563EB,#0CA35C)', color: '#fff', textAlign: 'center', padding: '10px 16px', fontSize: '13px', fontWeight: 600, lineHeight: 1.4 }}>
                     🚀 New: WhatsApp-powered affiliate program is live!{' '}
                     <Link href="/features" style={{ color: '#fff', textDecoration: 'underline', opacity: 0.85 }}>Explore now &rarr;</Link>
                 </div>
@@ -1211,21 +1211,21 @@ export default function LandingPage() {
                 {/* ─── HERO ─────────────────────────────────────────────────── */}
                 <section style={{ position: 'relative', padding: '130px 5% 88px', background: '#fff', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                     {/* Subtle bg blobs as per Academic Atelier design system */}
-                    <div style={{ position: 'absolute', top: '-120px', right: '-120px', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,75,147,0.05),transparent 70%)', pointerEvents: 'none' }} />
-                    <div style={{ position: 'absolute', bottom: '-80px', left: '-80px', width: 380, height: 380, borderRadius: '50%', background: 'radial-gradient(circle,rgba(31,172,99,0.04),transparent 70%)', pointerEvents: 'none' }} />
+                    <div style={{ position: 'absolute', top: '-120px', right: '-120px', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(30,58,138,0.05),transparent 70%)', pointerEvents: 'none' }} />
+                    <div style={{ position: 'absolute', bottom: '-80px', left: '-80px', width: 380, height: 380, borderRadius: '50%', background: 'radial-gradient(circle,rgba(12,163,92,0.04),transparent 70%)', pointerEvents: 'none' }} />
                     {/* Hero background image watermark representing Indian education */}
                     <div style={{ position: 'absolute', inset: 0, backgroundImage: 'url("/indian_school_hero.png")', backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: 'none' }} />
 
                     <div className="max-w-3xl w-full relative z-10 flex flex-col items-center" style={{ margin: '0 auto' }}>
                         {/* Badge */}
-                        <div className="inline-flex items-center gap-2 bg-[#004B93]/5 border border-[#004B93]/10 text-[#004B93] rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider mb-8">
-                            <Sparkles size={12} className="text-[#004B93]" /> Institutional Excellence Platform
+                        <div className="inline-flex items-center gap-2 bg-[#1E3A8A]/5 border border-[#1E3A8A]/10 text-[#1E3A8A] rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider mb-8">
+                            <Sparkles size={12} className="text-[#1E3A8A]" /> Institutional Excellence Platform
                         </div>
 
                         {/* Headline */}
                         <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-[#191c20] leading-tight font-manrope mb-6 text-center" style={{ letterSpacing: '-0.02em' }}>
                             Empower Every{' '}
-                            <span style={{ background: 'linear-gradient(135deg,#004B93,#1FAC63)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                            <span style={{ background: 'linear-gradient(135deg,#1E3A8A,#0CA35C)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                                 Educator.
                             </span>
                             <br />Inspire Every Student.
@@ -1238,11 +1238,11 @@ export default function LandingPage() {
 
                         {/* CTA row */}
                         <div className="flex flex-wrap justify-center items-center gap-4 mb-8 w-full">
-                            <Link href="/request-demo" className="inline-flex items-center gap-2 bg-gradient-to-br from-[#00356A] to-[#004B93] text-white px-8 py-4 rounded-2xl font-bold text-[15px] transition-all hover:scale-[1.02] shadow-lg shadow-[#004B93]/20">
+                            <Link href="/request-demo" className="inline-flex items-center gap-2 bg-gradient-to-br from-[#152A6E] to-[#1E3A8A] text-white px-8 py-4 rounded-2xl font-bold text-[15px] transition-all hover:scale-[1.02] shadow-lg shadow-[#1E3A8A]/20">
                                 Get Started Free <ArrowRight size={16} />
                             </Link>
                             <Link href="/pricing" className="inline-flex items-center gap-2 bg-white text-[#191c20] px-8 py-4 rounded-2xl font-bold text-[15px] border border-gray-200 transition-all hover:bg-gray-50 hover:scale-[1.02]">
-                                <Play size={14} className="text-[#004B93]" /> View Pricing
+                                <Play size={14} className="text-[#1E3A8A]" /> View Pricing
                             </Link>
                         </div>
 
@@ -1250,7 +1250,7 @@ export default function LandingPage() {
                         <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-xs md:text-sm text-gray-400 font-semibold font-worksans w-full">
                             {['No credit card required', 'DPDP & data-compliant', 'Setup in under 24h'].map(t => (
                                 <span key={t} className="flex items-center gap-2">
-                                    <CheckCircle size={14} className="text-[#1FAC63] flex-shrink-0" /> {t}
+                                    <CheckCircle size={14} className="text-[#0CA35C] flex-shrink-0" /> {t}
                                 </span>
                             ))}
                         </div>
@@ -1259,68 +1259,59 @@ export default function LandingPage() {
                     {/* Dashboard mockup */}
                     <div style={{ width: '100%', maxWidth: '960px', marginTop: '60px', position: 'relative', margin: '60px auto 0' }}>
                         {/* Floating badges */}
-                        <div style={{ position: 'absolute', left: '-20px', top: '40%', zIndex: 20, display: 'flex', alignItems: 'center', gap: '12px', background: '#fff', border: '1px solid #f1f5f9', borderRadius: '16px', padding: '12px 16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', transition: 'transform 0.2s' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(31,172,99,0.1)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}><TrendingUp size={14} className="text-[#1FAC63]" /></div>
-                            <div style={{ textAlign: 'left' }}>
-                                <div style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 500 }}>This week</div>
-                                <div style={{ fontSize: '13px', color: '#111', fontWeight: 'bold' }}>+24% Growth</div>
+                        <div style={{ position: 'absolute', left: '-20px', top: '40%', zIndex: 20, display: 'flex', alignItems: 'center', gap: '12px', background: '#FFFFFF', border: '1px solid #F1F5F9', borderRadius: '16px', padding: '12px 16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(12,163,92,0.1)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}><TrendingUp size={14} className="text-[#0CA35C]" /></div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>Avg Score: +18.4%</div>
+                                <div style={{ fontSize: '11px', color: '#64748B' }}>After 3 practice mocks</div>
                             </div>
                         </div>
-                        <div style={{ position: 'absolute', right: '-20px', top: '15%', zIndex: 20, display: 'flex', alignItems: 'center', gap: '12px', background: '#fff', border: '1px solid #f1f5f9', borderRadius: '16px', padding: '12px 16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', transition: 'transform 0.2s' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(0,75,147,0.1)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}><Shield size={14} className="text-[#004B93]" /></div>
-                            <div style={{ textAlign: 'left' }}>
-                                <div style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 500 }}>Exam integrity</div>
-                                <div style={{ fontSize: '13px', color: '#111', fontWeight: 'bold' }}>99.9% Uptime</div>
+                        <div style={{ position: 'absolute', right: '-20px', top: '15%', zIndex: 20, display: 'flex', alignItems: 'center', gap: '12px', background: '#FFFFFF', borderRadius: '16px', padding: '16px', border: '1px solid #F1F5F9', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.08)' }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(30,58,138,0.1)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}><Shield size={14} className="text-[#1E3A8A]" /></div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>Anti-Cheat Shield</div>
+                                <div style={{ fontSize: '11px', color: '#0CA35C', fontWeight: 600 }}>Active · 0 tab switches</div>
                             </div>
                         </div>
 
-                        {/* Screen chrome */}
-                        <div style={{ borderRadius: '24px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', background: '#111827', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            {/* Title bar */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF5F57' }} />
-                                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FEBC2E' }} />
-                                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28C840' }} />
-                                <div style={{ flex: 1, fontSize: '12px', color: '#9ca3af', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 8, background: 'rgba(255,255,255,0.07)', borderRadius: 6, padding: '4px 10px' }}>
-                                    <Lock size={10} className="text-[#1FAC63]" /> app.bebrilliant.in/dashboard
+                        {/* UI Mockup Screen */}
+                        <div style={{ background: '#0F172A', borderRadius: '24px', padding: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#EF4444' }} />
+                                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#F59E0B' }} />
+                                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#10B981' }} />
                                 </div>
+                                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <Lock size={10} className="text-[#0CA35C]" /> app.bebrilliant.in/dashboard
+                                </div>
+                                <div style={{ width: 24 }} />
                             </div>
-                            {/* Content */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', minHeight: '300px' }}>
-                                {/* Sidebar */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '16px 10px', borderRight: '1px solid rgba(255,255,255,0.05)', textAlign: 'left' }}>
-                                    {['Dashboard', 'Exams', 'Students', 'Analytics', 'Billing', 'Settings'].map((item, i) => (
-                                        <div key={item} style={{ padding: '8px 12px', borderRadius: 8, fontSize: '12px', fontWeight: 'cbd', color: i === 0 ? '#fff' : 'rgba(255,255,255,0.35)', background: i === 0 ? '#004B93' : 'transparent', userSelect: 'none' }}>{item}</div>
+                            {/* Inner Dashboard Layout Mock */}
+                            <div style={{ display: 'flex', gap: '16px' }}>
+                                <div style={{ width: '140px', background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    {['Overview', 'Exams', 'Students', 'Analytics', 'Fees'].map((item, i) => (
+                                        <div key={item} style={{ padding: '8px 12px', borderRadius: 8, fontSize: '12px', fontWeight: 'bold', color: i === 0 ? '#FFFFFF' : 'rgba(255,255,255,0.35)', background: i === 0 ? '#1E3A8A' : 'transparent', userSelect: 'none' }}>{item}</div>
                                     ))}
                                 </div>
-                                {/* Main */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', textAlign: 'left' }}>
-                                    {/* KPI row */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                                         {[
-                                            { label: 'Students', val: '4,821', gradient: 'linear-gradient(135deg,#004B93,#0077CC)', Icon: Users },
-                                            { label: 'Exams Today', val: '12', gradient: 'linear-gradient(135deg,#1FAC63,#28CC78)', Icon: BookOpen },
-                                            { label: 'Revenue (₹)', val: '2.4L', gradient: 'linear-gradient(135deg,#F0A026,#F5B94A)', Icon: Wallet },
-                                            { label: 'Avg Score', val: '78%', gradient: 'linear-gradient(135deg,#7C3AED,#9B59B6)', Icon: Trophy },
-                                        ].map(({ label, val, gradient, Icon }) => (
-                                            <div key={label} style={{ background: gradient, padding: '12px', borderRadius: '16px', color: '#fff' }}>
-                                                <Icon size={14} style={{ opacity: 0.7, marginBottom: 6 }} />
-                                                <div style={{ fontSize: '18px', fontWeight: 'extrabold' }}>{val}</div>
-                                                <div style={{ fontSize: '8px', fontWeight: 'semibold', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.6 }}>{label}</div>
+                                            { label: 'Students', val: '4,821', gradient: 'linear-gradient(135deg,#1E3A8A,#2563EB)', Icon: Users },
+                                            { label: 'Exams Today', val: '12', gradient: 'linear-gradient(135deg,#0CA35C,#16A34A)', Icon: BookOpen },
+                                            { label: 'Pass Rate', val: '94.2%', gradient: 'linear-gradient(135deg,#F0A026,#EAB308)', Icon: Award },
+                                        ].map((card, i) => (
+                                            <div key={i} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{card.label}</div>
+                                                <div style={{ fontSize: 18, fontWeight: 800, color: '#FFFFFF', marginTop: 2 }}>{card.val}</div>
                                             </div>
                                         ))}
                                     </div>
-                                    {/* Chart */}
-                                    <div style={{ background: 'rgba(255,255,255,0.04)', padding: '12px', borderRadius: '16px' }}>
-                                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.45)', fontWeight: 'semibold', marginBottom: '10px' }}>Weekly Exam Activity</div>
-                                        <div style={{ display: 'flex', alignItems: 'end', gap: '6px', height: '60px' }}>
-                                            {[45, 72, 58, 85, 63, 91, 77].map((h, i) => (
-                                                <div key={i} style={{ flex: 1, borderRadius: '2px 2px 0 0', background: 'linear-gradient(to top,#004B93,#1FAC63)', opacity: 0.75, height: `${h}%` }} />
-                                            ))}
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
-                                            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-                                                <span key={i} style={{ flex: 1, textAlign: 'center', fontSize: '8px', color: 'rgba(255,255,255,0.2)', fontWeight: 'semibold' }}>{d}</span>
+                                    <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '14px', border: '1px solid rgba(255,255,255,0.08)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 8, fontWeight: 600 }}>Active Cohort Performance Trend</div>
+                                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 60 }}>
+                                            {[40, 65, 55, 80, 70, 90, 85, 95].map((h, i) => (
+                                                <div key={i} style={{ flex: 1, borderRadius: '2px 2px 0 0', background: 'linear-gradient(to top,#1E3A8A,#0CA35C)', opacity: 0.75, height: `${h}%` }} />
                                             ))}
                                         </div>
                                     </div>
@@ -1331,15 +1322,15 @@ export default function LandingPage() {
                 </section>
 
                 {/* ─── STATS ────────────────────────────────────────────────── */}
-                <section style={{ background: 'linear-gradient(135deg, #051329 0%, #0a2246 100%)', padding: '64px 5%', display: 'flex', justifyContent: 'center', width: '100%' }}>
+                <section style={{ background: 'linear-gradient(135deg, #051329 0%, #0A2246 100%)', padding: '64px 5%', display: 'flex', justifyContent: 'center', width: '100%' }}>
                     <div className="pub-stats-grid-6">
                         {[
-                            { end: 1200000, suffix: '+', label: 'Exams Delivered', gradient: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)' },
-                            { end: 500,     suffix: '+', label: 'Active Institutions', gradient: 'linear-gradient(135deg, #064e3b 0%, #10b981 100%)' },
-                            { end: 4800000, suffix: '+', label: 'Students Served', gradient: 'linear-gradient(135deg, #4c1d95 0%, #8b5cf6 100%)' },
-                            { end: 15000,   suffix: '+', label: 'Syllabus Covered', gradient: 'linear-gradient(135deg, #78350f 0%, #f59e0b 100%)' },
-                            { end: 500000,  suffix: '+', label: 'Questions Banked', gradient: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)' },
-                            { end: 99,      suffix: '.9%', label: 'Platform Uptime', gradient: 'linear-gradient(135deg, #991b1b 0%, #ef4444 100%)' },
+                            { end: 1200000, suffix: '+', label: 'Exams Delivered', gradient: 'linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%)' },
+                            { end: 500,     suffix: '+', label: 'Active Institutions', gradient: 'linear-gradient(135deg, #064E3B 0%, #10B981 100%)' },
+                            { end: 4800000, suffix: '+', label: 'Students Served', gradient: 'linear-gradient(135deg, #4C1D95 0%, #8B5CF6 100%)' },
+                            { end: 15000,   suffix: '+', label: 'Syllabus Covered', gradient: 'linear-gradient(135deg, #78350F 0%, #F59E0B 100%)' },
+                            { end: 500000,  suffix: '+', label: 'Questions Banked', gradient: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)' },
+                            { end: 99,      suffix: '.9%', label: 'Platform Uptime', gradient: 'linear-gradient(135deg, #991B1B 0%, #EF4444 100%)' },
                         ].map(({ end, suffix, label, gradient }) => (
                             <div key={label} style={{ background: gradient, padding: '32px 20px', textAlign: 'center', borderRadius: 24, transition: 'all 0.3s', boxShadow: '0 10px 20px rgba(0,0,0,0.2)' }}
                                 onMouseEnter={e => {
@@ -1351,55 +1342,44 @@ export default function LandingPage() {
                                     e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.2)';
                                 }}
                             >
-                                <div style={{ fontSize: 'clamp(26px,2.8vw,38px)', fontWeight: 900, color: '#ffffff', lineHeight: 1, marginBottom: 12, fontFamily: 'var(--font-manrope, sans-serif)' }}>
+                                <div style={{ fontSize: 'clamp(26px,2.8vw,38px)', fontWeight: 900, color: '#FFFFFF', lineHeight: 1, marginBottom: 12, fontFamily: 'var(--font-manrope, sans-serif)' }}>
                                     <CountUp end={end} suffix={suffix} />
                                 </div>
-                                <div style={{ fontSize: 10, fontWeight: 800, color: '#f3f4f6', textTransform: 'uppercase', letterSpacing: '0.12em', lineHeight: 1.3 }}>{label}</div>
+                                <div style={{ fontSize: 10, fontWeight: 800, color: '#F3F4F6', textTransform: 'uppercase', letterSpacing: '0.12em', lineHeight: 1.3 }}>{label}</div>
                             </div>
                         ))}
                     </div>
                 </section>
 
-                {/* ─── BOARDS & SYLLABUS — Interactive Feature Showcase ────────────────── */}
-                <section style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)', padding: '88px 5%', overflow: 'hidden' }}>
-                    <div className="pub-content" style={{ maxWidth: 1200, margin: '0 auto' }}>
-                        {/* Header */}
-                        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(0,75,147,0.06)', border: '1px solid rgba(0,75,147,0.12)', color: '#004B93', borderRadius: 999, padding: '6px 18px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 20 }}>
-                                <GraduationCap size={13} /> Syllabus & Curriculum
-                            </div>
-                            <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 800, color: '#111827', lineHeight: 1.2, letterSpacing: '-0.02em', marginBottom: 16, fontFamily: 'var(--font-manrope, sans-serif)' }}>
-                                Pre-aligned to all major<br />
-                                <span style={{ background: 'linear-gradient(135deg,#004B93,#1FAC63)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>boards & entrance exams.</span>
-                            </h2>
-                            <p style={{ fontSize: 16, color: '#6b7280', maxWidth: 540, margin: '0 auto', fontWeight: 500, lineHeight: 1.7 }}>
-                                Instantly assign syllabus modules, mock tests, and question banks matching your students' curriculum.
-                            </p>
+                {/* ─── SECTION: SYLLABUS & QUESTION BANK SHOWCASE ───────────────────── */}
+                <section style={{ padding: '80px 5%', background: '#F8FAFC', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
+                    <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(30,58,138,0.06)', border: '1px solid rgba(30,58,138,0.12)', color: '#1E3A8A', borderRadius: 999, padding: '6px 18px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 20 }}>
+                            <BookOpen size={14} /> Comprehensive Question Bank Coverage
                         </div>
+                        <h2 style={{ fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.02em', marginBottom: 16, fontFamily: 'var(--font-manrope, sans-serif)' }}>
+                            Pre-loaded syllabus for all major{' '}
+                            <span style={{ background: 'linear-gradient(135deg,#1E3A8A,#0CA35C)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>boards & entrance exams.</span>
+                        </h2>
+                        <p style={{ fontSize: 16, color: '#64748B', fontWeight: 500, maxWidth: 640, margin: '0 auto 48px', lineHeight: 1.6 }}>
+                            Select your institution's focus area to explore interactive syllabus structures, chapter-wise question counts, and board PYQs ready to deploy in seconds.
+                        </p>
 
-                        {/* Interactive Syllabus Showcase */}
                         <SyllabusInteractiveShowcase />
                     </div>
                 </section>
 
-                {/* ─── COLLABORATORS ─────────────────────────────────────────── */}
-                <section style={{ background: '#fff', padding: '64px 0 72px', borderTop: '1px solid #f1f5f9' }}>
-                    <div className="pub-content" style={{ marginBottom: 40 }}>
-                        {/* Header */}
-                        <div style={{ textAlign: 'center' }}>
-                            <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 36px)', fontWeight: 800, color: '#111827', lineHeight: 1.2, letterSpacing: '-0.02em', marginBottom: 12, fontFamily: 'var(--font-manrope, sans-serif)' }}>
-                                Trusted by Leading Educational Institutions
-                            </h2>
-                            <p style={{ fontSize: 16, color: '#6b7280', maxWidth: 640, margin: '0 auto', fontWeight: 500, lineHeight: 1.6 }}>
-                                Over 500+ schools, coaching centers, and educators across India deliver assessments and manage operations with BeBrilliant.
-                            </p>
-                        </div>
-                    </div>
-                    <div className="pub-logo-marquee-container" style={{ padding: '48px 0', background: 'transparent', borderTop: '1px solid rgba(0,0,0,0.04)', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-                        <div className="pub-logo-marquee-track">
-                            {[...COLLABORATORS, ...COLLABORATORS, ...COLLABORATORS].map((partner, idx) => (
-                                <div key={idx} className="pub-logo-item" style={{ fontSize: '18px' }}>
-                                    <partner.icon size={24} style={{ color: '#004B93' }} />
+                {/* ─── TRUSTED BY INSTITUTIONS STRIP ───────────────────────────────────── */}
+                <section style={{ padding: '60px 5%', background: '#FFFFFF', borderBottom: '1px solid #F1F5F9' }}>
+                    <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center' }}>
+                        <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#94A3B8', marginBottom: 32 }}>
+                            Trusted By 500+ Leading Coaching Centers & Schools Across India
+                        </p>
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '32px 48px' }}>
+                            {COLLABORATORS.map((partner, idx) => (
+                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#475569', fontWeight: 700, fontSize: 14, fontFamily: 'var(--font-manrope, sans-serif)' }}>
+                                    <partner.icon size={24} style={{ color: '#1E3A8A' }} />
                                     <span>{partner.name}</span>
                                 </div>
                             ))}
@@ -1407,209 +1387,127 @@ export default function LandingPage() {
                     </div>
                 </section>
 
-                {/* ─── FEATURES — Enterprise Capability Suite ────────────────────────── */}
-                <section style={{ background: '#F8FAFC', padding: '88px 5%', overflow: 'hidden' }}>
-                    <div className="pub-content" style={{ maxWidth: 1200, margin: '0 auto' }}>
-                        {/* Header */}
-                        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#FFFFFF', border: '1px solid #E2E8F0', color: '#004B93', borderRadius: 999, padding: '6px 18px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 20, boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
-                                <Zap size={13} /> Enterprise Capability Suite
-                            </div>
-                            <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 800, color: '#111827', lineHeight: 1.2, letterSpacing: '-0.02em', marginBottom: 16, fontFamily: 'var(--font-manrope, sans-serif)' }}>
-                                Everything your institution needs,<br />
-                                <span style={{ background: 'linear-gradient(135deg,#004B93,#1FAC63)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>in one unified suite.</span>
-                            </h2>
-                            <p style={{ fontSize: 16, color: '#6b7280', maxWidth: 520, margin: '0 auto', fontWeight: 500, lineHeight: 1.7 }}>
-                                From admissions to analytics — every critical workflow streamlined for scale.
-                            </p>
+                {/* ─── SECTION: ENTERPRISE CORE CAPABILITIES SHOWCASE ──────────────── */}
+                <section style={{ padding: '96px 5%', background: '#FFFFFF' }}>
+                    <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#FFFFFF', border: '1px solid #E2E8F0', color: '#1E3A8A', borderRadius: 999, padding: '6px 18px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 20, boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+                            <Layers size={14} /> Modular Enterprise Architecture
                         </div>
+                        <h2 style={{ fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.02em', marginBottom: 16, fontFamily: 'var(--font-manrope, sans-serif)' }}>
+                            Everything your academic ecosystem needs,{' '}
+                            <span style={{ background: 'linear-gradient(135deg,#1E3A8A,#0CA35C)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>in one unified suite.</span>
+                        </h2>
+                        <p style={{ fontSize: 16, color: '#64748B', fontWeight: 500, maxWidth: 680, margin: '0 auto 48px', lineHeight: 1.6 }}>
+                            Explore four enterprise-grade technology pillars designed to scale assessment, revenue, security, and student performance insights simultaneously.
+                        </p>
 
-                        {/* Enterprise Showcase */}
                         <EnterpriseCapabilityShowcase />
                     </div>
                 </section>
 
-                {/* ─── STUDENT BANNER ────────────────────────────────────────── */}
-                <section style={{ 
-                    position: 'relative', 
-                    width: '100%', 
-                    height: '400px', 
-                    backgroundImage: 'linear-gradient(rgba(4,18,42,0.65), rgba(0,75,147,0.52)), url("/happy_indian_students.png")', 
-                    backgroundSize: 'cover', 
-                    backgroundPosition: 'center', 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    justifyContent: 'center', 
-                    alignItems: 'center', 
-                    textAlign: 'center',
-                    padding: '0 20px',
-                    color: '#ffffff'
-                }}>
-                    <div style={{ zIndex: 10, maxWidth: '800px' }}>
-                        <h2 style={{ fontSize: 'clamp(20px, 3vw, 28px)', fontWeight: 900, marginBottom: '8px', fontFamily: 'var(--font-manrope, sans-serif)', letterSpacing: '-0.02em', color: '#ffffff' }}>
-                            Transforming the Assessment Experience for Indian Students
-                        </h2>
-                        <p style={{ fontSize: 'clamp(12px, 1.5vw, 15px)', fontWeight: 500, color: 'rgba(255,255,255,0.9)', maxWidth: '640px', margin: '0 auto', lineHeight: 1.5, fontFamily: 'var(--font-worksans, sans-serif)' }}>
-                            Distraction-free exam interfaces, instant result analytics, and automated study paths tailored for every student's growth.
-                        </p>
-                    </div>
-                </section>
-
-                {/* ─── ROLES — Bento Grid Showcase ───────────────────────────────────────── */}
-                <section style={{ background: '#FFFFFF', padding: '88px 5%', overflow: 'hidden' }}>
-                    <div className="pub-content" style={{ maxWidth: 1200, margin: '0 auto' }}>
-                        {/* Header */}
-                        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(0,75,147,0.06)', border: '1px solid rgba(0,75,147,0.12)', color: '#004B93', borderRadius: 999, padding: '6px 18px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 20 }}>
-                                <Users size={13} /> Built for Every Role
-                            </div>
-                            <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 800, color: '#111827', lineHeight: 1.2, letterSpacing: '-0.02em', marginBottom: 16, fontFamily: 'var(--font-manrope, sans-serif)' }}>
-                                The right tools for<br />
-                                <span style={{ background: 'linear-gradient(135deg,#004B93,#1FAC63)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>everyone in your institution.</span>
-                            </h2>
-                            <p style={{ fontSize: 16, color: '#6b7280', maxWidth: 460, margin: '0 auto', fontWeight: 500, lineHeight: 1.7 }}>
-                                One platform, six dedicated portals — each tailored with high-density minimal precision.
-                            </p>
+                {/* ─── SECTION: MULTI-ROLE EXPERIENCE MATRIX ───────────────────────── */}
+                <section style={{ padding: '96px 5%', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', borderBottom: '1px solid #E2E8F0' }}>
+                    <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(30,58,138,0.06)', border: '1px solid rgba(30,58,138,0.12)', color: '#1E3A8A', borderRadius: 999, padding: '6px 18px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 20 }}>
+                            <Users size={14} /> Multi-Role Portal Engine
                         </div>
+                        <h2 style={{ fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.02em', marginBottom: 16, fontFamily: 'var(--font-manrope, sans-serif)' }}>
+                            Custom-tailored experience for{' '}
+                            <span style={{ background: 'linear-gradient(135deg,#1E3A8A,#0CA35C)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>everyone in your institution.</span>
+                        </h2>
+                        <p style={{ fontSize: 16, color: '#64748B', fontWeight: 500, maxWidth: 640, margin: '0 auto 48px', lineHeight: 1.6 }}>
+                            Dedicated, role-permissioned dashboard views engineered specifically for Owners, Admins, Teachers, Students, Parents, and Affiliates.
+                        </p>
 
-                        {/* Bento Grid */}
                         <RolesBentoGridShowcase />
                     </div>
                 </section>
 
-                {/* ─── TESTIMONIALS — Enterprise Social Proof ────────────────────────── */}
-                <section style={{ background: '#F8FAFC', padding: '88px 5%', overflow: 'hidden' }}>
-                    <div className="pub-content" style={{ maxWidth: 1200, margin: '0 auto' }}>
-                        {/* Header */}
-                        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#FFFFFF', border: '1px solid #E2E8F0', color: '#004B93', borderRadius: 999, padding: '6px 18px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 20, boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
-                                <Star size={13} style={{ color: '#F0A026', fill: '#F0A026' }} /> Verified Institutional Impact
-                            </div>
-                            <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 800, color: '#111827', lineHeight: 1.2, letterSpacing: '-0.02em', marginBottom: 16, fontFamily: 'var(--font-manrope, sans-serif)' }}>
-                                500+ institutions trust<br />
-                                <span style={{ background: 'linear-gradient(135deg,#004B93,#1FAC63)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>BeBrilliant for scale & accuracy.</span>
-                            </h2>
-                            <p style={{ fontSize: 16, color: '#6b7280', maxWidth: 500, margin: '0 auto', fontWeight: 500, lineHeight: 1.7 }}>
-                                Real results from institute owners, academic directors, and senior teachers across India.
-                            </p>
+                {/* ─── SECTION: REVIEWS & PROOF CAROUSEL ───────────────────────────── */}
+                <section style={{ padding: '96px 5%', background: '#FFFFFF' }}>
+                    <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#FFFFFF', border: '1px solid #E2E8F0', color: '#1E3A8A', borderRadius: 999, padding: '6px 18px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 20, boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+                            <Star size={14} style={{ color: '#F0A026' }} /> Verified Institutional Reviews
                         </div>
+                        <h2 style={{ fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.02em', marginBottom: 16, fontFamily: 'var(--font-manrope, sans-serif)' }}>
+                            Educators & directors trust{' '}
+                            <span style={{ background: 'linear-gradient(135deg,#1E3A8A,#0CA35C)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>BeBrilliant for scale & accuracy.</span>
+                        </h2>
+                        <p style={{ fontSize: 16, color: '#64748B', fontWeight: 500, maxWidth: 640, margin: '0 auto 48px', lineHeight: 1.6 }}>
+                            Hear how coaching centers and academic directors save 70% exam management time and scale student enrolments effortlessly.
+                        </p>
 
-                        {/* Enterprise Showcase */}
                         <EnterpriseTestimonialShowcase />
                     </div>
                 </section>
 
-                <section style={{ background: '#f8fafc', padding: '72px 5%', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
-                    <div className="pub-content">
-                        <div className="pub-trust-grid">
-                            {[
-                                { Icon: ShieldCheck, label: 'DPDP Compliant', sub: 'Data Privacy', desc: '100% DPDP Act compliant architecture securing student and institutional logs.' },
-                                { Icon: Lock,        label: 'Bank-Grade Security', sub: 'Security', desc: 'End-to-end AES-256 encryption for user passwords, payment data, and API keys.' },
-                                { Icon: Zap,         label: '< 200ms Response', sub: 'Performance', desc: 'Optimized server-rendering ensures lightning-fast quiz loads on any connection.' },
-                                { Icon: Globe,       label: 'Pan-India CDN', sub: 'Availability', desc: 'Distributed edge servers deliver high-availability access from anywhere in India.' },
-                                { Icon: Activity,    label: '99.9% Uptime SLA', sub: 'Reliability', desc: 'Guaranteed infrastructure uptime backed by enterprise-grade cloud redundancies.' },
-                            ].map(({ Icon, label, sub, desc }) => (
-                                <div key={label} className="pub-trust-card">
-                                    <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(0,75,147,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, transition: 'all 0.3s' }}>
-                                        <Icon size={26} style={{ color: '#004B93' }} />
-                                    </div>
-                                    <div style={{ fontSize: 16, fontWeight: 800, color: '#111827', fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 4 }}>{label}</div>
-                                    <div style={{ fontSize: 11, color: '#1FAC63', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>{sub}</div>
-                                    <p style={{ fontSize: 13, color: '#6b7280', fontWeight: 500, lineHeight: 1.6, margin: 0 }}>{desc}</p>
+                {/* ─── MOBILE APP COMPANION SHOWCASE STRIP ──────────────────────────── */}
+                <section style={{ padding: '80px 5%', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', borderBottom: '1px solid #E2E8F0' }}>
+                    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 32, alignItems: 'center' }}>
+                            <div style={{ textAlign: 'left' }}>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(30,58,138,0.05)', border: '1px solid rgba(30,58,138,0.1)', color: '#1E3A8A', borderRadius: 999, padding: '6px 16px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 20 }}>
+                                    <Globe size={14} /> Android Mobile Apps
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
+                                <h3 style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#0F172A', lineHeight: 1.25, marginBottom: 12, fontFamily: 'var(--font-manrope, sans-serif)' }}>
+                                    BeBrilliant Mobile Companions for Teachers & Students
+                                </h3>
+                                <p style={{ fontSize: 15, color: '#64748B', fontWeight: 500, lineHeight: 1.7, marginBottom: 28 }}>
+                                    Download APK companions built for instant offline exam syncing, push notification alerts, live attendance tracking, and student scorecards on mobile devices.
+                                </p>
 
-                {/* ─── MOBILE COMPANION APPS ─────────────────────────────────── */}
-                <section style={{ background: '#fff', padding: '72px 5%', borderBottom: '1px solid #e2e8f0' }}>
-                    <div className="pub-content">
-                        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(0,75,147,0.05)', border: '1px solid rgba(0,75,147,0.1)', color: '#004B93', borderRadius: 999, padding: '6px 16px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 20 }}>
-                                📱 Mobile Companion
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                    {[
+                                        { role: 'Teacher Companion', desc: 'Create exams, track student attendance, grade submissions, and generate Gemini AI tests instantly.', link: '/downloads/teacher-companion.apk', icon: UserCheck, color: '#1E3A8A', label: 'Download APK' },
+                                        { role: 'Student Companion', desc: 'Take online assessments, review question cards, track wallet credits, and view completed grades.', link: '/downloads/student-companion.apk', icon: GraduationCap, color: '#0CA35C', label: 'Download APK' }
+                                    ].map((app, idx) => {
+                                        const AppIcon = app.icon
+                                        return (
+                                            <div key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 20, padding: 20, textAlign: 'left', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+                                                <div style={{ width: 40, height: 40, borderRadius: 12, background: `${app.color}15`, color: app.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                                                    <AppIcon size={20} />
+                                                </div>
+                                                <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 4 }}>{app.role}</div>
+                                                <div style={{ fontSize: 11, color: '#64748B', lineHeight: 1.5, marginBottom: 16 }}>{app.desc}</div>
+                                                <a href={app.link} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: app.color, textDecoration: 'none' }}>
+                                                    {app.label} &rarr;
+                                                </a>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
                             </div>
-                            <h2 style={{ fontSize: 'clamp(28px,4vw,44px)', fontWeight: 800, color: '#111827', lineHeight: 1.2, letterSpacing: '-0.02em', marginBottom: 16, fontFamily: 'var(--font-manrope, sans-serif)' }}>
-                                Download Mobile Companion Apps
-                            </h2>
-                            <p style={{ fontSize: 16, color: '#6b7280', maxWidth: 540, margin: '0 auto', fontWeight: 500, lineHeight: 1.7 }}>
-                                Get immediate access to exams, schedules, performance records, and fee receipts on the go.
-                            </p>
-                        </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', maxWidth: '1000px', margin: '0 auto' }}>
-                            {[
-                                { role: 'Teacher Companion', desc: 'Create exams, track student attendance, grade submissions, and generate Gemini AI tests instantly.', link: '/downloads/teacher-companion.apk', icon: UserCheck, color: '#004B93', label: 'Download APK' },
-                                { role: 'Student Companion', desc: 'Take online assessments, review question cards, track wallet credits, and view completed grades.', link: '/downloads/student-companion.apk', icon: GraduationCap, color: '#1FAC63', label: 'Download APK' },
-                                { role: 'Parent Companion', desc: 'Switch child profiles, monitor class presence calendars, view test scores, and download payment invoices.', link: '/downloads/parent-companion.apk', icon: Target, color: '#7C3AED', label: 'Download APK' }
-                            ].map(({ role, desc, link, icon: Icon, color, label }) => (
-                                <div key={role} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 24, padding: 32, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'all 0.3s' }}
-                                    onMouseEnter={e => {
-                                        e.currentTarget.style.transform = 'translateY(-4px)';
-                                        e.currentTarget.style.borderColor = color;
-                                        e.currentTarget.style.boxShadow = `0 10px 25px -5px ${color}1A`;
-                                    }}
-                                    onMouseLeave={e => {
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.borderColor = '#e2e8f0';
-                                        e.currentTarget.style.boxShadow = 'none';
-                                    }}
-                                >
-                                    <div>
-                                        <div style={{ width: 44, height: 44, borderRadius: 12, background: '#fff', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                                            <Icon size={20} style={{ color }} />
-                                        </div>
-                                        <h3 style={{ fontSize: 18, fontWeight: 800, color: '#111827', marginBottom: 10, fontFamily: 'var(--font-manrope, sans-serif)' }}>{role}</h3>
-                                        <p style={{ fontSize: 13, color: '#6b7280', fontWeight: 500, lineHeight: 1.6, marginBottom: 24 }}>{desc}</p>
-                                    </div>
-                                    <a href={link} download style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: color, color: '#fff', borderRadius: 14, padding: '12px 20px', fontSize: 13, fontWeight: 700, textDecoration: 'none', gap: 8, transition: 'opacity 0.2s' }}
-                                        onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-                                        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                                    >
-                                        <Icon size={14} /> {label}
-                                    </a>
+                            {/* App Screenshot Image Mock */}
+                            <div style={{ position: 'relative', borderRadius: 28, overflow: 'hidden', minHeight: 380, background: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, boxShadow: '0 25px 50px -15px rgba(0,0,0,0.2)' }}>
+                                <div style={{ position: 'absolute', inset: 0, backgroundImage: 'url("/student_achievement.png")', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.35 }} />
+                                <div style={{ position: 'relative', zIndex: 10, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(16px)', borderRadius: 20, padding: 24, border: '1px solid rgba(255,255,255,0.6)', textAlign: 'center', maxWidth: 300 }}>
+                                    <Sparkles size={24} style={{ color: '#1E3A8A', margin: '0 auto 12px' }} />
+                                    <div style={{ fontSize: 16, fontWeight: 900, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 6 }}>Cross-Platform Sync</div>
+                                    <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500, lineHeight: 1.6, marginBottom: 16 }}>Seamless synchronization between Next.js Web Dashboard & Expo React Native Mobile Apps.</div>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: '#0CA35C', background: '#DCFCE7', padding: '6px 12px', borderRadius: 999, display: 'inline-block' }}>Realtime Supabase Channels</div>
                                 </div>
-                            ))}
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                {/* ─── CTA ──────────────────────────────────────────────────── */}
-                {/* ─── CTA ──────────────────────────────────────────────────── */}
-                <section style={{ 
-                    width: '100%', 
-                    position: 'relative', 
-                    backgroundImage: 'linear-gradient(rgba(0,40,80,0.85), rgba(0,60,120,0.85)), url("/student_achievement.png")', 
-                    backgroundSize: 'cover', 
-                    backgroundPosition: 'center', 
-                    padding: '96px 5%',
-                    textAlign: 'center',
-                    boxSizing: 'border-box',
-                    marginBottom: '80px'
-                }}>
-                    {/* Decorative blobs */}
-                    <div style={{ position: 'absolute', top: '-20%', right: '-5%', width: 300, height: 300, borderRadius: '50%', background: 'rgba(31,172,99,0.1)', filter: 'blur(50px)', pointerEvents: 'none' }} />
-                    <div style={{ position: 'absolute', bottom: '-10%', left: '-8%', width: 240, height: 240, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', filter: 'blur(40px)', pointerEvents: 'none' }} />
-                    {/* Dot grid overlay */}
-                    <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle,rgba(255,255,255,0.06) 1px,transparent 1px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
-
-                    <div className="relative z-10 max-w-[1200px] mx-auto">
-                        <div className="inline-flex items-center gap-2 bg-white/10 border border-white/15 text-white rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider mb-6">
-                            <Sparkles size={12} /> Start Your Free Trial
-                        </div>
-
-                        <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight font-manrope mb-6 max-w-[800px] mx-auto" style={{ letterSpacing: '-0.02em' }}>
-                            Ready to transform your institution?
+                {/* ─── FINAL CTA BANNER ────────────────────────────────────────────── */}
+                <section style={{ padding: '100px 5%', background: '#002C5B', color: '#FFFFFF', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,#002C5B 0%,#1E3A8A 50%,#0CA35C 100%)', opacity: 0.95 }} />
+                    <div style={{ maxWidth: 760, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+                        <h2 style={{ fontSize: 'clamp(32px, 4vw, 56px)', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: 20, fontFamily: 'var(--font-manrope, sans-serif)', lineHeight: 1.15 }}>
+                            Ready to elevate your institution's academic performance?
                         </h2>
-                        <p className="text-base md:text-lg text-white/70 max-w-[680px] mx-auto mb-10 leading-relaxed font-worksans">
-                            Join 500+ educators redefining digital education in India. No setup fees. No hidden charges. Results from day one.
+                        <p style={{ fontSize: 18, opacity: 0.85, fontWeight: 500, marginBottom: 40, lineHeight: 1.6 }}>
+                            Join 500+ leading Indian coaching centers and schools. Set up your institution portal in under 24 hours.
                         </p>
 
                         {/* Mini stats */}
                         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '24px 64px', paddingBottom: '36px', marginBottom: '36px', borderBottom: '1px solid rgba(255,255,255,0.12)', maxWidth: '640px', marginLeft: 'auto', marginRight: 'auto' }}>
                             {[{ val: '48h', label: 'Avg. onboarding time' }, { val: '₹0', label: 'Setup cost' }, { val: '24/7', label: 'Support' }].map(({ val, label }) => (
                                 <div key={label} style={{ textAlign: 'center', flexShrink: 0 }}>
-                                    <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', fontFamily: 'var(--font-manrope, sans-serif)' }}>{val}</div>
+                                    <div style={{ fontSize: 24, fontWeight: 800, color: '#FFFFFF', fontFamily: 'var(--font-manrope, sans-serif)' }}>{val}</div>
                                     <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginTop: 4, fontFamily: 'var(--font-worksans, sans-serif)' }}>{label}</div>
                                 </div>
                             ))}

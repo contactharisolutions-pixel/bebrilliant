@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useRouter, useSegments, SplashScreen } from 'expo-router'
-import { View, ActivityIndicator, Platform } from 'react-native'
+import { Platform } from 'react-native'
 import { apiFetch, clearToken, getToken } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { usePushNotifications } from '../hooks/usePushNotifications'
@@ -87,7 +87,12 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
       if (!hasUser && !inAuthGroup) {
         router.replace('/(auth)/onboarding')
       } else if (hasUser && inAuthGroup) {
-        if (user.role === 'teacher' || user.role === 'owner' || user.role === 'tenant_admin') {
+        if (
+          user.role === 'teacher' ||
+          user.role === 'teacher_pending' ||
+          user.role === 'owner' ||
+          user.role === 'tenant_admin'
+        ) {
           router.replace('/(teacher)/dashboard')
         } else if (user.role === 'student') {
           router.replace('/(student)/dashboard')
@@ -101,15 +106,6 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
       console.warn('Navigation guard error:', e)
     }
   }, [user, segments, loading])
-
-  // While auth is resolving, show a branded loader.
-  if (loading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#004B93', justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#FFFFFF" />
-      </View>
-    )
-  }
 
   return (
     <IdentityContext.Provider value={{ user, loading, logout, refresh }}>

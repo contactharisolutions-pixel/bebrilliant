@@ -1,101 +1,181 @@
 import React from 'react'
 import { Tabs } from 'expo-router'
-import { LayoutDashboard, BookOpen, Wallet, LogOut } from 'lucide-react-native'
+import {
+  LayoutDashboard,
+  BookOpen,
+  BarChart2,
+  Wallet,
+  UserCircle,
+} from 'lucide-react-native'
 import { useIdentity } from '../../contexts/IdentityContext'
-import { TouchableOpacity, View, Text } from 'react-native'
+import { View, Text, StyleSheet, Platform } from 'react-native'
+
+// ─── Animated active tab indicator ──────────────────────────────────────────
+function TabIcon({
+  icon: Icon,
+  label,
+  color,
+  focused,
+  accentColor,
+}: {
+  icon: React.ComponentType<{ size: number; color: string }>
+  label: string
+  color: string
+  focused: boolean
+  accentColor: string
+}) {
+  return (
+    <View style={styles.tabItem}>
+      {focused && <View style={[styles.activePill, { backgroundColor: accentColor + '22' }]} />}
+      <Icon size={focused ? 22 : 20} color={focused ? accentColor : color} />
+      <Text
+        style={[
+          styles.tabLabel,
+          { color: focused ? accentColor : color, fontWeight: focused ? '800' : '600' },
+        ]}
+      >
+        {label}
+      </Text>
+    </View>
+  )
+}
 
 export default function StudentLayout() {
-  const { logout, user } = useIdentity()
+  const { user } = useIdentity()
+  const userInitial = user?.fullName?.charAt(0).toUpperCase() || 'S'
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#004B93',
-        tabBarInactiveTintColor: '#9CA3AF',
-        tabBarStyle: {
-          borderTopColor: '#F1F5F9',
-          height: 64,
-          paddingBottom: 8,
-          paddingTop: 8,
-          backgroundColor: '#FFFFFF',
-        },
-        headerStyle: {
-          backgroundColor: '#FFFFFF',
-          elevation: 0,
-          shadowOpacity: 0,
-          borderBottomWidth: 1,
-          borderBottomColor: '#F1F5F9',
-        },
-        headerTitleStyle: {
-          fontWeight: '900',
-          fontSize: 18,
-          color: '#111827',
-        },
+        headerShown: false, // Each screen renders its own custom header
+        tabBarStyle: styles.tabBar,
+        tabBarShowLabel: false, // Labels are rendered inside TabIcon
       }}
     >
+      {/* ── HOME ── */}
       <Tabs.Screen
         name="dashboard/index"
         options={{
-          title: 'Dashboard',
-          tabBarLabel: 'Home',
-          headerTitle: 'Student Hub',
-          tabBarIcon: ({ color, size }) => <LayoutDashboard size={size} color={color} />,
+          title: 'Home',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              icon={LayoutDashboard}
+              label="Home"
+              color={color}
+              focused={focused}
+              accentColor="#004B93"
+            />
+          ),
         }}
       />
+
+      {/* ── EXAMS ── */}
       <Tabs.Screen
         name="exams/index"
         options={{
           title: 'Exams',
-          tabBarLabel: 'Exams',
-          headerTitle: 'Exam Center',
-          tabBarIcon: ({ color, size }) => <BookOpen size={size} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              icon={BookOpen}
+              label="Exams"
+              color={color}
+              focused={focused}
+              accentColor="#7C3AED"
+            />
+          ),
         }}
       />
+
+      {/* ── ANALYTICS ── */}
+      <Tabs.Screen
+        name="analytics/index"
+        options={{
+          title: 'Analytics',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              icon={BarChart2}
+              label="Analytics"
+              color={color}
+              focused={focused}
+              accentColor="#059669"
+            />
+          ),
+        }}
+      />
+
+      {/* ── WALLET ── */}
       <Tabs.Screen
         name="wallet/index"
         options={{
           title: 'Wallet',
-          tabBarLabel: 'Wallet',
-          headerTitle: 'My Wallet',
-          tabBarIcon: ({ color, size }) => <Wallet size={size} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              icon={Wallet}
+              label="Wallet"
+              color={color}
+              focused={focused}
+              accentColor="#F59E0B"
+            />
+          ),
         }}
       />
+
+      {/* ── PROFILE ── */}
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarLabel: 'Profile',
-          headerTitle: 'My Account',
-          tabBarIcon: ({ color, size }) => (
-            <View className="h-6 w-6 items-center justify-center rounded-full bg-primary/10">
-              <Text className="text-xs font-bold text-primary">
-                {user?.fullName?.charAt(0) || 'S'}
-              </Text>
-            </View>
-          ),
-          headerRight: () => (
-            <TouchableOpacity onPress={logout} className="mr-4 p-2">
-              <LogOut size={20} color="#EF4444" />
-            </TouchableOpacity>
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              icon={UserCircle}
+              label="Profile"
+              color={color}
+              focused={focused}
+              accentColor="#EF4444"
+            />
           ),
         }}
       />
-      <Tabs.Screen
-        name="materials/index"
-        options={{
-          href: null,
-          title: 'Study Materials',
-          headerTitle: 'Study Vault',
-        }}
-      />
-      <Tabs.Screen
-        name="live/index"
-        options={{
-          href: null,
-          title: 'Live Classroom',
-          headerTitle: 'Live Classes',
-        }}
-      />
+
+      {/* Hidden screens (navigated to via router.push) */}
+      <Tabs.Screen name="materials/index" options={{ href: null }} />
+      <Tabs.Screen name="live/index"      options={{ href: null }} />
+      <Tabs.Screen name="exams/attempt"   options={{ href: null }} />
     </Tabs>
   )
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    height: Platform.OS === 'ios' ? 84 : 72,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+    paddingTop: 6,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#EEF2F8',
+    shadowColor: '#0040A0',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  tabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    paddingHorizontal: 4,
+    gap: 3,
+  },
+  activePill: {
+    position: 'absolute',
+    top: -6,
+    borderRadius: 99,
+    width: 40,
+    height: 40,
+  },
+  tabLabel: {
+    fontSize: 10,
+    letterSpacing: 0.2,
+    marginTop: 1,
+  },
+})
