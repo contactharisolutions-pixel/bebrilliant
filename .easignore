@@ -1,4 +1,7 @@
-# Exclude root web app files from EAS mobile build archive
+# Exclude large zip files and root web app files from EAS build archive
+*.zip
+*.tar
+*.gz
 node_modules/
 .next/
 src/
