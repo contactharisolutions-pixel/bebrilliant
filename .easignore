@@ -1,25 +1,25 @@
-# Exclude large zips and backups
-bebrilliant_codebase.zip
-bebrilliant_storage_migration.zip
-
-# Exclude dependencies and builds
+# Exclude root web app files from EAS mobile build archive
 node_modules/
-mobile/node_modules/
 .next/
-.expo/
-dist/
-tmp/
+src/
+public/
+migrations/
 migration_storage/
+docs/
+adapters/
+hari-solutions/
+middleware/
 nginx/
-
-# Exclude logs
-*.log
-*.txt
-
-# Exclude environment configuration/cache
-.claude/
-.gemini/
-.git/
-.gsd/
+ralph/
+routes/
+scratch/
+scripts/
+shared/
+supabase/
+tmp/
+utils/
 .agent/
 .agents/
+.gemini/
+.gsd/
+*.log
