@@ -27,7 +27,7 @@ const workSans = Work_Sans({
 export const metadata: Metadata = {
   title: 'BeBrilliant — India\'s Institutional Excellence Platform',
   description:
-    'Empower every educator, inspire every student. India\'s most trusted multi-role platform for institutions — smart exams, WhatsApp growth, real-time analytics, and secure fee collection.',
+    'Empowering Schools, Teachers & Institutes with One Complete Digital Examination Platform. India\'s most trusted multi-role platform for institutions — smart exams, AI question building, real-time analytics, and secure fee collection.',
   keywords: 'coaching institute software, online exam platform India, LMS India, student management system, fee collection software, WhatsApp affiliate education',
   icons: {
     icon: '/favicon.ico',

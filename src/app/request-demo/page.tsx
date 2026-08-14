@@ -1,13 +1,19 @@
 'use client'
 
-import React from 'react'
-import { PageLayout } from '@/components/public/PageLayout'
-import { P } from '@/components/shared/institutional/theme'
-import { User, Mail, Phone, Building, Briefcase, MessageSquare, Send, CheckCircle2, ArrowRight } from 'lucide-react'
+import React, { useState } from 'react'
+import Link from 'next/link'
+import {
+    User, Mail, Phone, Building, Briefcase, MessageSquare,
+    Send, CheckCircle2, ArrowRight, Sparkles, ShieldCheck, Calendar, Clock
+} from 'lucide-react'
+import { PublicHeader } from '@/components/public/PublicHeader'
+import { PublicFooter } from '@/components/public/PublicFooter'
 
 export default function RequestDemoPage() {
-    const [submitted, setSubmitted] = React.useState(false)
-    const [formData, setFormData] = React.useState({
+    const [submitted, setSubmitted] = useState(false)
+    const [submitting, setSubmitting] = useState(false)
+    const [error, setError] = useState('')
+    const [formData, setFormData] = useState({
         name: '',
         designation: '',
         email: '',
@@ -16,8 +22,6 @@ export default function RequestDemoPage() {
         type: 'school',
         message: ''
     })
-    const [submitting, setSubmitting] = React.useState(false)
-    const [error, setError] = React.useState('')
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -41,169 +45,298 @@ export default function RequestDemoPage() {
                 const data = await res.json()
                 setError(data.error || 'Failed to submit request')
             }
-        } catch (err) {
+        } catch {
             setError('Something went wrong. Please try again.')
         } finally {
             setSubmitting(false)
         }
     }
 
-    if (submitted) {
-        return (
-            <PageLayout 
-                title="Request Received" 
-                subtitle="Thank you for your interest. Our consultants will reach out shortly."
-                bgImage="/request_demo_hero.png"
-            >
-                <div className="max-w-[1440px] mx-auto px-6 py-32 text-center">
-                    <div className="w-24 h-24 rounded-full bg-[#0CA35C]/10 flex items-center justify-center mx-auto mb-10 text-[#0CA35C]">
-                        <CheckCircle2 size={48} />
-                    </div>
-                    <h2 className="text-4xl font-[950] text-[#111827] mb-6">You're on the list!</h2>
-                    <p className="text-xl text-gray-500 font-semibold max-w-xl mx-auto mb-12 leading-relaxed">
-                        We've received your data. A specialized demo account and a platform overview document have been sent to your email.
-                    </p>
-                    <button 
-                        onClick={() => window.location.href = '/'}
-                        className="bg-[#1E3A8A] text-white py-5 px-12 rounded-2xl text-lg font-black shadow-xl shadow-blue-900/40 hover:scale-105 transition-all cursor-pointer"
-                    >
-                        Return Home
-                    </button>
-                </div>
-            </PageLayout>
-        )
-    }
-
     return (
-        <PageLayout 
-            title="Book a Live Demo" 
-            subtitle="Explore how BeBrilliant can transform your institutional operations with a personalized walkthrough."
-            bgImage="/request_demo_hero.png"
-        >
-            <div className="max-w-[1440px] mx-auto px-6 pt-12 pb-24 font-worksans">
-                <div className="max-w-3xl mx-auto bg-white p-10 md:p-16 rounded-[48px] shadow-2xl shadow-blue-950/5">
-                    <form onSubmit={handleSubmit} className="space-y-8">
-                        
-                        <div className="pub-cards-2">
-                            <div className="space-y-3">
-                                <label className="text-[13px] font-black uppercase tracking-widest text-[#191c20] flex items-center gap-2 font-manrope">
-                                    <User size={14} /> Full Name
-                                </label>
-                                <input 
-                                    type="text" 
-                                    required 
-                                    placeholder="John Doe" 
-                                    value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full px-6 py-4 rounded-2xl bg-[#ededf4] text-[15px] font-semibold text-[#191c20] placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#00356a] transition-all border-none"
-                                />
-                            </div>
-                            <div className="space-y-3">
-                                <label className="text-[13px] font-black uppercase tracking-widest text-[#191c20] flex items-center gap-2 font-manrope">
-                                    <Briefcase size={14} /> Designation
-                                </label>
-                                <input 
-                                    type="text" 
-                                    required 
-                                    placeholder="e.g. Principal" 
-                                    value={formData.designation}
-                                    onChange={e => setFormData({ ...formData, designation: e.target.value })}
-                                    className="w-full px-6 py-4 rounded-2xl bg-[#ededf4] text-[15px] font-semibold text-[#191c20] placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#00356a] transition-all border-none"
-                                />
-                            </div>
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#F8FAFC', fontFamily: 'var(--font-worksans, sans-serif)' }}>
+            <PublicHeader />
+
+            <main style={{ flex: 1 }}>
+
+                {/* ── HERO SECTION ── */}
+                <section style={{ position: 'relative', padding: '80px 5% 60px', background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%)', color: '#FFFFFF', overflow: 'hidden', textAlign: 'center' }}>
+                    <div style={{ position: 'absolute', top: '-100px', left: '50%', transform: 'translateX(-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 70%)', pointerEvents: 'none' }} />
+
+                    <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative', zIndex: 10 }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255, 255, 255, 0.12)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#93C5FD', marginBottom: 20 }}>
+                            <Sparkles size={14} /> Schedule Walkthrough · Live Demo
                         </div>
 
-                        <div className="pub-cards-2">
-                            <div className="space-y-3">
-                                <label className="text-[13px] font-black uppercase tracking-widest text-[#191c20] flex items-center gap-2 font-manrope">
-                                    <Mail size={14} /> Work Email
-                                </label>
-                                <input 
-                                    type="email" 
-                                    required 
-                                    placeholder="john@institute.com" 
-                                    value={formData.email}
-                                    onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                    className="w-full px-6 py-4 rounded-2xl bg-[#ededf4] text-[15px] font-semibold text-[#191c20] placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#00356a] transition-all border-none"
-                                />
-                            </div>
-                            <div className="space-y-3">
-                                <label className="text-[13px] font-black uppercase tracking-widest text-[#191c20] flex items-center gap-2 font-manrope">
-                                    <Phone size={14} /> Contact Number
-                                </label>
-                                <input 
-                                    type="tel" 
-                                    required 
-                                    placeholder="+91 99999 00000" 
-                                    value={formData.phone}
-                                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                    className="w-full px-6 py-4 rounded-2xl bg-[#ededf4] text-[15px] font-semibold text-[#191c20] placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#00356a] transition-all border-none"
-                                />
-                            </div>
-                        </div>
+                        <h1 style={{ fontSize: 'clamp(28px, 3.5vw, 48px)', fontWeight: 800, lineHeight: 1.2, fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 16 }}>
+                            Book a Personalized Campus Demo
+                        </h1>
 
-                        <div className="space-y-3">
-                            <label className="text-[13px] font-black uppercase tracking-widest text-[#191c20] flex items-center gap-2 font-manrope">
-                                <Building size={14} /> Organization Name
-                            </label>
-                            <input 
-                                type="text" 
-                                required 
-                                placeholder="Academy of Excellence" 
-                                value={formData.organization}
-                                onChange={e => setFormData({ ...formData, organization: e.target.value })}
-                                className="w-full px-6 py-4 rounded-2xl bg-[#ededf4] text-[15px] font-semibold text-[#191c20] placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#00356a] transition-all border-none"
-                            />
-                        </div>
-
-                        <div className="space-y-3">
-                            <label className="text-[13px] font-black uppercase tracking-widest text-[#191c20] font-manrope">What best describes you?</label>
-                            <select 
-                                required 
-                                value={formData.type}
-                                onChange={e => setFormData({ ...formData, type: e.target.value })}
-                                className="w-full px-6 py-4 rounded-2xl bg-[#ededf4] text-[15px] font-semibold text-[#191c20] focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#00356a] transition-all appearance-none cursor-pointer border-none"
-                            >
-                                <option value="school">School</option>
-                                <option value="institute">Coaching Institute</option>
-                                <option value="teacher">Independent Teacher</option>
-                                <option value="enterprise">Enterprise Organization</option>
-                            </select>
-                        </div>
-
-                        <div className="space-y-3">
-                            <label className="text-[13px] font-black uppercase tracking-widest text-[#191c20] flex items-center gap-2 font-manrope">
-                                <MessageSquare size={14} /> Brief Introduction
-                            </label>
-                            <textarea 
-                                rows={4} 
-                                placeholder="Tell us about your institutional needs..." 
-                                value={formData.message}
-                                onChange={e => setFormData({ ...formData, message: e.target.value })}
-                                className="w-full px-6 py-4 rounded-2xl bg-[#ededf4] text-[15px] font-semibold text-[#191c20] placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#00356a] transition-all resize-none border-none"
-                            />
-                        </div>
-
-                        {error && (
-                            <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-semibold">
-                                {error}
-                            </div>
-                        )}
-
-                        <button 
-                            type="submit" 
-                            disabled={submitting}
-                            className="w-full bg-gradient-to-br from-[#152A6E] to-[#0CA35C] text-white py-6 rounded-2xl text-lg font-black shadow-xl shadow-blue-900/10 hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-4 font-manrope cursor-pointer border-none disabled:opacity-50"
-                        >
-                            {submitting ? 'Submitting...' : 'Schedule Assessment Workshop'} <ArrowRight size={22} />
-                        </button>
-                        
-                        <p className="text-center text-[11px] text-gray-400 font-bold uppercase tracking-widest font-manrope">
-                            Secure submission • No credit card required • Response in 24h
+                        <p style={{ fontSize: 16, color: '#94A3B8', fontWeight: 500, lineHeight: 1.6, maxWidth: 680, margin: '0 auto' }}>
+                            See how BeBrilliant automates exam paper generation, mobile OMR scanning, anti-cheat proctoring, and student rank analytics in under 20 minutes.
                         </p>
-                    </form>
-                </div>
-            </div>
-        </PageLayout>
+                    </div>
+                </section>
+
+                {/* ── FORM CONTAINER ── */}
+                <section style={{ padding: '60px 5% 90px', background: '#F8FAFC' }}>
+                    <div style={{ maxWidth: 740, margin: '0 auto' }}>
+
+                        <div style={{ background: '#FFFFFF', borderRadius: 28, padding: '44px 40px', border: '1px solid #E2E8F0', boxShadow: '0 20px 50px -15px rgba(0, 0, 0, 0.05)' }}>
+
+                            {submitted ? (
+                                <div style={{ textAlign: 'center', padding: '32px 16px' }}>
+                                    <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#DCFCE7', color: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                        <CheckCircle2 size={40} />
+                                    </div>
+                                    <h2 style={{ fontSize: 28, fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 12 }}>
+                                        Demo Request Received!
+                                    </h2>
+                                    <p style={{ fontSize: 16, color: '#64748B', lineHeight: 1.6, maxWidth: 480, margin: '0 auto 32px' }}>
+                                        Thank you, <strong style={{ color: '#0F172A' }}>{formData.name}</strong>. Our institutional specialist will reach out to schedule your live platform walkthrough.
+                                    </p>
+                                    <Link
+                                        href="/"
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                            background: '#004B93',
+                                            color: '#FFFFFF',
+                                            padding: '14px 32px',
+                                            borderRadius: 14,
+                                            fontSize: 15,
+                                            fontWeight: 800,
+                                            textDecoration: 'none'
+                                        }}
+                                    >
+                                        Return Home <ArrowRight size={16} />
+                                    </Link>
+                                </div>
+                            ) : (
+                                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18 }}>
+                                        <div>
+                                            <label style={{ fontSize: 12, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 8 }}>
+                                                Full Name *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="Dr. Rajesh Sharma"
+                                                value={formData.name}
+                                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '13px 16px',
+                                                    borderRadius: 14,
+                                                    border: '1.5px solid #E2E8F0',
+                                                    fontSize: 14.5,
+                                                    outline: 'none',
+                                                    background: '#F8FAFC',
+                                                    color: '#0F172A',
+                                                    boxSizing: 'border-box'
+                                                }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: 12, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 8 }}>
+                                                Designation *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="Principal / Managing Director"
+                                                value={formData.designation}
+                                                onChange={e => setFormData({ ...formData, designation: e.target.value })}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '13px 16px',
+                                                    borderRadius: 14,
+                                                    border: '1.5px solid #E2E8F0',
+                                                    fontSize: 14.5,
+                                                    outline: 'none',
+                                                    background: '#F8FAFC',
+                                                    color: '#0F172A',
+                                                    boxSizing: 'border-box'
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18 }}>
+                                        <div>
+                                            <label style={{ fontSize: 12, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 8 }}>
+                                                Work Email *
+                                            </label>
+                                            <input
+                                                type="email"
+                                                required
+                                                placeholder="name@institution.com"
+                                                value={formData.email}
+                                                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '13px 16px',
+                                                    borderRadius: 14,
+                                                    border: '1.5px solid #E2E8F0',
+                                                    fontSize: 14.5,
+                                                    outline: 'none',
+                                                    background: '#F8FAFC',
+                                                    color: '#0F172A',
+                                                    boxSizing: 'border-box'
+                                                }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: 12, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 8 }}>
+                                                Phone / WhatsApp Number *
+                                            </label>
+                                            <input
+                                                type="tel"
+                                                required
+                                                placeholder="+91 98765 43210"
+                                                value={formData.phone}
+                                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '13px 16px',
+                                                    borderRadius: 14,
+                                                    border: '1.5px solid #E2E8F0',
+                                                    fontSize: 14.5,
+                                                    outline: 'none',
+                                                    background: '#F8FAFC',
+                                                    color: '#0F172A',
+                                                    boxSizing: 'border-box'
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18 }}>
+                                        <div>
+                                            <label style={{ fontSize: 12, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 8 }}>
+                                                Institution Name *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="Apex Coaching Classes"
+                                                value={formData.organization}
+                                                onChange={e => setFormData({ ...formData, organization: e.target.value })}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '13px 16px',
+                                                    borderRadius: 14,
+                                                    border: '1.5px solid #E2E8F0',
+                                                    fontSize: 14.5,
+                                                    outline: 'none',
+                                                    background: '#F8FAFC',
+                                                    color: '#0F172A',
+                                                    boxSizing: 'border-box'
+                                                }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: 12, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 8 }}>
+                                                Institution Type *
+                                            </label>
+                                            <select
+                                                required
+                                                value={formData.type}
+                                                onChange={e => setFormData({ ...formData, type: e.target.value })}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '13px 16px',
+                                                    borderRadius: 14,
+                                                    border: '1.5px solid #E2E8F0',
+                                                    fontSize: 14.5,
+                                                    outline: 'none',
+                                                    background: '#F8FAFC',
+                                                    color: '#0F172A',
+                                                    cursor: 'pointer',
+                                                    boxSizing: 'border-box'
+                                                }}
+                                            >
+                                                <option value="school">K-12 School / School Group</option>
+                                                <option value="institute">Coaching Institute / Academy</option>
+                                                <option value="teacher">Independent Educator / Tutor</option>
+                                                <option value="enterprise">Enterprise Franchise Network</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label style={{ fontSize: 12, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 8 }}>
+                                            Institutional Needs / Message (Optional)
+                                        </label>
+                                        <textarea
+                                            rows={3}
+                                            placeholder="Tell us about student strength, target exams, or specific requirements..."
+                                            value={formData.message}
+                                            onChange={e => setFormData({ ...formData, message: e.target.value })}
+                                            style={{
+                                                width: '100%',
+                                                padding: '13px 16px',
+                                                borderRadius: 14,
+                                                border: '1.5px solid #E2E8F0',
+                                                fontSize: 14.5,
+                                                outline: 'none',
+                                                background: '#F8FAFC',
+                                                color: '#0F172A',
+                                                resize: 'none',
+                                                boxSizing: 'border-box'
+                                            }}
+                                        />
+                                    </div>
+
+                                    {error && (
+                                        <div style={{ fontSize: 13, color: '#DC2626', fontWeight: 600, background: '#FEF2F2', border: '1px solid #FECACA', padding: '12px 16px', borderRadius: 12 }}>
+                                            {error}
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        disabled={submitting}
+                                        style={{
+                                            width: '100%',
+                                            padding: '16px',
+                                            borderRadius: 16,
+                                            border: 'none',
+                                            background: 'linear-gradient(135deg, #004B93 0%, #1FAC63 100%)',
+                                            color: '#FFFFFF',
+                                            fontSize: 16,
+                                            fontWeight: 800,
+                                            cursor: submitting ? 'not-allowed' : 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 8,
+                                            boxShadow: '0 8px 24px rgba(0, 75, 147, 0.25)',
+                                            marginTop: 10
+                                        }}
+                                    >
+                                        {submitting ? 'Submitting Request...' : (
+                                            <>Schedule Walkthrough <ArrowRight size={18} /></>
+                                        )}
+                                    </button>
+
+                                    <div style={{ textAlign: 'center', fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>
+                                        <ShieldCheck size={14} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle', color: '#10B981' }} />
+                                        Secure 256-bit submission · Zero credit card required · Response in 24h
+                                    </div>
+                                </form>
+                            )}
+
+                        </div>
+
+                    </div>
+                </section>
+
+            </main>
+
+            <PublicFooter />
+        </div>
     )
 }

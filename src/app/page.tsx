@@ -1214,26 +1214,24 @@ export default function LandingPage() {
                     <div style={{ position: 'absolute', top: '-120px', right: '-120px', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(30,58,138,0.05),transparent 70%)', pointerEvents: 'none' }} />
                     <div style={{ position: 'absolute', bottom: '-80px', left: '-80px', width: 380, height: 380, borderRadius: '50%', background: 'radial-gradient(circle,rgba(12,163,92,0.04),transparent 70%)', pointerEvents: 'none' }} />
                     {/* Hero background image watermark representing Indian education */}
-                    <div style={{ position: 'absolute', inset: 0, backgroundImage: 'url("/indian_school_hero.png")', backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: 'none' }} />
+                    <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(180deg, rgba(15, 23, 42, 0.65) 0%, rgba(15, 23, 42, 0.8) 100%), url("/indian_school_hero.png")', backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: 'none' }} />
 
-                    <div className="max-w-3xl w-full relative z-10 flex flex-col items-center" style={{ margin: '0 auto' }}>
+                    <div className="max-w-5xl w-full relative z-10 flex flex-col items-center" style={{ margin: '0 auto' }}>
                         {/* Badge */}
-                        <div className="inline-flex items-center gap-2 bg-[#1E3A8A]/5 border border-[#1E3A8A]/10 text-[#1E3A8A] rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider mb-8">
-                            <Sparkles size={12} className="text-[#1E3A8A]" /> Institutional Excellence Platform
+                        <div className="inline-flex items-center gap-2 bg-white/15 border border-white/25 backdrop-blur-md text-white rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider mb-8 shadow-sm">
+                            <Sparkles size={12} className="text-[#38BDF8]" /> Institutional Excellence Platform
                         </div>
 
                         {/* Headline */}
-                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-[#191c20] leading-tight font-manrope mb-6 text-center" style={{ letterSpacing: '-0.02em' }}>
-                            Empower Every{' '}
-                            <span style={{ background: 'linear-gradient(135deg,#1E3A8A,#0CA35C)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                                Educator.
-                            </span>
-                            <br />Inspire Every Student.
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight font-manrope mb-6 text-center" style={{ letterSpacing: '-0.02em', textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
+                            Empowering Schools, Teachers & Institutes
+                            <br />
+                            with One Complete Digital Examination & Assessment Platform.
                         </h1>
 
                         {/* Sub */}
-                        <p className="text-lg md:text-xl text-gray-500 font-medium leading-relaxed max-w-xl mx-auto mb-10 font-worksans text-center">
-                            India's most trusted multi-role platform — smart exams, WhatsApp growth, real-time analytics, and secure fee collection in one place.
+                        <p className="text-lg md:text-xl text-gray-200 font-medium leading-relaxed max-w-2xl mx-auto mb-10 font-worksans text-center" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}>
+                            India's most trusted multi-role platform — smart anti-cheat exams, AI question building, real-time analytics, and automated fee collection in one place.
                         </p>
 
                         {/* CTA row */}
@@ -1247,76 +1245,12 @@ export default function LandingPage() {
                         </div>
 
                         {/* Trust strip */}
-                        <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-xs md:text-sm text-gray-400 font-semibold font-worksans w-full">
+                        <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-xs md:text-sm text-gray-200 font-semibold font-worksans w-full" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
                             {['No credit card required', 'DPDP & data-compliant', 'Setup in under 24h'].map(t => (
                                 <span key={t} className="flex items-center gap-2">
-                                    <CheckCircle size={14} className="text-[#0CA35C] flex-shrink-0" /> {t}
+                                    <CheckCircle size={14} className="text-[#34D399] flex-shrink-0" /> {t}
                                 </span>
                             ))}
-                        </div>
-                    </div>
-
-                    {/* Dashboard mockup */}
-                    <div style={{ width: '100%', maxWidth: '960px', marginTop: '60px', position: 'relative', margin: '60px auto 0' }}>
-                        {/* Floating badges */}
-                        <div style={{ position: 'absolute', left: '-20px', top: '40%', zIndex: 20, display: 'flex', alignItems: 'center', gap: '12px', background: '#FFFFFF', border: '1px solid #F1F5F9', borderRadius: '16px', padding: '12px 16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(12,163,92,0.1)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}><TrendingUp size={14} className="text-[#0CA35C]" /></div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>Avg Score: +18.4%</div>
-                                <div style={{ fontSize: '11px', color: '#64748B' }}>After 3 practice mocks</div>
-                            </div>
-                        </div>
-                        <div style={{ position: 'absolute', right: '-20px', top: '15%', zIndex: 20, display: 'flex', alignItems: 'center', gap: '12px', background: '#FFFFFF', borderRadius: '16px', padding: '16px', border: '1px solid #F1F5F9', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.08)' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(30,58,138,0.1)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}><Shield size={14} className="text-[#1E3A8A]" /></div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>Anti-Cheat Shield</div>
-                                <div style={{ fontSize: '11px', color: '#0CA35C', fontWeight: 600 }}>Active · 0 tab switches</div>
-                            </div>
-                        </div>
-
-                        {/* UI Mockup Screen */}
-                        <div style={{ background: '#0F172A', borderRadius: '24px', padding: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                                <div style={{ display: 'flex', gap: '6px' }}>
-                                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#EF4444' }} />
-                                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#F59E0B' }} />
-                                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#10B981' }} />
-                                </div>
-                                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <Lock size={10} className="text-[#0CA35C]" /> app.bebrilliant.in/dashboard
-                                </div>
-                                <div style={{ width: 24 }} />
-                            </div>
-                            {/* Inner Dashboard Layout Mock */}
-                            <div style={{ display: 'flex', gap: '16px' }}>
-                                <div style={{ width: '140px', background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                    {['Overview', 'Exams', 'Students', 'Analytics', 'Fees'].map((item, i) => (
-                                        <div key={item} style={{ padding: '8px 12px', borderRadius: 8, fontSize: '12px', fontWeight: 'bold', color: i === 0 ? '#FFFFFF' : 'rgba(255,255,255,0.35)', background: i === 0 ? '#1E3A8A' : 'transparent', userSelect: 'none' }}>{item}</div>
-                                    ))}
-                                </div>
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-                                        {[
-                                            { label: 'Students', val: '4,821', gradient: 'linear-gradient(135deg,#1E3A8A,#2563EB)', Icon: Users },
-                                            { label: 'Exams Today', val: '12', gradient: 'linear-gradient(135deg,#0CA35C,#16A34A)', Icon: BookOpen },
-                                            { label: 'Pass Rate', val: '94.2%', gradient: 'linear-gradient(135deg,#F0A026,#EAB308)', Icon: Award },
-                                        ].map((card, i) => (
-                                            <div key={i} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                                                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{card.label}</div>
-                                                <div style={{ fontSize: 18, fontWeight: 800, color: '#FFFFFF', marginTop: 2 }}>{card.val}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '14px', border: '1px solid rgba(255,255,255,0.08)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 8, fontWeight: 600 }}>Active Cohort Performance Trend</div>
-                                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 60 }}>
-                                            {[40, 65, 55, 80, 70, 90, 85, 95].map((h, i) => (
-                                                <div key={i} style={{ flex: 1, borderRadius: '2px 2px 0 0', background: 'linear-gradient(to top,#1E3A8A,#0CA35C)', opacity: 0.75, height: `${h}%` }} />
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </section>

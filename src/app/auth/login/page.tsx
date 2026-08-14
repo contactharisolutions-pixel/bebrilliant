@@ -1,16 +1,31 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, type LoginSchema } from '@/lib/validations/auth'
 import { AuthLayout } from '@/components/auth/AuthLayout'
-import { ArrowRight, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import {
+    ArrowRight, Mail, Lock, Eye, EyeOff, AlertCircle, Building,
+    UserCheck, School, GraduationCap, Users
+} from 'lucide-react'
 
-export default function LoginPage() {
+const ROLES = [
+    { id: 'school', label: 'School Admin', icon: Building },
+    { id: 'teacher', label: 'Teacher', icon: UserCheck },
+    { id: 'institute', label: 'Institute', icon: School },
+    { id: 'student', label: 'Student', icon: GraduationCap },
+    { id: 'parent', label: 'Parent', icon: Users },
+]
+
+function LoginFormContent() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const initialRole = searchParams.get('role') || 'school'
+
+    const [selectedRole, setSelectedRole] = useState(initialRole)
     const [showPassword, setShowPassword] = useState(false)
     const [serverError, setServerError] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(false)
@@ -32,7 +47,7 @@ export default function LoginPage() {
                 const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data),
+                    body: JSON.stringify({ ...data, role_hint: selectedRole }),
                 })
 
                 const json = await res.json()
@@ -42,17 +57,14 @@ export default function LoginPage() {
                     return
                 }
 
-                // First-login — must change password
                 if (json.requires_password_change) {
                     router.push('/auth/change-password?first=true')
                     return
                 }
 
-                // Phase 9 Role-Based Routing
                 if (json.user?.role === 'owner') {
                     router.push('/owner/dashboard')
                 } else {
-                    // All other roles (tenant_admin, teacher, student, parent) → shared dashboard
                     router.push('/dashboard')
                 }
             } catch {
@@ -61,11 +73,11 @@ export default function LoginPage() {
                 setIsLoading(false)
             }
         },
-        [router]
+        [router, selectedRole]
     )
 
     return (
-        <AuthLayout title="Platform Login" subtitle="Enter your credentials to access your dashboard.">
+        <AuthLayout title="Multi-Role Portal Login" subtitle="Select your role and enter credentials to access your dashboard.">
             <style>{`
                 .premium-input {
                     width: 100%;
@@ -100,7 +112,45 @@ export default function LoginPage() {
                     box-shadow: 0 0 0 4px rgba(0, 75, 147, 0.12);
                 }
             `}</style>
+            
             <div className="fade-in-up fade-in-up-delay-1" style={{ width: '100%' }}>
+
+                {/* Role Selector Tabs */}
+                <div style={{ marginBottom: 24 }}>
+                    <label style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 10 }}>
+                        Select Portal Role
+                    </label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {ROLES.map((role) => {
+                            const Icon = role.icon
+                            const isActive = selectedRole === role.id
+                            return (
+                                <button
+                                    key={role.id}
+                                    type="button"
+                                    onClick={() => setSelectedRole(role.id)}
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        padding: '8px 12px',
+                                        borderRadius: 10,
+                                        fontSize: 12,
+                                        fontWeight: 700,
+                                        border: isActive ? '1.5px solid #004B93' : '1px solid #E2E8F0',
+                                        background: isActive ? '#EFF6FF' : '#FFFFFF',
+                                        color: isActive ? '#004B93' : '#475569',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease'
+                                    }}
+                                >
+                                    <Icon size={14} /> {role.label}
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+
                 {serverError && (
                     <div className="alert alert-error" role="alert" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#B91C1C', padding: '12px 16px', borderRadius: '12px', marginBottom: '20px' }}>
                         <AlertCircle size={18} />
@@ -117,7 +167,7 @@ export default function LoginPage() {
                             <input
                                 id="login-email"
                                 type="email"
-                                placeholder="name@institute.com"
+                                placeholder="name@domain.com"
                                 className="premium-input"
                                 {...register('email')}
                             />
@@ -177,32 +227,28 @@ export default function LoginPage() {
                             boxShadow: '0 8px 20px rgba(0, 75, 147, 0.25)',
                             marginTop: 24
                         }}
-                        onMouseEnter={e => {
-                            if (!isLoading) {
-                                e.currentTarget.style.transform = 'translateY(-2px)'
-                                e.currentTarget.style.boxShadow = '0 12px 24px rgba(0, 75, 147, 0.35)'
-                            }
-                        }}
-                        onMouseLeave={e => {
-                            if (!isLoading) {
-                                e.currentTarget.style.transform = 'translateY(0)'
-                                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 75, 147, 0.25)'
-                            }
-                        }}
                     >
                         {isLoading ? <div style={{ width: 20, height: 20, border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : (
-                            <>Sign In <ArrowRight size={18} /></>
+                            <>Sign In to {ROLES.find(r => r.id === selectedRole)?.label || 'Portal'} <ArrowRight size={18} /></>
                         )}
                     </button>
                 </form>
             </div>
 
-                <div style={{ marginTop: 32, textAlign: 'center' }} className="fade-in-up fade-in-up-delay-3">
-                    <p style={{ fontSize: 14, color: '#6B7280', fontWeight: 500 }}>
-                        Don&apos;t have an account?{' '}
-                        <Link href="/auth/signup" style={{ color: '#004B93', fontWeight: 800, textDecoration: 'none' }}>Create account</Link>
-                    </p>
-                </div>
+            <div style={{ marginTop: 32, textAlign: 'center' }} className="fade-in-up fade-in-up-delay-3">
+                <p style={{ fontSize: 14, color: '#6B7280', fontWeight: 500 }}>
+                    Don&apos;t have an account?{' '}
+                    <Link href="/auth/signup" style={{ color: '#004B93', fontWeight: 800, textDecoration: 'none' }}>Create account</Link>
+                </p>
+            </div>
         </AuthLayout>
+    )
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<div style={{ textAlign: 'center', padding: '40px' }}>Loading Portal...</div>}>
+            <LoginFormContent />
+        </Suspense>
     )
 }
