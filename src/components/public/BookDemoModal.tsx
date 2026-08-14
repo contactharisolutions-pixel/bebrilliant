@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-[#000]'
+import { createPortal as reactCreatePortal } from 'react-dom'
 import {
     X, User, Mail, Phone, Building, Briefcase, MessageSquare,
     ArrowRight, CheckCircle2, Sparkles, ShieldCheck
@@ -12,6 +14,7 @@ interface BookDemoModalProps {
 }
 
 export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose }) => {
+    const [mounted, setMounted] = useState(false)
     const [submitted, setSubmitted] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
@@ -24,6 +27,10 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
         type: 'school',
         message: ''
     })
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -41,7 +48,7 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
         }
     }, [isOpen, onClose])
 
-    if (!isOpen) return null
+    if (!isOpen || !mounted) return null
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -72,44 +79,55 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
         }
     }
 
-    return (
+    const modalContent = (
         <div
             onClick={onClose}
             style={{
                 position: 'fixed',
-                inset: 0,
-                backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: '100vw',
+                height: '100vh',
+                backgroundColor: 'rgba(15, 23, 42, 0.8)',
                 backdropFilter: 'blur(8px)',
-                zIndex: 2500,
+                WebkitBackdropFilter: 'blur(8px)',
+                zIndex: 999999,
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: 'flex-start',
                 justifyContent: 'center',
-                padding: '20px 16px',
-                overflowY: 'auto'
+                padding: '30px 16px',
+                overflowY: 'auto',
+                boxSizing: 'border-box'
             }}
         >
             <div
                 onClick={(e) => e.stopPropagation()}
                 style={{
                     width: '100%',
-                    maxWidth: 620,
+                    maxWidth: 580,
+                    maxHeight: 'calc(100vh - 60px)',
+                    overflowY: 'auto',
+                    margin: 'auto 0',
                     background: '#FFFFFF',
-                    borderRadius: 28,
-                    padding: '36px 32px',
-                    boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.3)',
+                    borderRadius: 24,
+                    padding: '32px 28px',
+                    boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.35)',
                     position: 'relative',
                     fontFamily: 'var(--font-worksans, sans-serif)',
                     border: '1px solid #E2E8F0',
-                    animation: 'fadeInUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+                    boxSizing: 'border-box'
                 }}
             >
                 {/* Close Button */}
                 <button
                     onClick={onClose}
+                    aria-label="Close modal"
                     style={{
                         position: 'absolute',
-                        top: 20,
-                        right: 20,
+                        top: 18,
+                        right: 18,
                         width: 36,
                         height: 36,
                         borderRadius: '50%',
@@ -120,7 +138,8 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
                         justifyContent: 'center',
                         cursor: 'pointer',
                         color: '#64748B',
-                        transition: 'all 0.15s ease'
+                        transition: 'all 0.15s ease',
+                        zIndex: 10
                     }}
                     onMouseEnter={e => {
                         e.currentTarget.style.background = '#E2E8F0'
@@ -139,10 +158,10 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
                         <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#DCFCE7', color: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
                             <CheckCircle2 size={36} />
                         </div>
-                        <h3 style={{ fontSize: 26, fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 10 }}>
+                        <h3 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 10 }}>
                             Demo Request Confirmed!
                         </h3>
-                        <p style={{ fontSize: 15, color: '#64748B', lineHeight: 1.6, maxWidth: 440, margin: '0 auto 28px' }}>
+                        <p style={{ fontSize: 14.5, color: '#64748B', lineHeight: 1.6, maxWidth: 440, margin: '0 auto 28px' }}>
                             Thank you, <strong style={{ color: '#0F172A' }}>{formData.name}</strong>. Our institutional specialist will reach out to schedule your personalized walkthrough.
                         </p>
                         <button
@@ -164,24 +183,24 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
                 ) : (
                     <>
                         {/* Header */}
-                        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#EFF6FF', color: '#004B93', padding: '4px 12px', borderRadius: 999, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
+                        <div style={{ textAlign: 'center', marginBottom: 24, paddingRight: 20 }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#EFF6FF', color: '#004B93', padding: '4px 12px', borderRadius: 999, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
                                 <Sparkles size={12} /> Book Live Demo
                             </div>
-                            <h2 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 6 }}>
+                            <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 4 }}>
                                 Schedule a Campus Walkthrough
                             </h2>
-                            <p style={{ fontSize: 13.5, color: '#64748B', margin: 0 }}>
+                            <p style={{ fontSize: 13, color: '#64748B', margin: 0 }}>
                                 See how BeBrilliant automates your examinations in under 20 minutes.
                             </p>
                         </div>
 
                         {/* Form */}
-                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                             
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                                 <div>
-                                    <label style={{ fontSize: 11, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 6 }}>
+                                    <label style={{ fontSize: 11, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 5 }}>
                                         Full Name *
                                     </label>
                                     <input
@@ -192,18 +211,19 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         style={{
                                             width: '100%',
-                                            padding: '11px 14px',
-                                            borderRadius: 12,
+                                            padding: '10px 12px',
+                                            borderRadius: 10,
                                             border: '1.5px solid #E2E8F0',
-                                            fontSize: 14,
+                                            fontSize: 13.5,
                                             outline: 'none',
                                             background: '#F8FAFC',
-                                            color: '#0F172A'
+                                            color: '#0F172A',
+                                            boxSizing: 'border-box'
                                         }}
                                     />
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: 11, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 6 }}>
+                                    <label style={{ fontSize: 11, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 5 }}>
                                         Designation *
                                     </label>
                                     <input
@@ -214,21 +234,22 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
                                         onChange={e => setFormData({ ...formData, designation: e.target.value })}
                                         style={{
                                             width: '100%',
-                                            padding: '11px 14px',
-                                            borderRadius: 12,
+                                            padding: '10px 12px',
+                                            borderRadius: 10,
                                             border: '1.5px solid #E2E8F0',
-                                            fontSize: 14,
+                                            fontSize: 13.5,
                                             outline: 'none',
                                             background: '#F8FAFC',
-                                            color: '#0F172A'
+                                            color: '#0F172A',
+                                            boxSizing: 'border-box'
                                         }}
                                     />
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                                 <div>
-                                    <label style={{ fontSize: 11, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 6 }}>
+                                    <label style={{ fontSize: 11, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 5 }}>
                                         Work Email *
                                     </label>
                                     <input
@@ -239,18 +260,19 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
                                         style={{
                                             width: '100%',
-                                            padding: '11px 14px',
-                                            borderRadius: 12,
+                                            padding: '10px 12px',
+                                            borderRadius: 10,
                                             border: '1.5px solid #E2E8F0',
-                                            fontSize: 14,
+                                            fontSize: 13.5,
                                             outline: 'none',
                                             background: '#F8FAFC',
-                                            color: '#0F172A'
+                                            color: '#0F172A',
+                                            boxSizing: 'border-box'
                                         }}
                                     />
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: 11, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 6 }}>
+                                    <label style={{ fontSize: 11, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 5 }}>
                                         Phone Number *
                                     </label>
                                     <input
@@ -261,21 +283,22 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
                                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                         style={{
                                             width: '100%',
-                                            padding: '11px 14px',
-                                            borderRadius: 12,
+                                            padding: '10px 12px',
+                                            borderRadius: 10,
                                             border: '1.5px solid #E2E8F0',
-                                            fontSize: 14,
+                                            fontSize: 13.5,
                                             outline: 'none',
                                             background: '#F8FAFC',
-                                            color: '#0F172A'
+                                            color: '#0F172A',
+                                            boxSizing: 'border-box'
                                         }}
                                     />
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                                 <div>
-                                    <label style={{ fontSize: 11, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 6 }}>
+                                    <label style={{ fontSize: 11, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 5 }}>
                                         School / Institute Name *
                                     </label>
                                     <input
@@ -286,18 +309,19 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
                                         onChange={e => setFormData({ ...formData, organization: e.target.value })}
                                         style={{
                                             width: '100%',
-                                            padding: '11px 14px',
-                                            borderRadius: 12,
+                                            padding: '10px 12px',
+                                            borderRadius: 10,
                                             border: '1.5px solid #E2E8F0',
-                                            fontSize: 14,
+                                            fontSize: 13.5,
                                             outline: 'none',
                                             background: '#F8FAFC',
-                                            color: '#0F172A'
+                                            color: '#0F172A',
+                                            boxSizing: 'border-box'
                                         }}
                                     />
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: 11, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 6 }}>
+                                    <label style={{ fontSize: 11, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 5 }}>
                                         Institution Category *
                                     </label>
                                     <select
@@ -306,14 +330,15 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
                                         onChange={e => setFormData({ ...formData, type: e.target.value })}
                                         style={{
                                             width: '100%',
-                                            padding: '11px 14px',
-                                            borderRadius: 12,
+                                            padding: '10px 12px',
+                                            borderRadius: 10,
                                             border: '1.5px solid #E2E8F0',
-                                            fontSize: 14,
+                                            fontSize: 13.5,
                                             outline: 'none',
                                             background: '#F8FAFC',
                                             color: '#0F172A',
-                                            cursor: 'pointer'
+                                            cursor: 'pointer',
+                                            boxSizing: 'border-box'
                                         }}
                                     >
                                         <option value="school">School / School Group</option>
@@ -325,7 +350,7 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
                             </div>
 
                             {error && (
-                                <div style={{ fontSize: 12.5, color: '#DC2626', fontWeight: 600, background: '#FEF2F2', border: '1px solid #FECACA', padding: '10px 14px', borderRadius: 10 }}>
+                                <div style={{ fontSize: 12, color: '#DC2626', fontWeight: 600, background: '#FEF2F2', border: '1px solid #FECACA', padding: '8px 12px', borderRadius: 8 }}>
                                     {error}
                                 </div>
                             )}
@@ -335,20 +360,20 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
                                 disabled={submitting}
                                 style={{
                                     width: '100%',
-                                    padding: '14px',
-                                    borderRadius: 14,
+                                    padding: '13px',
+                                    borderRadius: 12,
                                     border: 'none',
                                     background: 'linear-gradient(135deg, #004B93 0%, #1FAC63 100%)',
                                     color: '#FFFFFF',
-                                    fontSize: 15,
+                                    fontSize: 14.5,
                                     fontWeight: 800,
                                     cursor: submitting ? 'not-allowed' : 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     gap: 8,
-                                    boxShadow: '0 8px 20px rgba(0, 75, 147, 0.25)',
-                                    marginTop: 6
+                                    boxShadow: '0 6px 18px rgba(0, 75, 147, 0.25)',
+                                    marginTop: 4
                                 }}
                             >
                                 {submitting ? 'Submitting Request...' : (
@@ -366,4 +391,6 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
             </div>
         </div>
     )
+
+    return reactCreatePortal(modalContent, document.body)
 }
