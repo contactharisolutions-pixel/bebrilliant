@@ -184,12 +184,12 @@ export default function SalesMarketingPage() {
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 36, flexWrap: 'wrap', gap: 16 }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <div style={{ background: P.brandBg, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800, color: P.brand, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Revenue Architecture</div>
+                    <div style={{ background: P.brandBg, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800, color: P.brand, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sales & Growth</div>
                     <div style={{ width: 4, height: 4, borderRadius: '50%', background: P.muted }} />
-                    <div style={{ fontSize: 12, fontWeight: 600, color: P.muted }}>Enterprise Sequence Engine</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: P.muted }}>Growth Engine</div>
                   </div>
-                    <h1 style={{ fontSize: 32, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.03em' }}>Sales Management</h1>
-                    <p style={{ fontSize: 14, color: P.muted, margin: '6px 0 0', fontWeight: 600 }}>Provisioning tracking & global acquisition sequences</p>
+                    <h1 style={{ fontSize: 32, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.03em' }}>Sales & Growth</h1>
+                    <p style={{ fontSize: 14, color: P.muted, margin: '6px 0 0', fontWeight: 600 }}>Track school growth, demo performance, and subscription plans.</p>
                 </div>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                     <div style={{ display: 'flex', gap: 4, background: P.card, border: '1px solid ' + P.border, borderRadius: 12, padding: 5, boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>

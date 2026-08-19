@@ -491,8 +491,8 @@ export default function OnboardingPage() {
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
                 <div>
-                    <div style={{ fontSize: 28, fontWeight: 900, color: P.dark, letterSpacing: '-0.5px' }}>Tenant Onboarding</div>
-                    <div style={{ fontSize: 14, color: P.muted, marginTop: 4 }}>Lifecycle management, task tracking, and health monitoring</div>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: P.dark, letterSpacing: '-0.5px' }}>Onboarding Progress</div>
+                    <div style={{ fontSize: 14, color: P.muted, marginTop: 4 }}>Track setup progress, school onboarding steps, and account health for registered schools.</div>
                 </div>
                 <button onClick={() => fetchData(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', background: P.card, border: '1px solid ' + P.border, borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 13, color: P.text }}>
                     <RefreshCw size={14} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} /> Refresh
