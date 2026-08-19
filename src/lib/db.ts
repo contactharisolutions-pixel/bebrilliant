@@ -1,13 +1,13 @@
 import { Pool } from 'pg'
 
-const isLocalDb = process.env.DATABASE_URL && (
-  process.env.DATABASE_URL.includes('localhost') || 
-  process.env.DATABASE_URL.includes('127.0.0.1')
+const useSsl = Boolean(
+  process.env.DATABASE_URL?.includes('sslmode=require') || 
+  process.env.DATABASE_SSL === 'true'
 )
 
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: isLocalDb ? undefined : { rejectUnauthorized: false }
+  ssl: useSsl ? { rejectUnauthorized: false } : false
 })
 
 export async function query(text: string, params?: any[]) {
