@@ -30,28 +30,27 @@ import {
 
 const NAV_GROUPS = [
     {
-        title: 'Dashboard & Reports',
+        title: 'Main Dashboard',
         items: [
             { label: 'Dashboard', icon: LayoutDashboard, href: '/owner/dashboard' },
-            { label: 'Reports & Insights', icon: BarChart4, href: '/owner/analytics', permission: 'analytics.view' },
         ]
     },
     {
-        title: 'Institute Management',
+        title: 'School & Institute Management',
         items: [
-            { label: 'My Institutes', icon: School, href: '/owner/tenants', permission: 'settings.manage' },
-            { label: 'Admission Enquiries', icon: UserPlus, href: '/owner/crm', permission: 'crm.manage' },
-            { label: 'Onboarding Status', icon: ShieldCheck, href: '/owner/onboarding', permission: 'crm.manage' },
+            { label: 'Registered Schools', icon: School, href: '/owner/tenants', permission: 'settings.manage' },
+            { label: 'Admission Inquiries', icon: UserPlus, href: '/owner/crm', permission: 'crm.manage' },
+            { label: 'Onboarding Progress', icon: ShieldCheck, href: '/owner/onboarding', permission: 'crm.manage' },
             { label: 'Sales & Growth', icon: TrendingUp, href: '/owner/sales', permission: 'crm.manage' },
         ]
     },
     {
-        title: 'Fees & Finance',
+        title: 'Income & Finances',
         items: [
-            { label: 'Subscription Payments', icon: Receipt, href: '/owner/payments', permission: 'payouts.manage' },
-            { label: 'Institute Balances', icon: Zap, href: '/owner/finance', permission: 'payouts.manage' },
+            { label: 'School Payments', icon: Receipt, href: '/owner/payments', permission: 'payouts.manage' },
+            { label: 'School Balances', icon: Zap, href: '/owner/finance', permission: 'payouts.manage' },
             { label: 'Withdrawal Requests', icon: Wallet, href: '/owner/finance/payouts', permission: 'payouts.manage' },
-            { label: 'Wallet Settings', icon: CreditCard, href: '/owner/wallet-config', permission: 'payouts.manage' },
+            { label: 'Payment Settings', icon: CreditCard, href: '/owner/wallet-config', permission: 'payouts.manage' },
         ]
     },
     {
@@ -63,7 +62,7 @@ const NAV_GROUPS = [
         ]
     },
     {
-        title: 'Settings & Control',
+        title: 'Settings & Controls',
         items: [
             { label: 'Website Manager',       icon: Globe,         href: '/owner/cms',            permission: 'cms.manage' },
             { label: 'Message Templates',    icon: MessageSquare, href: '/owner/communications', permission: 'automation.manage' },
