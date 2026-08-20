@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 
 import { verifyPlatformAccess } from '@/lib/platform-auth'
 
-/** GET /api/owner/rbac - Full RBAC data: roles, permissions, users, audit logs */
+/** GET /api/owner/rbac - Full RBAC data: roles, permissions, owner staff users, audit logs */
 export async function GET(request: NextRequest) {
     const user = await verifyPlatformAccess('settings.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -12,44 +12,52 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
     const roleFilter = searchParams.get('role') || 'all'
-    const tenantFilter = searchParams.get('tenant') || 'all'
     const page = parseInt(searchParams.get('page') || '1')
     const limit = 25
     const offset = (page - 1) * limit
 
+    // Owner platform staff roles only — no tenants, teachers, parents, students
+    const OWNER_STAFF_ROLES = ['owner', 'platform_staff', 'sales_exec', 'demo_exec', 'onboarding_spec', 'support', 'admin']
+
     // Parallel fetch all RBAC data
-    const [rolesRes, permissionsRes, rolePermsRes, auditRes, tenantsRes] = await Promise.all([
+    const [rolesRes, permissionsRes, rolePermsRes, auditRes] = await Promise.all([
         supabaseAdmin.from('roles').select('id, name, description').order('name'),
         supabaseAdmin.from('permissions').select('id, module, action, key, description').order('module').order('action'),
         supabaseAdmin.from('role_permissions').select('id, role_id, permission_id, tenant_id, roles!role_permissions_role_id_fkey(name), permissions!role_permissions_permission_id_fkey(key, module, action)'),
         supabaseAdmin.from('audit_logs').select('id, action, module, details, created_at, tenant_id, user_id').order('created_at', { ascending: false }).limit(100),
-        supabaseAdmin.from('tenants').select('id, name, type').order('name'),
     ])
 
-    // Users with role filter and search
+    // Users: ONLY owner platform staff (tenant_id IS NULL + owner staff roles)
     let usersQ = supabaseAdmin
         .from('user_profiles')
-        .select('id, first_name, last_name, email, role, tenant_id, is_active, created_at, tenants!user_profiles_tenant_id_fkey(name, type)', { count: 'exact' })
+        .select('id, first_name, last_name, email, role, tenant_id, is_active, created_at')
+        .is('tenant_id', null)
+        .in('role', OWNER_STAFF_ROLES)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
 
-    if (roleFilter === 'staff') {
-        usersQ = usersQ.in('role', ['owner', 'platform_staff', 'sales_exec', 'demo_exec', 'onboarding_spec'])
-    } else if (roleFilter !== 'all') {
+    if (roleFilter !== 'all' && OWNER_STAFF_ROLES.includes(roleFilter)) {
         usersQ = usersQ.eq('role', roleFilter)
     }
-    if (tenantFilter !== 'all') usersQ = usersQ.eq('tenant_id', tenantFilter)
     if (search) usersQ = usersQ.or('email.ilike.%' + search + '%,first_name.ilike.%' + search + '%,last_name.ilike.%' + search + '%')
 
     const { data: users, count: usersCount } = await usersQ
 
-    // Role distribution
-    const allUsers = (await supabaseAdmin.from('user_profiles').select('role, is_active')).data ?? []
-    const roleDistribution = ['owner', 'tenant_admin', 'teacher', 'teacher_pending', 'student', 'parent'].map(r => ({
+    // Stats: scoped to owner platform staff only
+    const { data: allStaff } = await supabaseAdmin
+        .from('user_profiles')
+        .select('role, is_active')
+        .is('tenant_id', null)
+        .in('role', OWNER_STAFF_ROLES)
+
+    const allUsers = allStaff ?? []
+
+    const roleDistribution = OWNER_STAFF_ROLES.map(r => ({
         role: r,
-        count: allUsers.filter(u => u.role === r).length,
-        active: allUsers.filter(u => u.role === r && u.is_active).length,
-    }))
+        label: r === 'owner' ? 'Owner' : r === 'platform_staff' ? 'Platform Staff' : r === 'sales_exec' ? 'Sales Executive' : r === 'demo_exec' ? 'Demo Executive' : r === 'onboarding_spec' ? 'Onboarding Specialist' : r === 'support' ? 'Support' : 'Admin',
+        count: allUsers.filter((u: any) => u.role === r).length,
+        active: allUsers.filter((u: any) => u.role === r && u.is_active).length,
+    })).filter(r => r.count > 0)
 
     // Permission matrix: group by module
     const permissions = permissionsRes.data ?? []
@@ -67,14 +75,15 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
         users: users ?? [],
-        usersTotal: usersCount ?? 0,
+        usersTotal: usersCount ?? (users ?? []).length,
         roles,
         permissions: permissionsRes.data ?? [],
         permMatrix,
         rolePerms: rolePermsRes.data ?? [],
         roleDistribution,
         auditLogs: auditRes.data ?? [],
-        tenants: tenantsRes.data ?? [],
+        tenants: [],
+        ownerStaffRoles: OWNER_STAFF_ROLES,
         stats: {
             totalUsers: allUsers.length,
             activeUsers: allUsers.filter((u: any) => u.is_active).length,
@@ -97,9 +106,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'All fields are required.' }, { status: 400 })
         }
 
-        const STAFF_ROLES = ['owner', 'platform_staff', 'sales_exec', 'demo_exec', 'onboarding_spec']
+        const STAFF_ROLES = ['owner', 'platform_staff', 'sales_exec', 'demo_exec', 'onboarding_spec', 'support', 'admin']
         if (!STAFF_ROLES.includes(role)) {
-            return NextResponse.json({ error: 'Invalid platform staff role selected.' }, { status: 400 })
+            return NextResponse.json({ error: 'Invalid platform staff role. Please select a valid role.' }, { status: 400 })
         }
 
         // Create auth user

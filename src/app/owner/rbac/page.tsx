@@ -13,21 +13,19 @@ import { P, GLASS_STYLES } from '@/components/shared/institutional/theme'
 import { KpiCard } from '@/components/shared/institutional/KpiCard'
 import { SideDrawer } from '@/components/owner/SideDrawer'
 
-// ── ROLE STYLING CONFIG ────────────────────────────────────────────────────────
+// ── OWNER PLATFORM STAFF ROLE STYLING ─────────────────────────────────────────
 const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string; badge: string }> = {
     owner:            { label: 'Platform Owner',        color: '#004B93', bg: '#EEF4FF', badge: '👑' },
-    platform_staff:   { label: 'Platform Staff',        color: '#004B93', bg: '#EEF4FF', badge: '🛡️' },
+    admin:            { label: 'Administrator',         color: '#1D4ED8', bg: '#EFF6FF', badge: '⚙️' },
+    platform_staff:   { label: 'Platform Staff',        color: '#6D28D9', bg: '#F5F3FF', badge: '🛡️' },
     sales_exec:       { label: 'Sales Executive',       color: '#7C3AED', bg: '#F5F3FF', badge: '💼' },
     demo_exec:        { label: 'Demo Executive',        color: '#2563EB', bg: '#EFF6FF', badge: '📺' },
     onboarding_spec:  { label: 'Onboarding Specialist', color: '#059669', bg: '#ECFDF5', badge: '🚀' },
-    tenant_admin:     { label: 'Tenant Admin',          color: '#F0A026', bg: '#FFF7E6', badge: '🏢' },
-    teacher:          { label: 'Teacher',               color: '#2563EB', bg: '#EFF6FF', badge: '📚' },
-    teacher_pending:  { label: 'Teacher (Pending)',     color: '#D97706', bg: '#FFFBEB', badge: '⏳' },
-    student:          { label: 'Student',               color: '#059669', bg: '#ECFDF5', badge: '🎓' },
-    parent:           { label: 'Parent',                color: '#6B7280', bg: '#F3F4F6', badge: '👪' },
+    support:          { label: 'Support Staff',         color: '#D97706', bg: '#FFFBEB', badge: '🎧' },
 }
 
-const PLATFORM_STAFF_ROLES = ['owner', 'platform_staff', 'sales_exec', 'demo_exec', 'onboarding_spec']
+// All valid owner platform staff roles — matches backend OWNER_STAFF_ROLES
+const PLATFORM_STAFF_ROLES = ['owner', 'admin', 'platform_staff', 'sales_exec', 'demo_exec', 'onboarding_spec', 'support']
 
 function Toast({ msg, type, onClose }: { msg: string; type: 'success' | 'error'; onClose: () => void }) {
     useEffect(() => {
@@ -61,7 +59,6 @@ export default function StaffPermissionsPage() {
     // User Directory state
     const [search, setSearch] = useState('')
     const [roleFilter, setRoleFilter] = useState('all')
-    const [tenantFilter, setTenantFilter] = useState('all')
     const [statusFilter, setStatusFilter] = useState('all')
     const [page, setPage] = useState(1)
 
@@ -81,7 +78,6 @@ export default function StaffPermissionsPage() {
         last_name: '',
         email: '',
         role: 'platform_staff',
-        tenant_id: ''
     })
     const [inviteSaving, setInviteSaving] = useState(false)
 
@@ -109,7 +105,7 @@ export default function StaffPermissionsPage() {
         if (isRefresh) setRefreshing(true); else setLoading(true)
         try {
             const params = new URLSearchParams({
-                search, role: roleFilter, tenant: tenantFilter, page: String(page)
+                search, role: roleFilter, page: String(page)
             })
             const res = await fetch(`/api/owner/rbac?${params}`)
             if (res.ok) setData(await res.json())
@@ -118,7 +114,7 @@ export default function StaffPermissionsPage() {
         } finally {
             setLoading(false); setRefreshing(false)
         }
-    }, [search, roleFilter, tenantFilter, page])
+    }, [search, roleFilter, page])
 
     const fetchPermissions = useCallback(async () => {
         setPermLoading(true)
@@ -432,10 +428,7 @@ export default function StaffPermissionsPage() {
                             <option value="suspended">Suspended Staff</option>
                         </select>
 
-                        <select value={tenantFilter} onChange={e => { setTenantFilter(e.target.value); setPage(1); }} style={{ padding: '10px 14px', border: `1px solid ${P.border}`, borderRadius: 12, fontSize: 13, background: '#fff', outline: 'none', fontWeight: 700, color: P.dark }}>
-                            <option value="all">All Institutes</option>
-                            {(data?.tenants ?? []).map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                        </select>
+
 
                         <span style={{ fontSize: 12, color: P.muted, fontWeight: 800 }}>{data?.usersTotal ?? 0} Total Staff</span>
                     </div>
@@ -445,7 +438,7 @@ export default function StaffPermissionsPage() {
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr style={{ background: P.bg, borderBottom: `2px solid ${P.border}` }}>
-                                    {['User Staff Member', 'Role Assigned', 'Institute Scope', 'Status', 'Date Joined', 'Actions'].map(h => (
+                                    {['Staff Member', 'Role', 'Status', 'Date Joined', 'Actions'].map(h => (
                                         <th key={h} style={{ padding: '16px 24px', textAlign: 'left', fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
                                     ))}
                                 </tr>
@@ -469,9 +462,7 @@ export default function StaffPermissionsPage() {
                                                     {cfg.badge} {cfg.label}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '18px 24px', fontSize: 13, color: P.dark, fontWeight: 700 }}>
-                                                {(u.tenants as any)?.name ?? (u.tenant_id ? 'Institute Scope' : 'All Platform Institutes')}
-                                            </td>
+
                                             <td style={{ padding: '18px 24px' }}>
                                                 <span style={{ background: u.is_active ? '#ECFDF5' : '#FEF2F2', color: u.is_active ? '#059669' : '#DC2626', padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 900 }}>
                                                     {u.is_active ? 'ACTIVE' : 'SUSPENDED'}

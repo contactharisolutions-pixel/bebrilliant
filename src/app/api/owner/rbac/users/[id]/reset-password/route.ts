@@ -1,104 +1,110 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { pool } from '@/lib/db'
+import bcrypt from 'bcryptjs'
 import { verifyPlatformAccess } from '@/lib/platform-auth'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 
-/** POST /api/owner/rbac/users/[id]/reset-password — Direct Owner Password Reset */
+/** POST /api/owner/rbac/users/[id]/reset-password
+ *  Owner directly resets a staff member's password. No email link sent.
+ */
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const user = await verifyPlatformAccess('settings.manage')
-    if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const caller = await verifyPlatformAccess('settings.manage')
+    if (!caller) return NextResponse.json({ error: 'Access denied.' }, { status: 403 })
+
     const { id } = await params
 
     try {
         const body = await request.json()
         const { password } = body
 
-        if (!password || password.length < 6) {
+        if (!password || typeof password !== 'string' || password.length < 6) {
             return NextResponse.json({ error: 'Password must be at least 6 characters long.' }, { status: 400 })
         }
 
-        // 1. Fetch user profile
-        const { data: profile } = await supabaseAdmin
-            .from('user_profiles')
-            .select('id, email, first_name, last_name, role')
-            .eq('id', id)
-            .single()
+        // 1. Fetch staff profile — must be owner platform staff (no tenant)
+        const { rows: profileRows } = await pool.query(
+            `SELECT id, email, first_name, last_name, role, tenant_id
+             FROM public.user_profiles
+             WHERE id = $1`,
+            [id]
+        )
 
-        if (!profile?.email) {
-            return NextResponse.json({ error: 'Staff user profile not found.' }, { status: 404 })
+        if (profileRows.length === 0) {
+            return NextResponse.json({ error: 'Staff member not found.' }, { status: 404 })
         }
 
-        let targetAuthId = id
+        const profile = profileRows[0]
 
-        // 2. Try direct update by profile ID
-        let { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(targetAuthId, {
-            password,
-            email_confirm: true
-        })
+        // Only allow resetting platform staff passwords (not tenant users)
+        const OWNER_STAFF_ROLES = ['owner', 'platform_staff', 'sales_exec', 'demo_exec', 'onboarding_spec', 'support', 'admin']
+        if (profile.tenant_id !== null || !OWNER_STAFF_ROLES.includes(profile.role)) {
+            return NextResponse.json({ error: 'You can only reset passwords for your own platform staff members.' }, { status: 403 })
+        }
 
-        // 3. If update by ID fails (e.g. user not found in auth.users), search by email
-        if (updateError) {
-            console.warn(`Direct update by ID ${id} failed: ${updateError.message}. Searching auth.users by email...`)
-            
-            const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers()
-            const foundAuthUser = authUsers?.users?.find(u => u.email?.toLowerCase() === profile.email.toLowerCase())
+        // 2. Hash new password
+        const hashedPassword = await bcrypt.hash(password, 12)
 
-            if (foundAuthUser) {
-                targetAuthId = foundAuthUser.id
-                const { error: retryError } = await supabaseAdmin.auth.admin.updateUserById(foundAuthUser.id, {
-                    password,
-                    email_confirm: true
-                })
-                updateError = retryError
+        // 3. Try updating auth.users by profile id directly
+        const { rows: updateRows } = await pool.query(
+            `UPDATE auth.users
+             SET encrypted_password = $1, updated_at = NOW(), email_confirmed_at = COALESCE(email_confirmed_at, NOW())
+             WHERE id = $2
+             RETURNING id`,
+            [hashedPassword, id]
+        )
+
+        // 4. If no auth row found by that id, look it up by email
+        if (updateRows.length === 0) {
+            const { rows: authByEmail } = await pool.query(
+                `SELECT id FROM auth.users WHERE email = $1`,
+                [profile.email]
+            )
+
+            if (authByEmail.length > 0) {
+                // Update by email-matched auth id
+                await pool.query(
+                    `UPDATE auth.users
+                     SET encrypted_password = $1, updated_at = NOW(), email_confirmed_at = COALESCE(email_confirmed_at, NOW())
+                     WHERE id = $2`,
+                    [hashedPassword, authByEmail[0].id]
+                )
             } else {
-                // 4. Auth user does not exist at all -> Create auth user with this password
-                console.log(`Creating missing auth user for ${profile.email}...`)
-                const { data: newAuthData, error: createError } = await supabaseAdmin.auth.admin.createUser({
-                    email: profile.email,
-                    password,
-                    email_confirm: true,
-                    user_metadata: { role: profile.role, first_name: profile.first_name, last_name: profile.last_name }
-                })
-
-                if (createError || !newAuthData?.user) {
-                    return NextResponse.json({ error: createError?.message || 'Failed to create auth user.' }, { status: 500 })
-                }
-                
-                targetAuthId = newAuthData.user.id
-                updateError = null
-            }
-
-            // Sync user_profiles ID if it differed from targetAuthId
-            if (targetAuthId !== id) {
-                await supabaseAdmin
-                    .from('user_profiles')
-                    .update({ id: targetAuthId })
-                    .eq('email', profile.email)
+                // No auth user at all — create one so the staff member can log in
+                const newId = profile.id
+                await pool.query(
+                    `INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, aud, role, raw_app_meta_data, raw_user_meta_data)
+                     VALUES ($1, $2, $3, NOW(), 'authenticated', 'authenticated',
+                             '{"provider":"email","providers":["email"]}'::jsonb,
+                             $4::jsonb)`,
+                    [newId, profile.email, hashedPassword,
+                     JSON.stringify({ role: profile.role, first_name: profile.first_name, last_name: profile.last_name })]
+                )
             }
         }
 
-        if (updateError) {
-            return NextResponse.json({ error: updateError.message || 'Failed to update staff password.' }, { status: 500 })
-        }
-
-        // Log audit event
+        // 5. Log the action in audit_logs
         await supabaseAdmin.from('audit_logs').insert({
-            action: 'staff_password_direct_reset',
+            action: 'staff_password_reset',
             module: 'rbac',
-            user_id: user.id,
-            details: { target_user_id: targetAuthId, target_email: profile.email, reset_by: user.id },
+            user_id: caller.id,
+            details: {
+                target_user_id: id,
+                target_email: profile.email,
+                reset_by: caller.id,
+            },
             severity: 'warning',
         })
 
         return NextResponse.json({
             success: true,
             email: profile.email,
-            name: [profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.email
+            name: [profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.email,
         })
     } catch (err: any) {
-        console.error('Direct password reset error:', err)
-        return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 })
+        console.error('[Reset Password Error]:', err)
+        return NextResponse.json({ error: err.message || 'Something went wrong. Please try again.' }, { status: 500 })
     }
 }

@@ -665,17 +665,65 @@ export const supabaseAdmin = {
                     const id = crypto.randomUUID()
                     const { email, password, user_metadata } = payload
                     const hashedPassword = await bcrypt.hash(password, 12)
-                    
                     await pool.query(
                         `INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, aud, role, raw_app_meta_data, raw_user_meta_data)
-                         VALUES ($1, $2, $3, NOW(), 'authenticated', 'authenticated', 
-                                 '{"provider": "email", "providers": ["email"]}'::jsonb, $4)`,
+                         VALUES ($1, $2, $3, NOW(), 'authenticated', 'authenticated',
+                                 '{"provider": "email", "providers": ["email"]}'::jsonb, $4)
+                         ON CONFLICT (email) DO NOTHING`,
                         [id, email, hashedPassword, JSON.stringify(user_metadata || {})]
                     )
-                    return { data: { user: { id } }, error: null }
+                    // Return existing id if conflict
+                    const { rows } = await pool.query(`SELECT id FROM auth.users WHERE email = $1`, [email])
+                    return { data: { user: { id: rows[0]?.id ?? id } }, error: null }
                 } catch (err: any) {
-                    console.error('[Mock Admin CreateUser Error]:', err)
+                    console.error('[Admin CreateUser Error]:', err)
                     return { data: { user: null }, error: err }
+                }
+            },
+            updateUserById: async (id: string, updates: { password?: string; email?: string; email_confirm?: boolean }) => {
+                try {
+                    const sets: string[] = []
+                    const params: any[] = []
+                    let paramIdx = 1
+
+                    if (updates.password) {
+                        const hashed = await bcrypt.hash(updates.password, 12)
+                        sets.push(`encrypted_password = $${paramIdx++}`)
+                        params.push(hashed)
+                    }
+                    if (updates.email) {
+                        sets.push(`email = $${paramIdx++}`)
+                        params.push(updates.email)
+                    }
+                    if (updates.email_confirm) {
+                        sets.push(`email_confirmed_at = NOW()`)
+                    }
+                    if (sets.length === 0) return { data: {}, error: null }
+
+                    params.push(id)
+                    const sql = `UPDATE auth.users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${paramIdx} RETURNING id`
+                    const { rows } = await pool.query(sql, params)
+
+                    if (rows.length === 0) {
+                        return { data: null, error: new Error(`Auth user not found for id: ${id}`) }
+                    }
+                    return { data: { user: rows[0] }, error: null }
+                } catch (err: any) {
+                    console.error('[Admin UpdateUserById Error]:', err)
+                    return { data: null, error: err }
+                }
+            },
+            listUsers: async (options?: { perPage?: number }) => {
+                try {
+                    const limit = options?.perPage ?? 1000
+                    const { rows } = await pool.query(
+                        `SELECT id, email, email_confirmed_at, created_at FROM auth.users ORDER BY created_at DESC LIMIT $1`,
+                        [limit]
+                    )
+                    return { data: { users: rows }, error: null }
+                } catch (err: any) {
+                    console.error('[Admin ListUsers Error]:', err)
+                    return { data: { users: [] }, error: err }
                 }
             },
             deleteUser: async (id: string) => {
@@ -683,7 +731,7 @@ export const supabaseAdmin = {
                     await pool.query(`DELETE FROM auth.users WHERE id = $1`, [id])
                     return { data: {}, error: null }
                 } catch (err: any) {
-                    console.error('[Mock Admin DeleteUser Error]:', err)
+                    console.error('[Admin DeleteUser Error]:', err)
                     return { data: null, error: err }
                 }
             }
