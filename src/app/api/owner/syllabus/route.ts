@@ -244,6 +244,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Unknown action: ' + action }, { status: 400 })
     } catch (e: any) {
         console.error('[Syllabus API Error]', action, e.message)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        return NextResponse.json({ error: e.message || 'Syllabus operation failed' }, { status: 500 })
     }
 }

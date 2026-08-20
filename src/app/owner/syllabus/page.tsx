@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
     BookOpen, BrainCircuit, ShoppingBag, BarChart2,
@@ -272,6 +272,7 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
     const [categoryNameState, setCategoryNameState] = useState('')
     const [result, setResult] = useState<any>(null)
     const [error, setError] = useState('')
+    const [warning, setWarning] = useState('')
     useEffect(() => {
         if (step === 'done') {
             const t = setTimeout(() => {
@@ -283,6 +284,7 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
     const handleGenerate = async () => {
         setStep('generating')
         setError('')
+        setWarning('')
         try {
             let categoryName = '';
             const categoryMap: any = {
@@ -301,6 +303,9 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
             const json = await res.json()
             if (!res.ok) throw new Error(json.error || 'Generation failed')
             setPreviewTree(json.tree)
+            if (json.warning) {
+                setWarning(json.warning)
+            }
             setStep('preview')
         } catch (e: any) {
             setError(e.message)
@@ -335,6 +340,7 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
             onSubmit={step === 'config' ? handleGenerate : (step === 'preview' ? handleSave : onDone)}
             loading={step === 'generating' || step === 'saving'}
             hideSave={step === 'done'}
+            saveLabel={step === 'config' ? 'Generate & Preview' : (step === 'preview' ? 'Save Structure' : 'Done')}
             cancelLabel={step === 'done' ? 'Close' : 'Cancel'}
         >
             {step === 'config' ? (
@@ -401,8 +407,13 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
                              <Check size={14} /> Structure Ready to Save
                          </div>
                          <h3 style={{ fontSize: 18, fontWeight: 800, margin: '12px 0 4px', color: '#1B1D21' }}>Review Generated Curriculum</h3>
-                         <p style={{ color: '#A5A2A6', fontSize: 12, margin: 0 }}>Ensure the structure meets your expectations. The AI verified distinct per-class branches.</p>
+                         <p style={{ color: '#A5A2A6', fontSize: 12, margin: 0 }}>Ensure the structure meets your expectations before saving to the database.</p>
                      </div>
+                     {warning && (
+                         <div style={{ marginBottom: 16, color: '#D97706', fontSize: 12, fontWeight: 600, background: '#FFFBEB', border: '1px solid #FCD34D', padding: 12, borderRadius: 8 }}>
+                             💡 {warning}
+                         </div>
+                     )}
                      <div style={{ background: '#F7F8FA', borderRadius: 12, padding: '16px', maxHeight: 300, overflowY: 'auto', border: '1px solid #E8E8E8', fontSize: 13 }}>
                         {previewTree?.map((c: any, i: number) => (
                             <div key={i} style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #E0E0E0' }}>
@@ -433,15 +444,15 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
                     <h3 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>Syllabus Saved!</h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 24, padding: '16px', background: '#F7F8FA', borderRadius: 16 }}>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: 18, fontWeight: 900 }}>{result.created?.classes || 0}</div>
+                            <div style={{ fontSize: 18, fontWeight: 900 }}>{result?.created?.classes || 0}</div>
                             <div style={{ fontSize: 10, color: '#A5A2A6', fontWeight: 700 }}>CLASSES</div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: 18, fontWeight: 900 }}>{result.created?.subjects || 0}</div>
+                            <div style={{ fontSize: 18, fontWeight: 900 }}>{result?.created?.subjects || 0}</div>
                             <div style={{ fontSize: 10, color: '#A5A2A6', fontWeight: 700 }}>SUBJECTS</div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: 18, fontWeight: 900 }}>{result.created?.chapters || 0}</div>
+                            <div style={{ fontSize: 18, fontWeight: 900 }}>{result?.created?.chapters || 0}</div>
                             <div style={{ fontSize: 10, color: '#A5A2A6', fontWeight: 700 }}>CHAPTERS</div>
                         </div>
                     </div>
