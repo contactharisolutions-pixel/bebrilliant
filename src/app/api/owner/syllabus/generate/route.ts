@@ -79,10 +79,27 @@ function getTemplateMockTree(boardName: string) {
     return mockTree;
 }
 
+// ── Helper: Retrieve Gemini API Key (DB config override or env) ────────────────
+async function getGeminiApiKey(): Promise<string | null> {
+    try {
+        const { data } = await supabaseAdmin
+            .from('ai_engine_config')
+            .select('value')
+            .eq('parameter', 'gemini_api_key')
+            .maybeSingle();
+        if (data?.value && typeof data.value === 'string' && data.value.trim()) {
+            return data.value.trim();
+        }
+    } catch (e) {
+        // ignore fallback
+    }
+    return process.env.GEMINI_API_KEY || null;
+}
+
 // ── Helper: Execute Gemini content generation with multi-model fallback ────────
 async function generateWithGemini(prompt: string): Promise<string> {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
+    const apiKey = await getGeminiApiKey();
+    if (!apiKey) throw new Error("GEMINI_API_KEY is missing or not configured");
 
     const modelsToTry = ["gemini-2.5-flash", "gemini-3.6-flash", "gemini-2.0-flash", "gemini-flash-latest"];
     let lastError: any = null;
@@ -100,7 +117,12 @@ async function generateWithGemini(prompt: string): Promise<string> {
             console.warn(`[Gemini Model Retry Warn] Model ${modelName} failed:`, err.message);
         }
     }
-    throw lastError || new Error("All Gemini AI models failed to respond");
+
+    let userFriendlyMsg = lastError?.message || "Gemini AI models failed to respond";
+    if (userFriendlyMsg.includes("403 Forbidden") || userFriendlyMsg.includes("leaked")) {
+        userFriendlyMsg = "Gemini API key is blocked or reported as leaked by Google. Please update GEMINI_API_KEY in environment or AI Engine settings.";
+    }
+    throw new Error(userFriendlyMsg);
 }
 
 // ── POST /api/owner/syllabus/generate ─────────────────────────────────────────
@@ -201,12 +223,17 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ tree: validTree });
             } catch (aiErr: any) {
                 console.warn("[AI Generate Fallback Triggered]:", aiErr.message);
-                // Fall back gracefully to verified template mock tree when AI service is unavailable
                 const mockTree = getTemplateMockTree(boardName);
+                let cleanWarning = aiErr.message || "";
+                if (cleanWarning.includes("leaked") || cleanWarning.includes("403 Forbidden") || cleanWarning.includes("blocked")) {
+                    cleanWarning = "Gemini API key is reported as leaked by Google. Loaded verified standard syllabus structure instead.";
+                } else {
+                    cleanWarning = `AI generation unavailable (${cleanWarning}). Loaded verified standard syllabus structure.`;
+                }
                 return NextResponse.json({
                     tree: mockTree,
                     fallback: true,
-                    warning: `AI generation unavailable (${aiErr.message}). Loaded standard verified syllabus structure.`
+                    warning: cleanWarning
                 });
             }
 
