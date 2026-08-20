@@ -51,8 +51,7 @@ const NAV_GROUPS = [
     {
         title: 'Management Intelligence',
         items: [
-            { label: 'Funnel Analytics',   icon: BarChart2, href: '/owner/analytics',  permission: 'crm.manage' },
-            { label: 'Registered Tenants', icon: School,    href: '/owner/tenants',    permission: 'settings.manage' },
+            { label: 'Registered Tenants', icon: School, href: '/owner/tenants', permission: 'settings.manage' },
         ]
     },
     {
