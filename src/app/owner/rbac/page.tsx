@@ -37,12 +37,12 @@ function Toast({ msg, type, onClose }: { msg: string; type: 'success' | 'error';
     const isOk = type === 'success'
     return (
         <div style={{
-            position: 'fixed', bottom: 32, right: 32, zIndex: 9999,
+            position: 'fixed', bottom: 32, right: 32, zIndex: 10000,
             background: isOk ? '#ECFDF5' : '#FEF2F2',
             border: `1px solid ${isOk ? P.success : P.error}40`,
             borderRadius: 16, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12,
             color: isOk ? '#065F46' : '#991B1B', fontSize: 13, fontWeight: 800,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.12)'
+            boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
         }}>
             {isOk ? <CheckCircle size={20} color={P.success} /> : <AlertTriangle size={20} color={P.error} />}
             <span>{msg}</span>
@@ -201,12 +201,17 @@ export default function StaffPermissionsPage() {
         setConfirmPassword(pwd)
     }
 
+    const [resetModalError, setResetModalError] = useState<string | null>(null)
+
     const handleDirectPasswordReset = async () => {
         if (!resetTarget) return
+        setResetModalError(null)
         if (!newPassword || newPassword.length < 6) {
+            setResetModalError('Password must be at least 6 characters long.')
             return showToast('Password must be at least 6 characters long.', 'error')
         }
         if (newPassword !== confirmPassword) {
+            setResetModalError('Password confirmation does not match.')
             return showToast('Password confirmation does not match.', 'error')
         }
 
@@ -224,8 +229,10 @@ export default function StaffPermissionsPage() {
             setResetTarget(null)
             setNewPassword('')
             setConfirmPassword('')
+            setResetModalError(null)
             fetchData(true)
         } catch (e: any) {
+            setResetModalError(e.message)
             showToast(e.message, 'error')
         } finally {
             setResetSaving(false)
@@ -753,7 +760,7 @@ export default function StaffPermissionsPage() {
 
             {/* ── RESET STAFF PASSWORD MODAL (DIRECT OWNER RESET — NO EMAIL LINK) ── */}
             {resetTarget && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: 20 }}>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: 20 }}>
                     <div style={{ background: '#fff', borderRadius: 28, width: '100%', maxWidth: 500, overflow: 'hidden', boxShadow: '0 40px 120px rgba(0,0,0,0.25)', border: `1px solid ${P.border}` }}>
                         <div style={{ padding: '24px 32px', borderBottom: `1px solid ${P.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: P.brandBg }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -765,10 +772,17 @@ export default function StaffPermissionsPage() {
                                     <p style={{ margin: '2px 0 0', fontSize: 12, color: P.dark, fontWeight: 600 }}>{[resetTarget.first_name, resetTarget.last_name].filter(Boolean).join(' ') || resetTarget.email}</p>
                                 </div>
                             </div>
-                            <button onClick={() => setResetTarget(null)} style={{ background: '#fff', border: `1px solid ${P.border}`, width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} color={P.muted} /></button>
+                            <button onClick={() => { setResetTarget(null); setResetModalError(null); }} style={{ background: '#fff', border: `1px solid ${P.border}`, width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} color={P.muted} /></button>
                         </div>
 
                         <div style={{ padding: '24px 32px' }}>
+                            {resetModalError && (
+                                <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 14, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, color: '#991B1B', fontSize: 12, fontWeight: 800 }}>
+                                    <AlertTriangle size={16} color="#DC2626" />
+                                    <span>{resetModalError}</span>
+                                </div>
+                            )}
+
                             <div style={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: 14, padding: 14, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <Lock size={16} color={P.brand} />
                                 <div style={{ fontSize: 12, color: P.dark, fontWeight: 700 }}>
