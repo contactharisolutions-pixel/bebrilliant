@@ -26,21 +26,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ invites: data ?? [] })
 }
 
-const STAFF_ROLES = ['owner', 'platform_staff', 'sales_exec', 'demo_exec', 'onboarding_spec']
+const STAFF_ROLES = ['owner', 'admin', 'platform_staff', 'sales_exec', 'demo_exec', 'onboarding_spec', 'support']
 
-/** POST /api/owner/rbac/invites — Create and send a staff invitation */
+/** POST /api/owner/rbac/invites — Create a staff account with owner-set password */
 export async function POST(request: NextRequest) {
     const user = await verifyPlatformAccess('settings.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
         const body = await request.json()
-        const { email, role, first_name, last_name } = body
+        const { email, role, first_name, last_name, password } = body
 
-        if (!email || !role) return NextResponse.json({ error: 'email and role are required' }, { status: 400 })
-        if (!STAFF_ROLES.includes(role)) return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+        if (!email || !role) return NextResponse.json({ error: 'Email and role are required.' }, { status: 400 })
+        if (!first_name || !last_name) return NextResponse.json({ error: 'First name and last name are required.' }, { status: 400 })
+        if (!password || password.length < 6) return NextResponse.json({ error: 'Password must be at least 6 characters long.' }, { status: 400 })
+        if (!STAFF_ROLES.includes(role)) return NextResponse.json({ error: 'Invalid platform staff role selected.' }, { status: 400 })
 
-        // Check for existing pending invite
+        // Check for existing pending invite or profile
         const { data: existing } = await supabaseAdmin
             .from('staff_invites')
             .select('id, status')
@@ -50,31 +52,29 @@ export async function POST(request: NextRequest) {
 
         if (existing) return NextResponse.json({ error: 'A pending invite already exists for this email.' }, { status: 409 })
 
-        // Create invite record
+        // Create invite record (audit trail)
         const { data: invite, error: inviteErr } = await supabaseAdmin
             .from('staff_invites')
             .insert({ email, role, first_name, last_name, invited_by: user.id })
             .select()
             .single()
 
-        if (inviteErr || !invite) return NextResponse.json({ error: 'Failed to create invite' }, { status: 500 })
+        if (inviteErr || !invite) return NextResponse.json({ error: 'Failed to create invite record.' }, { status: 500 })
 
-        // Create actual auth user directly (per user decision: send email via provider)
-        const tempPassword = 'Staff@' + Math.random().toString(36).slice(2, 8).toUpperCase()
+        // Create auth user with the owner-specified password
         const { data: authData, error: authErr } = await supabaseAdmin.auth.admin.createUser({
             email,
-            password: tempPassword,
+            password,
             email_confirm: true,
             user_metadata: { role, first_name, last_name },
         })
 
         if (authErr || !authData?.user) {
-            // Clean up the invite if auth user creation failed
             await supabaseAdmin.from('staff_invites').delete().eq('id', invite.id)
-            return NextResponse.json({ error: authErr?.message || 'Failed to create auth user' }, { status: 400 })
+            return NextResponse.json({ error: authErr?.message || 'Failed to create staff login account.' }, { status: 400 })
         }
 
-        // Create profile
+        // Create user profile (platform staff — no tenant)
         await supabaseAdmin.from('user_profiles').insert({
             id: authData.user.id,
             email,
@@ -85,28 +85,30 @@ export async function POST(request: NextRequest) {
             is_active: true,
         })
 
-        // Mark invite as accepted immediately (account was created directly)
+        // Mark invite as accepted (account was created directly by owner)
         await supabaseAdmin
             .from('staff_invites')
             .update({ status: 'accepted', accepted_at: new Date().toISOString() })
             .eq('id', invite.id)
 
-        // Send password reset / welcome email via Supabase Auth
-        await supabaseAdmin.auth.admin.generateLink({
-            type: 'recovery',
-            email,
+        // Log audit event
+        await supabaseAdmin.from('audit_logs').insert({
+            action: 'staff_account_created',
+            module: 'rbac',
+            user_id: user.id,
+            details: { created_email: email, role, created_by: user.id },
+            severity: 'info',
         })
 
         return NextResponse.json({
             success: true,
             user_id: authData.user.id,
             invite_id: invite.id,
-            temp_password: tempPassword,
-            message: `Staff account created. Welcome email sent to ${email}.`,
+            message: `Staff account created successfully for ${email}.`,
         }, { status: 201 })
 
     } catch (err: any) {
         console.error('POST /rbac/invites error:', err)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
     }
 }

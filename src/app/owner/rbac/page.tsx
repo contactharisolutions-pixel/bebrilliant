@@ -78,7 +78,9 @@ export default function StaffPermissionsPage() {
         last_name: '',
         email: '',
         role: 'platform_staff',
+        password: '',
     })
+    const [inviteShowPassword, setInviteShowPassword] = useState(false)
     const [inviteSaving, setInviteSaving] = useState(false)
 
     // Reset Password Modal State (Direct Owner Password Reset)
@@ -255,8 +257,17 @@ export default function StaffPermissionsPage() {
         }
     }
 
+    const generateInvitePassword = () => {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$'
+        let pwd = ''
+        for (let i = 0; i < 12; i++) pwd += chars.charAt(Math.floor(Math.random() * chars.length))
+        setInviteForm(f => ({ ...f, password: pwd }))
+    }
+
     const handleSendInvite = async () => {
-        if (!inviteForm.email.trim()) return showToast('Please enter an email address.', 'error')
+        if (!inviteForm.first_name.trim() || !inviteForm.last_name.trim()) return showToast('Please enter the staff member\'s first and last name.', 'error')
+        if (!inviteForm.email.trim()) return showToast('Please enter a valid email address.', 'error')
+        if (!inviteForm.password || inviteForm.password.length < 6) return showToast('Password must be at least 6 characters long.', 'error')
         setInviteSaving(true)
         try {
             const res = await fetch('/api/owner/rbac/invites', {
@@ -265,10 +276,11 @@ export default function StaffPermissionsPage() {
                 body: JSON.stringify(inviteForm)
             })
             const d = await res.json()
-            if (!res.ok) throw new Error(d.error || 'Failed sending invitation')
-            showToast(`Staff invitation sent to ${inviteForm.email}!`, 'success')
+            if (!res.ok) throw new Error(d.error || 'Failed to create staff account')
+            showToast(`Staff account created for ${inviteForm.email}!`, 'success')
             setShowInviteModal(false)
-            setInviteForm({ first_name: '', last_name: '', email: '', role: 'platform_staff', tenant_id: '' })
+            setInviteForm({ first_name: '', last_name: '', email: '', role: 'platform_staff', password: '' })
+            setInviteShowPassword(false)
             fetchInvites()
             fetchData(true)
         } catch (e: any) {
@@ -702,35 +714,47 @@ export default function StaffPermissionsPage() {
 
             {/* ── INVITE STAFF MODAL ── */}
             {showInviteModal && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: 20 }}>
-                    <div style={{ background: '#fff', borderRadius: 28, width: '100%', maxWidth: 540, overflow: 'hidden', boxShadow: '0 40px 120px rgba(0,0,0,0.25)', border: `1px solid ${P.border}` }}>
-                        <div style={{ padding: '24px 32px', borderBottom: `1px solid ${P.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: P.bg }}>
-                            <div>
-                                <h3 style={{ margin: 0, fontSize: 20, fontWeight: 950, color: P.dark }}>Invite New Staff Member</h3>
-                                <p style={{ margin: '4px 0 0', fontSize: 13, color: P.muted, fontWeight: 600 }}>Send an invitation link to grant platform administrative access.</p>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.55)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: 20 }}>
+                    <div style={{ background: '#fff', borderRadius: 28, width: '100%', maxWidth: 560, maxHeight: '92vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 40px 120px rgba(0,0,0,0.25)', border: `1px solid ${P.border}` }}>
+
+                        {/* Header */}
+                        <div style={{ padding: '24px 32px', borderBottom: `1px solid ${P.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: P.brandBg, flexShrink: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{ width: 42, height: 42, borderRadius: 14, background: P.brand, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Users size={20} color="#fff" />
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: 19, fontWeight: 950, color: P.brand }}>Add New Staff Member</h3>
+                                    <p style={{ margin: '2px 0 0', fontSize: 12, color: P.muted, fontWeight: 600 }}>Create a login account for your platform staff.</p>
+                                </div>
                             </div>
-                            <button onClick={() => setShowInviteModal(false)} style={{ background: '#fff', border: `1px solid ${P.border}`, width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} color={P.muted} /></button>
+                            <button onClick={() => { setShowInviteModal(false); setInviteShowPassword(false) }} style={{ background: '#fff', border: `1px solid ${P.border}`, width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} color={P.muted} /></button>
                         </div>
 
-                        <div style={{ padding: '28px 32px' }}>
+                        {/* Scrollable Body */}
+                        <div style={{ overflowY: 'auto', flex: 1, padding: '28px 32px' }}>
+
+                            {/* Name Row */}
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>First Name</label>
-                                    <input value={inviteForm.first_name} onChange={e => setInviteForm({ ...inviteForm, first_name: e.target.value })} placeholder="John" style={{ width: '100%', padding: '12px 16px', border: `1px solid ${P.border}`, borderRadius: 12, fontSize: 14, fontWeight: 700, color: P.dark, outline: 'none', boxSizing: 'border-box' }} />
+                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>First Name *</label>
+                                    <input value={inviteForm.first_name} onChange={e => setInviteForm({ ...inviteForm, first_name: e.target.value })} placeholder="e.g. Rahul" style={{ width: '100%', padding: '12px 16px', border: `1px solid ${P.border}`, borderRadius: 12, fontSize: 14, fontWeight: 700, color: P.dark, outline: 'none', boxSizing: 'border-box' }} />
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Last Name</label>
-                                    <input value={inviteForm.last_name} onChange={e => setInviteForm({ ...inviteForm, last_name: e.target.value })} placeholder="Doe" style={{ width: '100%', padding: '12px 16px', border: `1px solid ${P.border}`, borderRadius: 12, fontSize: 14, fontWeight: 700, color: P.dark, outline: 'none', boxSizing: 'border-box' }} />
+                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Last Name *</label>
+                                    <input value={inviteForm.last_name} onChange={e => setInviteForm({ ...inviteForm, last_name: e.target.value })} placeholder="e.g. Sharma" style={{ width: '100%', padding: '12px 16px', border: `1px solid ${P.border}`, borderRadius: 12, fontSize: 14, fontWeight: 700, color: P.dark, outline: 'none', boxSizing: 'border-box' }} />
                                 </div>
                             </div>
 
+                            {/* Email */}
                             <div style={{ marginBottom: 16 }}>
-                                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Email Address *</label>
-                                <input type="email" value={inviteForm.email} onChange={e => setInviteForm({ ...inviteForm, email: e.target.value })} placeholder="staff.member@company.com" style={{ width: '100%', padding: '12px 16px', border: `1px solid ${P.border}`, borderRadius: 12, fontSize: 14, fontWeight: 700, color: P.dark, outline: 'none', boxSizing: 'border-box' }} />
+                                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Work Email Address *</label>
+                                <input type="email" value={inviteForm.email} onChange={e => setInviteForm({ ...inviteForm, email: e.target.value })} placeholder="rahul.sharma@yourcompany.com" style={{ width: '100%', padding: '12px 16px', border: `1px solid ${P.border}`, borderRadius: 12, fontSize: 14, fontWeight: 700, color: P.dark, outline: 'none', boxSizing: 'border-box' }} />
                             </div>
 
-                            <div style={{ marginBottom: 24 }}>
-                                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Assign Staff Role *</label>
+                            {/* Role */}
+                            <div style={{ marginBottom: 16 }}>
+                                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Assign Platform Role *</label>
                                 <select value={inviteForm.role} onChange={e => setInviteForm({ ...inviteForm, role: e.target.value })} style={{ width: '100%', padding: '12px 16px', border: `1px solid ${P.border}`, borderRadius: 12, fontSize: 14, fontWeight: 700, color: P.dark, outline: 'none', background: '#fff', boxSizing: 'border-box' }}>
                                     {PLATFORM_STAFF_ROLES.map(r => (
                                         <option key={r} value={r}>{ROLE_CONFIG[r]?.badge} {ROLE_CONFIG[r]?.label}</option>
@@ -738,12 +762,53 @@ export default function StaffPermissionsPage() {
                                 </select>
                             </div>
 
-                            <div style={{ display: 'flex', gap: 12 }}>
-                                <button onClick={() => setShowInviteModal(false)} style={{ flex: 1, padding: 14, background: P.bg, color: P.dark, border: `1px solid ${P.border}`, borderRadius: 12, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-                                <button onClick={handleSendInvite} disabled={inviteSaving} style={{ flex: 2, padding: 14, background: P.brand, color: '#fff', border: 'none', borderRadius: 12, fontWeight: 900, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: `0 6px 20px ${P.brand}30` }}>
-                                    {inviteSaving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={16} />} Send Staff Invitation
-                                </button>
+                            {/* Divider */}
+                            <div style={{ borderTop: `1px dashed ${P.border}`, margin: '20px 0' }} />
+
+                            {/* Password Section */}
+                            <div style={{ marginBottom: 8 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                    <label style={{ fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Login Password *</label>
+                                    <button onClick={generateInvitePassword} type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 900, color: P.brand, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        ⚡ Auto-Generate
+                                    </button>
+                                </div>
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type={inviteShowPassword ? 'text' : 'password'}
+                                        value={inviteForm.password}
+                                        onChange={e => setInviteForm({ ...inviteForm, password: e.target.value })}
+                                        placeholder="Set a strong login password (min. 6 characters)"
+                                        style={{ width: '100%', padding: '12px 48px 12px 16px', border: `1px solid ${inviteForm.password && inviteForm.password.length < 6 ? '#FCA5A5' : P.border}`, borderRadius: 12, fontSize: 14, fontWeight: 700, color: P.dark, outline: 'none', boxSizing: 'border-box', fontFamily: inviteShowPassword ? 'inherit' : 'monospace' }}
+                                    />
+                                    <button onClick={() => setInviteShowPassword(!inviteShowPassword)} type="button" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: P.muted }}>
+                                        {inviteShowPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
+                                {inviteForm.password && inviteForm.password.length < 6 && (
+                                    <p style={{ margin: '6px 0 0', fontSize: 11, color: '#DC2626', fontWeight: 700 }}>⚠ Password too short — must be at least 6 characters.</p>
+                                )}
+                                {inviteForm.password && inviteForm.password.length >= 6 && (
+                                    <p style={{ margin: '6px 0 0', fontSize: 11, color: '#059669', fontWeight: 700 }}>✓ Password strength looks good.</p>
+                                )}
                             </div>
+
+                            {/* Info note */}
+                            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: '10px 14px', marginTop: 16, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                <Shield size={14} color="#2563EB" style={{ marginTop: 2, flexShrink: 0 }} />
+                                <p style={{ margin: 0, fontSize: 11, color: '#1E40AF', fontWeight: 700, lineHeight: 1.5 }}>
+                                    A staff login account will be created immediately. Share the email and password with the staff member so they can log in.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Footer Actions */}
+                        <div style={{ padding: '20px 32px', borderTop: `1px solid ${P.border}`, display: 'flex', gap: 12, flexShrink: 0, background: '#FAFBFD' }}>
+                            <button onClick={() => { setShowInviteModal(false); setInviteShowPassword(false) }} style={{ flex: 1, padding: 14, background: '#fff', color: P.dark, border: `1px solid ${P.border}`, borderRadius: 12, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+                            <button onClick={handleSendInvite} disabled={inviteSaving} style={{ flex: 2, padding: 14, background: P.brand, color: '#fff', border: 'none', borderRadius: 12, fontWeight: 900, fontSize: 13, cursor: inviteSaving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: `0 6px 20px ${P.brand}30`, opacity: inviteSaving ? 0.7 : 1 }}>
+                                {inviteSaving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <UserCheck size={16} />}
+                                {inviteSaving ? 'Creating Account...' : 'Create Staff Account'}
+                            </button>
                         </div>
                     </div>
                 </div>
