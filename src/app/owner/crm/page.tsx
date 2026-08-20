@@ -145,12 +145,14 @@ function AddLeadModal({ onClose, onSuccess, staffList }: { onClose: () => void; 
 
 // ── DETAIL DRAWER ────────────────────────────────────────────────────────────
 function LeadDetailDrawer({ lead, staffList, onClose, onSuccess }: { lead: any; staffList: any[]; onClose: () => void; onSuccess: () => void }) {
-    const [tab, setTab] = useState<'info' | 'demos' | 'activities'>('info')
+    const [tab, setTab] = useState<'info' | 'call' | 'demos' | 'timeline'>('info')
     const [fullLead, setFullLead] = useState<any>(lead)
     const [demos, setDemos] = useState<any[]>(lead.demos || [])
     const [activities, setActivities] = useState<any[]>([])
+    const [timeline, setTimeline] = useState<any[]>([])
+    const [callLogs, setCallLogs] = useState<any[]>([])
     const [loadingDemos, setLoadingDemos] = useState(false)
-    const [loadingActivities, setLoadingActivities] = useState(true)
+    const [loadingTimeline, setLoadingTimeline] = useState(false)
 
     const [formInfo, setFormInfo] = useState({
         name: lead.name || '',
@@ -164,11 +166,23 @@ function LeadDetailDrawer({ lead, staffList, onClose, onSuccess }: { lead: any; 
         assigned_to: lead.assigned_to || ''
     })
 
+    const [callForm, setCallForm] = useState({
+        outcome: 'connected',
+        notes: '',
+        customer_requirement: '',
+        demo_interest: false,
+        preferred_demo_date: '',
+        preferred_demo_time: '',
+        demo_type: 'online',
+        next_followup_date: '',
+        duration_mins: 5
+    })
+
     const [demoForm, setDemoForm] = useState({ scheduled_at: '', conducted_by: '', notes: '' })
     const [actForm, setActForm] = useState({ type: 'note', content: '' })
     const [saving, setSaving] = useState(false)
     const [scheduling, setScheduling] = useState(false)
-    const [logging, setLogging] = useState(false)
+    const [loggingCall, setLoggingCall] = useState(false)
 
     const fetchLeadDetails = useCallback(async () => {
         setLoadingDemos(true)
@@ -184,23 +198,36 @@ function LeadDetailDrawer({ lead, staffList, onClose, onSuccess }: { lead: any; 
         }
     }, [lead.id])
 
-    const fetchActivities = useCallback(async () => {
-        setLoadingActivities(true)
+    const fetchTimeline = useCallback(async () => {
+        setLoadingTimeline(true)
         try {
-            const res = await fetch(`/api/owner/crm/leads/${lead.id}/activities`)
+            const res = await fetch(`/api/owner/crm/leads/${lead.id}/timeline`)
             if (res.ok) {
                 const d = await res.json()
-                setActivities(d.activities ?? [])
+                setTimeline(d.timeline ?? [])
             }
         } finally {
-            setLoadingActivities(false)
+            setLoadingTimeline(false)
+        }
+    }, [lead.id])
+
+    const fetchCallLogs = useCallback(async () => {
+        try {
+            const res = await fetch(`/api/owner/crm/leads/${lead.id}/call`)
+            if (res.ok) {
+                const d = await res.json()
+                setCallLogs(d.call_logs ?? [])
+            }
+        } catch (e) {
+            console.error(e)
         }
     }, [lead.id])
 
     useEffect(() => {
         fetchLeadDetails()
-        fetchActivities()
-    }, [fetchLeadDetails, fetchActivities])
+        fetchTimeline()
+        fetchCallLogs()
+    }, [fetchLeadDetails, fetchTimeline, fetchCallLogs])
 
     useEffect(() => {
         if (fullLead) {
@@ -233,9 +260,41 @@ function LeadDetailDrawer({ lead, staffList, onClose, onSuccess }: { lead: any; 
             if (res.ok) {
                 onSuccess()
                 fetchLeadDetails()
+                fetchTimeline()
             }
         } finally {
             setSaving(false)
+        }
+    }
+
+    async function handleLogCallSubmit() {
+        if (!callForm.outcome) return
+        setLoggingCall(true)
+        try {
+            const res = await fetch(`/api/owner/crm/leads/${lead.id}/call`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(callForm)
+            })
+            if (res.ok) {
+                setCallForm({
+                    outcome: 'connected',
+                    notes: '',
+                    customer_requirement: '',
+                    demo_interest: false,
+                    preferred_demo_date: '',
+                    preferred_demo_time: '',
+                    demo_type: 'online',
+                    next_followup_date: '',
+                    duration_mins: 5
+                })
+                fetchLeadDetails()
+                fetchCallLogs()
+                fetchTimeline()
+                onSuccess()
+            }
+        } finally {
+            setLoggingCall(false)
         }
     }
 
@@ -255,7 +314,7 @@ function LeadDetailDrawer({ lead, staffList, onClose, onSuccess }: { lead: any; 
             if (res.ok) {
                 setDemoForm({ scheduled_at: '', conducted_by: '', notes: '' })
                 fetchLeadDetails()
-                fetchActivities()
+                fetchTimeline()
                 onSuccess()
             }
         } finally {
@@ -263,33 +322,11 @@ function LeadDetailDrawer({ lead, staffList, onClose, onSuccess }: { lead: any; 
         }
     }
 
-    async function handleAddActivity() {
-        if (!actForm.content.trim()) return
-        setLogging(true)
-        const res = await fetch(`/api/owner/crm/leads/${lead.id}/activities`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(actForm)
-        })
-        if (res.ok) {
-            setActForm(f => ({ ...f, content: '' }))
-            fetchActivities()
-        }
-        setLogging(false)
-    }
-
-    const ACTIVITY_TYPES = [
-        { key: 'note', label: 'Note', icon: StickyNote, color: P.info },
-        { key: 'call', label: 'Call', icon: PhoneCall, color: P.success },
-        { key: 'email', label: 'Email', icon: Mail, color: P.purple },
-        { key: 'meeting', label: 'Meeting', icon: Video, color: P.warning },
-    ]
-
     return (
         <div style={{ position: 'fixed', inset: 0, zIndex: 950, display: 'flex', justifyContent: 'flex-end' }}>
             <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)' }} />
             
-            <div style={{ position: 'relative', width: 520, background: P.card, height: '100%', overflowY: 'auto', boxShadow: '-20px 0 60px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ position: 'relative', width: 560, background: P.card, height: '100%', overflowY: 'auto', boxShadow: '-20px 0 60px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid ' + P.border, background: P.card }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
                         <div style={{ flex: 1 }}>
@@ -299,19 +336,20 @@ function LeadDetailDrawer({ lead, staffList, onClose, onSuccess }: { lead: any; 
                         <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}><X size={18} color={P.muted} /></button>
                     </div>
                     
-                    <div style={{ display: 'flex', borderBottom: '1px solid ' + P.border, padding: '0 8px', marginTop: 12 }}>
+                    <div style={{ display: 'flex', borderBottom: '1px solid ' + P.border, padding: '0 4px', marginTop: 12, gap: 4 }}>
                         {[
-                            { key: 'info', label: 'Inquiry Details', icon: User },
-                            { key: 'demos', label: 'Scheduled Demos', icon: Video },
-                            { key: 'activities', label: 'Notes & Timeline', icon: History }
+                            { key: 'info', label: 'Inquiry Info', icon: User },
+                            { key: 'call', label: 'Log Call', icon: PhoneCall },
+                            { key: 'demos', label: 'Demos', icon: Video },
+                            { key: 'timeline', label: 'Lifecycle History', icon: History }
                         ].map(t => (
                             <button
                                 key={t.key}
                                 onClick={() => setTab(t.key as any)}
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: 6,
-                                    padding: '10px 14px', background: 'none', border: 'none',
-                                    cursor: 'pointer', fontWeight: 700, fontSize: 12,
+                                    padding: '10px 12px', background: 'none', border: 'none',
+                                    cursor: 'pointer', fontWeight: 800, fontSize: 12,
                                     color: tab === t.key ? P.brand : P.muted,
                                     borderBottom: tab === t.key ? '2px solid ' + P.brand : '2px solid transparent',
                                     marginBottom: -1, transition: 'all 0.15s'
@@ -388,6 +426,80 @@ function LeadDetailDrawer({ lead, staffList, onClose, onSuccess }: { lead: any; 
                         </div>
                     )}
 
+                    {tab === 'call' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            <div style={{ background: P.bg, border: '1px solid ' + P.border, borderRadius: 14, padding: 16 }}>
+                                <div style={{ fontSize: 14, fontWeight: 900, color: P.dark, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <PhoneCall size={16} color={P.brand} /> Log Call Outcome & Qualification
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                                    <div>
+                                        <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 5 }}>Call Outcome *</label>
+                                        <select value={callForm.outcome} onChange={e => setCallForm({ ...callForm, outcome: e.target.value, demo_interest: e.target.value === 'demo_required' })} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card, outline: 'none', fontWeight: 700 }}>
+                                            <option value="connected">📞 Connected</option>
+                                            <option value="not_reachable">📵 Not Reachable</option>
+                                            <option value="call_back_later">⏳ Call Back Later</option>
+                                            <option value="qualified">⭐ Qualified Prospect</option>
+                                            <option value="demo_required">📺 Demo Required</option>
+                                            <option value="follow_up_required">📋 Follow-up Required</option>
+                                            <option value="not_interested">❌ Not Interested</option>
+                                            <option value="invalid_lead">🚫 Invalid Lead</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 5 }}>Call Duration (Mins)</label>
+                                        <input type="number" value={callForm.duration_mins} onChange={e => setCallForm({ ...callForm, duration_mins: parseInt(e.target.value) || 0 })} style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card, outline: 'none' }} />
+                                    </div>
+                                </div>
+
+                                {(callForm.outcome === 'demo_required' || callForm.demo_interest) && (
+                                    <div style={{ background: P.brandBg, border: `1px solid ${P.brand}30`, borderRadius: 10, padding: 12, marginBottom: 12 }}>
+                                        <div style={{ fontSize: 11, fontWeight: 900, color: P.brand, marginBottom: 8 }}>📺 Demo Request Details</div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                                            <div>
+                                                <label style={{ fontSize: 10, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 4 }}>Demo Format</label>
+                                                <select value={callForm.demo_type} onChange={e => setCallForm({ ...callForm, demo_type: e.target.value })} style={{ width: '100%', padding: '7px 10px', border: '1px solid ' + P.border, borderRadius: 8, fontSize: 12, background: '#fff', outline: 'none' }}>
+                                                    <option value="online">Online Video Call</option>
+                                                    <option value="on_site">On-Site School Visit</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: 10, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 4 }}>Preferred Date</label>
+                                                <input type="date" value={callForm.preferred_demo_date} onChange={e => setCallForm({ ...callForm, preferred_demo_date: e.target.value })} style={{ width: '100%', padding: '7px 10px', border: '1px solid ' + P.border, borderRadius: 8, fontSize: 12, background: '#fff', outline: 'none' }} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div style={{ marginBottom: 12 }}>
+                                    <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 5 }}>Call Notes & Requirements</label>
+                                    <textarea rows={3} value={callForm.notes} onChange={e => setCallForm({ ...callForm, notes: e.target.value })} placeholder="Key discussions, requirements, pain points..." style={{ width: '100%', padding: '9px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card, outline: 'none', resize: 'none', boxSizing: 'border-box' }} />
+                                </div>
+
+                                <button onClick={handleLogCallSubmit} disabled={loggingCall} style={{ width: '100%', padding: 12, background: P.brand, color: '#fff', border: 'none', borderRadius: 9, cursor: 'pointer', fontWeight: 900, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                                    {loggingCall ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <PhoneCall size={16} />} Save Call Record & Update Lifecycle
+                                </button>
+                            </div>
+
+                            {/* Call History */}
+                            <div>
+                                <div style={{ fontSize: 12, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>Call History ({callLogs.length})</div>
+                                {callLogs.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: 20, color: P.muted, fontSize: 12 }}>No calls logged yet.</div>
+                                ) : callLogs.map((c: any) => (
+                                    <div key={c.id} style={{ background: P.bg, border: '1px solid ' + P.border, borderRadius: 10, padding: 12, marginBottom: 8 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                            <span style={{ fontSize: 12, fontWeight: 900, color: P.dark }}>Call #{c.call_number} — {c.outcome?.replace('_', ' ').toUpperCase()}</span>
+                                            <span style={{ fontSize: 11, color: P.muted }}>{new Date(c.call_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+                                        {c.notes && <div style={{ fontSize: 12, color: P.text, marginTop: 4 }}>{c.notes}</div>}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {tab === 'demos' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                             <div style={{ background: P.bg, border: '1px solid ' + P.border, borderRadius: 12, padding: 16 }}>
@@ -446,46 +558,36 @@ function LeadDetailDrawer({ lead, staffList, onClose, onSuccess }: { lead: any; 
                         </div>
                     )}
 
-                    {tab === 'activities' && (
+                    {tab === 'timeline' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                            <div style={{ background: P.bg, borderRadius: 12, padding: 14, border: '1px solid ' + P.border }}>
-                                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                                    {ACTIVITY_TYPES.map(t => (
-                                        <button key={t.key} onClick={() => setActForm(f => ({ ...f, type: t.key }))}
-                                            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 8, border: '1px solid ' + (actForm.type === t.key ? t.color : P.border), background: actForm.type === t.key ? t.color + '20' : 'transparent', cursor: 'pointer', fontSize: 11, fontWeight: 700, color: actForm.type === t.key ? t.color : P.muted }}>
-                                            <t.icon size={11} /> {t.label}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div style={{ display: 'flex', gap: 8 }}>
-                                    <input value={actForm.content} onChange={e => setActForm(f => ({ ...f, content: e.target.value }))} onKeyDown={e => e.key === 'Enter' && handleAddActivity()} placeholder="Add a follow-up note..." style={{ flex: 1, padding: '8px 12px', border: '1px solid ' + P.border, borderRadius: 9, fontSize: 13, background: P.card, outline: 'none' }} />
-                                    <button onClick={handleAddActivity} disabled={logging || !actForm.content.trim()} style={{ padding: '8px 14px', borderRadius: 9, border: 'none', background: P.brand, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 700, fontSize: 12, opacity: actForm.content.trim() && !logging ? 1 : 0.6 }}>
-                                        {logging ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={12} />} Save Note
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div style={{ flex: 1 }}>
-                                {loadingActivities ? (
-                                    <div style={{ textAlign: 'center', padding: 40 }}><Loader2 size={24} color={P.brand} style={{ animation: 'spin 1s linear infinite' }} /></div>
-                                ) : activities.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: 40, color: P.muted, fontSize: 13 }}>No activity notes yet.</div>
-                                ) : activities.map((a, i) => {
-                                    const t = ACTIVITY_TYPES.find(t => t.key === a.type) ?? ACTIVITY_TYPES[0]
-                                    return (
-                                        <div key={a.id} style={{ display: 'flex', gap: 12, paddingBottom: i < activities.length - 1 ? 16 : 0, marginBottom: i < activities.length - 1 ? 16 : 0, borderBottom: i < activities.length - 1 ? '1px solid ' + P.border : 'none' }}>
-                                            <div style={{ width: 30, height: 30, borderRadius: '50%', background: t.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}><t.icon size={13} color={t.color} /></div>
+                            <div style={{ fontSize: 13, fontWeight: 900, color: P.dark }}>Central Customer Lifecycle History</div>
+                            {loadingTimeline ? (
+                                <div style={{ textAlign: 'center', padding: 40 }}><Loader2 size={24} color={P.brand} style={{ animation: 'spin 1s linear infinite' }} /></div>
+                            ) : timeline.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: 40, color: P.muted, fontSize: 13 }}>No timeline events recorded yet.</div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                                    {timeline.map((evt: any, i: number) => (
+                                        <div key={evt.id} style={{ display: 'flex', gap: 12, paddingBottom: 14, borderBottom: i < timeline.length - 1 ? `1px solid ${P.border}` : 'none' }}>
+                                            <div style={{ width: 32, height: 32, borderRadius: 10, background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                <Sparkles size={14} color={P.brand} />
+                                            </div>
                                             <div style={{ flex: 1 }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                                                    <Pill label={t.label} color={t.color} bg={t.color + '20'} />
-                                                    <span style={{ fontSize: 11, color: P.muted }}>{new Date(a.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                                                    <span style={{ fontSize: 13, fontWeight: 900, color: P.dark }}>{evt.event_label}</span>
+                                                    <span style={{ fontSize: 11, color: P.muted }}>{new Date(evt.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                                                 </div>
-                                                <div style={{ fontSize: 13, color: P.text, lineHeight: 1.5 }}>{a.content}</div>
+                                                {evt.description && <div style={{ fontSize: 12, color: P.text, marginTop: 2 }}>{evt.description}</div>}
+                                                {evt.staff && (
+                                                    <div style={{ fontSize: 10, color: P.muted, marginTop: 4, fontWeight: 700 }}>
+                                                        Logged by: {evt.staff.first_name} {evt.staff.last_name} ({evt.staff.role})
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                    )
-                                })}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -493,6 +595,7 @@ function LeadDetailDrawer({ lead, staffList, onClose, onSuccess }: { lead: any; 
         </div>
     )
 }
+
 
 function KanbanCard({ lead, onDragStart, onClick, onStageChange, stages, staffList }: any) {
     const stage = stageOf(lead.status)
@@ -530,16 +633,23 @@ function KanbanCard({ lead, onDragStart, onClick, onStageChange, stages, staffLi
 
             <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 11, color: P.muted }}>{new Date(lead.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
-                {lead.status === 'converted' && (
-                    <button type="button" onClick={(e) => { e.stopPropagation(); window.location.href = `/owner/tenants?provision=true&leadId=${lead.id}`; }}
-                        style={{ padding: '3px 8px', border: 'none', borderRadius: 6, background: P.brand, color: '#fff', fontSize: 10, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <ArrowUpRight size={10} /> Create School
+                <div style={{ display: 'flex', gap: 6 }}>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); onClick(lead); }}
+                        style={{ padding: '3px 8px', border: `1px solid ${P.brand}30`, borderRadius: 6, background: P.brandBg, color: P.brand, fontSize: 10, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <PhoneCall size={10} /> Log Call
                     </button>
-                )}
+                    {lead.status === 'converted' && (
+                        <button type="button" onClick={(e) => { e.stopPropagation(); window.location.href = `/owner/tenants?provision=true&leadId=${lead.id}`; }}
+                            style={{ padding: '3px 8px', border: 'none', borderRadius: 6, background: P.brand, color: '#fff', fontSize: 10, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <ArrowUpRight size={10} /> Create School
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     )
 }
+
 
 function AnalyticsPanel({ onClose }: { onClose: () => void }) {
     const [analytics, setAnalytics] = useState<any>(null)

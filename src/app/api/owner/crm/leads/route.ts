@@ -68,5 +68,30 @@ export async function POST(request: NextRequest) {
         .single()
 
     if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+
+    // Auto-log event in lifecycle timeline
+    await supabaseAdmin.from('lifecycle_timeline').insert({
+        lead_id: data.id,
+        event_type: 'inquiry_received',
+        event_label: 'New Inquiry Received',
+        description: `Inquiry source: ${data.source}`,
+        staff_id: user.id,
+        metadata: { source: data.source, organization: data.organization }
+    })
+
+    // Auto-create initial response task for assigned staff (30 min SLA)
+    await supabaseAdmin.from('platform_tasks').insert({
+        task_type: 'call',
+        title: `Initial Inquiry Response Call: ${data.name} (${data.organization})`,
+        description: `Contact lead at ${data.phone || data.email} to qualify and assess requirements.`,
+        lead_id: data.id,
+        assigned_to: assigned_to || user.id,
+        created_by: user.id,
+        due_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        priority: 'high',
+        sla_minutes: 30
+    })
+
     return NextResponse.json({ lead: data }, { status: 201 })
 }
+
