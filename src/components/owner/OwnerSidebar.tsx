@@ -25,7 +25,10 @@ import {
     Receipt,
     Wallet,
     MessageSquare,
-    Megaphone
+    Megaphone,
+    Video,
+    Award,
+    BarChart2
 } from 'lucide-react'
 
 const NAV_GROUPS = [
@@ -36,12 +39,20 @@ const NAV_GROUPS = [
         ]
     },
     {
-        title: 'Tenant Management',
+        title: 'Customer Lifecycle',
         items: [
-            { label: 'Sales & Growth', icon: TrendingUp, href: '/owner/sales', permission: 'crm.manage' },
-            { label: 'CRM & Pipeline', icon: UserPlus, href: '/owner/crm', permission: 'crm.manage' },
-            { label: 'Onboarding Progress', icon: ShieldCheck, href: '/owner/onboarding', permission: 'crm.manage' },
-            { label: 'Registered Tenant', icon: School, href: '/owner/tenants', permission: 'settings.manage' },
+            { label: 'Sales & Growth',       icon: TrendingUp,  href: '/owner/sales',       permission: 'crm.manage' },
+            { label: 'CRM & Inquiries',      icon: UserPlus,    href: '/owner/crm',         permission: 'crm.manage' },
+            { label: 'Demo Operations',      icon: Video,       href: '/owner/demos',       permission: 'crm.manage' },
+            { label: 'Onboarding Lifecycle', icon: ShieldCheck, href: '/owner/onboarding',  permission: 'crm.manage' },
+            { label: 'Training & Go-Live',   icon: Award,       href: '/owner/training',    permission: 'crm.manage' },
+        ]
+    },
+    {
+        title: 'Management Intelligence',
+        items: [
+            { label: 'Funnel Analytics',   icon: BarChart2, href: '/owner/analytics',  permission: 'crm.manage' },
+            { label: 'Registered Tenants', icon: School,    href: '/owner/tenants',    permission: 'settings.manage' },
         ]
     },
     {
