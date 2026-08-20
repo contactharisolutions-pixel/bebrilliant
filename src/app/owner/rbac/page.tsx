@@ -5,9 +5,9 @@ import {
     Shield, Users, Key, Lock, RefreshCw, Search, X, Loader2,
     CheckCircle, XCircle, AlertTriangle, ChevronLeft, ChevronRight,
     UserCheck, UserX, Crown, User, Activity, Building2, ClipboardList,
-    Eye, Pencil, ToggleLeft, ToggleRight, Download, Mail, Plus,
+    Eye, EyeOff, Pencil, ToggleLeft, ToggleRight, Download, Mail, Plus,
     MoreHorizontal, Clock, Ban, Unlock, RotateCcw, Filter,
-    ChevronDown, Send, Trash2, Monitor, Laptop, Smartphone
+    ChevronDown, Send, Trash2, Monitor, Laptop, Smartphone, Copy, Check
 } from 'lucide-react'
 import { P, GLASS_STYLES } from '@/components/shared/institutional/theme'
 import { KpiCard } from '@/components/shared/institutional/KpiCard'
@@ -64,7 +64,6 @@ export default function StaffPermissionsPage() {
     const [tenantFilter, setTenantFilter] = useState('all')
     const [statusFilter, setStatusFilter] = useState('all')
     const [page, setPage] = useState(1)
-    const [selected, setSelected] = useState<Set<string>>(new Set())
 
     // Permissions state
     const [permData, setPermData] = useState<any>(null)
@@ -85,6 +84,14 @@ export default function StaffPermissionsPage() {
         tenant_id: ''
     })
     const [inviteSaving, setInviteSaving] = useState(false)
+
+    // Reset Password Modal State (Direct Owner Password Reset)
+    const [resetTarget, setResetTarget] = useState<any>(null)
+    const [newPassword, setNewPassword] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
+    const [showPasswordText, setShowPasswordText] = useState(false)
+    const [resetSaving, setResetSaving] = useState(false)
+    const [copied, setCopied] = useState(false)
 
     // Audit log state
     const [auditLogs, setAuditLogs] = useState<any[]>([])
@@ -184,13 +191,44 @@ export default function StaffPermissionsPage() {
         }
     }
 
-    const handlePasswordReset = async (userId: string, email: string) => {
+    const generateRandomPassword = () => {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$'
+        let pwd = ''
+        for (let i = 0; i < 12; i++) {
+            pwd += chars.charAt(Math.floor(Math.random() * chars.length))
+        }
+        setNewPassword(pwd)
+        setConfirmPassword(pwd)
+    }
+
+    const handleDirectPasswordReset = async () => {
+        if (!resetTarget) return
+        if (!newPassword || newPassword.length < 6) {
+            return showToast('Password must be at least 6 characters long.', 'error')
+        }
+        if (newPassword !== confirmPassword) {
+            return showToast('Password confirmation does not match.', 'error')
+        }
+
+        setResetSaving(true)
         try {
-            const res = await fetch(`/api/owner/rbac/users/${userId}/reset-password`, { method: 'POST' })
-            if (!res.ok) throw new Error('Password reset failed')
-            showToast(`Password reset link sent to ${email}`, 'success')
+            const res = await fetch(`/api/owner/rbac/users/${resetTarget.id}/reset-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: newPassword })
+            })
+            const d = await res.json()
+            if (!res.ok) throw new Error(d.error || 'Password update failed')
+
+            showToast(`Password successfully reset for ${resetTarget.email}!`, 'success')
+            setResetTarget(null)
+            setNewPassword('')
+            setConfirmPassword('')
+            fetchData(true)
         } catch (e: any) {
             showToast(e.message, 'error')
+        } finally {
+            setResetSaving(false)
         }
     }
 
@@ -284,7 +322,7 @@ export default function StaffPermissionsPage() {
                         <span style={{ fontSize: 11, fontWeight: 900, color: P.brand, textTransform: 'uppercase', letterSpacing: '0.15em' }}>Settings & Controls</span>
                     </div>
                     <h1 style={{ fontSize: 32, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.03em' }}>Staff Permissions</h1>
-                    <p style={{ color: P.muted, margin: '8px 0 0', fontWeight: 600, fontSize: 15 }}>Manage platform staff members, role permissions, invitations, and activity logs.</p>
+                    <p style={{ color: P.muted, margin: '8px 0 0', fontWeight: 600, fontSize: 15 }}>Control and manage platform staff team members, access roles, invitations, and passwords.</p>
                 </div>
                 <div style={{ display: 'flex', gap: 12 }}>
                     <button onClick={() => fetchData(true)} disabled={refreshing} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: `1px solid ${P.border}`, borderRadius: 12, padding: '12px 20px', fontSize: 13, fontWeight: 800, color: P.dark, cursor: 'pointer' }}>
@@ -301,7 +339,7 @@ export default function StaffPermissionsPage() {
 
             {/* KPI OVERVIEW CARDS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 32 }}>
-                <KpiCard icon={Users} title="Total Staff" value={String(stats.totalUsers ?? 0)} color={P.brand} />
+                <KpiCard icon={Users} title="Total Platform Staff" value={String(stats.totalUsers ?? 0)} color={P.brand} />
                 <KpiCard icon={UserCheck} title="Active Staff" value={String(stats.activeUsers ?? 0)} color="#059669" />
                 <KpiCard icon={UserX} title="Suspended Staff" value={String((stats.totalUsers ?? 0) - (stats.activeUsers ?? 0))} color="#DC2626" />
                 <KpiCard icon={Shield} title="Roles Defined" value={String(stats.totalRoles ?? 0)} color="#7C3AED" />
@@ -441,8 +479,8 @@ export default function StaffPermissionsPage() {
                                                         {u.is_active ? <Ban size={13} /> : <Unlock size={13} />}
                                                         {u.is_active ? 'Suspend' : 'Activate'}
                                                     </button>
-                                                    <button onClick={() => handlePasswordReset(u.id, u.email)} style={{ padding: '8px 12px', background: P.bg, border: `1px solid ${P.border}`, borderRadius: 10, color: P.dark, fontWeight: 800, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                        <RotateCcw size={13} /> Reset Password
+                                                    <button onClick={() => { setResetTarget(u); setNewPassword(''); setConfirmPassword(''); }} style={{ padding: '8px 12px', background: P.brandBg, border: `1px solid ${P.brand}30`, borderRadius: 10, color: P.brand, fontWeight: 800, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                        <Key size={13} /> Reset Password
                                                     </button>
                                                 </div>
                                             </td>
@@ -706,6 +744,74 @@ export default function StaffPermissionsPage() {
                                 <button onClick={() => setShowInviteModal(false)} style={{ flex: 1, padding: 14, background: P.bg, color: P.dark, border: `1px solid ${P.border}`, borderRadius: 12, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
                                 <button onClick={handleSendInvite} disabled={inviteSaving} style={{ flex: 2, padding: 14, background: P.brand, color: '#fff', border: 'none', borderRadius: 12, fontWeight: 900, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: `0 6px 20px ${P.brand}30` }}>
                                     {inviteSaving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={16} />} Send Staff Invitation
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── RESET STAFF PASSWORD MODAL (DIRECT OWNER RESET — NO EMAIL LINK) ── */}
+            {resetTarget && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: 20 }}>
+                    <div style={{ background: '#fff', borderRadius: 28, width: '100%', maxWidth: 500, overflow: 'hidden', boxShadow: '0 40px 120px rgba(0,0,0,0.25)', border: `1px solid ${P.border}` }}>
+                        <div style={{ padding: '24px 32px', borderBottom: `1px solid ${P.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: P.brandBg }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{ width: 38, height: 38, borderRadius: 12, background: P.brand, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Key size={18} color="#fff" />
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: P.brand }}>Reset Staff Password</h3>
+                                    <p style={{ margin: '2px 0 0', fontSize: 12, color: P.dark, fontWeight: 600 }}>{[resetTarget.first_name, resetTarget.last_name].filter(Boolean).join(' ') || resetTarget.email}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setResetTarget(null)} style={{ background: '#fff', border: `1px solid ${P.border}`, width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} color={P.muted} /></button>
+                        </div>
+
+                        <div style={{ padding: '24px 32px' }}>
+                            <div style={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: 14, padding: 14, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <Lock size={16} color={P.brand} />
+                                <div style={{ fontSize: 12, color: P.dark, fontWeight: 700 }}>
+                                    Staff Email: <span style={{ color: P.brand }}>{resetTarget.email}</span>
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: 16 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                    <label style={{ fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>New Password *</label>
+                                    <button onClick={generateRandomPassword} type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 900, color: P.brand }}>
+                                        ⚡ Auto-Generate
+                                    </button>
+                                </div>
+                                <div style={{ position: 'relative' }}>
+                                    <input 
+                                        type={showPasswordText ? 'text' : 'password'} 
+                                        value={newPassword} 
+                                        onChange={e => setNewPassword(e.target.value)} 
+                                        placeholder="Enter new password..." 
+                                        style={{ width: '100%', padding: '12px 16px', paddingRight: 40, border: `1px solid ${P.border}`, borderRadius: 12, fontSize: 14, fontWeight: 700, color: P.dark, outline: 'none', boxSizing: 'border-box' }} 
+                                    />
+                                    <button onClick={() => setShowPasswordText(!showPasswordText)} type="button" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: P.muted }}>
+                                        {showPasswordText ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: 24 }}>
+                                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Confirm Password *</label>
+                                <input 
+                                    type={showPasswordText ? 'text' : 'password'} 
+                                    value={confirmPassword} 
+                                    onChange={e => setConfirmPassword(e.target.value)} 
+                                    placeholder="Re-enter password to confirm..." 
+                                    style={{ width: '100%', padding: '12px 16px', border: `1px solid ${P.border}`, borderRadius: 12, fontSize: 14, fontWeight: 700, color: P.dark, outline: 'none', boxSizing: 'border-box' }} 
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 12 }}>
+                                <button onClick={() => setResetTarget(null)} style={{ flex: 1, padding: 14, background: P.bg, color: P.dark, border: `1px solid ${P.border}`, borderRadius: 12, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+                                <button onClick={handleDirectPasswordReset} disabled={resetSaving} style={{ flex: 2, padding: 14, background: P.brand, color: '#fff', border: 'none', borderRadius: 12, fontWeight: 900, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: `0 6px 20px ${P.brand}30` }}>
+                                    {resetSaving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Key size={16} />} Set New Password
                                 </button>
                             </div>
                         </div>
