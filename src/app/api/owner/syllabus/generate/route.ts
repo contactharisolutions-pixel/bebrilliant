@@ -101,7 +101,7 @@ async function generateWithGemini(prompt: string): Promise<string> {
     const apiKey = await getGeminiApiKey();
     if (!apiKey) throw new Error("GEMINI_API_KEY is missing or not configured");
 
-    const modelsToTry = ["gemini-2.5-flash", "gemini-3.6-flash", "gemini-2.0-flash", "gemini-flash-latest"];
+    const modelsToTry = ["gemini-3.6-flash", "gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash"];
     let lastError: any = null;
 
     const genAI = new GoogleGenerativeAI(apiKey);
