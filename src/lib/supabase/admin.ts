@@ -142,7 +142,96 @@ class SupabaseQueryBuilder {
         }
     }
 
+    private async ensureLifecycleTables() {
+        const sqls = [
+            `CREATE TABLE IF NOT EXISTS lead_call_logs (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                lead_id UUID NOT NULL REFERENCES owner_leads(id) ON DELETE CASCADE,
+                staff_id UUID REFERENCES user_profiles(id) ON DELETE SET NULL,
+                call_number INTEGER NOT NULL DEFAULT 1,
+                call_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                duration_mins INTEGER,
+                outcome TEXT NOT NULL,
+                notes TEXT, customer_requirement TEXT, demo_interest BOOLEAN DEFAULT FALSE,
+                preferred_demo_date DATE, preferred_demo_time TEXT, demo_type TEXT,
+                next_followup_date DATE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )`,
+            `CREATE TABLE IF NOT EXISTS lead_demo_requests (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                lead_id UUID NOT NULL REFERENCES owner_leads(id) ON DELETE CASCADE,
+                call_log_id UUID, demo_type TEXT NOT NULL DEFAULT 'online',
+                preferred_date DATE, preferred_time TEXT, customer_city TEXT,
+                customer_state TEXT, customer_pincode TEXT, customer_address TEXT,
+                status TEXT NOT NULL DEFAULT 'pending_assignment',
+                suggested_staff_id UUID, assigned_staff_id UUID, assignment_score INTEGER,
+                assignment_reason TEXT, confirmed_by UUID, confirmed_at TIMESTAMPTZ,
+                scheduled_at TIMESTAMPTZ, meeting_link TEXT, sla_deadline TIMESTAMPTZ,
+                sla_breached BOOLEAN DEFAULT FALSE, completed_at TIMESTAMPTZ,
+                outcome TEXT, interest_level INTEGER, demo_notes TEXT,
+                deal_probability INTEGER, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )`,
+            `CREATE TABLE IF NOT EXISTS platform_tasks (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                task_type TEXT NOT NULL, title TEXT NOT NULL, description TEXT,
+                lead_id UUID, demo_request_id UUID, assigned_to UUID, created_by UUID,
+                due_at TIMESTAMPTZ, priority TEXT NOT NULL DEFAULT 'medium',
+                sla_minutes INTEGER, sla_breached BOOLEAN DEFAULT FALSE,
+                status TEXT NOT NULL DEFAULT 'pending', completed_at TIMESTAMPTZ,
+                completion_notes TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )`,
+            `CREATE TABLE IF NOT EXISTS lifecycle_timeline (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                lead_id UUID NOT NULL REFERENCES owner_leads(id) ON DELETE CASCADE,
+                event_type TEXT NOT NULL, event_label TEXT NOT NULL, description TEXT,
+                staff_id UUID, metadata JSONB DEFAULT '{}', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )`,
+            `CREATE TABLE IF NOT EXISTS onboarding_cases (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(), tenant_id UUID, lead_id UUID,
+                organization_name TEXT NOT NULL, contact_name TEXT, contact_email TEXT, contact_phone TEXT,
+                assigned_staff_id UUID, assigned_at TIMESTAMPTZ,
+                stage TEXT NOT NULL DEFAULT 'assigned', stage_progress_pct INTEGER NOT NULL DEFAULT 12,
+                target_completion_date DATE, sla_deadline TIMESTAMPTZ, sla_breached BOOLEAN DEFAULT FALSE,
+                completed_at TIMESTAMPTZ, completed_by UUID, notes TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )`,
+            `CREATE TABLE IF NOT EXISTS onboarding_checklists (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                case_id UUID REFERENCES onboarding_cases(id) ON DELETE CASCADE,
+                stage TEXT NOT NULL, task_name TEXT NOT NULL, is_completed BOOLEAN NOT NULL DEFAULT FALSE,
+                completed_at TIMESTAMPTZ, completed_by UUID, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )`,
+            `CREATE TABLE IF NOT EXISTS training_cases (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(), onboarding_case_id UUID, tenant_id UUID, lead_id UUID,
+                organization_name TEXT NOT NULL, assigned_trainer_id UUID,
+                status TEXT NOT NULL DEFAULT 'pending_trainer', training_type TEXT NOT NULL DEFAULT 'admin',
+                scheduled_at TIMESTAMPTZ, completed_at TIMESTAMPTZ, sla_deadline TIMESTAMPTZ,
+                feedback_rating INTEGER, feedback_comments TEXT, notes TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )`,
+            `CREATE TABLE IF NOT EXISTS training_sessions (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                case_id UUID REFERENCES training_cases(id) ON DELETE CASCADE,
+                session_no INTEGER NOT NULL DEFAULT 1, topic TEXT NOT NULL,
+                conducted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), duration_mins INTEGER DEFAULT 60,
+                attendees_count INTEGER DEFAULT 1, meeting_link TEXT, notes TEXT,
+                conducted_by UUID, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )`
+        ]
+
+        for (const sql of sqls) {
+            try { await pool.query(sql) } catch (e) { /* ignore if exists */ }
+        }
+    }
+
     private async execute() {
+        const lifecycleTables = ['lead_call_logs', 'lead_demo_requests', 'platform_tasks', 'lifecycle_timeline', 'onboarding_cases', 'onboarding_checklists', 'training_cases', 'training_sessions']
+        if (lifecycleTables.includes(this.table)) {
+            await this.ensureLifecycleTables()
+        }
+
+
         let sql = ''
         const params: any[] = []
         let paramIdx = 1
