@@ -136,13 +136,16 @@ export async function POST(request: Request) {
                 .insert({
                     tenant_id: tenant.id,
                     assigned_staff_id: assignedStaffId || user.id,
+                    lifecycle_stage: 'provisioned',
+                    health_score: 100,
+                    churn_risk_level: 'safe',
                     tasks: [
-                        { title: "DNS & Domain Mapping Setup", completed: false },
-                        { title: "Institute Logo & Theme Selection", completed: false },
-                        { title: "Subscription/Billing Plan Configuration", completed: false },
-                        { title: "First Academic Year & Master Syllabus Initialization", completed: false },
-                        { title: "Payment Gateway Credentials Set", completed: false },
-                        { title: "Final Verification and Handover", completed: false }
+                        { id: '1', title: "DNS & Domain Mapping Setup", completed: false, priority: 'high' },
+                        { id: '2', title: "Institute Logo & Theme Selection", completed: false, priority: 'medium' },
+                        { id: '3', title: "Subscription & Billing Plan Setup", completed: false, priority: 'high' },
+                        { id: '4', title: "First Academic Year & Master Syllabus Setup", completed: false, priority: 'medium' },
+                        { id: '5', title: "Payment Gateway Credentials Setup", completed: false, priority: 'medium' },
+                        { id: '6', title: "Final Verification and Handover", completed: false, priority: 'high' }
                     ],
                     notes: lead_id ? `Provisioned from CRM lead: ${lead_id}` : 'Manually provisioned'
                 })

@@ -30,11 +30,15 @@ export async function GET(request: Request) {
 
         const { data, error } = await supabase
             .from('paper_templates')
-            .select('*')
+            .select(`
+                *,
+                sections:template_sections(id, section_name, section_type)
+            `)
             .order('created_at', { ascending: false });
 
         if (error) throw error;
         return NextResponse.json(data);
+
     } catch (e: any) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }

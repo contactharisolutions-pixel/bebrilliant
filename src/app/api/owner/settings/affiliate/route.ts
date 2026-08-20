@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
             const { data: wallets } = await supabaseAdmin
                 .from('affiliate_wallets')
                 .select('*')
-                .eq('affiliate_type', 'teacher')
 
             const mapped = (teachers || []).map((t: any) => {
                 const w = wallets?.find((w: any) => w.affiliate_id === t.id)
@@ -48,15 +47,27 @@ export async function GET(request: NextRequest) {
 
         // Default GET_SETTINGS
         const tenant_id = searchParams.get('tenant_id')
-        if (!tenant_id) return NextResponse.json({ error: 'Tenant ID required' }, { status: 400 })
+        
+        let settings = null
+        if (tenant_id && tenant_id !== 'global') {
+            const { data } = await supabaseAdmin
+                .from('affiliate_settings')
+                .select('*')
+                .eq('tenant_id', tenant_id)
+                .maybeSingle()
+            settings = data
+        }
 
-        const { data: settings } = await supabaseAdmin
-            .from('affiliate_settings')
-            .select('*')
-            .eq('tenant_id', tenant_id)
-            .maybeSingle()
+        if (!settings) {
+            const { data } = await supabaseAdmin
+                .from('platform_settings')
+                .select('value')
+                .eq('key', 'partner_rewards_settings')
+                .maybeSingle()
+            settings = data?.value || null
+        }
 
-        return NextResponse.json({ settings: settings || null })
+        return NextResponse.json({ settings })
     } catch (e: any) {
         console.error('Affiliate owner GET error:', e)
         return NextResponse.json({ error: e.message || 'GET failed' }, { status: 500 })
@@ -101,30 +112,26 @@ export async function POST(request: NextRequest) {
                 .from('affiliate_wallets')
                 .select('*')
                 .eq('affiliate_id', wreq.teacher_id)
-                .eq('affiliate_type', 'teacher')
-                .single()
+                .maybeSingle()
 
-            if (!wallet) return NextResponse.json({ error: 'Affiliate wallet not found' }, { status: 404 })
-
-            // Process status change
-            if (status === 'paid') {
-                // Deduct from actual balance (locked withdrawable was already deducted at creation)
-                await supabaseAdmin
-                    .from('affiliate_wallets')
-                    .update({
-                        balance: wallet.balance - wreq.amount_requested,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', wallet.id)
-            } else if (status === 'rejected') {
-                // Refund withdrawable balance
-                await supabaseAdmin
-                    .from('affiliate_wallets')
-                    .update({
-                        withdrawable: wallet.withdrawable + wreq.amount_requested,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', wallet.id)
+            if (wallet) {
+                if (status === 'paid') {
+                    await supabaseAdmin
+                        .from('affiliate_wallets')
+                        .update({
+                            balance: Math.max(0, (wallet.balance || 0) - wreq.amount_requested),
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', wallet.id)
+                } else if (status === 'rejected') {
+                    await supabaseAdmin
+                        .from('affiliate_wallets')
+                        .update({
+                            withdrawable: (wallet.withdrawable || 0) + wreq.amount_requested,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', wallet.id)
+                }
             }
 
             const { data: updatedWreq, error: errUpdate } = await supabaseAdmin
@@ -144,22 +151,30 @@ export async function POST(request: NextRequest) {
 
         // Default SAVE_SETTINGS
         const tenant_id = searchParams.get('tenant_id')
-        if (!tenant_id) return NextResponse.json({ error: 'Tenant ID required' }, { status: 400 })
+        if (tenant_id && tenant_id !== 'global') {
+            const { data, error } = await supabaseAdmin
+                .from('affiliate_settings')
+                .upsert({
+                    tenant_id,
+                    ...body,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'tenant_id' })
+                .select()
+                .single()
 
-        const { data, error } = await supabaseAdmin
-            .from('affiliate_settings')
-            .upsert({
-                tenant_id,
-                ...body,
-                updated_at: new Date().toISOString()
-            }, { onConflict: 'tenant_id' })
-            .select()
-            .single()
+            if (error) throw error
+            return NextResponse.json({ settings: data })
+        } else {
+            // Save global platform settings
+            await supabaseAdmin
+                .from('platform_settings')
+                .upsert([{ key: 'partner_rewards_settings', value: body }], { onConflict: 'key' })
 
-        if (error) throw error
-        return NextResponse.json({ settings: data })
+            return NextResponse.json({ settings: body })
+        }
     } catch (e: any) {
         console.error('Affiliate owner POST error:', e)
         return NextResponse.json({ error: e.message || 'POST failed' }, { status: 500 })
     }
 }
+

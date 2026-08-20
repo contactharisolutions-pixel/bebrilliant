@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 
         // Active subscriptions across tenants
         supabaseAdmin.from('tenant_subscriptions')
-            .select('id, plan_name, amount, billing_cycle, status, tenant_id, created_at')
+            .select('*, tenants(id, name, email, tenant_type, type)')
             .order('created_at', { ascending: false })
             .limit(50),
 

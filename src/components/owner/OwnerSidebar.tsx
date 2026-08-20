@@ -36,21 +36,21 @@ const NAV_GROUPS = [
         ]
     },
     {
-        title: 'School & Institute Management',
+        title: 'Tenant Management',
         items: [
-            { label: 'Registered Schools', icon: School, href: '/owner/tenants', permission: 'settings.manage' },
-            { label: 'Admission Inquiries', icon: UserPlus, href: '/owner/crm', permission: 'crm.manage' },
-            { label: 'Onboarding Progress', icon: ShieldCheck, href: '/owner/onboarding', permission: 'crm.manage' },
             { label: 'Sales & Growth', icon: TrendingUp, href: '/owner/sales', permission: 'crm.manage' },
+            { label: 'CRM & Pipeline', icon: UserPlus, href: '/owner/crm', permission: 'crm.manage' },
+            { label: 'Onboarding Progress', icon: ShieldCheck, href: '/owner/onboarding', permission: 'crm.manage' },
+            { label: 'Registered Tenant', icon: School, href: '/owner/tenants', permission: 'settings.manage' },
         ]
     },
     {
         title: 'Income & Finances',
         items: [
-            { label: 'School Payments', icon: Receipt, href: '/owner/payments', permission: 'payouts.manage' },
-            { label: 'School Balances', icon: Zap, href: '/owner/finance', permission: 'payouts.manage' },
+            { label: 'Tenant Payments', icon: Receipt, href: '/owner/payments', permission: 'payouts.manage' },
+            { label: 'Tenant Balances', icon: Zap, href: '/owner/finance', permission: 'payouts.manage' },
             { label: 'Withdrawal Requests', icon: Wallet, href: '/owner/finance/payouts', permission: 'payouts.manage' },
-            { label: 'Payment Settings', icon: CreditCard, href: '/owner/wallet-config', permission: 'payouts.manage' },
+            { label: 'Student Wallet Config', icon: CreditCard, href: '/owner/wallet-config', permission: 'payouts.manage' },
         ]
     },
     {
@@ -58,18 +58,23 @@ const NAV_GROUPS = [
         items: [
             { label: 'Course Syllabus', icon: BookOpenCheck, href: '/owner/syllabus', permission: 'settings.manage' },
             { label: 'Exam Formats', icon: ScrollText, href: '/owner/exams/templates', permission: 'settings.manage' },
-            { label: 'Question Bank', icon: ScrollText, href: '/owner/exams', permission: 'settings.manage' },
+            { label: 'Exam Oversight', icon: ScrollText, href: '/owner/exams', permission: 'settings.manage' },
+        ]
+    },
+    {
+        title: 'Communication & Marketing',
+        items: [
+            { label: 'Bulk Messages',        icon: Megaphone,     href: '/owner/marketing',      permission: 'automation.manage' },
+            { label: 'Message Templates',    icon: MessageSquare, href: '/owner/communications', permission: 'automation.manage' },
+            { label: 'Affiliate Rewards',    icon: Users,         href: '/owner/settings/affiliate', permission: 'settings.manage' },
         ]
     },
     {
         title: 'Settings & Controls',
         items: [
             { label: 'Website Manager',       icon: Globe,         href: '/owner/cms',            permission: 'cms.manage' },
-            { label: 'Message Templates',    icon: MessageSquare, href: '/owner/communications', permission: 'automation.manage' },
-            { label: 'Bulk Messages',        icon: Megaphone,     href: '/owner/marketing',      permission: 'automation.manage' },
             { label: 'Commission Settings',  icon: ShieldCheck,   href: '/owner/settings/finance', permission: 'settings.manage' },
             { label: 'Subscription Plans',   icon: CreditCard,    href: '/owner/settings/plans', permission: 'settings.manage' },
-            { label: 'Partner Rewards',      icon: Users,         href: '/owner/settings/affiliate', permission: 'settings.manage' },
             { label: 'Staff Permissions',    icon: ShieldCheck,   href: '/owner/rbac',           permission: 'settings.manage' },
             { label: 'System Settings',      icon: Settings2,     href: '/owner/settings',       permission: 'settings.manage' },
         ]

@@ -617,6 +617,7 @@ export default function CRMPage() {
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [total, setTotal] = useState(0)
+    const [stageCounts, setStageCounts] = useState<Record<string, number>>({})
 
     const [search, setSearch] = useState('')
     const [statusFilter, setStatusFilter] = useState('all')
@@ -640,10 +641,30 @@ export default function CRMPage() {
         if (isRefresh) setRefreshing(true); else setLoading(true)
         try {
             const params = new URLSearchParams({ search, status: statusFilter, page: String(page), limit: '25' })
+            if (priorityFilter !== 'all') params.set('priority', priorityFilter)
             const res = await fetch(`/api/owner/crm/leads?${params}`)
-            if (res.ok) { const d = await res.json(); setLeads(d.leads ?? []); setTotal(d.total ?? 0) }
+            if (res.ok) {
+                const d = await res.json()
+                setLeads(d.leads ?? [])
+                setTotal(d.total ?? 0)
+            }
+            // Fetch per-stage counts (unfiltered) for the KPI strip
+            const countsRes = await fetch('/api/owner/crm/leads?limit=1&page=1&status=all')
+            if (countsRes.ok) {
+                const countsData = await countsRes.json()
+                // Build stage counts from analytics (all leads, no pagination)
+                const analyticsRes = await fetch('/api/owner/crm/analytics?days=3650')
+                if (analyticsRes.ok) {
+                    const analyticsData = await analyticsRes.json()
+                    const map: Record<string, number> = {}
+                    for (const f of analyticsData.funnel ?? []) {
+                        map[f.status] = f.count
+                    }
+                    setStageCounts(map)
+                }
+            }
         } finally { setLoading(false); setRefreshing(false) }
-    }, [search, statusFilter, page])
+    }, [search, statusFilter, priorityFilter, page])
 
     useEffect(() => { fetchLeads() }, [fetchLeads])
     useEffect(() => {
@@ -729,14 +750,14 @@ export default function CRMPage() {
     }
 
     const totalPages = Math.ceil(total / 25)
-    const filtered = leads.filter(l => priorityFilter === 'all' || l.priority === priorityFilter)
+    const filtered = leads
 
     if (loading) {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
                 <div style={{ textAlign: 'center' }}>
                     <Loader2 size={36} color={P.brand} style={{ animation: 'spin 1s linear infinite', marginBottom: 12 }} />
-                    <div style={{ color: P.muted, fontWeight: 600 }}>Loading admission inquiries...</div>
+                    <div style={{ color: P.muted, fontWeight: 600 }}>Loading inquiries...</div>
                 </div>
             </div>
         )
@@ -753,8 +774,8 @@ export default function CRMPage() {
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
                 <div>
-                    <div style={{ fontSize: 28, fontWeight: 900, color: P.dark, letterSpacing: '-0.5px' }}>Admission Inquiries</div>
-                    <div style={{ fontSize: 14, color: P.muted, marginTop: 4 }}>Track new school inquiries, follow-ups, and convert leads into registered schools.</div>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: P.dark, letterSpacing: '-0.5px' }}>CRM & Pipeline</div>
+                    <div style={{ fontSize: 14, color: P.muted, marginTop: 4 }}>Track new inquiries, follow-ups, and convert leads into registered tenants.</div>
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                     <button onClick={() => fetchLeads(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 15px', background: P.card, border: '1px solid ' + P.border, borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 13, color: P.text }}>
@@ -775,7 +796,7 @@ export default function CRMPage() {
             {/* KPI Strip */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 24 }}>
                 {DEFAULT_STAGES.map(s => {
-                    const count = leads.filter(l => l.status === s.key).length
+                    const count = stageCounts[s.key] ?? leads.filter(l => l.status === s.key).length
                     return (
                         <button key={s.key} onClick={() => { setStatusFilter(statusFilter === s.key ? 'all' : s.key); setPage(1) }}
                             style={{ background: statusFilter === s.key ? s.bg : P.card, border: '1px solid ' + (statusFilter === s.key ? s.color : P.border), borderRadius: 12, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}>

@@ -29,10 +29,9 @@ export async function POST(request: Request) {
         const { type, tenant_id, category, percentage, is_override, description } = body
 
         if (!type || percentage === undefined) {
-            return NextResponse.json({ error: 'Type and percentage are required' }, { status: 400 })
+            return NextResponse.json({ error: 'Type and percentage rate are required' }, { status: 400 })
         }
 
-        // Validate duplicates
         const formattedTenantId = tenant_id || null
         const formattedCategory = category || 'default'
 
@@ -51,7 +50,21 @@ export async function POST(request: Request) {
         const { data: existing } = await query.maybeSingle()
 
         if (existing) {
-            return NextResponse.json({ error: 'A rule configuration already exists for this tenant, type, and category.' }, { status: 400 })
+            // Update existing rule instead of erroring out
+            const { data, error } = await supabaseAdmin
+                .from('commission_rules')
+                .update({
+                    percentage,
+                    is_override: !!is_override,
+                    description: description || null,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', existing.id)
+                .select()
+                .single()
+
+            if (error) throw error
+            return NextResponse.json({ rule: data, updated: true })
         }
 
         const { data, error } = await supabaseAdmin
@@ -84,7 +97,7 @@ export async function PUT(request: Request) {
         const { id, type, tenant_id, category, percentage, is_override, description } = body
 
         if (!id || !type || percentage === undefined) {
-            return NextResponse.json({ error: 'ID, type, and percentage are required' }, { status: 400 })
+            return NextResponse.json({ error: 'ID, type, and percentage rate are required' }, { status: 400 })
         }
 
         const { data, error } = await supabaseAdmin
@@ -95,7 +108,8 @@ export async function PUT(request: Request) {
                 category: category || 'default',
                 percentage,
                 is_override: !!is_override,
-                description: description || null
+                description: description || null,
+                updated_at: new Date().toISOString()
             })
             .eq('id', id)
             .select()
@@ -126,8 +140,9 @@ export async function DELETE(request: Request) {
 
         if (error) throw error
 
-        return NextResponse.json({ message: 'Rule deleted successfully' })
+        return NextResponse.json({ message: 'Commission rule deleted successfully' })
     } catch (e: any) {
         return NextResponse.json({ error: e.message }, { status: 400 })
     }
 }
+

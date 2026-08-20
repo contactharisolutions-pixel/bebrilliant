@@ -255,7 +255,7 @@ export default function DashboardPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
                 <KpiCard icon={School} label="Registered Schools" value={String(stats.totalTenants || 0)} sub={`${stats.activeTenants || 0} active now`} color={P.brand} bg={P.brandBg} trend="Growing" />
                 <KpiCard icon={Users} label="Total Registered Users" value={Number(stats.totalUsers || 0).toLocaleString()} sub={`${Number(stats.totalStudents || 0).toLocaleString()} students`} color={P.info} bg={P.infoBg} trend="+12.4%" />
-                <KpiCard icon={Receipt} label="Platform Revenue" value={`₹${Number(stats.totalRevenue || 0).toLocaleString()}`} sub="Total earnings" color={P.success} bg={P.successBg} trend="+8.2%" />
+                <KpiCard icon={Receipt} label="Platform Revenue" value={`Rs. ${Number(stats.totalRevenue || 0).toLocaleString()}`} sub="Total earnings" color={P.success} bg={P.successBg} trend="+8.2%" />
                 <KpiCard icon={DollarSign} label="Platform Fees (10%)" value={`₹${Number(stats.netCommission || 0).toLocaleString()}`} sub="Earned commission" color={P.cta} bg={P.ctaBg} trend="+5.2%" />
             </div>
 
@@ -422,7 +422,7 @@ export default function DashboardPage() {
             {activeTab === 'income' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-                        <KpiCard icon={DollarSign} label="Total Platform Income" value={`₹${Number(stats.totalRevenue || 0).toLocaleString()}`} color={P.success} bg={P.successBg} trend="+8.4%" />
+                        <KpiCard icon={DollarSign} label="Total Platform Income" value={`Rs. ${Number(stats.totalRevenue || 0).toLocaleString()}`} color={P.success} bg={P.successBg} trend="+8.4%" />
                         <KpiCard icon={Receipt} label="Platform Fees (10%)" value={`₹${Number(stats.netCommission || 0).toLocaleString()}`} color={P.brand} bg={P.brandBg} sub="Platform revenue share" />
                         <KpiCard icon={CreditCard} label="Pending Payouts" value={`₹${Number(stats.pendingPayout || 0).toLocaleString()}`} color={P.cta} bg={P.ctaBg} sub={`${stats.pendingCount || 0} requests pending`} />
                     </div>

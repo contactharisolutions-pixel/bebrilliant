@@ -63,7 +63,9 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
                     organization: formData.organization,
                     email: formData.email,
                     phone: formData.phone,
-                    message: `[Designation: ${formData.designation}] [Type: ${formData.type}] ${formData.message}`
+                    designation: formData.designation,
+                    type: formData.type,
+                    message: formData.message
                 })
             })
             if (res.ok) {

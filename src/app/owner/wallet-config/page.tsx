@@ -57,6 +57,7 @@ type Transaction = {
 
 export default function WalletConfigPage() {
     const [activeTab, setActiveTab] = useState<'rules' | 'bulk' | 'ledger'>('rules')
+    const [searchInput, setSearchInput] = useState('')
     
     // Core Rules State
     const [rules, setRules] = useState<Rule[]>([])
@@ -282,8 +283,8 @@ export default function WalletConfigPage() {
                             <CreditCard size={24} color={P.brand} />
                         </div>
                         <div>
-                            <h1 style={{ fontSize: 30, fontWeight: 900, color: P.dark, margin: 0, letterSpacing: '-0.03em' }}>Wallet Credit Engine</h1>
-                            <p style={{ margin: '4px 0 0', fontSize: 14, color: P.muted, fontWeight: 600 }}>Manage granular FIFO grants, custom promotion rules, and bulk credit distributions.</p>
+                            <h1 style={{ fontSize: 30, fontWeight: 900, color: P.dark, margin: 0, letterSpacing: '-0.03em' }}>Student Wallet Settings</h1>
+                            <p style={{ margin: '4px 0 0', fontSize: 14, color: P.muted, fontWeight: 600 }}>Control how students earn and spend wallet credits across all tenants.</p>
                         </div>
                     </div>
                 </div>
@@ -301,9 +302,9 @@ export default function WalletConfigPage() {
             {/* TABS */}
             <div style={{ display: 'flex', gap: 8, borderBottom: `1px solid ${P.border}`, marginBottom: 32, paddingBottom: 12 }}>
                 {[
-                    { id: 'rules', label: 'Credit Rules Builder', icon: Settings },
-                    { id: 'bulk', label: 'Bulk Operations Console', icon: Sparkles },
-                    { id: 'ledger', label: 'Transaction Audit Ledger', icon: Activity }
+                    { id: 'rules', label: 'Credit Rules', icon: Settings },
+                    { id: 'bulk', label: 'Send Credits', icon: Sparkles },
+                    { id: 'ledger', label: 'Transaction History', icon: Activity }
                 ].map(t => {
                     const Icon = t.icon
                     const isSelected = activeTab === t.id
@@ -346,13 +347,11 @@ export default function WalletConfigPage() {
             {/* TAB 1: RULES BUILDER */}
             {activeTab === 'rules' && (
                 <div>
-                    {/* EXPLANATION BANNER */}
+                    {/* HOW IT WORKS BANNER */}
                     <div style={{ marginBottom: 32, padding: '20px 28px', background: P.brandBg, borderRadius: 20, border: `1px solid ${P.brand}20`, display: 'flex', alignItems: 'flex-start', gap: 16 }}>
                         <Sparkles size={20} color={P.brand} style={{ marginTop: 2, flexShrink: 0 }} />
                         <div style={{ fontSize: 14, color: P.dark, fontWeight: 600, lineHeight: 1.7 }}>
-                            <strong>Rule Engine Execution:</strong> Wallet credit rules are evaluated automatically when a new student profiles is created.
-                            If multiple active rules match, their credits are granted cumulatively in isolated, FIFO-tracked expiry buckets.
-                            Standard default rules handle enrollment grants by tenant type.
+                            <strong>How this works:</strong> Credit rules run automatically when a new student joins. If more than one rule matches the student, all matching credits are given at the same time. You can set rules by tenant type or for a specific tenant.
                         </div>
                     </div>
 
@@ -409,7 +408,7 @@ export default function WalletConfigPage() {
                                         <div style={{ borderTop: `1px solid ${P.border}`, paddingTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <div>
                                                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                                                    <span style={{ fontSize: 24, fontWeight: 900, color: P.brand }}>₡{rule.credits}</span>
+                                                    <span style={{ fontSize: 24, fontWeight: 900, color: P.brand }}>Rs. {rule.credits}</span>
                                                     <span style={{ fontSize: 12, color: P.muted, fontWeight: 600 }}>credits</span>
                                                 </div>
                                             </div>
@@ -435,9 +434,9 @@ export default function WalletConfigPage() {
             {activeTab === 'bulk' && (
                 <div style={{ maxWidth: 680, margin: '0 auto', background: P.card, borderRadius: 28, border: `1px solid ${P.border}`, padding: '32px 40px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
                     <h3 style={{ margin: '0 0 8px 0', fontSize: 18, fontWeight: 900, color: P.dark, display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <Sparkles size={20} color={P.brand} /> Manual Bulk Credit Grant
+                        <Sparkles size={20} color={P.brand} /> Send Credits to Students
                     </h3>
-                    <p style={{ margin: '0 0 28px 0', fontSize: 13, color: P.muted, fontWeight: 600 }}>Award or adjust credits to targeted demographics immediately.</p>
+                    <p style={{ margin: '0 0 28px 0', fontSize: 13, color: P.muted, fontWeight: 600 }}>Manually add wallet credits to all students or a specific tenant's students right now.</p>
 
                     <form onSubmit={handleExecuteBulk} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                         {/* Demographic Type */}
@@ -493,7 +492,7 @@ export default function WalletConfigPage() {
                             {/* Amount */}
                             <div>
                                 <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
-                                    Credit Amount (₡)
+                                    Credit Amount (Rs.)
                                 </label>
                                 <input
                                     type="number"
@@ -542,7 +541,7 @@ export default function WalletConfigPage() {
                         {/* Notes */}
                         <div>
                             <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
-                                Operation Audit Notes
+                                Reason / Notes
                             </label>
                             <textarea
                                 value={bulkForm.notes}
@@ -574,7 +573,7 @@ export default function WalletConfigPage() {
                             style={{ width: '100%', height: 48, background: P.brand, color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 800, cursor: executingBulk ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: `0 8px 24px ${P.brand}30`, opacity: executingBulk ? 0.7 : 1 }}
                         >
                             {executingBulk && <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />}
-                            {executingBulk ? 'Processing batch allocations...' : 'Execute Bulk Allocation'}
+                            {executingBulk ? 'Sending credits...' : 'Send Credits Now'}
                         </button>
                     </form>
                 </div>
@@ -590,11 +589,11 @@ export default function WalletConfigPage() {
                             <input
                                 type="text"
                                 placeholder="Search by student name or email..."
-                                value={ledgerFilters.search}
+                                value={searchInput}
                                 onChange={e => {
-                                    setLedgerFilters(p => ({ ...p, search: e.target.value, page: 1 }))
-                                    // Debounce reload
-                                    setTimeout(() => loadLedger(), 300)
+                                    const val = e.target.value
+                                    setSearchInput(val)
+                                    setLedgerFilters(p => ({ ...p, search: val, page: 1 }))
                                 }}
                                 style={{ width: '100%', height: 44, padding: '0 16px 0 44px', background: P.bg, border: `2px solid ${P.border}`, borderRadius: 10, fontSize: 13, fontWeight: 600, color: P.dark, outline: 'none' }}
                             />
@@ -678,14 +677,14 @@ export default function WalletConfigPage() {
                                             </td>
                                             <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 800 }}>
                                                 <span style={{ color: txn.txn_type === 'credit' ? P.success : '#EF4444' }}>
-                                                    {txn.txn_type === 'credit' ? '+' : '-'}₡{txn.amount}
+                                                    {txn.txn_type === 'credit' ? '+' : '-'}Rs. {txn.amount}
                                                 </span>
                                                 <div style={{ fontSize: 9, color: P.muted, fontWeight: 700, marginTop: 2 }}>
                                                     {txn.credit_type.toUpperCase()}
                                                 </div>
                                             </td>
                                             <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 800 }}>
-                                                ₡{txn.balance_after}
+                                                Rs. {txn.balance_after}
                                             </td>
                                             <td style={{ padding: '16px 24px', fontSize: 12, color: P.muted }}>
                                                 {txn.source}
@@ -732,7 +731,7 @@ export default function WalletConfigPage() {
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
                     <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 28, width: '100%', maxWidth: 540, padding: 36, boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                            <h3 style={{ fontSize: 18, fontWeight: 900, color: P.dark, margin: 0 }}>Create Custom Credit Rule</h3>
+                            <h3 style={{ fontSize: 18, fontWeight: 900, color: P.dark, margin: 0 }}>Add Credit Rule</h3>
                             <button onClick={() => setShowCreateModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: P.muted }}><X size={20} /></button>
                         </div>
 
@@ -744,7 +743,7 @@ export default function WalletConfigPage() {
                                 </label>
                                 <input
                                     type="text"
-                                    placeholder="E.g. Delhi Public School Welcome Grant"
+                                    placeholder="E.g. New Student Welcome Credits"
                                     value={newRule.name}
                                     onChange={e => setNewRule(p => ({ ...p, name: e.target.value }))}
                                     required

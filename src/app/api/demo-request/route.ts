@@ -3,17 +3,33 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
     try {
-        const { name, organization, email, phone, message } = await req.json()
+        const { name, organization, email, phone, message, designation, type } = await req.json()
 
         if (!name || !organization || !email) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
         }
 
+        // Map public form type to internal CRM type
+        const typeMap: Record<string, string> = {
+            school: 'INSTITUTE',
+            institute: 'INSTITUTE',
+            teacher: 'PERSONAL_TEACHER',
+            enterprise: 'INSTITUTE',
+        }
+        const crmType = typeMap[type] ?? 'INSTITUTE'
+
+        // Build message with designation context
+        const fullMessage = [
+            designation ? `Designation: ${designation}` : '',
+            type ? `Category: ${type}` : '',
+            message || '',
+        ].filter(Boolean).join(' | ')
+
         // Insert into demo_requests
         const { data: lead, error } = await supabaseAdmin
             .from('demo_requests')
             .insert([
-                { name, organization, email, phone, message, status: 'new' }
+                { name, organization, email, phone, message: fullMessage, status: 'new' }
             ])
             .select()
             .single()
@@ -34,7 +50,8 @@ export async function POST(req: NextRequest) {
                     phone, 
                     source: 'Website', 
                     status: 'new',
-                    type: 'INSTITUTE'
+                    type: crmType,
+                    priority: 'medium',
                 }
             ])
 

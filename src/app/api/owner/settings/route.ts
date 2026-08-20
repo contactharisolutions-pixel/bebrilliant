@@ -3,7 +3,18 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { verifyPlatformAccess } from '@/lib/platform-auth'
 
 const DEFAULTS = [
-    { key: 'general', value: { platform_name: 'BeBrilliant Hub', support_email: 'support@bebrilliant.io', timezone: 'Asia/Kolkata' } },
+    { 
+        key: 'general', 
+        value: { 
+            platform_name: 'BeBrilliant Pro', 
+            support_email: 'support@bebrilliant.io', 
+            support_phone: '+91 98765 43210',
+            gst_no: '27AAAAA0000A1Z5',
+            business_address: 'Level 5, Institutional Tower, Cyber City, Mumbai, Maharashtra 400051',
+            date_format: 'DD/MM/YYYY',
+            timezone: 'Asia/Kolkata' 
+        } 
+    },
     { key: 'security', value: { require_2fa_admins: false, session_timeout_mins: 120, max_login_attempts: 5, password_policy: 'medium' } },
     {
         key: 'integrations', value: {

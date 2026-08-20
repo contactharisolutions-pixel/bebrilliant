@@ -68,7 +68,7 @@ export async function PATCH(
             completed_by: completed ? user.id : null,
         })
         .eq('id', milestone_id)
-        .eq('checklist_id', params.id)
+        .eq('checklist_id', id)
         .select()
         .single()
 

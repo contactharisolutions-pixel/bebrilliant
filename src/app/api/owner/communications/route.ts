@@ -54,15 +54,19 @@ export async function GET(request: NextRequest) {
     const user = await verifyPlatformAccess('automation.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const [emailTpls, waTpls, autoRules] = await Promise.all([
+    const [emailTpls, waTpls, autoRules, pushSettings] = await Promise.all([
         supabaseAdmin.from('email_templates').select('*').order('created_at', { ascending: false }),
         supabaseAdmin.from('whatsapp_templates').select('*').order('created_at', { ascending: false }),
-        supabaseAdmin.from('automation_rules').select('*').order('id', { ascending: false })
+        supabaseAdmin.from('automation_rules').select('*').order('id', { ascending: false }),
+        supabaseAdmin.from('platform_settings').select('value').eq('key', 'push_templates').maybeSingle()
     ])
+
+    const pushTpls = pushSettings.data?.value || []
 
     const stats = {
         emailTemplates: emailTpls.data?.length || 0,
         waTemplates: waTpls.data?.length || 0,
+        pushTemplates: Array.isArray(pushTpls) ? pushTpls.length : 0,
         activeRules: autoRules.data?.filter((r: any) => r.active_status).length || 0,
         totalRules: autoRules.data?.length || 0
     }
@@ -70,6 +74,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
         emailTemplates: emailTpls.data || [],
         waTemplates: waTpls.data || [],
+        pushTemplates: Array.isArray(pushTpls) ? pushTpls : [],
         automationRules: autoRules.data || [],
         stats
     })

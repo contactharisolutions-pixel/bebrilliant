@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const classification = searchParams.get('classification')
+    const priority = searchParams.get('priority')
     const search = searchParams.get('search') || ''
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '25')
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest) {
         const type = classification === 'institutional' ? 'INSTITUTE' : 'PERSONAL_TEACHER'
         query = query.eq('type', type)
     }
+    if (priority && priority !== 'all') query = query.eq('priority', priority)
     if (search) query = query.or(`name.ilike.%${search}%,organization.ilike.%${search}%,email.ilike.%${search}%`)
 
     const { data, error, count } = await query

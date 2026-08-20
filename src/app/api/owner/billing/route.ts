@@ -15,12 +15,19 @@ export async function GET(request: NextRequest) {
             .order('price', { ascending: true })
         if (plansErr) throw plansErr
 
-        // 2. Fetch Tenant Subscriptions with dynamic plans mapping resolved
+        // 2. Fetch Tenant Subscriptions with plan name joined
         const { data: subscriptions, error: subsErr } = await supabaseAdmin
             .from('tenant_subscriptions')
-            .select('*, tenants(id, name, email)')
+            .select('*, tenants(id, name, email), plans(name, price)')
             .order('created_at', { ascending: false })
         if (subsErr) throw subsErr
+
+        // Flatten plan name into subscription object for easier frontend use
+        const enrichedSubscriptions = (subscriptions ?? []).map((s: any) => ({
+            ...s,
+            plan_name: s.plans?.name || null,
+            amount: s.amount ?? s.plans?.price ?? 0
+        }))
 
         // 3. Fetch Invoices
         const { data: invoices, error: invErr } = await supabaseAdmin
@@ -38,7 +45,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             plans: plans ?? [],
-            subscriptions: subscriptions ?? [],
+            subscriptions: enrichedSubscriptions,
             invoices: invoices ?? [],
             addons: addons ?? []
         })

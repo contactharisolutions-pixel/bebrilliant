@@ -283,10 +283,10 @@ export default function TenantManagementPage() {
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                        <span style={{ background: P.brandBg, color: P.brand, borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Registered Schools</span>
+                        <span style={{ background: P.brandBg, color: P.brand, borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Registered Tenant</span>
                     </div>
-                    <div style={{ fontSize: 28, fontWeight: 900, color: P.dark, letterSpacing: '-0.5px' }}>School & Institute Management</div>
-                    <div style={{ fontSize: 14, color: P.muted, marginTop: 4 }}>View, add, edit, and manage all registered schools and institutes across the platform.</div>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: P.dark, letterSpacing: '-0.5px' }}>Tenant Management</div>
+                    <div style={{ fontSize: 14, color: P.muted, marginTop: 4 }}>View, add, edit, and manage all registered tenants across the platform.</div>
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                     <button onClick={() => fetchTenants(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', background: P.card, border: '1px solid ' + P.border, borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 13, color: P.text }}>
@@ -629,8 +629,26 @@ export default function TenantManagementPage() {
 
                                 <div style={{ padding: 16, background: P.bg, border: '1px solid ' + P.border, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
                                     <div style={{ fontSize: 13, fontWeight: 700, color: P.dark }}>Password Reset</div>
-                                    <div style={{ fontSize: 11, color: P.muted }}>Send a password reset email to the school owner.</div>
-                                    <button onClick={() => alert('Password reset link sent to admin inbox.')} style={{ width: '100%', padding: '10px', background: '#F1F5F9', color: P.dark, border: '1px solid ' + P.border, borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                                    <div style={{ fontSize: 11, color: P.muted }}>Send a password reset link to the school account owner email.</div>
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const res = await fetch('/api/owner/tenants/reset-password', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ email: selectedTenant.email })
+                                                })
+                                                if (res.ok) {
+                                                    showToast('Password reset link sent to ' + selectedTenant.email)
+                                                } else {
+                                                    const j = await res.json()
+                                                    showToast(j.error || 'Failed to send reset link', false)
+                                                }
+                                            } catch {
+                                                showToast('Failed to send reset link', false)
+                                            }
+                                        }}
+                                        style={{ width: '100%', padding: '10px', background: '#F1F5F9', color: P.dark, border: '1px solid ' + P.border, borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
                                         Send Reset Password Link
                                     </button>
                                 </div>
