@@ -1,1 +1,270 @@
-'use client'import React, { useState, useEffect, useCallback } from 'react'import {    Shield, Users, Key, PlusCircle, CheckCircle, XCircle, Search,    Power, ShieldAlert, FileEdit, Eye, Lock, Loader2} from 'lucide-react'// ── TYPES ────────────────────────────────────────────────type StaffNode = { id: string, first_name: string, last_name: string, email: string, role: string, is_active: boolean, created_at: string }const ROLES = [    { id: 'admin', label: 'Tenant Admin', icon: Shield, color: '#EF4444', bg: '#FEF2F2', root: true },    { id: 'teacher', label: 'Faculty / Teacher', icon: Users, color: '#3B82F6', bg: '#EFF6FF', root: false },    { id: 'editor', label: 'Editor (Q-Bank Only)', icon: FileEdit, color: '#F59E0B', bg: '#FFFBEB', root: false },    { id: 'reviewer', label: 'Reviewer (QA Approvals)', icon: Eye, color: '#10B981', bg: '#ECFDF5', root: false }]// ── MODALS & COMPONENTS ──────────────────────────────────function Modal({ title, onClose, children, onSubmit, saving, saveText = 'Save', maxWidth = 520 }: any) {    return (        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', padding: 20 }}>            <div style={{ background: '#FFF', borderRadius: 24, width: '100%', maxWidth, overflow: 'hidden', boxShadow: '0 24px 48px rgba(0,0,0,0.2)', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>                <div style={{ padding: '24px 32px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>                    <h3 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 10 }}><Key size={22} color="var(--color-primary)" /> {title}</h3>                    <button onClick={onClose} style={{ background: '#F1F5F9', border: 'none', width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}><XCircle size={18} color="#64748B" /></button>                </div>                <div style={{ padding: '24px 32px', overflowY: 'auto' }}>{children}</div>                <div style={{ padding: '20px 32px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end', gap: 12, flexShrink: 0 }}>                    <button onClick={onClose} style={{ padding: '12px 20px', borderRadius: 12, background: 'transparent', border: '1px solid #E2E8F0', color: '#0F172A', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>                    <button onClick={onSubmit} disabled={saving} style={{ padding: '12px 24px', borderRadius: 12, background: 'var(--color-primary-gradient)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 800, cursor: saving ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: 'var(--shadow-primary)' }}>                        {saving && <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />} {saveText}                    </button>                </div>            </div>        </div>    )}function Input({ label, value, onChange, placeholder = '', type = 'text', prefix = '' }: any) {    return (        <div style={{ marginBottom: 16 }}>            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 8 }}>{label}</label>            <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #E2E8F0', borderRadius: 10, overflow: 'hidden', background: '#fff', transition: 'box-shadow 0.2s' }}>                {prefix && <div style={{ padding: '10px 14px', background: '#F8FAFC', borderRight: '1px solid #E2E8F0', color: '#475569', fontWeight: 700, fontSize: 14 }}>{prefix}</div>}                <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ flex: 1, padding: '12px 14px', border: 'none', fontSize: 14, color: '#0F172A', outline: 'none' }} />            </div>        </div>    )}// ── MAIN PAGE ────────────────────────────────────────────export default function RBACDashboard() {    const [staff, setStaff] = useState<StaffNode[]>([])    const [loading, setLoading] = useState(true)    const [saving, setSaving] = useState(false)    const [search, setSearch] = useState('')    const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)    // Modals    const [showDeployModal, setShowDeployModal] = useState(false)    // Form State    const [form, setForm] = useState<any>({        first_name: '', last_name: '', email: '', role: 'teacher'    })    const showToast = (msg: string, ok: boolean) => {        setToast({ msg, ok }); setTimeout(() => setToast(null), 3500)    }    const fetchStaff = useCallback(async () => {        setLoading(true)        try {            const res = await fetch('/api/dashboard/staff')            const json = await res.json()            if (res.ok) setStaff(json || [])        } finally { setLoading(false) }    }, [])    useEffect(() => { fetchStaff() }, [fetchStaff])    const apiAction = async (action: string, payload: any) => {        setSaving(true)        try {            const res = await fetch('/api/dashboard/staff', {                method: 'POST', headers: { 'Content-Type': 'application/json' },                body: JSON.stringify({ action, payload })            })            const json = await res.json()            if (!res.ok) throw new Error(json.error || 'Access Control logic failure')            await fetchStaff()            showToast('Access Control Updated!', true)            return { success: true }        } catch (e: any) {            showToast(e.message || 'Transmission Exception', false)            return { success: false }        } finally { setSaving(false) }    }    const handleCreate = async () => {        if (!form.email || !form.role) return showToast('Email and security scope logic required.', false)        const { success } = await apiAction('CREATE_STAFF', form)        if (success) setShowDeployModal(false)    }    const toggleStatus = async (id: string, current: boolean) => {        if (confirm(`Suspend this staff vector? They will lose all portal access instantly.`)) {            apiAction('TOGGLE_STATUS', { id, is_active: !current })        }    }    const handleRoleSwap = async (id: string, newRole: string) => {        if (confirm(`WARNING: Modifying root RBAC bounds. Escalating or stripping permissions?`)) {            apiAction('UPDATE_ROLE', { id, role: newRole })        }    }    const filteredStaff = staff.filter(s => s.email?.toLowerCase().includes(search.toLowerCase()) || s.first_name?.toLowerCase().includes(search.toLowerCase()))    return (        <div style={{ padding: '32px 40px', background: '#F8FAFC', minHeight: '100%', position: 'relative' }}>            {/* TOAST SYSTEM */}            {toast && (                <div style={{ position: 'fixed', top: 24, right: 28, background: toast.ok ? '#ECFDF5' : '#FEF2F2', border: '1px solid ' + (toast.ok ? '#10B981' : '#EF4444') + '40', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.1)', zIndex: 9000 }}>                    {toast.ok ? <CheckCircle size={16} color="#10B981" /> : <XCircle size={16} color="#EF4444" />}                    <span style={{ fontSize: 13, fontWeight: 700, color: toast.ok ? '#065F46' : '#991B1B' }}>{toast.msg}</span>                </div>            )}            {/* HEADER */}            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>                <div>                    <h1 style={{ fontSize: 26, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 12 }}>                        Institutional Access Map <ShieldAlert size={20} color="var(--color-primary)" />                    </h1>                    <p style={{ fontSize: 13, color: '#64748B', margin: '6px 0 0', fontWeight: 600 }}>                        Manage Institutional-scoped permissions. Explicitly provision Editors, Reviewers, and Administration.                    </p>                </div>                <div>                    <button onClick={() => setShowDeployModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--color-primary-gradient)', border: 'none', borderRadius: 10, padding: '12px 20px', fontSize: 13, fontWeight: 800, color: '#FFF', cursor: 'pointer', boxShadow: 'var(--shadow-primary)', transition: 'transform 0.1s' }} onMouseDown={e => e.currentTarget.style.transform = 'scale(0.96)'} onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}>                        <PlusCircle size={16} color="#FFF" /> Authorize New Staff                    </button>                </div>            </div>            {/* SEARCH */}            <div style={{ marginBottom: 24, position: 'relative' }}>                <Search size={18} color="#94A3B8" style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }} />                <input                    type="text" value={search} onChange={e => setSearch(e.target.value)}                    placeholder="Search hierarchy by exact identity or email structure..."                    style={{ width: '100%', padding: '14px 16px 14px 44px', border: '1px solid #E2E8F0', borderRadius: 14, outline: 'none', fontSize: 14, color: '#0F172A', fontWeight: 500, background: '#FFF', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}                />            </div>            {/* RBAC GRID / LIST */}            {loading && staff.length === 0 ? (                <div style={{ padding: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>                    <Loader2 size={32} color="#672AEA" style={{ animation: 'spin 1s linear infinite', marginBottom: 14 }} />                </div>            ) : (                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>                    {filteredStaff.map(s => {                        const RoleNode = ROLES.find(r => r.id === s.role) || ROLES[1]                        const Icon = RoleNode.icon                        return (                            <div key={s.id} style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 20, padding: 24, boxShadow: '0 4px 12px rgba(0,0,0,0.02)', position: 'relative', overflow: 'hidden' }}>                                {RoleNode.root && <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 4, background: RoleNode.color }} />}                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>                                        <div style={{ width: 44, height: 44, borderRadius: 12, background: RoleNode.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>                                            <Icon size={20} color={RoleNode.color} />                                        </div>                                        <div>                                            <div style={{ fontSize: 16, fontWeight: 900, color: '#0F172A' }}>{s.first_name} {s.last_name || ''}</div>                                            <div style={{ fontSize: 12, color: s.is_active ? '#10B981' : '#EF4444', fontWeight: 800, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>                                                {s.is_active ? <CheckCircle size={10} /> : <XCircle size={10} />}                                                {s.is_active ? 'ACCESS GRANTED' : 'ACCESS REVOKED'}                                            </div>                                        </div>                                    </div>                                </div>                                <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 10, border: '1px solid #E2E8F0', marginBottom: 16 }}>                                    <div style={{ fontSize: 11, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 4 }}>System Target</div>                                    <div style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>{s.email}</div>                                </div>                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>                                    <select                                        value={s.role}                                        onChange={(e) => handleRoleSwap(s.id, e.target.value)}                                        style={{ flex: 1, padding: '10px 12px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 13, color: '#0F172A', fontWeight: 700, outline: 'none', background: '#FFF', cursor: 'pointer' }}                                    >                                        {ROLES.map(r => (                                            <option key={r.id} value={r.id}>{r.label}</option>                                        ))}                                    </select>                                    <button onClick={() => toggleStatus(s.id, s.is_active)} style={{ width: 40, height: 40, background: s.is_active ? '#FFF' : '#FEF2F2', border: '1px solid ' + (s.is_active ? '#E2E8F0' : '#FECACA'), borderRadius: 10, color: s.is_active ? '#94A3B8' : '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} title={s.is_active ? "Suspend Identity Engine" : "Re-activate Vector"}>                                        <Power size={18} />                                    </button>                                </div>                            </div>                        )                    })}                    {filteredStaff.length === 0 && (                        <div style={{ gridColumn: '1 / -1', padding: 60, textAlign: 'center', border: '2px dashed #E2E8F0', borderRadius: 24 }}>                            <div style={{ width: 64, height: 64, background: '#F1F5F9', borderRadius: '50%', color: '#94A3B8', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>                                <Lock size={32} />                            </div>                            <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A' }}>RBAC Array Empty</h4>                            <p style={{ margin: '6px 0 0', fontSize: 14, color: '#64748B', fontWeight: 500 }}>Deploy explicitly mapped identities to grant localized admin/teaching capabilities.</p>                        </div>                    )}                </div>            )}            {/* PROTOCOL MODAL */}            {showDeployModal && (                <Modal title="New Staff Authorization" onClose={() => setShowDeployModal(false)} onSubmit={handleCreate} saving={saving} saveText="Authorize Account" maxWidth={600}>                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>                            <Input label="First Name" value={form.first_name} onChange={(v: string) => setForm({ ...form, first_name: v })} placeholder="e.g. Rahul" />                            <Input label="Last Name" value={form.last_name} onChange={(v: string) => setForm({ ...form, last_name: v })} placeholder="e.g. Verma" />                        </div>                        <Input label="Official Email Address" type="email" value={form.email} onChange={(v: string) => setForm({ ...form, email: v })} placeholder="staff@school.edu" />                        <div style={{ marginBottom: 4 }}>                            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 8 }}>Authorization Levels (RBAC)</label>                            <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} style={{ width: '100%', padding: '14px', border: '1px solid #E2E8F0', borderRadius: 12, fontSize: 14, color: '#0F172A', fontWeight: 600, outline: 'none', background: '#fff' }}>                                {ROLES.map(r => (                                    <option key={r.id} value={r.id}>{r.label.toUpperCase()}</option>                                ))}                            </select>                        </div>                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, background: '#FFFBEB', border: '1px solid #FCD34D', padding: 16, borderRadius: 12, marginTop: 8 }}>                            <ShieldAlert size={20} color="#D97706" style={{ flexShrink: 0, marginTop: 2 }} />                            <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: '#92400E', lineHeight: 1.5 }}>                                <strong>WARNING:</strong> Assigning the <strong style={{ color: '#0F172A' }}>TENANT ADMIN</strong> role grants complete destructive authority natively bypassing RLS queries scoped to this specific tenant account. Initial auto-password will be set to: <code>SecureStaff#123!@</code>                            </p>                        </div>                    </div>                </Modal>            )}        </div>    )}
+'use client'
+
+import React, { useState, useEffect, useCallback } from 'react'
+import {
+    Shield, Users, Key, PlusCircle, CheckCircle, XCircle, Search,
+    Power, ShieldAlert, FileEdit, Eye, Lock, Loader2, Video, Calendar,
+    Clock, PhoneCall, CheckCircle2, AlertTriangle, Sparkles, Award,
+    CheckSquare, Square, User, Building2, ChevronRight, Activity, ArrowUpRight
+} from 'lucide-react'
+import { P } from '@/components/shared/institutional/theme'
+import { KpiCard } from '@/components/shared/institutional/KpiCard'
+
+export default function StaffPersonalWorkspace() {
+    const [userProfile, setUserProfile] = useState<any>(null)
+    const [myTasks, setMyTasks] = useState<any[]>([])
+    const [myDemos, setMyDemos] = useState<any[]>([])
+    const [myOnboarding, setMyOnboarding] = useState<any[]>([])
+    const [myTraining, setMyTraining] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
+    const [taskFilter, setTaskFilter] = useState<'pending' | 'completed' | 'all'>('pending')
+    const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
+
+    const showToast = (msg: string, ok = true) => setToast({ msg, ok })
+
+    const fetchWorkspaceData = useCallback(async () => {
+        setLoading(true)
+        try {
+            // Fetch current staff user tasks
+            const resTasks = await fetch('/api/owner/tasks?assigned_to=me')
+            if (resTasks.ok) {
+                const d = await resTasks.json()
+                setMyTasks(d.tasks ?? [])
+            }
+
+            // Fetch current staff demos
+            const resDemos = await fetch('/api/owner/demos')
+            if (resDemos.ok) {
+                const d = await resDemos.json()
+                setMyDemos(d.demos ?? [])
+            }
+
+            // Fetch onboarding cases
+            const resOb = await fetch('/api/owner/onboarding/cases')
+            if (resOb.ok) {
+                const d = await resOb.json()
+                setMyOnboarding(d.cases ?? [])
+            }
+
+            // Fetch training cases
+            const resTr = await fetch('/api/owner/training')
+            if (resTr.ok) {
+                const d = await resTr.json()
+                setMyTraining(d.cases ?? [])
+            }
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setLoading(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        fetchWorkspaceData()
+    }, [fetchWorkspaceData])
+
+    async function handleCompleteTask(taskId: string) {
+        try {
+            const res = await fetch(`/api/owner/tasks/${taskId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'completed' })
+            })
+            if (res.ok) {
+                showToast('Task marked as completed!', true)
+                fetchWorkspaceData()
+            }
+        } catch (e) {
+            showToast('Failed to complete task', false)
+        }
+    }
+
+    const filteredTasks = myTasks.filter(t => {
+        if (taskFilter === 'pending') return t.status === 'pending' || t.status === 'in_progress'
+        if (taskFilter === 'completed') return t.status === 'completed'
+        return true
+    })
+
+    const pendingTasksCount = myTasks.filter(t => t.status === 'pending').length
+    const completedTasksCount = myTasks.filter(t => t.status === 'completed').length
+
+    return (
+        <div style={{ padding: '32px 40px', background: P.bg, minHeight: '100vh', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+            {/* Toast */}
+            {toast && (
+                <div style={{ position: 'fixed', top: 24, right: 28, background: toast.ok ? P.successBg : P.errorBg, border: `1px solid ${toast.ok ? P.success : P.error}40`, borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.1)', zIndex: 9000 }}>
+                    {toast.ok ? <CheckCircle2 size={16} color={P.success} /> : <AlertTriangle size={16} color={P.error} />}
+                    <span style={{ fontSize: 13, fontWeight: 700, color: toast.ok ? '#065F46' : '#991B1B' }}>{toast.msg}</span>
+                </div>
+            )}
+
+            {/* Header Banner */}
+            <div style={{ background: P.brand, borderRadius: 24, padding: '28px 36px', color: '#fff', marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: `0 12px 32px ${P.brand}30` }}>
+                <div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.15)', padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                        <Sparkles size={12} color="#F0A026" /> Platform Operations Workspace
+                    </div>
+                    <h1 style={{ fontSize: 26, fontWeight: 950, margin: 0 }}>Staff Personal Operational Hub</h1>
+                    <p style={{ margin: '4px 0 0', fontSize: 13, opacity: 0.85, fontWeight: 600 }}>Role-aware dashboard: Your assigned tasks, demos, onboarding cases & schedule.</p>
+                </div>
+
+                <div style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 16, padding: '12px 20px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 20, fontWeight: 950 }}>{pendingTasksCount}</div>
+                        <div style={{ fontSize: 11, opacity: 0.8, fontWeight: 700 }}>My Tasks Due</div>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 16, padding: '12px 20px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 20, fontWeight: 950 }}>{myDemos.length}</div>
+                        <div style={{ fontSize: 11, opacity: 0.8, fontWeight: 700 }}>My Demos</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Role Modules Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
+                {/* Left Column: My Tasks & Assigned Work */}
+                <div>
+                    {/* My Tasks Panel */}
+                    <div style={{ background: '#fff', border: `1px solid ${P.border}`, borderRadius: 24, padding: 24, marginBottom: 24 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <CheckSquare size={20} color={P.brand} />
+                                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: P.dark }}>My Action Tasks</h3>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 6 }}>
+                                {[
+                                    { key: 'pending', label: 'Pending', count: pendingTasksCount },
+                                    { key: 'completed', label: 'Completed', count: completedTasksCount },
+                                    { key: 'all', label: 'All', count: myTasks.length },
+                                ].map(t => (
+                                    <button
+                                        key={t.key}
+                                        onClick={() => setTaskFilter(t.key as any)}
+                                        style={{
+                                            padding: '5px 12px', borderRadius: 8, border: 'none',
+                                            background: taskFilter === t.key ? P.brandBg : 'transparent',
+                                            color: taskFilter === t.key ? P.brand : P.muted,
+                                            fontWeight: 800, fontSize: 12, cursor: 'pointer'
+                                        }}
+                                    >
+                                        {t.label} ({t.count})
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {loading ? (
+                            <div style={{ textAlign: 'center', padding: 40 }}><Loader2 size={24} color={P.brand} style={{ animation: 'spin 1s linear infinite' }} /></div>
+                        ) : filteredTasks.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: 40, color: P.muted, fontSize: 13 }}>No tasks found in this view.</div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {filteredTasks.map(t => (
+                                    <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 14, border: `1px solid ${P.border}`, borderRadius: 14, background: t.status === 'completed' ? '#ECFDF5' : '#fff' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                            <button onClick={() => t.status !== 'completed' && handleCompleteTask(t.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                                                {t.status === 'completed' ? <CheckSquare size={18} color={P.success} /> : <Square size={18} color={P.muted} />}
+                                            </button>
+                                            <div>
+                                                <div style={{ fontSize: 14, fontWeight: 800, color: t.status === 'completed' ? P.muted : P.dark, textDecoration: t.status === 'completed' ? 'line-through' : 'none' }}>
+                                                    {t.title}
+                                                </div>
+                                                {t.description && <div style={{ fontSize: 12, color: P.muted, marginTop: 2 }}>{t.description}</div>}
+                                                {t.due_at && (
+                                                    <div style={{ fontSize: 11, color: P.brand, fontWeight: 700, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                        <Clock size={11} /> Due: {new Date(t.due_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <span style={{ background: t.priority === 'high' ? '#FEF2F2' : P.bg, color: t.priority === 'high' ? '#DC2626' : P.muted, padding: '3px 8px', borderRadius: 6, fontSize: 10, fontWeight: 900 }}>
+                                            {t.priority?.toUpperCase()}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* My Demos Section */}
+                    <div style={{ background: '#fff', border: `1px solid ${P.border}`, borderRadius: 24, padding: 24 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <Video size={20} color={P.purple} />
+                                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: P.dark }}>My Demo Presentations</h3>
+                            </div>
+                            <a href="/owner/demos" style={{ fontSize: 12, fontWeight: 800, color: P.brand, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                View All Demos <ArrowUpRight size={13} />
+                            </a>
+                        </div>
+
+                        {myDemos.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: 30, color: P.muted, fontSize: 13 }}>No demos assigned to you yet.</div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {myDemos.slice(0, 5).map(d => (
+                                    <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 14, border: `1px solid ${P.border}`, borderRadius: 14, background: P.bg }}>
+                                        <div>
+                                            <div style={{ fontSize: 14, fontWeight: 900, color: P.dark }}>{d.lead?.name || 'Prospect'} — {d.lead?.organization || ''}</div>
+                                            <div style={{ fontSize: 12, color: P.muted, fontWeight: 600, marginTop: 2 }}>Format: {d.demo_type === 'on_site' ? 'On-Site School Visit' : 'Online Video Call'}</div>
+                                        </div>
+                                        <span style={{ background: P.purpleBg, color: P.purple, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 900 }}>
+                                            {d.status?.toUpperCase()}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Right Column: Quick Links & Active Workload */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                    {/* Quick Operations Links */}
+                    <div style={{ background: '#fff', border: `1px solid ${P.border}`, borderRadius: 24, padding: 24 }}>
+                        <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 950, color: P.dark }}>Operational Shortcuts</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {[
+                                { label: 'CRM & Lead Pipeline', href: '/owner/crm', icon: Users, color: P.brand },
+                                { label: 'Demo Operations Hub', href: '/owner/demos', icon: Video, color: P.purple },
+                                { label: 'Onboarding Lifecycle', href: '/owner/onboarding', icon: ShieldCheck, color: P.success },
+                                { label: 'Training & Go-Live', href: '/owner/training', icon: Award, color: P.warning },
+                            ].map(link => (
+                                <a
+                                    key={link.label}
+                                    href={link.href}
+                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 14, border: `1px solid ${P.border}`, borderRadius: 14, textDecoration: 'none', background: P.bg, transition: 'transform 0.15s' }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <link.icon size={16} color={link.color} />
+                                        <span style={{ fontSize: 13, fontWeight: 800, color: P.dark }}>{link.label}</span>
+                                    </div>
+                                    <ChevronRight size={16} color={P.muted} />
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Active Onboarding Cases */}
+                    <div style={{ background: '#fff', border: `1px solid ${P.border}`, borderRadius: 24, padding: 24 }}>
+                        <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 950, color: P.dark }}>Active Onboarding Cases</h3>
+                        {myOnboarding.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: 20, color: P.muted, fontSize: 12 }}>No active onboarding cases.</div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {myOnboarding.slice(0, 4).map(ob => (
+                                    <div key={ob.id} style={{ padding: 12, border: `1px solid ${P.border}`, borderRadius: 12, background: P.bg }}>
+                                        <div style={{ fontSize: 13, fontWeight: 900, color: P.dark }}>{ob.organization_name}</div>
+                                        <div style={{ fontSize: 11, color: P.brand, fontWeight: 800, marginTop: 4 }}>Stage: {ob.stage?.toUpperCase()} ({ob.stage_progress_pct || 12}%)</div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
