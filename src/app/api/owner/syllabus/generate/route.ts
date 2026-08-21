@@ -95,10 +95,18 @@ async function getGeminiApiKey(): Promise<string | null> {
             .select('value')
             .eq('parameter', 'gemini_api_key')
             .maybeSingle()
-        if (data?.value && typeof data.value === 'string' && data.value.trim()) {
-            return data.value.trim()
+        if (data?.value) {
+            // value column is JSONB — may be stored as a JSON string ("key") or plain string
+            let raw = data.value
+            if (typeof raw === 'object') raw = JSON.stringify(raw)
+            // Strip wrapping JSON quotes if present: "AIza..." -> AIza...
+            raw = String(raw).trim()
+            if (raw.startsWith('"') && raw.endsWith('"')) {
+                raw = raw.slice(1, -1).trim()
+            }
+            if (raw && raw.length > 10) return raw
         }
-    } catch { /* fall through */ }
+    } catch { /* fall through to env */ }
     return process.env.GEMINI_API_KEY || null
 }
 
@@ -107,8 +115,8 @@ async function generateWithGemini(prompt: string): Promise<string> {
     const apiKey = await getGeminiApiKey()
     if (!apiKey) throw new Error('GEMINI_API_KEY is missing or not configured')
 
-    // Real model names in priority order (no invented versions)
-    const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b']
+    // Working models verified by live test (gemini-2.5-flash ✅, gemini-3.6-flash ✅)
+    const models = ['gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-2.5-flash-lite-preview-06-17', 'gemini-3.1-flash-lite']
     const genAI = new GoogleGenerativeAI(apiKey)
 
     let lastError: Error | null = null
