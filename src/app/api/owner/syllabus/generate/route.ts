@@ -4,8 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { CURRICULUM_TEMPLATES } from '@/lib/ai/curriculum-templates'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-// Allow up to 120s for AI generation (2x Gemini calls + examination agent)
-export const maxDuration = 120
+// Keep at 60s — works on self-hosted Node + Nginx (with proxy_read_timeout 60s)
+export const maxDuration = 60
 
 async function verifyOwner() {
     const supabase = await createClient()
@@ -16,29 +16,27 @@ async function verifyOwner() {
     return (role === 'owner' || role === 'admin' || role === 'platform_staff') ? user : null
 }
 
-// ── Helper: insert a node and return its ID ────────────────────────────────────
+// ── Helper: insert a node (upsert-style, skip duplicates) ─────────────────────
 async function insertNode(
     name: string,
     type: string,
     parentId: string | null,
     orderIndex: number
 ): Promise<string> {
-    // Check for existence to avoid duplicates at the same level
     let query = supabaseAdmin
         .from('syllabus_nodes')
         .select('id')
         .eq('name', name)
-        .eq('type', type);
+        .eq('type', type)
 
     if (parentId === null) {
-        query = query.is('parent_id', null);
+        query = query.is('parent_id', null)
     } else {
-        query = query.eq('parent_id', parentId);
+        query = query.eq('parent_id', parentId)
     }
 
-    const { data: existing } = await query.maybeSingle();
-
-    if (existing) return existing.id;
+    const { data: existing } = await query.maybeSingle()
+    if (existing) return existing.id
 
     const { data, error } = await supabaseAdmin
         .from('syllabus_nodes')
@@ -49,89 +47,103 @@ async function insertNode(
     return data.id
 }
 
-// ── Helper: Generate mock tree from verified curriculum templates ─────────────
+// ── Helper: Build template tree from local CURRICULUM_TEMPLATES ───────────────
 function getTemplateMockTree(boardName: string) {
-    const template = CURRICULUM_TEMPLATES[boardName] || CURRICULUM_TEMPLATES['CBSE'];
-    const mockTree = [];
-    if (template) {
-        for (let i = 0; i < template.classes.length; i++) {
-            const className = template.classes[i];
-            const subjects = Object.entries(template.subjects);
-            const lowerClass = className.toLowerCase();
-            let allowedSubjects = subjects;
-            if (lowerClass.includes('science')) {
-                allowedSubjects = subjects.filter(([name]) => ['physics', 'chemistry', 'biology', 'mathematics', 'math'].some(c => name.toLowerCase().includes(c)));
-            } else if (lowerClass.includes('commerce') || lowerClass.includes('ca ')) {
-                allowedSubjects = subjects.filter(([name]) => ['accountancy', 'business', 'economics', 'finance', 'math'].some(c => name.toLowerCase().includes(c)));
-            } else if (lowerClass.includes('arts')) {
-                allowedSubjects = subjects.filter(([name]) => ['history', 'geography', 'polity', 'sociology', 'english'].some(c => name.toLowerCase().includes(c)));
-            } else if (lowerClass.match(/grade [1-8]|std [1-8]|class [1-8]/)) {
-                allowedSubjects = subjects.filter(([name]) => ['physics', 'chemistry', 'biology', 'accountancy', 'business'].every(c => !name.toLowerCase().includes(c)));
-            }
-            if (allowedSubjects.length === 0) allowedSubjects = subjects.slice(0, 2);
+    const template = CURRICULUM_TEMPLATES[boardName] || CURRICULUM_TEMPLATES['CBSE']
+    const mockTree = []
+    if (!template) return mockTree
 
-            const formattedSubjects = allowedSubjects.map(([sName, sData]: any) => ({
-                name: sName,
-                chapters: sData.chapters.map((cName: string) => ({
-                    name: cName,
-                    topics: sData.topics?.[cName] || ['Introduction', 'Core Concepts', 'Practice Questions']
-                }))
-            }));
-            mockTree.push({ class: className, subjects: formattedSubjects });
+    for (let i = 0; i < template.classes.length; i++) {
+        const className = template.classes[i]
+        const lowerClass = className.toLowerCase()
+        let allowedSubjects = Object.entries(template.subjects)
+
+        if (lowerClass.includes('science')) {
+            allowedSubjects = allowedSubjects.filter(([n]) =>
+                ['physics', 'chemistry', 'biology', 'mathematics', 'math'].some(c => n.toLowerCase().includes(c)))
+        } else if (lowerClass.includes('commerce') || lowerClass.includes('ca ')) {
+            allowedSubjects = allowedSubjects.filter(([n]) =>
+                ['accountancy', 'business', 'economics', 'finance', 'math'].some(c => n.toLowerCase().includes(c)))
+        } else if (lowerClass.includes('arts')) {
+            allowedSubjects = allowedSubjects.filter(([n]) =>
+                ['history', 'geography', 'polity', 'sociology', 'english'].some(c => n.toLowerCase().includes(c)))
+        } else if (lowerClass.match(/grade [1-8]|std [1-8]|class [1-8]/i)) {
+            allowedSubjects = allowedSubjects.filter(([n]) =>
+                !['physics', 'chemistry', 'biology', 'accountancy', 'business'].some(c => n.toLowerCase().includes(c)))
         }
+
+        if (allowedSubjects.length === 0) allowedSubjects = Object.entries(template.subjects).slice(0, 3)
+
+        const formattedSubjects = allowedSubjects.map(([sName, sData]: any) => ({
+            name: sName,
+            chapters: sData.chapters.map((cName: string) => ({
+                name: cName,
+                topics: sData.topics?.[cName] || ['Introduction', 'Core Concepts', 'Practice Questions']
+            }))
+        }))
+
+        mockTree.push({ class: className, subjects: formattedSubjects })
     }
-    return mockTree;
+    return mockTree
 }
 
-// ── Helper: Retrieve Gemini API Key (DB config override or env) ────────────────
+// ── Helper: Fetch Gemini key from DB config or env ────────────────────────────
 async function getGeminiApiKey(): Promise<string | null> {
     try {
         const { data } = await supabaseAdmin
             .from('ai_engine_config')
             .select('value')
             .eq('parameter', 'gemini_api_key')
-            .maybeSingle();
+            .maybeSingle()
         if (data?.value && typeof data.value === 'string' && data.value.trim()) {
-            return data.value.trim();
+            return data.value.trim()
         }
-    } catch (e) {
-        // ignore fallback
-    }
-    return process.env.GEMINI_API_KEY || null;
+    } catch { /* fall through */ }
+    return process.env.GEMINI_API_KEY || null
 }
 
-// ── Helper: Execute Gemini content generation with multi-model fallback ────────
+// ── Helper: Single Gemini call with 25s timeout + real model names ────────────
 async function generateWithGemini(prompt: string): Promise<string> {
-    const apiKey = await getGeminiApiKey();
-    if (!apiKey) throw new Error("GEMINI_API_KEY is missing or not configured");
+    const apiKey = await getGeminiApiKey()
+    if (!apiKey) throw new Error('GEMINI_API_KEY is missing or not configured')
 
-    const modelsToTry = ["gemini-2.5-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite"];
-    let lastError: any = null;
+    // Real model names in priority order (no invented versions)
+    const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b']
+    const genAI = new GoogleGenerativeAI(apiKey)
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-
-    for (const modelName of modelsToTry) {
+    let lastError: Error | null = null
+    for (const modelName of models) {
         try {
-            const model = genAI.getGenerativeModel({ model: modelName });
-            const result = await model.generateContent(prompt);
-            const text = result.response.text();
-            if (text) return text;
+            const model = genAI.getGenerativeModel({
+                model: modelName,
+                generationConfig: { responseMimeType: 'application/json' }
+            })
+
+            // Race against 25s timeout per model attempt
+            const result = await Promise.race([
+                model.generateContent(prompt),
+                new Promise<never>((_, reject) =>
+                    setTimeout(() => reject(new Error(`Model ${modelName} timed out after 25s`)), 25000)
+                )
+            ])
+
+            const text = (result as any).response.text()
+            if (text && text.trim().length > 2) return text
         } catch (err: any) {
-            lastError = err;
-            console.warn(`[Gemini Model Retry Warn] Model ${modelName} failed:`, err.message);
+            lastError = err
+            console.warn(`[Gemini] ${modelName} failed: ${err.message}`)
+            // Don't retry on auth errors — they'll fail on all models too
+            if (err.message?.includes('API_KEY_INVALID') || err.message?.includes('403')) break
         }
     }
 
-    let userFriendlyMsg = lastError?.message || "Gemini AI models failed to respond";
-    if (userFriendlyMsg.includes("403 Forbidden") || userFriendlyMsg.includes("leaked")) {
-        userFriendlyMsg = "Gemini API key is blocked or reported as leaked by Google. Please update GEMINI_API_KEY in environment or AI Engine settings.";
-    } else if (userFriendlyMsg.includes("404") || userFriendlyMsg.includes("not found") || userFriendlyMsg.includes("no longer available") || userFriendlyMsg.includes("not supported")) {
-        userFriendlyMsg = "All configured Gemini models are unavailable for this API key. The AI-generated curriculum fallback was loaded instead.";
-    } else if (userFriendlyMsg.length > 200) {
-        // Truncate overly long raw API error messages
-        userFriendlyMsg = userFriendlyMsg.substring(0, 200) + "...";
+    let msg = lastError?.message || 'All Gemini models failed'
+    if (msg.includes('403') || msg.includes('leaked') || msg.includes('API_KEY_INVALID')) {
+        msg = 'Gemini API key is invalid or blocked. Using verified curriculum template instead.'
+    } else if (msg.includes('404') || msg.includes('not found')) {
+        msg = 'Gemini model unavailable. Using verified curriculum template instead.'
     }
-    throw new Error(userFriendlyMsg);
+    throw new Error(msg)
 }
 
 // ── POST /api/owner/syllabus/generate ─────────────────────────────────────────
@@ -140,153 +152,118 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     let body: any
-    try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
+    try { body = await request.json() } catch {
+        return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
 
     const { boardName, category, deepGen = false, action = 'save', tree = [] } = body
-
     if (!boardName) return NextResponse.json({ error: 'boardName is required' }, { status: 400 })
 
     try {
+        // ── ACTION: preview ──────────────────────────────────────────────────
         if (action === 'preview') {
             if (!deepGen) {
-                const mockTree = getTemplateMockTree(boardName);
-                return NextResponse.json({ tree: mockTree });
+                // Instant: use local curriculum template
+                const mockTree = getTemplateMockTree(boardName)
+                return NextResponse.json({ tree: mockTree })
             }
 
-            // Gemini Deep Generation & Examination
+            // Deep Gen: ONE Gemini call, no examination agent loop (avoids timeout)
             try {
-                let validTree = null;
-                let attempts = 0;
+                const prompt = `You are an academic curriculum expert. Generate a complete, realistic syllabus for "${boardName}".
 
-                while (!validTree && attempts < 3) {
-                    attempts++;
-                    const prompt = `Generate a realistic syllabus hierarchy for the board/exam "${boardName}".
-                    Return a JSON array of class objects. Each class MUST have its own specific subjects, chapters, and topics designed uniquely for that grade level.
-                    
-                    CRITICAL CURRICULUM GUIDELINES:
-                    - Generate classes for 6th to 12th standards.
-                    - For Class 11 and 12, explicitly divide classes into streams, e.g., "Class 11 Science", "Class 11 Commerce", "Class 11 Arts".
-                    - Middle School (Class 6-8): English, Regional/Hindi Language, Mathematics, Science, Social Science, Computer Science, Art.
-                    - Secondary (Class 9-10): English, Regional/Hindi Language, Mathematics, Science, Social Science (History, Geography, Economics), IT/Computer Studies.
-                    - Senior Secondary Science: Physics, Chemistry, Biology, Mathematics, English, Computer Science.
-                    - Senior Secondary Commerce: Accountancy, Business Studies, Economics, Statistics/Math, English.
-                    - Senior Secondary Arts/Humanities: History, Political Science, Geography, Psychology, Sociology, English, Regional Languages/Philosophy.
+Return ONLY a valid JSON array (no markdown, no code blocks, no explanation).
+Schema:
+[
+  {
+    "class": "Class 6",
+    "subjects": [
+      {
+        "name": "Mathematics",
+        "chapters": [
+          { "name": "Integers", "topics": ["Introduction to Integers", "Operations", "Number Line"] }
+        ]
+      }
+    ]
+  }
+]
 
-                    Strict JSON Format (NO markdown text, pure unformatted JSON array):
-                    [
-                        {
-                            "class": "Class 10",
-                            "subjects": [
-                                {
-                                    "name": "Mathematics",
-                                    "chapters": [
-                                        {
-                                            "name": "Algebra",
-                                            "topics": ["Polynomials", "Linear Equations"]
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                    Maintain generating 3 to 5 core subjects per class, at least 4 chapters per subject, and 3 topics per chapter to ensure structural integrity across 6th to 12th grades (and streams).`;
+Rules:
+- Classes 6 to 10: English, Mathematics, Science, Social Science, Hindi/Regional Language, Computer Science
+- Class 11 & 12: Split into streams — Science (Physics, Chemistry, Biology/Math, English, CS), Commerce (Accountancy, Business Studies, Economics, Math, English), Arts (History, Political Science, Geography, Sociology, English)
+- Minimum 4 chapters per subject, 3 topics per chapter
+- Each class must have distinct, grade-appropriate content (Class 6 Math ≠ Class 9 Math)
+- Return ONLY the JSON array, nothing else`
 
-                    const text = await generateWithGemini(prompt);
-                    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                    let generatedJson;
-                    try { generatedJson = JSON.parse(cleanJson); } catch (e) { continue; }
+                const text = await generateWithGemini(prompt)
+                const clean = text.replace(/```json/gi, '').replace(/```/g, '').trim()
 
-                    // EXAMINATION AGENT
-                    const examinePrompt = `Examine the following JSON array representing an academic syllabus.
-                    JSON:
-                    ${JSON.stringify(generatedJson)}
-
-                    Requirements for Success:
-                    1. Is it a JSON Array?
-                    2. Are there multiple classes?
-                    3. Are the subjects fundamentally different or are the chapters fully distinct across different classes? (e.g. Class 9 Math chapters should NOT be identical to Class 10 Math chapters).
-                    4. Does every chapter have an array of topics?
-
-                    Return evaluation strictly as JSON (no markdown block): {"valid": true} OR {"valid": false, "reason": "..."}`;
-
-                    const evalText = await generateWithGemini(examinePrompt);
-                    const cleanEvalText = evalText.replace(/```json/g, '').replace(/```/g, '').trim();
-                    let evalJson;
-                    try { evalJson = JSON.parse(cleanEvalText); } catch (e) { continue; }
-
-                    if (evalJson.valid) {
-                        validTree = generatedJson;
-                    }
+                let generatedTree: any[]
+                try {
+                    generatedTree = JSON.parse(clean)
+                } catch {
+                    // JSON parse failed — use template fallback
+                    throw new Error('AI returned malformed JSON')
                 }
 
-                if (!validTree) {
-                    // Fall back to template mock tree if examination fails
-                    const mockTree = getTemplateMockTree(boardName);
-                    return NextResponse.json({
-                        tree: mockTree,
-                        fallback: true,
-                        warning: "AI syllabus examination did not complete. Loaded verified curriculum template."
-                    });
+                if (!Array.isArray(generatedTree) || generatedTree.length === 0) {
+                    throw new Error('AI returned empty syllabus tree')
                 }
 
-                return NextResponse.json({ tree: validTree });
+                return NextResponse.json({ tree: generatedTree })
+
             } catch (aiErr: any) {
-                console.warn("[AI Generate Fallback Triggered]:", aiErr.message);
-                const mockTree = getTemplateMockTree(boardName);
-                let cleanWarning = aiErr.message || "";
-                if (cleanWarning.includes("leaked") || cleanWarning.includes("403 Forbidden") || cleanWarning.includes("blocked")) {
-                    cleanWarning = "Gemini API key is reported as leaked by Google. Loaded verified standard syllabus structure instead.";
-                } else if (cleanWarning.includes("404") || cleanWarning.includes("not found") || cleanWarning.includes("no longer available") || cleanWarning.includes("not supported") || cleanWarning.includes("unavailable")) {
-                    cleanWarning = "AI Deep Generation unavailable for this API key configuration. Loaded verified standard syllabus structure.";
-                } else {
-                    cleanWarning = `AI generation unavailable (${cleanWarning}). Loaded verified standard syllabus structure.`;
+                console.warn('[AI Generate Fallback]:', aiErr.message)
+                const mockTree = getTemplateMockTree(boardName)
+                let warning = aiErr.message || 'AI generation failed'
+                if (!warning.includes('template') && !warning.includes('instead')) {
+                    warning = `AI generation unavailable (${warning.substring(0, 120)}). Loaded verified standard syllabus.`
                 }
-                return NextResponse.json({
-                    tree: mockTree,
-                    fallback: true,
-                    warning: cleanWarning
-                });
+                return NextResponse.json({ tree: mockTree, fallback: true, warning })
             }
+        }
 
-        } else if (action === 'save') {
-            const created = { summary: { categories: 0, boards: 0, classes: 0, subjects: 0, chapters: 0, topics: 0 } };
+        // ── ACTION: save ─────────────────────────────────────────────────────
+        if (action === 'save') {
+            const summary = { categories: 0, boards: 0, classes: 0, subjects: 0, chapters: 0, topics: 0 }
 
-            let parentId = null;
+            let parentId: string | null = null
             if (category) {
-                parentId = await insertNode(category, 'category', null, 0);
-                created.summary.categories++;
+                parentId = await insertNode(category, 'category', null, 0)
+                summary.categories++
             }
+
             const boardId = await insertNode(boardName, 'board', parentId, 0)
-            created.summary.boards++
+            summary.boards++
 
             if (Array.isArray(tree)) {
                 for (let i = 0; i < tree.length; i++) {
-                    const cls = tree[i];
-                    if (!cls.class) continue;
-                    const classId = await insertNode(cls.class, 'class', boardId, i);
-                    created.summary.classes++;
+                    const cls = tree[i]
+                    if (!cls.class) continue
+                    const classId = await insertNode(cls.class, 'class', boardId, i)
+                    summary.classes++
 
                     if (Array.isArray(cls.subjects)) {
                         for (let j = 0; j < cls.subjects.length; j++) {
-                            const subj = cls.subjects[j];
-                            if (!subj.name) continue;
-                            const subjId = await insertNode(subj.name, 'subject', classId, j);
-                            created.summary.subjects++;
+                            const subj = cls.subjects[j]
+                            if (!subj.name) continue
+                            const subjId = await insertNode(subj.name, 'subject', classId, j)
+                            summary.subjects++
 
                             if (Array.isArray(subj.chapters)) {
                                 for (let k = 0; k < subj.chapters.length; k++) {
-                                    const chap = subj.chapters[k];
-                                    if (!chap.name) continue;
-                                    const chapId = await insertNode(chap.name, 'chapter', subjId, k);
-                                    created.summary.chapters++;
+                                    const chap = subj.chapters[k]
+                                    if (!chap.name) continue
+                                    const chapId = await insertNode(chap.name, 'chapter', subjId, k)
+                                    summary.chapters++
 
                                     if (Array.isArray(chap.topics)) {
                                         for (let l = 0; l < chap.topics.length; l++) {
-                                            const topicName = chap.topics[l];
-                                            if (!topicName) continue;
-                                            const tName = typeof topicName === 'string' ? topicName : topicName.name || 'Topic';
-                                            await insertNode(tName, 'topic', chapId, l);
-                                            created.summary.topics++;
+                                            const t = chap.topics[l]
+                                            if (!t) continue
+                                            const tName = typeof t === 'string' ? t : (t as any).name || 'Topic'
+                                            await insertNode(tName.trim(), 'topic', chapId, l)
+                                            summary.topics++
                                         }
                                     }
                                 }
@@ -296,57 +273,60 @@ export async function POST(request: NextRequest) {
                 }
             }
 
+            const total = Object.values(summary).reduce((a, b) => a + b, 0)
             return NextResponse.json({
                 success: true,
                 boardId,
-                created: created.summary,
-                message: `Successfully saved ${Object.values(created.summary).reduce((a, b) => a + b, 0)} nodes for ${boardName}`
+                created: summary,
+                message: `Successfully saved ${total} nodes for ${boardName}`
             })
-        } else if (action === 'generate_children') {
-            const { parentId, parentName, parentType, targetType } = body;
-            if (!parentId || !parentName || !parentType || !targetType) throw new Error("Missing params for contextual generation");
+        }
 
-            let generatedItems: string[] = [];
+        // ── ACTION: generate_children (contextual AI gen for tree node) ──────
+        if (action === 'generate_children') {
+            const { parentId, parentName, parentType, targetType } = body
+            if (!parentId || !parentName || !parentType || !targetType) {
+                throw new Error('Missing params for contextual generation')
+            }
+
+            let generatedItems: string[] = []
             try {
-                const prompt = `I am building an academic syllabus. You must generate realistic, standard academic ${targetType}s that belong under a ${parentType} named "${parentName}".
-                Strict JSON Format (NO markdown text, pure unformatted JSON array of strings):
-                ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"]
-                Generate at least 5 to 7 highly relevant items based on standard CBSE/state board curriculum. Only return the JSON array of strings.`;
+                const prompt = `Generate ${targetType}s for a ${parentType} named "${parentName}" in an academic syllabus.
+Return ONLY a JSON array of strings (no markdown):
+["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"]
+Generate 5 to 7 specific, curriculum-relevant items.`
 
-                const text = await generateWithGemini(prompt);
-                const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                generatedItems = JSON.parse(cleanJson);
+                const text = await generateWithGemini(prompt)
+                const clean = text.replace(/```json/gi, '').replace(/```/g, '').trim()
+                generatedItems = JSON.parse(clean)
             } catch (aiErr: any) {
-                console.warn("[Contextual AI Generation Fallback]:", aiErr.message);
+                console.warn('[Contextual AI Fallback]:', aiErr.message)
                 generatedItems = [
-                    `${parentName} - Fundamentals`,
-                    `${parentName} - Core Concepts`,
-                    `${parentName} - Advanced Topics`,
-                    `${parentName} - Practical Applications`,
-                    `${parentName} - Review & Assessment`
-                ];
+                    `${parentName} — Fundamentals`,
+                    `${parentName} — Core Concepts`,
+                    `${parentName} — Advanced Topics`,
+                    `${parentName} — Practical Applications`,
+                    `${parentName} — Assessment & Review`
+                ]
             }
 
-            if (!Array.isArray(generatedItems)) {
-                generatedItems = [`${parentName} Overview`, `${parentName} Practice`].filter(Boolean);
-            }
+            if (!Array.isArray(generatedItems)) generatedItems = [`${parentName} Overview`]
 
             for (let i = 0; i < generatedItems.length; i++) {
-                const item = generatedItems[i];
-                if (typeof item === 'string' && item.trim().length > 0) {
-                    await insertNode(item.trim(), targetType, parentId, i);
-                } else if (item && (item as any).name) {
-                    await insertNode((item as any).name.trim(), targetType, parentId, i);
+                const item = generatedItems[i]
+                const name = typeof item === 'string' ? item.trim() : (item as any)?.name?.trim()
+                if (name && name.length > 0) {
+                    await insertNode(name, targetType, parentId, i)
                 }
             }
 
             return NextResponse.json({
                 success: true,
-                message: `Successfully generated ${generatedItems.length} ${targetType}s for ${parentName}`
-            });
+                message: `Generated ${generatedItems.length} ${targetType}s for "${parentName}"`
+            })
         }
 
-        return NextResponse.json({ error: 'Invalid action specified' }, { status: 400 });
+        return NextResponse.json({ error: 'Invalid action specified' }, { status: 400 })
 
     } catch (e: any) {
         console.error('[AI Generate Error]', e.message)
@@ -354,14 +334,13 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// ── GET: Return available templates ───────────────────────────────────────────
+// ── GET: Return available curriculum templates ─────────────────────────────────
 export async function GET() {
     const templates = Object.entries(CURRICULUM_TEMPLATES).map(([board, data]) => ({
         board,
         classes: data.classes,
         subjects: Object.keys(data.subjects),
-        totalChapters: Object.values(data.subjects).reduce((sum, s) => sum + s.chapters.length, 0),
+        totalChapters: Object.values(data.subjects).reduce((sum: number, s: any) => sum + s.chapters.length, 0),
     }))
     return NextResponse.json({ templates })
 }
-
