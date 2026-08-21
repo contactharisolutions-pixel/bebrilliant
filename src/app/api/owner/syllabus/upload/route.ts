@@ -8,12 +8,28 @@ async function verifyOwner() {
     const { data: { user }, error } = await supabase.auth.getUser()
     if (error || !user) return null
     const { data: p } = await supabaseAdmin.from('user_profiles').select('role').eq('id', user.id).single()
-    return p?.role === 'owner' ? user : null
+    const role = p?.role?.toLowerCase()
+    return (role === 'owner' || role === 'admin' || role === 'platform_staff') ? user : null
 }
 
 type RowData = {
     board?: string; class?: string | number; subject?: string; chapter?: string; topic?: string;
     Board?: string; Class?: string | number; Subject?: string; Chapter?: string; Topic?: string;
+}
+
+// Board → category mapping (mirrors the page's category logic)
+const BOARD_CATEGORY_MAP: Record<string, string> = {
+    'CBSE': 'School Syllabus', 'ICSE': 'School Syllabus', 'IB Board': 'School Syllabus',
+    'NIOS Board': 'School Syllabus', 'State Board': 'School Syllabus', 'Olympiad': 'School Syllabus',
+    'Gujarat Board (English Medium)': 'School Syllabus', 'Gujarat Board (Gujarati Medium)': 'School Syllabus',
+    'JEE Main': 'Entrance Exam', 'JEE Advanced': 'Entrance Exam', 'NEET': 'Entrance Exam',
+    'CUET': 'Entrance Exam', 'CLAT': 'Entrance Exam', 'CAT': 'Entrance Exam',
+    'IPMAT/JIPMAT': 'Entrance Exam', 'NID Entrance Exam': 'Entrance Exam', 'NATA': 'Entrance Exam',
+    'UPSC Civil Services': 'Competitive Exam', 'SSC CGL': 'Competitive Exam', 'SSC CHSL': 'Competitive Exam',
+    'SBI PO & Clerk': 'Competitive Exam', 'IBPS PO & Clerk': 'Competitive Exam',
+    'RBI Grade B & Assistant': 'Competitive Exam', 'RRB NTPC': 'Competitive Exam',
+    'NDA': 'Competitive Exam', 'CDS': 'Competitive Exam', 'GATE': 'Competitive Exam',
+    'UPPSC/MPSC/TNPSC': 'Competitive Exam',
 }
 
 // Insert or find a node — returns the UUID
@@ -25,12 +41,11 @@ async function upsertNode(
 ): Promise<string> {
     const key = `${type}::${parentId ?? 'root'}::${name}`
 
-    // Check if already exists
     let query = supabaseAdmin.from('syllabus_nodes').select('id').eq('name', name).eq('type', type)
     if (parentId) query = query.eq('parent_id', parentId)
     else query = query.is('parent_id', null)
 
-    const { data: existing } = await query.single()
+    const { data: existing } = await query.maybeSingle()
     if (existing) return existing.id
 
     const orderIndex = (orderMap.get(key) ?? 0)
@@ -52,8 +67,11 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
-        const formData = await request.formData()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const formData = (await request.formData()) as any
         const file = formData.get('file') as File | null
+        const dryRun = formData.get('dryRun') === 'true'
+
         if (!file) return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
 
         const ext = file.name.split('.').pop()?.toLowerCase()
@@ -64,7 +82,6 @@ export async function POST(request: NextRequest) {
         const arrayBuffer = await file.arrayBuffer()
         const buffer = Buffer.from(arrayBuffer)
 
-        // Parse workbook
         const workbook = XLSX.read(buffer, { type: 'buffer' })
         const sheet = workbook.Sheets[workbook.SheetNames[0]]
         const rawRows: RowData[] = XLSX.utils.sheet_to_json(sheet, { defval: '' })
@@ -82,7 +99,6 @@ export async function POST(request: NextRequest) {
             topic: String(r.topic || r.Topic || '').trim(),
         }))
 
-        // Validate: must have at least board column
         if (!rows[0].board) {
             return NextResponse.json({
                 error: 'First column must be "Board". Check the sample file for correct format.',
@@ -90,14 +106,54 @@ export async function POST(request: NextRequest) {
             }, { status: 422 })
         }
 
-        // Initialize cache maps
+        // ── DRY RUN: count what would be created ────────────────────────────
+        if (dryRun) {
+            const preview = {
+                categories: new Set<string>(),
+                boards: new Set<string>(),
+                classes: new Set<string>(),
+                subjects: new Set<string>(),
+                chapters: new Set<string>(),
+                topics: new Set<string>(),
+                skipped: 0,
+                total_rows: rows.length,
+            }
+            for (const row of rows) {
+                if (!row.board) { preview.skipped++; continue }
+                const category = BOARD_CATEGORY_MAP[row.board]
+                if (category) preview.categories.add(category)
+                preview.boards.add(row.board)
+                if (row.class) preview.classes.add(`${row.board}::${row.class}`)
+                if (row.class && row.subject) preview.subjects.add(`${row.board}::${row.class}::${row.subject}`)
+                if (row.class && row.subject && row.chapter) preview.chapters.add(`${row.board}::${row.class}::${row.subject}::${row.chapter}`)
+                if (row.class && row.subject && row.chapter && row.topic) preview.topics.add(`${row.board}::${row.class}::${row.subject}::${row.chapter}::${row.topic}`)
+            }
+            return NextResponse.json({
+                dryRun: true,
+                preview: {
+                    categories: preview.categories.size,
+                    boards: preview.boards.size,
+                    classes: preview.classes.size,
+                    subjects: preview.subjects.size,
+                    chapters: preview.chapters.size,
+                    topics: preview.topics.size,
+                    skipped: preview.skipped,
+                    total_rows: preview.total_rows,
+                    total_nodes: preview.categories.size + preview.boards.size + preview.classes.size +
+                        preview.subjects.size + preview.chapters.size + preview.topics.size,
+                }
+            })
+        }
+
+        // ── ACTUAL IMPORT ────────────────────────────────────────────────────
+        const categoryIds = new Map<string, string>()
         const boardIds = new Map<string, string>()
         const classIds = new Map<string, string>()
         const subjectIds = new Map<string, string>()
         const chapterIds = new Map<string, string>()
         const orderMap = new Map<string, number>()
 
-        const stats = { boards: 0, classes: 0, subjects: 0, chapters: 0, topics: 0, skipped: 0, errors: [] as string[] }
+        const stats = { categories: 0, boards: 0, classes: 0, subjects: 0, chapters: 0, topics: 0, skipped: 0, duplicates: 0, errors: [] as string[] }
         let rowNum = 1
 
         for (const row of rows) {
@@ -105,9 +161,23 @@ export async function POST(request: NextRequest) {
             if (!row.board) { stats.skipped++; continue }
 
             try {
-                // Board
+                // Auto-create category node if this is a known board
+                const categoryName = BOARD_CATEGORY_MAP[row.board]
+                let categoryId: string | null = null
+
+                if (categoryName) {
+                    if (!categoryIds.has(categoryName)) {
+                        const id = await upsertNode(categoryName, 'category', null, orderMap)
+                        const isNew = !categoryIds.has(categoryName)
+                        categoryIds.set(categoryName, id)
+                        if (isNew) stats.categories++
+                    }
+                    categoryId = categoryIds.get(categoryName) ?? null
+                }
+
+                // Board (under category if known, else root)
                 if (!boardIds.has(row.board)) {
-                    const id = await upsertNode(row.board, 'board', null, orderMap)
+                    const id = await upsertNode(row.board, 'board', categoryId, orderMap)
                     boardIds.set(row.board, id)
                     stats.boards++
                 }
@@ -115,7 +185,6 @@ export async function POST(request: NextRequest) {
 
                 if (!row.class) continue
 
-                // Class
                 const classKey = `${row.board}::${row.class}`
                 if (!classIds.has(classKey)) {
                     const id = await upsertNode(row.class, 'class', boardId, orderMap)
@@ -126,7 +195,6 @@ export async function POST(request: NextRequest) {
 
                 if (!row.subject) continue
 
-                // Subject
                 const subjectKey = `${classKey}::${row.subject}`
                 if (!subjectIds.has(subjectKey)) {
                     const id = await upsertNode(row.subject, 'subject', classId, orderMap)
@@ -137,7 +205,6 @@ export async function POST(request: NextRequest) {
 
                 if (!row.chapter) continue
 
-                // Chapter
                 const chapterKey = `${subjectKey}::${row.chapter}`
                 if (!chapterIds.has(chapterKey)) {
                     const id = await upsertNode(row.chapter, 'chapter', subjectId, orderMap)
@@ -148,17 +215,16 @@ export async function POST(request: NextRequest) {
 
                 if (!row.topic) continue
 
-                // Topic
                 await upsertNode(row.topic, 'topic', chapterId, orderMap)
                 stats.topics++
 
             } catch (e: any) {
                 stats.errors.push(`Row ${rowNum}: ${e.message}`)
-                if (stats.errors.length >= 10) break // stop after 10 errors
+                if (stats.errors.length >= 10) break
             }
         }
 
-        const total = stats.boards + stats.classes + stats.subjects + stats.chapters + stats.topics
+        const total = stats.categories + stats.boards + stats.classes + stats.subjects + stats.chapters + stats.topics
 
         return NextResponse.json({
             success: true,
@@ -174,7 +240,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// ── GET: Download sample CSV ──────────────────────────────────────────────────
+// ── GET: Download sample XLSX ─────────────────────────────────────────────────
 export async function GET() {
     const sampleData = [
         ['Board', 'Class', 'Subject', 'Chapter', 'Topic'],
@@ -184,7 +250,7 @@ export async function GET() {
         ['CBSE', 'Class 9', 'Mathematics', 'Algebra', 'Linear Equations'],
         ['CBSE', 'Class 9', 'Science', 'Motion', 'Distance & Displacement'],
         ['CBSE', 'Class 9', 'Science', 'Motion', 'Speed & Velocity'],
-        ['CBSE', 'Class 10', 'Mathematics', 'Real Numbers', 'Euclid\'s Division Lemma'],
+        ['CBSE', 'Class 10', 'Mathematics', 'Real Numbers', "Euclid's Division Lemma"],
         ['CBSE', 'Class 10', 'Mathematics', 'Trigonometry', 'Trigonometric Ratios'],
         ['JEE Main', 'JEE Preparation', 'Physics', 'Kinematics', '1D Motion'],
         ['JEE Main', 'JEE Preparation', 'Physics', 'Kinematics', 'Projectile Motion'],
@@ -195,32 +261,29 @@ export async function GET() {
 
     const wb = XLSX.utils.book_new()
     const ws = XLSX.utils.aoa_to_sheet(sampleData)
-
-    // Column widths
     ws['!cols'] = [{ wch: 16 }, { wch: 18 }, { wch: 16 }, { wch: 28 }, { wch: 30 }]
-
     XLSX.utils.book_append_sheet(wb, ws, 'Syllabus Template')
 
-    // Add instructions sheet
     const instructionsData = [
         ['INSTRUCTIONS FOR BULK UPLOAD'],
         [''],
         ['Column', 'Required', 'Description', 'Example'],
-        ['Board', 'YES', 'The board or exam name', 'CBSE, JEE Main, NEET, UPSC'],
+        ['Board', 'YES', 'The board or exam name — auto-grouped by category', 'CBSE, JEE Main, NEET, UPSC'],
         ['Class', 'NO', 'Class or level', 'Class 9, Class 10, JEE Preparation'],
         ['Subject', 'NO', 'Subject name', 'Mathematics, Physics, Biology'],
         ['Chapter', 'NO', 'Chapter name', 'Algebra, Kinematics, Cell Biology'],
         ['Topic', 'NO', 'Specific topic', 'Polynomials, 1D Motion, Cell Structure'],
         [''],
         ['NOTES:'],
-        ['1. Duplicate entries are automatically skipped (safe to re-upload)'],
-        ['2. You can upload only Board+Class without Chapter/Topic — hierarchy is partial'],
+        ['1. Known boards (CBSE, JEE, NEET etc.) are auto-grouped under their category'],
+        ['2. Duplicate entries are automatically skipped (safe to re-upload)'],
         ['3. Columns must be exactly: Board, Class, Subject, Chapter, Topic'],
         ['4. Maximum recommended: 5000 rows per upload'],
-        ['5. Supports .csv, .xlsx, and .xls formats'],
+        ['5. Use "dryRun" mode to preview counts before committing'],
+        ['6. Supports .csv, .xlsx, and .xls formats'],
     ]
     const ws2 = XLSX.utils.aoa_to_sheet(instructionsData)
-    ws2['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 40 }, { wch: 30 }]
+    ws2['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 50 }, { wch: 30 }]
     XLSX.utils.book_append_sheet(wb, ws2, 'Instructions')
 
     const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' })

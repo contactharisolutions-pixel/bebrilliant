@@ -170,7 +170,7 @@ export default function SyllabusManagement() {
                     fetchHierarchy()
                 }
             },
-            error: (err) => {
+            error: (err: Error) => {
                 showToast(`CSV parse error: ${err.message}`, false)
             }
         })

@@ -38,8 +38,8 @@ async function enforceOneSchoolBoard(tenant_id: string, boardName: string) {
 
     if (boards && boards.length > 0) {
         const otherSchoolBoardIds = boards
-            .filter(b => b.name !== boardName && SCHOOL_BOARDS.some(sb => b.name.includes(sb)))
-            .map(b => b.id);
+            .filter((b: any) => b.name !== boardName && SCHOOL_BOARDS.some((sb: any) => b.name.includes(sb)))
+            .map((b: any) => b.id);
 
         if (otherSchoolBoardIds.length > 0) {
             await supabaseAdmin
@@ -59,11 +59,11 @@ async function enforceOneSchoolBoard(tenant_id: string, boardName: string) {
 
     if (subs && subs.length > 0) {
         const otherSubIds = subs
-            .filter(s => {
+            .filter((s: any) => {
                 const name = (s.syllabus_nodes as any)?.name;
-                return name !== boardName && SCHOOL_BOARDS.some(sb => name.includes(sb));
+                return name !== boardName && SCHOOL_BOARDS.some((sb: any) => name.includes(sb));
             })
-            .map(s => s.id);
+            .map((s: any) => s.id);
 
         if (otherSubIds.length > 0) {
             await supabaseAdmin
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
             .order('created_at', { ascending: false })
 
         // Format subscriptions to match the UI expectations (SyllabusPlan-like structure)
-        const active_subscriptions = distributions?.map(d => ({
+        const active_subscriptions = distributions?.map((d: any) => ({
             id: d.id, // tenant_syllabus id
             syllabus_id: d.master_syllabus_id,
             syllabus_nodes: d.syllabus_nodes as any,
@@ -123,8 +123,8 @@ export async function GET(request: NextRequest) {
 
         // Merge and mark master nodes as active based on subscription status
         const mergedNodes = [...(tenantNodes || [])]
-        masterNodes?.forEach(mn => {
-            const sub = distributions?.find(d => d.master_syllabus_id === mn.id)
+        masterNodes?.forEach((mn: any) => {
+            const sub = distributions?.find((d: any) => d.master_syllabus_id === mn.id)
             mergedNodes.push({
                 ...mn,
                 is_active: sub?.is_active ?? false,

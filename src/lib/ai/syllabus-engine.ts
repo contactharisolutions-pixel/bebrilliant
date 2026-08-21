@@ -14,7 +14,7 @@ export class SyllabusAIEngine {
 
         // 2. Mock NLP match logic
         // If question text contains tag, we match it
-        const matches = tags.filter(t => text.toLowerCase().includes(t.tag.toLowerCase()))
+        const matches = tags.filter((t: any) => text.toLowerCase().includes(t.tag.toLowerCase()))
 
         if (matches.length > 0) {
             // Pick highest weight or best match
@@ -52,7 +52,7 @@ export class SyllabusAIEngine {
         // 3. Construct Exam metadata
         return {
             name: `AI-Generated Test: ${nodeId}`,
-            questions: questions.map(q => q.id),
+            questions: questions.map((q: any) => q.id),
             configuration: {
                 total_marks: 100,
                 difficulty: difficulty,

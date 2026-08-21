@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         }
 
         // 3. Fetch Subjects for these classes
-        const classIds = classNodes.map(n => n.id)
+        const classIds = classNodes.map((n: { id: string }) => n.id)
         const { data: subjects, error: subError } = await supabaseAdmin
             .from('syllabus_nodes')
             .select('id, name')
