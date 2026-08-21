@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { CURRICULUM_TEMPLATES } from '@/lib/ai/curriculum-templates'
+import { CURRICULUM_TEMPLATES, getClassTree } from '@/lib/ai/curriculum-templates'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // Keep at 60s — works on self-hosted Node + Nginx (with proxy_read_timeout 60s)
@@ -49,8 +49,13 @@ async function insertNode(
 
 // ── Helper: Build template tree from local CURRICULUM_TEMPLATES ───────────────
 function getTemplateMockTree(boardName: string) {
+    // Use new per-class detailed tree when available
+    const classTree = getClassTree(boardName)
+    if (classTree && classTree.length > 0) return classTree
+
+    // Fallback: legacy flat subject pool for boards without detailed trees
     const template = CURRICULUM_TEMPLATES[boardName] || CURRICULUM_TEMPLATES['CBSE']
-    const mockTree = []
+    const mockTree: any[] = []
     if (!template) return mockTree
 
     for (let i = 0; i < template.classes.length; i++) {
@@ -178,30 +183,37 @@ export async function POST(request: NextRequest) {
 
             // Deep Gen: ONE Gemini call, no examination agent loop (avoids timeout)
             try {
-                const prompt = `You are an academic curriculum expert. Generate a complete, realistic syllabus for "${boardName}".
+                const prompt = `You are an expert Indian school curriculum designer. Generate a COMPLETE and DETAILED syllabus for the "${boardName}" board covering ALL classes from Class 1 to Class 12.
 
-Return ONLY a valid JSON array (no markdown, no code blocks, no explanation).
-Schema:
+Return ONLY a valid JSON array — no markdown, no code fences, no explanation.
+
+JSON Schema:
 [
   {
-    "class": "Class 6",
+    "class": "Class 1",
     "subjects": [
       {
         "name": "Mathematics",
         "chapters": [
-          { "name": "Integers", "topics": ["Introduction to Integers", "Operations", "Number Line"] }
+          { "name": "Numbers 1-100", "topics": ["Counting 1-10", "Counting 11-50", "Before After Between", "Skip Counting"] }
         ]
       }
     ]
   }
 ]
 
-Rules:
-- Classes 6 to 10: English, Mathematics, Science, Social Science, Hindi/Regional Language, Computer Science
-- Class 11 & 12: Split into streams — Science (Physics, Chemistry, Biology/Math, English, CS), Commerce (Accountancy, Business Studies, Economics, Math, English), Arts (History, Political Science, Geography, Sociology, English)
-- Minimum 4 chapters per subject, 3 topics per chapter
-- Each class must have distinct, grade-appropriate content (Class 6 Math ≠ Class 9 Math)
-- Return ONLY the JSON array, nothing else`
+Rules (MUST follow every rule):
+1. Include ALL classes: Class 1, Class 2, Class 3, Class 4, Class 5, Class 6, Class 7, Class 8, Class 9, Class 10, Class 11 Science, Class 11 Commerce, Class 11 Arts, Class 12 Science, Class 12 Commerce, Class 12 Arts
+2. Class 1–5: English, Mathematics, Environmental Studies / Science, Social Studies
+3. Class 6–8: English, Mathematics, Science, Social Science, Hindi, Computer Science
+4. Class 9–10: English, Mathematics, Science, Social Science, Hindi, Computer Science
+5. Class 11 & 12 Science stream: Physics, Chemistry, Biology, Mathematics, English, Computer Science
+6. Class 11 & 12 Commerce stream: Accountancy, Business Studies, Economics, Mathematics, English
+7. Class 11 & 12 Arts stream: History, Political Science, Geography, Sociology, English
+8. Minimum 8 chapters per subject for Class 6–12, minimum 4 chapters for Class 1–5
+9. Minimum 4 topics per chapter
+10. Each class must have DISTINCT grade-appropriate content (e.g., Class 6 Math covers Integers, Class 9 Math covers Quadratic Equations — they must NOT overlap)
+11. Return ONLY the JSON array — nothing else`
 
                 const text = await generateWithGemini(prompt)
                 const clean = text.replace(/```json/gi, '').replace(/```/g, '').trim()
