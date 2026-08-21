@@ -115,8 +115,8 @@ async function generateWithGemini(prompt: string): Promise<string> {
     const apiKey = await getGeminiApiKey()
     if (!apiKey) throw new Error('GEMINI_API_KEY is missing or not configured')
 
-    // Working models verified by live test (gemini-2.5-flash ✅, gemini-3.6-flash ✅)
-    const models = ['gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-2.5-flash-lite-preview-06-17', 'gemini-3.1-flash-lite']
+    // Priority: gemini-3.1-flash-lite is fastest (5.5s verified), 2.5-flash uses extended thinking (~25s+)
+    const models = ['gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-3.6-flash']
     const genAI = new GoogleGenerativeAI(apiKey)
 
     let lastError: Error | null = null
@@ -127,11 +127,11 @@ async function generateWithGemini(prompt: string): Promise<string> {
                 generationConfig: { responseMimeType: 'application/json' }
             })
 
-            // Race against 25s timeout per model attempt
+            // Race against 45s timeout per model attempt
             const result = await Promise.race([
                 model.generateContent(prompt),
                 new Promise<never>((_, reject) =>
-                    setTimeout(() => reject(new Error(`Model ${modelName} timed out after 25s`)), 25000)
+                    setTimeout(() => reject(new Error(`Model ${modelName} timed out after 45s`)), 45000)
                 )
             ])
 
