@@ -102,7 +102,7 @@ async function generateWithGemini(prompt: string): Promise<string> {
     const apiKey = await getGeminiApiKey();
     if (!apiKey) throw new Error("GEMINI_API_KEY is missing or not configured");
 
-    const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
+    const modelsToTry = ["gemini-2.5-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite"];
     let lastError: any = null;
 
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -122,6 +122,11 @@ async function generateWithGemini(prompt: string): Promise<string> {
     let userFriendlyMsg = lastError?.message || "Gemini AI models failed to respond";
     if (userFriendlyMsg.includes("403 Forbidden") || userFriendlyMsg.includes("leaked")) {
         userFriendlyMsg = "Gemini API key is blocked or reported as leaked by Google. Please update GEMINI_API_KEY in environment or AI Engine settings.";
+    } else if (userFriendlyMsg.includes("404") || userFriendlyMsg.includes("not found") || userFriendlyMsg.includes("no longer available") || userFriendlyMsg.includes("not supported")) {
+        userFriendlyMsg = "All configured Gemini models are unavailable for this API key. The AI-generated curriculum fallback was loaded instead.";
+    } else if (userFriendlyMsg.length > 200) {
+        // Truncate overly long raw API error messages
+        userFriendlyMsg = userFriendlyMsg.substring(0, 200) + "...";
     }
     throw new Error(userFriendlyMsg);
 }
@@ -228,6 +233,8 @@ export async function POST(request: NextRequest) {
                 let cleanWarning = aiErr.message || "";
                 if (cleanWarning.includes("leaked") || cleanWarning.includes("403 Forbidden") || cleanWarning.includes("blocked")) {
                     cleanWarning = "Gemini API key is reported as leaked by Google. Loaded verified standard syllabus structure instead.";
+                } else if (cleanWarning.includes("404") || cleanWarning.includes("not found") || cleanWarning.includes("no longer available") || cleanWarning.includes("not supported") || cleanWarning.includes("unavailable")) {
+                    cleanWarning = "AI Deep Generation unavailable for this API key configuration. Loaded verified standard syllabus structure.";
                 } else {
                     cleanWarning = `AI generation unavailable (${cleanWarning}). Loaded verified standard syllabus structure.`;
                 }
