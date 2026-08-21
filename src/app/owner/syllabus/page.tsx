@@ -562,28 +562,19 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
 
             setProgress(p => [...p, `🤖 Contacting Gemini AI for ${selectedBoard}...`])
 
-            // 50s client-side timeout — server has 25s per model + fallback
-            const controller = new AbortController()
-            const timer = setTimeout(() => controller.abort(), 50000)
-
-            let res: Response
-            try {
-                res = await fetch('/api/owner/syllabus/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'preview', boardName: selectedBoard, deepGen }),
-                    signal: controller.signal
-                })
-            } finally {
-                clearTimeout(timer)
-            }
+            // No client-side timeout cap — allow deep generation and saving to take as long as needed
+            const res = await fetch('/api/owner/syllabus/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'preview', boardName: selectedBoard, deepGen }),
+            })
 
             const resText = await res.text()
             let json: any = {}
             try {
                 json = JSON.parse(resText)
             } catch {
-                if (res.status === 504) throw new Error('Request timed out on the server. The AI model took too long — try again with Deep Generation OFF for instant results.')
+                if (res.status === 504) throw new Error('Request timed out on the server. Try again or check network connection.')
                 throw new Error(`Server error (${res.status}): Invalid response`)
             }
             if (!res.ok) throw new Error(json.error || `Generation failed (${res.status})`)
@@ -598,9 +589,7 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
             if (json.warning) setWarning(json.warning)
             setStep('preview')
         } catch (e: any) {
-            const msg = e.name === 'AbortError'
-                ? 'Request timed out after 50s. Try again with Deep Generation OFF for instant results.'
-                : e.message
+            const msg = e.message || 'Generation failed'
             setError(msg)
             setStep('config')
             showToast(msg, false)
@@ -611,19 +600,11 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
         setStep('saving')
         setError('')
         try {
-            const controller = new AbortController()
-            const timer = setTimeout(() => controller.abort(), 120000) // 2min for large saves
-            let res: Response
-            try {
-                res = await fetch('/api/owner/syllabus/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'save', boardName: selectedBoard, category: categoryName, tree: previewTree }),
-                    signal: controller.signal
-                })
-            } finally {
-                clearTimeout(timer)
-            }
+            const res = await fetch('/api/owner/syllabus/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'save', boardName: selectedBoard, category: categoryName, tree: previewTree }),
+            })
             const resText = await res.text()
             let json: any = {}
             try { json = JSON.parse(resText) } catch { throw new Error(`Server error (${res.status})`) }
@@ -631,7 +612,7 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
             setResult(json)
             setStep('done')
         } catch (e: any) {
-            const msg = e.name === 'AbortError' ? 'Save timed out — the tree may be very large. Try again.' : e.message
+            const msg = e.message || 'Save failed'
             setError(msg)
             setStep('preview')
             showToast(msg, false)

@@ -4,8 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { CURRICULUM_TEMPLATES, getClassTree } from '@/lib/ai/curriculum-templates'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-// Keep at 60s — works on self-hosted Node + Nginx (with proxy_read_timeout 60s)
-export const maxDuration = 60
+// Set max duration to 300s (5 minutes) — no cap on syllabus AI generation
+export const maxDuration = 300
 
 async function verifyOwner() {
     const supabase = await createClient()
@@ -132,11 +132,11 @@ async function generateWithGemini(prompt: string): Promise<string> {
                 generationConfig: { responseMimeType: 'application/json' }
             })
 
-            // Race against 45s timeout per model attempt
+            // Race against 180s timeout per model attempt (no artificial early cap)
             const result = await Promise.race([
                 model.generateContent(prompt),
                 new Promise<never>((_, reject) =>
-                    setTimeout(() => reject(new Error(`Model ${modelName} timed out after 45s`)), 45000)
+                    setTimeout(() => reject(new Error(`Model ${modelName} timed out after 180s`)), 180000)
                 )
             ])
 
