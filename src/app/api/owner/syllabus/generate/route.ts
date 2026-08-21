@@ -9,7 +9,8 @@ async function verifyOwner() {
     const { data: { user }, error } = await supabase.auth.getUser()
     if (error || !user) return null
     const { data: p } = await supabaseAdmin.from('user_profiles').select('role').eq('id', user.id).single()
-    return p?.role === 'owner' ? user : null
+    const role = p?.role?.toLowerCase()
+    return (role === 'owner' || role === 'admin' || role === 'platform_staff') ? user : null
 }
 
 // ── Helper: insert a node and return its ID ────────────────────────────────────
@@ -101,7 +102,7 @@ async function generateWithGemini(prompt: string): Promise<string> {
     const apiKey = await getGeminiApiKey();
     if (!apiKey) throw new Error("GEMINI_API_KEY is missing or not configured");
 
-    const modelsToTry = ["gemini-3.6-flash", "gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash"];
+    const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
     let lastError: any = null;
 
     const genAI = new GoogleGenerativeAI(apiKey);

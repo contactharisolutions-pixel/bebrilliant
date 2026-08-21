@@ -300,8 +300,14 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'preview', boardName: selectedBoard, deepGen })
             })
-            const json = await res.json()
-            if (!res.ok) throw new Error(json.error || 'Generation failed')
+            const resText = await res.text()
+            let json: any = {}
+            try {
+                json = JSON.parse(resText)
+            } catch {
+                throw new Error(`Server error (${res.status}: ${res.statusText || 'Invalid response'}). Please try again.`)
+            }
+            if (!res.ok) throw new Error(json.error || `Generation failed (${res.status})`)
             setPreviewTree(json.tree)
             if (json.warning) {
                 setWarning(json.warning)
@@ -323,8 +329,14 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'save', boardName: selectedBoard, category: categoryNameState, tree: previewTree })
             })
-            const json = await res.json()
-            if (!res.ok) throw new Error(json.error || 'Saved failed')
+            const resText = await res.text()
+            let json: any = {}
+            try {
+                json = JSON.parse(resText)
+            } catch {
+                throw new Error(`Server error (${res.status}: ${res.statusText || 'Invalid response'}). Please try again.`)
+            }
+            if (!res.ok) throw new Error(json.error || `Save failed (${res.status})`)
             setResult(json)
             setStep('done')
         } catch (e: any) {
@@ -484,8 +496,10 @@ function UploadModal({ onClose, onDone, showToast }: { onClose: () => void; onDo
             const fd = new FormData()
             fd.append('file', file)
             const res = await fetch('/api/owner/syllabus/upload', { method: 'POST', body: fd })
-            const json = await res.json()
-            if (!res.ok) throw new Error(json.error)
+            const resText = await res.text()
+            let json: any = {}
+            try { json = JSON.parse(resText) } catch { throw new Error(`Server returned invalid response (${res.status})`) }
+            if (!res.ok) throw new Error(json.error || `Upload failed (${res.status})`)
             setResult(json)
             setStep('done')
             onDone()
@@ -798,8 +812,10 @@ export default function CourseSyllabusPage() {
                     targetType: nodeForm.type
                 })
             })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Failed to auto-generate')
+            const resText = await res.text()
+            let data: any = {}
+            try { data = JSON.parse(resText) } catch { throw new Error(`Server returned invalid response (${res.status})`) }
+            if (!res.ok) throw new Error(data.error || `Failed to auto-generate (${res.status})`)
             showToast(data.message || `Auto-generated ${nodeForm.type}s`, true)
             setNodeModal({ open: false })
             fetchAll()
