@@ -4,6 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 import { CURRICULUM_TEMPLATES } from '@/lib/ai/curriculum-templates'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
+// Allow up to 120s for AI generation (2x Gemini calls + examination agent)
+export const maxDuration = 120
+
 async function verifyOwner() {
     const supabase = await createClient()
     const { data: { user }, error } = await supabase.auth.getUser()
