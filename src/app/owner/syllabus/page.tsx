@@ -829,7 +829,6 @@ export default function CourseSyllabusPage() {
     const boardNodes = nodes.filter(n => n.type === 'board' || n.type === 'category')
     const TABS = [
         { id: 'tree', label: 'Academic Structure', icon: BookOpen },
-        { id: 'ai', label: 'AI Engine', icon: BrainCircuit },
         { id: 'market', label: 'Marketplace', icon: ShoppingBag },
         { id: 'dist', label: 'Distribution', icon: Globe },
         { id: 'analytics', label: 'Analytics', icon: BarChart2 },
@@ -987,80 +986,7 @@ export default function CourseSyllabusPage() {
                             </div>
                         </div>
                     )}
-                    {/* -- TAB: AI ENGINE --------------------------------------------- */}
-                    {tab === 'ai' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-                            {/* Config Panel */}
-                            <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #E8E8E8', overflow: 'hidden' }}>
-                                <div style={{ padding: '20px 24px', borderBottom: '1px solid #E8E8E8', display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <div style={{ width: 40, height: 40, borderRadius: 10, background: '#EFE9FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Settings size={20} color="#004B93" />
-                                    </div>
-                                    <div>
-                                        <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>AI Engine Configuration</h2>
-                                        <p style={{ margin: '2px 0 0', fontSize: 12, color: '#A5A2A6' }}>Tune the NLP and adaptive learning parameters</p>
-                                    </div>
-                                </div>
-                                <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                    {aiConfig.length === 0 && <div style={{ color: '#A5A2A6', textAlign: 'center', padding: 20 }}>No config loaded</div>}
-                                    {aiConfig.map(cfg => (
-                                        <AIConfigRow key={cfg.parameter} cfg={cfg} onSave={handleSaveConfig} saving={saving} />
-                                    ))}
-                                </div>
-                            </div>
-                            {/* AI Capabilities Info */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                                <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #E8E8E8', padding: '20px 24px' }}>
-                                    <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 800 }}>AI Capabilities</h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                        {[
-                                            { icon: Tag, label: 'Auto Topic Tagging', desc: 'NLP maps questions to syllabus topics', enabled: true },
-                                            { icon: TrendingUp, label: 'Adaptive Weightage', desc: 'AI adjusts topic weights based on exam trends', enabled: true },
-                                            { icon: AlertCircle, label: 'Gap Detection', desc: 'Detects missing or thin coverage in curriculum', enabled: true },
-                                            { icon: BrainCircuit, label: 'Test Series Generation', desc: 'Auto-generates balanced test papers from a chapter', enabled: false },
-                                        ].map(cap => (
-                                            <div key={cap.label} style={{ display: 'flex', gap: 12, padding: 12, background: '#F7F8FA', borderRadius: 10 }}>
-                                                <div style={{ width: 36, height: 36, borderRadius: 8, background: cap.enabled ? '#EFE9FF' : '#F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                                    <cap.icon size={18} color={cap.enabled ? '#004B93' : '#A5A2A6'} />
-                                                </div>
-                                                <div>
-                                                    <div style={{ fontSize: 13, fontWeight: 700, color: '#1B1D21', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                        {cap.label}
-                                                        <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, fontWeight: 800, background: cap.enabled ? '#ECFDF5' : '#F0F0F0', color: cap.enabled ? '#10B981' : '#A5A2A6' }}>
-                                                            {cap.enabled ? 'ACTIVE' : 'COMING SOON'}
-                                                        </span>
-                                                    </div>
-                                                    <div style={{ fontSize: 12, color: '#A5A2A6', marginTop: 2 }}>{cap.desc}</div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div style={{ background: 'linear-gradient(135deg, #004B93, #1B1D21)', borderRadius: 20, padding: '24px', color: '#fff' }}>
-                                    <BrainCircuit size={28} style={{ marginBottom: 12, opacity: 0.9 }} />
-                                    <h3 style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 800 }}>Board Comparison Engine</h3>
-                                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: '0 0 16px' }}>
-                                        Compare two boards to instantly surface topic weightage gaps, difficulty differences, and coverage overlap.
-                                    </p>
-                                    {boardNodes.length >= 2 ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                            <select style={{ ...inputStyle, background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}>
-                                                {boardNodes.map(b => <option key={b.id} value={b.id} style={{ color: '#000' }}>{b.name}</option>)}
-                                            </select>
-                                            <select style={{ ...inputStyle, background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}>
-                                                {boardNodes.map(b => <option key={b.id} value={b.id} style={{ color: '#000' }}>{b.name}</option>)}
-                                            </select>
-                                            <button style={{ background: '#fff', color: '#004B93', border: 'none', borderRadius: 10, padding: '10px', fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>
-                                                Run Comparison Analysis
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>Add at least 2 boards to enable comparison.</div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
+
                     {/* -- TAB: MARKETPLACE ------------------------------------------- */}
                     {tab === 'market' && (
                         <div style={{ animation: 'slideUp 0.3s' }}>
