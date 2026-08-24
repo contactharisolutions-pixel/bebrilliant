@@ -182,7 +182,7 @@ function TabBar({ tabs, active, onChange }: { tabs: { id: string; label: string;
 
 // ── TREE NODE ─────────────────────────────────────────────────────────────────
 function TreeNode({ node, nodes, plans, onEdit, onDelete, onAddChild, onToggle, onSelect, selectedIds, level = 0 }: any) {
-    const [expanded, setExpanded] = useState(level < 2)
+    const [expanded, setExpanded] = useState(false)
     const [inlineEdit, setInlineEdit] = useState(false)
     const [inlineName, setInlineName] = useState(node.name)
     const children = nodes.filter((n: SyllabusNode) => n.parent_id === node.id)
