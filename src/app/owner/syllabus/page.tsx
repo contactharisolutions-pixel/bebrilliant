@@ -536,6 +536,7 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
     const [selectedBoard, setSelectedBoard] = useState(ALL_BOARDS[0])
     const [deepGen, setDeepGen] = useState(false)
     const [previewTree, setPreviewTree] = useState<any>(null)
+    const [boardType, setBoardType] = useState<'School' | 'Entrance' | 'Competitive'>('School')
     const [categoryName, setCategoryName] = useState('')
     const [result, setResult] = useState<any>(null)
     const [error, setError] = useState('')
@@ -562,7 +563,6 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
 
             setProgress(p => [...p, `🤖 Contacting Gemini AI for ${selectedBoard}...`])
 
-            // No client-side timeout cap — allow deep generation and saving to take as long as needed
             const res = await fetch('/api/owner/syllabus/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -579,10 +579,14 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
             }
             if (!res.ok) throw new Error(json.error || `Generation failed (${res.status})`)
 
-            const classCount = json.tree?.length || 0
+            const detectedType: 'School' | 'Entrance' | 'Competitive' = json.boardType || 'School'
+            setBoardType(detectedType)
+
+            const itemCount = json.tree?.length || 0
+            const itemLabel = detectedType === 'School' ? 'classes' : 'subjects'
             setProgress(p => [...p,
                 `✅ Curriculum generated successfully`,
-                `📋 ${classCount} classes ready for review`
+                `📋 ${itemCount} ${itemLabel} ready for review`
             ])
             if (json.fallback) setProgress(p => [...p, `📚 Loaded verified curriculum template (AI unavailable)`])
             setPreviewTree(json.tree)
@@ -636,7 +640,19 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
                     <div style={{ background: 'linear-gradient(135deg, #F5F3FF, #EDE9FE)', border: '1px solid #DDD6FE', borderRadius: 12, padding: 16, marginBottom: 20, display: 'flex', gap: 12 }}>
                         <Sparkles size={20} color="#6366F1" style={{ flexShrink: 0, marginTop: 2 }} />
                         <div style={{ fontSize: 13, color: '#5B21B6', lineHeight: 1.6 }}>
-                            Gemini AI will generate a complete curriculum: <strong>Board → Class → Subject → Chapter → Topic</strong>. An examination agent will validate it for uniqueness before you approve.
+                            {(() => {
+                                const catMap: Record<string, string[]> = {
+                                    'School Syllabus': BOARD_GROUPS[0].items,
+                                    'Entrance Exam': BOARD_GROUPS[1].items,
+                                    'Competitive Exam': BOARD_GROUPS[2].items,
+                                }
+                                const isEntrance = BOARD_GROUPS[1].items.includes(selectedBoard)
+                                const isCompetitive = BOARD_GROUPS[2].items.includes(selectedBoard)
+                                if (isEntrance || isCompetitive) {
+                                    return <><strong>{selectedBoard}</strong> is a {isEntrance ? 'entrance' : 'competitive'} exam. AI will generate: <strong>Board → Subject → Chapter → Topic</strong> (no Class level).</>
+                                }
+                                return <>Gemini AI will generate a complete curriculum: <strong>Board → Class → Subject → Chapter → Topic</strong>. An examination agent will validate it for uniqueness before you approve.</>
+                            })()}
                         </div>
                     </div>
                     <Field label="Select Board / Exam" required>
@@ -689,31 +705,58 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
                     </div>
                     {warning && <div style={{ marginBottom: 14, color: '#D97706', fontSize: 12, background: '#FFFBEB', border: '1px solid #FCD34D', padding: '10px 14px', borderRadius: 10 }}>💡 {warning}</div>}
                     <div style={{ background: '#F9FAFB', borderRadius: 12, padding: 14, maxHeight: 340, overflowY: 'auto', border: '1px solid #F0F0F0', fontSize: 13 }}>
-                        {previewTree?.map((c: any, i: number) => (
-                            <div key={i} style={{ marginBottom: 14, paddingBottom: 14, borderBottom: '1px solid #E5E7EB' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                                    <strong style={{ color: '#0EA5E9', fontSize: 14 }}>{c.class}</strong>
-                                    <span style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 700 }}>{c.subjects?.length || 0} subjects · {c.subjects?.reduce((acc: number, s: any) => acc + (s.chapters?.length || 0), 0) || 0} chapters</span>
+
+                        {boardType === 'School' ? (
+                            // School: Class → Subjects → Chapters
+                            previewTree?.map((c: any, i: number) => (
+                                <div key={i} style={{ marginBottom: 14, paddingBottom: 14, borderBottom: '1px solid #E5E7EB' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                        <strong style={{ color: '#0EA5E9', fontSize: 14 }}>{c.class}</strong>
+                                        <span style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 700 }}>{c.subjects?.length || 0} subjects · {c.subjects?.reduce((acc: number, s: any) => acc + (s.chapters?.length || 0), 0) || 0} chapters</span>
+                                    </div>
+                                    <div style={{ marginLeft: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                        {c.subjects?.map((s: any, j: number) => (
+                                            <details key={j} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '6px 10px' }}>
+                                                <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <span>{s.name}</span>
+                                                    <span style={{ fontSize: 10, background: '#ECFDF5', color: '#10B981', padding: '1px 6px', borderRadius: 10, fontWeight: 800 }}>{s.chapters?.length || 0} Chapters</span>
+                                                </summary>
+                                                <ol style={{ margin: '6px 0 2px 18px', padding: 0, fontSize: 11, color: '#4B5563', lineHeight: 1.5 }}>
+                                                    {s.chapters?.map((chap: any, k: number) => (
+                                                        <li key={k}>
+                                                            <strong>{chap.name}</strong> <span style={{ color: '#9CA3AF' }}>({chap.topics?.length || 0} topics)</span>
+                                                        </li>
+                                                    ))}
+                                                </ol>
+                                            </details>
+                                        ))}
+                                    </div>
                                 </div>
-                                <div style={{ marginLeft: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                    {c.subjects?.map((s: any, j: number) => (
-                                        <details key={j} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '6px 10px' }}>
-                                            <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <span>{s.name}</span>
-                                                <span style={{ fontSize: 10, background: '#ECFDF5', color: '#10B981', padding: '1px 6px', borderRadius: 10, fontWeight: 800 }}>{s.chapters?.length || 0} Chapters</span>
-                                            </summary>
-                                            <ol style={{ margin: '6px 0 2px 18px', padding: 0, fontSize: 11, color: '#4B5563', lineHeight: 1.5 }}>
-                                                {s.chapters?.map((chap: any, k: number) => (
-                                                    <li key={k}>
-                                                        <strong>{chap.name}</strong> <span style={{ color: '#9CA3AF' }}>({chap.topics?.length || 0} topics)</span>
-                                                    </li>
-                                                ))}
-                                            </ol>
-                                        </details>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
+                            ))
+                        ) : (
+                            // Entrance / Competitive: Subject → Chapters (no class level)
+                            previewTree?.map((s: any, i: number) => {
+                                const subjName = s.subject || s.name
+                                return (
+                                    <details key={i} open style={{ marginBottom: 10, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, padding: '8px 12px' }}>
+                                        <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <strong style={{ color: '#6366F1', fontSize: 14 }}>{subjName}</strong>
+                                            <span style={{ fontSize: 11, background: '#F0F0FF', color: '#6366F1', padding: '2px 8px', borderRadius: 10, fontWeight: 800 }}>
+                                                {s.chapters?.length || 0} Chapters
+                                            </span>
+                                        </summary>
+                                        <ol style={{ margin: '8px 0 2px 18px', padding: 0, fontSize: 11, color: '#4B5563', lineHeight: 1.6 }}>
+                                            {s.chapters?.map((chap: any, k: number) => (
+                                                <li key={k}>
+                                                    <strong>{chap.name}</strong> <span style={{ color: '#9CA3AF' }}>({chap.topics?.length || 0} topics)</span>
+                                                </li>
+                                            ))}
+                                        </ol>
+                                    </details>
+                                )
+                            })
+                        )}
+
                     </div>
                     {error && <div style={{ marginTop: 10, color: '#EF4444', fontSize: 12, fontWeight: 600 }}>⚠️ {error}</div>}
                 </div>
@@ -734,9 +777,14 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
                     </div>
                     <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 6 }}>Syllabus Saved!</div>
                     <div style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 24 }}>{result.message}</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: boardType === 'School' ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 10 }}>
+                        {boardType === 'School' && (
+                            <div style={{ background: '#F9FAFB', borderRadius: 10, padding: '12px 8px', textAlign: 'center' }}>
+                                <div style={{ fontSize: 22, fontWeight: 950, color: '#1B1D21' }}>{result.created?.classes || 0}</div>
+                                <div style={{ fontSize: 9, color: '#9CA3AF', fontWeight: 800, textTransform: 'uppercase', marginTop: 2 }}>Classes</div>
+                            </div>
+                        )}
                         {[
-                            { label: 'Classes', v: result.created?.classes || 0 },
                             { label: 'Subjects', v: result.created?.subjects || 0 },
                             { label: 'Chapters', v: result.created?.chapters || 0 },
                             { label: 'Topics', v: result.created?.topics || 0 },

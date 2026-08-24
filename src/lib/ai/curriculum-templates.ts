@@ -1234,6 +1234,39 @@ export function getClassTree(boardName: string): ClassEntry[] {
   return CLASS_TREE_LOOKUP[boardName] || CBSE_CLASS_TREES
 }
 
+// ── Board type detection ───────────────────────────────────────────────────────
+const ENTRANCE_BOARDS = new Set([
+  'JEE Main', 'JEE Advanced', 'NEET', 'CUET', 'CLAT', 'CAT',
+  'IPMAT/JIPMAT', 'NID Entrance Exam', 'NATA',
+])
+const COMPETITIVE_BOARDS = new Set([
+  'UPSC Civil Services', 'SSC CGL', 'SSC CHSL', 'SBI PO & Clerk',
+  'IBPS PO & Clerk', 'RBI Grade B & Assistant', 'RRB NTPC',
+  'NDA', 'CDS', 'GATE', 'UPPSC/MPSC/TNPSC',
+])
+
+export type BoardType = 'School' | 'Entrance' | 'Competitive'
+
+/** Classify any board name into its type — drives prompt & save logic */
+export function getBoardType(boardName: string): BoardType {
+  if (ENTRANCE_BOARDS.has(boardName)) return 'Entrance'
+  if (COMPETITIVE_BOARDS.has(boardName)) return 'Competitive'
+  return 'School'
+}
+
+/** For non-school boards: returns a flat array of { subject, chapters[] } */
+export function getEntranceSubjects(boardName: string): { subject: string; chapters: { name: string; topics: string[] }[] }[] {
+  const t = CURRICULUM_TEMPLATES[boardName]
+  if (!t) return []
+  return Object.entries(t.subjects).map(([subjectName, data]) => ({
+    subject: subjectName,
+    chapters: data.chapters.map((ch: string) => ({
+      name: ch,
+      topics: (data.topics as any)?.[ch] ?? ['Introduction', 'Core Concepts', 'Practice Questions', 'Exam Tips'],
+    })),
+  }))
+}
+
 // ── Legacy CURRICULUM_TEMPLATES (for GET /api/owner/syllabus/generate) ────────
 export const CURRICULUM_TEMPLATES: Record<string, {
   classes: string[]

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { CURRICULUM_TEMPLATES, getClassTree } from '@/lib/ai/curriculum-templates'
+import { CURRICULUM_TEMPLATES, getClassTree, getBoardType, getEntranceSubjects, BoardType } from '@/lib/ai/curriculum-templates'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // Set max duration to 300s (5 minutes) — no cap on syllabus AI generation
@@ -217,15 +217,27 @@ export async function POST(request: NextRequest) {
     try {
         // ── ACTION: preview ──────────────────────────────────────────────────
         if (action === 'preview') {
+            const boardType: BoardType = getBoardType(boardName)
+
             if (!deepGen) {
                 // Instant: use local curriculum template
-                const mockTree = getTemplateMockTree(boardName)
-                return NextResponse.json({ tree: mockTree })
+                if (boardType === 'School') {
+                    const mockTree = getTemplateMockTree(boardName)
+                    return NextResponse.json({ tree: mockTree, boardType })
+                } else {
+                    // Entrance / Competitive: return flat subject list
+                    const subjects = getEntranceSubjects(boardName)
+                    return NextResponse.json({ tree: subjects, boardType })
+                }
             }
 
-            // Deep Gen: Gemini call + automatic template enrichment for 100% completeness
+            // Deep Gen: Gemini call with board-type-specific prompt
             try {
-                const prompt = `You are an expert Indian school curriculum designer. Generate a COMPLETE, EXHAUSTIVE and DETAILED syllabus for the "${boardName}" board covering ALL classes from Class 1 to Class 12.
+                let prompt: string
+
+                if (boardType === 'School') {
+                    // ── School prompt: Class → Subject → Chapter → Topic ──────────────
+                    prompt = `You are an expert Indian school curriculum designer. Generate a COMPLETE, EXHAUSTIVE and DETAILED syllabus for the "${boardName}" board covering ALL classes from Class 1 to Class 12.
 
 Return ONLY a valid JSON array — no markdown, no code fences, no explanation.
 
@@ -257,6 +269,33 @@ Rules (MUST follow every rule):
 10. Each class must have DISTINCT grade-appropriate content
 11. Return ONLY the JSON array — nothing else`
 
+                } else {
+                    // ── Entrance / Competitive prompt: Subject → Chapter → Topic ──────
+                    // NO class level — generate subjects directly under the board
+                    const examLabel = boardType === 'Entrance' ? 'entrance exam' : 'competitive exam'
+                    prompt = `You are an expert Indian ${examLabel} curriculum designer. Generate a COMPLETE, EXHAUSTIVE and DETAILED syllabus for "${boardName}".
+
+Return ONLY a valid JSON array — no markdown, no code fences, no explanation.
+
+JSON Schema:
+[
+  {
+    "subject": "Physics",
+    "chapters": [
+      { "name": "Units and Dimensions", "topics": ["SI Units", "Dimensional Analysis", "Significant Figures", "Error Analysis"] }
+    ]
+  }
+]
+
+Rules (MUST follow every rule):
+1. Include ALL official subjects tested in ${boardName}
+2. Do NOT use class names (Class 11, Class 12, etc.) — subjects go directly at the top level
+3. Include EVERY chapter and topic from the official ${boardName} syllabus — do NOT omit any
+4. Minimum 4 detailed, exam-relevant topics per chapter
+5. Topics should reflect actual exam pattern and weightage of ${boardName}
+6. Return ONLY the JSON array — nothing else`
+                }
+
                 const text = await generateWithGemini(prompt)
                 const clean = text.replace(/```json/gi, '').replace(/```/g, '').trim()
 
@@ -264,7 +303,6 @@ Rules (MUST follow every rule):
                 try {
                     generatedTree = JSON.parse(clean)
                 } catch {
-                    // JSON parse failed — use template fallback
                     throw new Error('AI returned malformed JSON')
                 }
 
@@ -272,25 +310,35 @@ Rules (MUST follow every rule):
                     throw new Error('AI returned empty syllabus tree')
                 }
 
-                // Enrich generated tree with template to guarantee 100% complete chapters & subjects
-                const enrichedTree = enrichWithTemplate(generatedTree, boardName)
+                // Only enrich School boards with template — entrance/competitive have unique structures
+                if (boardType === 'School') {
+                    const enrichedTree = enrichWithTemplate(generatedTree, boardName)
+                    return NextResponse.json({ tree: enrichedTree, boardType })
+                }
 
-                return NextResponse.json({ tree: enrichedTree })
+                return NextResponse.json({ tree: generatedTree, boardType })
 
             } catch (aiErr: any) {
                 console.warn('[AI Generate Fallback]:', aiErr.message)
-                const mockTree = getTemplateMockTree(boardName)
+                let fallbackTree: any[]
+                const boardType: BoardType = getBoardType(boardName)
+                if (boardType === 'School') {
+                    fallbackTree = getTemplateMockTree(boardName)
+                } else {
+                    fallbackTree = getEntranceSubjects(boardName)
+                }
                 let warning = aiErr.message || 'AI generation failed'
                 if (!warning.includes('template') && !warning.includes('instead')) {
                     warning = `AI generation unavailable (${warning.substring(0, 120)}). Loaded verified standard syllabus.`
                 }
-                return NextResponse.json({ tree: mockTree, fallback: true, warning })
+                return NextResponse.json({ tree: fallbackTree, boardType, fallback: true, warning })
             }
         }
 
         // ── ACTION: save ─────────────────────────────────────────────────────
         if (action === 'save') {
             const summary = { categories: 0, boards: 0, classes: 0, subjects: 0, chapters: 0, topics: 0 }
+            const boardType: BoardType = getBoardType(boardName)
 
             let parentId: string | null = null
             if (category) {
@@ -302,34 +350,67 @@ Rules (MUST follow every rule):
             summary.boards++
 
             if (Array.isArray(tree)) {
-                for (let i = 0; i < tree.length; i++) {
-                    const cls = tree[i]
-                    if (!cls.class) continue
-                    const classId = await insertNode(cls.class, 'class', boardId, i)
-                    summary.classes++
+                if (boardType === 'School') {
+                    // ── School path: Board → Class → Subject → Chapter → Topic ────────
+                    for (let i = 0; i < tree.length; i++) {
+                        const cls = tree[i]
+                        if (!cls.class) continue
+                        const classId = await insertNode(cls.class, 'class', boardId, i)
+                        summary.classes++
 
-                    if (Array.isArray(cls.subjects)) {
-                        for (let j = 0; j < cls.subjects.length; j++) {
-                            const subj = cls.subjects[j]
-                            if (!subj.name) continue
-                            const subjId = await insertNode(subj.name, 'subject', classId, j)
-                            summary.subjects++
+                        if (Array.isArray(cls.subjects)) {
+                            for (let j = 0; j < cls.subjects.length; j++) {
+                                const subj = cls.subjects[j]
+                                if (!subj.name) continue
+                                const subjId = await insertNode(subj.name, 'subject', classId, j)
+                                summary.subjects++
 
-                            if (Array.isArray(subj.chapters)) {
-                                for (let k = 0; k < subj.chapters.length; k++) {
-                                    const chap = subj.chapters[k]
-                                    if (!chap.name) continue
-                                    const chapId = await insertNode(chap.name, 'chapter', subjId, k)
-                                    summary.chapters++
+                                if (Array.isArray(subj.chapters)) {
+                                    for (let k = 0; k < subj.chapters.length; k++) {
+                                        const chap = subj.chapters[k]
+                                        if (!chap.name) continue
+                                        const chapId = await insertNode(chap.name, 'chapter', subjId, k)
+                                        summary.chapters++
 
-                                    if (Array.isArray(chap.topics)) {
-                                        for (let l = 0; l < chap.topics.length; l++) {
-                                            const t = chap.topics[l]
-                                            if (!t) continue
-                                            const tName = typeof t === 'string' ? t : (t as any).name || 'Topic'
-                                            await insertNode(tName.trim(), 'topic', chapId, l)
-                                            summary.topics++
+                                        if (Array.isArray(chap.topics)) {
+                                            for (let l = 0; l < chap.topics.length; l++) {
+                                                const t = chap.topics[l]
+                                                if (!t) continue
+                                                const tName = typeof t === 'string' ? t : (t as any).name || 'Topic'
+                                                await insertNode(tName.trim(), 'topic', chapId, l)
+                                                summary.topics++
+                                            }
                                         }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // ── Entrance / Competitive path: Board → Subject → Chapter → Topic ─
+                    // NO class node inserted — subjects hang directly from boardId
+                    for (let j = 0; j < tree.length; j++) {
+                        const subj = tree[j]
+                        // Support both { subject, chapters } and { name, chapters } shapes
+                        const subjName = subj.subject || subj.name
+                        if (!subjName) continue
+                        const subjId = await insertNode(subjName, 'subject', boardId, j)
+                        summary.subjects++
+
+                        if (Array.isArray(subj.chapters)) {
+                            for (let k = 0; k < subj.chapters.length; k++) {
+                                const chap = subj.chapters[k]
+                                if (!chap.name) continue
+                                const chapId = await insertNode(chap.name, 'chapter', subjId, k)
+                                summary.chapters++
+
+                                if (Array.isArray(chap.topics)) {
+                                    for (let l = 0; l < chap.topics.length; l++) {
+                                        const t = chap.topics[l]
+                                        if (!t) continue
+                                        const tName = typeof t === 'string' ? t : (t as any).name || 'Topic'
+                                        await insertNode(tName.trim(), 'topic', chapId, l)
+                                        summary.topics++
                                     }
                                 }
                             }
