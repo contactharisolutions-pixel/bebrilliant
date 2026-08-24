@@ -688,15 +688,28 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
                         <div style={{ fontSize: 12, color: '#9CA3AF' }}>Verify before saving to the database.</div>
                     </div>
                     {warning && <div style={{ marginBottom: 14, color: '#D97706', fontSize: 12, background: '#FFFBEB', border: '1px solid #FCD34D', padding: '10px 14px', borderRadius: 10 }}>💡 {warning}</div>}
-                    <div style={{ background: '#F9FAFB', borderRadius: 12, padding: 14, maxHeight: 280, overflowY: 'auto', border: '1px solid #F0F0F0', fontSize: 13 }}>
+                    <div style={{ background: '#F9FAFB', borderRadius: 12, padding: 14, maxHeight: 340, overflowY: 'auto', border: '1px solid #F0F0F0', fontSize: 13 }}>
                         {previewTree?.map((c: any, i: number) => (
                             <div key={i} style={{ marginBottom: 14, paddingBottom: 14, borderBottom: '1px solid #E5E7EB' }}>
-                                <strong style={{ color: '#0EA5E9' }}>{c.class}</strong> <span style={{ color: '#9CA3AF', fontSize: 11 }}>({c.subjects?.length || 0} subjects)</span>
-                                <div style={{ marginLeft: 16, marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                    <strong style={{ color: '#0EA5E9', fontSize: 14 }}>{c.class}</strong>
+                                    <span style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 700 }}>{c.subjects?.length || 0} subjects · {c.subjects?.reduce((acc: number, s: any) => acc + (s.chapters?.length || 0), 0) || 0} chapters</span>
+                                </div>
+                                <div style={{ marginLeft: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
                                     {c.subjects?.map((s: any, j: number) => (
-                                        <span key={j} style={{ fontSize: 11, background: '#fff', border: '1px solid #E5E7EB', padding: '2px 8px', borderRadius: 20, color: '#374151' }}>
-                                            {s.name} <span style={{ color: '#9CA3AF' }}>·{s.chapters?.length || 0}ch</span>
-                                        </span>
+                                        <details key={j} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '6px 10px' }}>
+                                            <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span>{s.name}</span>
+                                                <span style={{ fontSize: 10, background: '#ECFDF5', color: '#10B981', padding: '1px 6px', borderRadius: 10, fontWeight: 800 }}>{s.chapters?.length || 0} Chapters</span>
+                                            </summary>
+                                            <ol style={{ margin: '6px 0 2px 18px', padding: 0, fontSize: 11, color: '#4B5563', lineHeight: 1.5 }}>
+                                                {s.chapters?.map((chap: any, k: number) => (
+                                                    <li key={k}>
+                                                        <strong>{chap.name}</strong> <span style={{ color: '#9CA3AF' }}>({chap.topics?.length || 0} topics)</span>
+                                                    </li>
+                                                ))}
+                                            </ol>
+                                        </details>
                                     ))}
                                 </div>
                             </div>

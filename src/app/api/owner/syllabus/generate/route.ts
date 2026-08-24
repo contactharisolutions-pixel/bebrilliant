@@ -115,6 +115,48 @@ async function getGeminiApiKey(): Promise<string | null> {
     return process.env.GEMINI_API_KEY || null
 }
 
+// ── Helper: Enrich AI generated tree with official curriculum template ─────────
+function enrichWithTemplate(generatedTree: any[], boardName: string): any[] {
+    const templateTree = getTemplateMockTree(boardName)
+    if (!Array.isArray(generatedTree) || generatedTree.length === 0) return templateTree
+
+    const enrichedTree = [...generatedTree]
+
+    for (const tClass of templateTree) {
+        let gClass = enrichedTree.find(c => c.class?.toLowerCase().trim() === tClass.class?.toLowerCase().trim())
+        if (!gClass) {
+            gClass = { class: tClass.class, subjects: [] }
+            enrichedTree.push(gClass)
+        }
+
+        if (!Array.isArray(gClass.subjects)) gClass.subjects = []
+
+        for (const tSubj of tClass.subjects) {
+            let gSubj = gClass.subjects.find((s: any) => s.name?.toLowerCase().trim() === tSubj.name?.toLowerCase().trim())
+            if (!gSubj) {
+                gSubj = { name: tSubj.name, chapters: [] }
+                gClass.subjects.push(gSubj)
+            }
+
+            if (!Array.isArray(gSubj.chapters)) gSubj.chapters = []
+
+            for (const tChap of tSubj.chapters) {
+                let gChap = gSubj.chapters.find((c: any) => c.name?.toLowerCase().trim() === tChap.name?.toLowerCase().trim())
+                if (!gChap) {
+                    gChap = { name: tChap.name, topics: [...(tChap.topics || [])] }
+                    gSubj.chapters.push(gChap)
+                } else {
+                    if (!Array.isArray(gChap.topics) || gChap.topics.length === 0) {
+                        gChap.topics = [...(tChap.topics || [])]
+                    }
+                }
+            }
+        }
+    }
+
+    return enrichedTree
+}
+
 // ── Helper: Single Gemini call with 25s timeout + real model names ────────────
 async function generateWithGemini(prompt: string): Promise<string> {
     const apiKey = await getGeminiApiKey()
@@ -181,9 +223,9 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ tree: mockTree })
             }
 
-            // Deep Gen: ONE Gemini call, no examination agent loop (avoids timeout)
+            // Deep Gen: Gemini call + automatic template enrichment for 100% completeness
             try {
-                const prompt = `You are an expert Indian school curriculum designer. Generate a COMPLETE and DETAILED syllabus for the "${boardName}" board covering ALL classes from Class 1 to Class 12.
+                const prompt = `You are an expert Indian school curriculum designer. Generate a COMPLETE, EXHAUSTIVE and DETAILED syllabus for the "${boardName}" board covering ALL classes from Class 1 to Class 12.
 
 Return ONLY a valid JSON array — no markdown, no code fences, no explanation.
 
@@ -206,13 +248,13 @@ Rules (MUST follow every rule):
 1. Include ALL classes: Class 1, Class 2, Class 3, Class 4, Class 5, Class 6, Class 7, Class 8, Class 9, Class 10, Class 11 Science, Class 11 Commerce, Class 11 Arts, Class 12 Science, Class 12 Commerce, Class 12 Arts
 2. Class 1–5: English, Mathematics, Environmental Studies / Science, Social Studies
 3. Class 6–8: English, Mathematics, Science, Social Science, Hindi, Computer Science
-4. Class 9–10: English, Mathematics, Science, Social Science, Hindi, Computer Science
+4. Class 9–10: English, Mathematics, Science, Social Science, Hindi, Computer Science (Class 10 Mathematics MUST include ALL 14 official NCERT chapters: Real Numbers, Polynomials, Pair of Linear Equations in Two Variables, Quadratic Equations, Arithmetic Progressions, Triangles, Coordinate Geometry, Introduction to Trigonometry, Some Applications of Trigonometry, Circles, Areas Related to Circles, Surface Areas and Volumes, Statistics, Probability)
 5. Class 11 & 12 Science stream: Physics, Chemistry, Biology, Mathematics, English, Computer Science
 6. Class 11 & 12 Commerce stream: Accountancy, Business Studies, Economics, Mathematics, English
 7. Class 11 & 12 Arts stream: History, Political Science, Geography, Sociology, English
-8. Minimum 8 chapters per subject for Class 6–12, minimum 4 chapters for Class 1–5
-9. Minimum 4 topics per chapter
-10. Each class must have DISTINCT grade-appropriate content (e.g., Class 6 Math covers Integers, Class 9 Math covers Quadratic Equations — they must NOT overlap)
+8. Include EVERY SINGLE CHAPTER and topic required by the official NCERT/CBSE curriculum. Do NOT truncate or skip chapters.
+9. Minimum 4 detailed topics per chapter
+10. Each class must have DISTINCT grade-appropriate content
 11. Return ONLY the JSON array — nothing else`
 
                 const text = await generateWithGemini(prompt)
@@ -230,7 +272,10 @@ Rules (MUST follow every rule):
                     throw new Error('AI returned empty syllabus tree')
                 }
 
-                return NextResponse.json({ tree: generatedTree })
+                // Enrich generated tree with template to guarantee 100% complete chapters & subjects
+                const enrichedTree = enrichWithTemplate(generatedTree, boardName)
+
+                return NextResponse.json({ tree: enrichedTree })
 
             } catch (aiErr: any) {
                 console.warn('[AI Generate Fallback]:', aiErr.message)
@@ -311,10 +356,10 @@ Rules (MUST follow every rule):
 
             let generatedItems: string[] = []
             try {
-                const prompt = `Generate ${targetType}s for a ${parentType} named "${parentName}" in an academic syllabus.
+                const prompt = `Generate ALL complete, exhaustive, and curriculum-aligned ${targetType}s for a ${parentType} named "${parentName}" in an official academic syllabus.
 Return ONLY a JSON array of strings (no markdown):
-["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"]
-Generate 5 to 7 specific, curriculum-relevant items.`
+["Item 1", "Item 2", "Item 3"]
+Include EVERY official ${targetType} required by the standard curriculum. Do NOT truncate or restrict to a small count.`
 
                 const text = await generateWithGemini(prompt)
                 const clean = text.replace(/```json/gi, '').replace(/```/g, '').trim()
