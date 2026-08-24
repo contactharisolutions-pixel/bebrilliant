@@ -157,22 +157,45 @@ function enrichWithTemplate(generatedTree: any[], boardName: string): any[] {
     return enrichedTree
 }
 
-// ── Helper: Single Gemini call with 25s timeout + real model names ────────────
+// ── Helper: Robustly extract the outermost JSON array from any Gemini response ─
+function extractJSONArray(text: string): string {
+    // Step 1: strip markdown code fences (```json ... ``` or ``` ... ```)
+    let s = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
+
+    // Step 2: find the outermost [ ... ] by tracking bracket depth
+    // This handles prose before/after the JSON array Gemini sometimes emits
+    let start = s.indexOf('[')
+    if (start === -1) return s   // no array found — let JSON.parse fail naturally
+
+    let depth = 0
+    let end = -1
+    for (let i = start; i < s.length; i++) {
+        if (s[i] === '[') depth++
+        else if (s[i] === ']') {
+            depth--
+            if (depth === 0) { end = i; break }
+        }
+    }
+
+    if (end !== -1) return s.slice(start, end + 1)
+    return s  // unbalanced — return as-is and let JSON.parse handle it
+}
+
+// ── Helper: Single Gemini call with timeout + model fallback chain ─────────────
 async function generateWithGemini(prompt: string): Promise<string> {
     const apiKey = await getGeminiApiKey()
     if (!apiKey) throw new Error('GEMINI_API_KEY is missing or not configured')
 
-    // Priority: gemini-3.1-flash-lite is fastest (5.5s verified), 2.5-flash uses extended thinking (~25s+)
+    // Priority: gemini-3.1-flash-lite is fastest, 2.5-flash for complex generation
     const models = ['gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-3.6-flash']
     const genAI = new GoogleGenerativeAI(apiKey)
 
     let lastError: Error | null = null
     for (const modelName of models) {
         try {
-            const model = genAI.getGenerativeModel({
-                model: modelName,
-                generationConfig: { responseMimeType: 'application/json' }
-            })
+            // Note: responseMimeType omitted — JSON mode silently degrades on some models
+            // and causes them to wrap output in prose. We extract JSON ourselves instead.
+            const model = genAI.getGenerativeModel({ model: modelName })
 
             // Race against 180s timeout per model attempt (no artificial early cap)
             const result = await Promise.race([
@@ -297,7 +320,7 @@ Rules (MUST follow every rule):
                 }
 
                 const text = await generateWithGemini(prompt)
-                const clean = text.replace(/```json/gi, '').replace(/```/g, '').trim()
+                const clean = extractJSONArray(text)
 
                 let generatedTree: any[]
                 try {
@@ -443,7 +466,7 @@ Return ONLY a JSON array of strings (no markdown):
 Include EVERY official ${targetType} required by the standard curriculum. Do NOT truncate or restrict to a small count.`
 
                 const text = await generateWithGemini(prompt)
-                const clean = text.replace(/```json/gi, '').replace(/```/g, '').trim()
+                const clean = extractJSONArray(text)
                 generatedItems = JSON.parse(clean)
             } catch (aiErr: any) {
                 console.warn('[Contextual AI Fallback]:', aiErr.message)
