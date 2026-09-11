@@ -22,6 +22,7 @@ interface SideDrawerProps {
     children: React.ReactNode;
     footer?: React.ReactNode;
     width?: string | number;
+    zIndex?: number;
 }
 
 export function SideDrawer({
@@ -36,11 +37,12 @@ export function SideDrawer({
     children,
     footer,
     width = 540,
+    zIndex = 900,
 }: SideDrawerProps) {
     if (!isOpen) return null;
 
     return (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 900, display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex, display: 'flex', justifyContent: 'flex-end' }}>
             {/* Backdrop */}
             <div
                 onClick={onClose}

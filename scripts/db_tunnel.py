@@ -2,8 +2,8 @@ import socket
 import sys
 import threading
 import paramiko
+import time
 
-# Configure stdout encoding to UTF-8
 sys.stdout.reconfigure(encoding='utf-8')
 
 VPS_IP = "89.116.33.188"
@@ -11,9 +11,10 @@ VPS_PORT = 22
 VPS_USER = "root"
 VPS_PASS = "Life@20242526"
 
-LOCAL_PORT = 5433
-REMOTE_HOST = "127.0.0.1"
-REMOTE_PORT = 5432
+TUNNELS = [
+    (8000, "127.0.0.1", 8000, "Supabase Kong Gateway"),
+    (5433, "127.0.0.1", 5432, "PostgreSQL Database"),
+]
 
 def pipe(source, destination):
     try:
@@ -27,68 +28,82 @@ def pipe(source, destination):
     finally:
         try:
             source.close()
-        except:
+        except Exception:
             pass
         try:
             destination.close()
-        except:
+        except Exception:
             pass
 
-def forward_connection(client_socket, transport):
+def forward_connection(client_socket, transport, remote_host, remote_port):
     try:
         chan = transport.open_channel(
             'direct-tcpip',
-            (REMOTE_HOST, REMOTE_PORT),
+            (remote_host, remote_port),
             client_socket.getpeername()
         )
         if chan is None:
-            print("Failed to open remote SSH channel.")
             client_socket.close()
             return
         
-        print("Tunnel connection established.")
-        # Start two threads to copy data back and forth
         t1 = threading.Thread(target=pipe, args=(client_socket, chan), daemon=True)
         t2 = threading.Thread(target=pipe, args=(chan, client_socket), daemon=True)
         t1.start()
         t2.start()
-    except Exception as e:
-        print(f"Error forwarding connection: {e}")
+    except Exception:
         client_socket.close()
 
-def main():
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    
-    print(f"Connecting to SSH server {VPS_IP}:{VPS_PORT}...")
-    try:
-        client.connect(VPS_IP, port=VPS_PORT, username=VPS_USER, password=VPS_PASS, timeout=30)
-    except Exception as e:
-        print(f"SSH connection failed: {e}")
-        sys.exit(1)
-        
-    print("SSH connection established successfully.")
-    
+def listen_tunnel(local_port, remote_host, remote_port, label, transport):
     local_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     local_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
-        local_socket.bind(('127.0.0.1', LOCAL_PORT))
+        local_socket.bind(('127.0.0.1', local_port))
         local_socket.listen(100)
-        print(f"Tunnel listening on local port {LOCAL_PORT} -> remote {REMOTE_HOST}:{REMOTE_PORT}...")
+        print(f"[TUNNEL READY] 127.0.0.1:{local_port} -> VPS {remote_host}:{remote_port} ({label})")
     except Exception as e:
-        print(f"Failed to bind local port {LOCAL_PORT}: {e}")
-        client.close()
+        print(f"[ERROR] Failed to bind local port {local_port} for {label}: {e}")
+        return
+
+    while True:
+        try:
+            client_socket, _ = local_socket.accept()
+            threading.Thread(
+                target=forward_connection,
+                args=(client_socket, transport, remote_host, remote_port),
+                daemon=True
+            ).start()
+        except Exception:
+            break
+
+def main():
+    print(f"Connecting SSH to VPS {VPS_IP}:{VPS_PORT}...")
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    
+    try:
+        client.connect(VPS_IP, port=VPS_PORT, username=VPS_USER, password=VPS_PASS, timeout=30)
+    except Exception as e:
+        print(f"[ERROR] SSH connection failed: {e}")
         sys.exit(1)
         
+    print("[OK] SSH connection established.")
+    transport = client.get_transport()
+
+    for local_port, remote_host, remote_port, label in TUNNELS:
+        t = threading.Thread(
+            target=listen_tunnel,
+            args=(local_port, remote_host, remote_port, label, transport),
+            daemon=True
+        )
+        t.start()
+
+    print("[INFO] Live Database & Gateway tunnels are active. Press Ctrl+C to stop.")
     try:
         while True:
-            client_socket, addr = local_socket.accept()
-            print(f"Received local connection from {addr}")
-            threading.Thread(target=forward_connection, args=(client_socket, client.get_transport()), daemon=True).start()
+            time.sleep(1)
     except KeyboardInterrupt:
-        print("Exiting...")
+        print("Stopping tunnel...")
     finally:
-        local_socket.close()
         client.close()
 
 if __name__ == '__main__':

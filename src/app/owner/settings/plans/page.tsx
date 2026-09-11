@@ -98,12 +98,19 @@ type ExtraPack = {
     is_active: boolean
 }
 
-const PLAN_TYPES = [
-    { value: 'institute', label: 'School / Institute' },
-    { value: 'personal_teacher', label: 'Individual Teacher' },
-    { value: 'coaching', label: 'Coaching Centre' },
-    { value: 'university', label: 'College / University' }
+// ─── System Tenant Types (Strictly aligned with platform architecture) ───────
+export const SYSTEM_TENANT_TYPES = [
+    { value: 'school', label: 'School (K-12)', badgeColor: '#2563EB', badgeBg: '#EFF6FF', description: 'Schools, K-12 Academics, Multi-Branch & OMR' },
+    { value: 'institute', label: 'Institute / Coaching', badgeColor: '#059669', badgeBg: '#ECFDF5', description: 'Coaching centers, test prep, competitive exams' },
+    { value: 'independent_teacher', label: 'Independent Teacher', badgeColor: '#7C3AED', badgeBg: '#F5F3FF', description: 'Private tutors, solo educators, subject specialists' },
 ]
+
+export const getTenantTypeMeta = (type?: string) => {
+    if (type === 'school') return SYSTEM_TENANT_TYPES[0]
+    if (type === 'institute') return SYSTEM_TENANT_TYPES[1]
+    if (type === 'independent_teacher' || type === 'personal_teacher') return SYSTEM_TENANT_TYPES[2]
+    return { value: type || 'custom', label: type || 'Custom', badgeColor: P.muted, badgeBg: P.bg, description: '' }
+}
 
 const FEATURE_CATEGORIES = ['Core', 'Learning', 'AI & Smart', 'Examinations', 'Reporting', 'Communication', 'Revenue', 'Customisation', 'Advanced']
 
@@ -347,7 +354,16 @@ export default function SubscriptionPlansManager() {
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Save failed')
-            showToast(editFeatMode ? 'Module updated.' : 'New module added to registry.', 'success')
+            showToast(editFeatMode ? `Module "${currentFeat.label}" updated.` : `New module "${currentFeat.label}" registered!`, 'success')
+
+            // If created while plan drawer is open, auto-enable it on current plan!
+            if (!editFeatMode && data.feature?.key) {
+                setCurrentPlan(prev => ({
+                    ...prev,
+                    features: { ...(prev.features || {}), [data.feature.key]: true }
+                }))
+            }
+
             setFeatDrawerOpen(false)
             fetchData(true)
         } catch (e: any) {
@@ -358,12 +374,23 @@ export default function SubscriptionPlansManager() {
     }
 
     const handleDeleteFeature = async (id: string, label: string) => {
-        if (!confirm(`Remove "${label}" from the platform module registry? This won't affect existing plan assignments.`)) return
+        if (!confirm(`Permanently delete "${label}" from available modules? This will remove it from all plans.`)) return
         try {
             const res = await fetch(`/api/owner/billing/features?id=${id}`, { method: 'DELETE' })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Delete failed')
-            showToast('Module removed from registry.', 'success')
+            showToast(`Module "${label}" deleted successfully.`, 'success')
+
+            // Remove from current plan if open
+            const feat = featureRegistry.find(f => f.id === id)
+            if (feat) {
+                setCurrentPlan(prev => {
+                    const nextFeats = { ...(prev.features || {}) }
+                    delete nextFeats[feat.key]
+                    return { ...prev, features: nextFeats }
+                })
+            }
+
             fetchData(true)
         } catch (e: any) {
             showToast(e.message, 'error')
@@ -432,9 +459,26 @@ export default function SubscriptionPlansManager() {
                 position: 'relative', boxShadow: plan.is_active ? '0 4px 24px rgba(0,0,0,0.04)' : 'none',
                 opacity: plan.is_active ? 1 : 0.65
             }}>
-                {/* Type badge */}
-                <div style={{ fontSize: 10, fontWeight: 900, color: P.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
-                    {PLAN_TYPES.find(t => t.value === plan.type)?.label || plan.type}
+                {/* Target Scope System Tenant Type badge */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    {(() => {
+                        const meta = getTenantTypeMeta(plan.type)
+                        return (
+                            <span style={{
+                                background: meta.badgeBg,
+                                color: meta.badgeColor,
+                                border: `1px solid ${meta.badgeColor}35`,
+                                borderRadius: 8,
+                                padding: '3px 10px',
+                                fontSize: 10.5,
+                                fontWeight: 900,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.06em'
+                            }}>
+                                {meta.label}
+                            </span>
+                        )
+                    })()}
                 </div>
 
                 {/* Title row */}
@@ -903,9 +947,13 @@ export default function SubscriptionPlansManager() {
                         <FormField label="Price (₹)">
                             <input type="number" value={currentPlan.price} onChange={e => setCurrentPlan({ ...currentPlan, price: parseFloat(e.target.value) || 0 })} style={inputStyle} />
                         </FormField>
-                        <FormField label="Target Scope">
-                            <select value={currentPlan.type} onChange={e => setCurrentPlan({ ...currentPlan, type: e.target.value })} style={{ ...inputStyle, appearance: 'none' }}>
-                                {PLAN_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                        <FormField label="Target Scope (System Tenant Type)">
+                            <select
+                                value={currentPlan.type === 'personal_teacher' ? 'independent_teacher' : (currentPlan.type || 'institute')}
+                                onChange={e => setCurrentPlan({ ...currentPlan, type: e.target.value })}
+                                style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}
+                            >
+                                {SYSTEM_TENANT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                             </select>
                         </FormField>
                     </div>
@@ -945,14 +993,50 @@ export default function SubscriptionPlansManager() {
 
                     {/* Dynamic Features — grouped by category */}
                     <div style={{ borderTop: `1px solid ${P.border}`, paddingTop: 20 }}>
-                        <div style={{ fontSize: 11, fontWeight: 900, color: P.dark, marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                            Available Feature Modules
-                            <span style={{ marginLeft: 8, fontSize: 10, color: P.muted, textTransform: 'none', fontWeight: 700 }}>({featureRegistry.filter(f => currentPlan.features?.[f.key]).length}/{featureRegistry.length} enabled)</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                            <div>
+                                <div style={{ fontSize: 11, fontWeight: 900, color: P.dark, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                    Available Feature Modules
+                                    <span style={{ marginLeft: 8, fontSize: 10, color: P.muted, textTransform: 'none', fontWeight: 700 }}>
+                                        ({featureRegistry.filter(f => currentPlan.features?.[f.key]).length}/{featureRegistry.length} enabled)
+                                    </span>
+                                </div>
+                                <div style={{ fontSize: 10.5, color: P.muted, fontWeight: 600, marginTop: 2 }}>
+                                    Toggle for plan, or click ✏️ / 🗑️ to edit or delete module from system
+                                </div>
+                            </div>
+
+                            {/* Quick Add Module button inside plan drawer */}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setCurrentFeat({
+                                        key: '',
+                                        label: '',
+                                        description: '',
+                                        icon: 'Star',
+                                        category: 'Core',
+                                        sort_order: (featureRegistry.length + 1) * 10
+                                    })
+                                    setEditFeatMode(false)
+                                    setFeatDrawerOpen(true)
+                                }}
+                                style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                    padding: '6px 12px', borderRadius: 10,
+                                    background: `${P.brand}12`, color: P.brand,
+                                    border: `1.5px solid ${P.brand}40`,
+                                    fontSize: 11.5, fontWeight: 900, cursor: 'pointer',
+                                    transition: 'all 0.15s'
+                                }}
+                            >
+                                <Plus size={13} strokeWidth={3} /> Add Module
+                            </button>
                         </div>
 
                         {featureRegistry.length === 0 && (
-                            <div style={{ fontSize: 12, color: P.muted, fontWeight: 600, textAlign: 'center', padding: '20px 0' }}>
-                                No feature modules defined. Go to the "Platform Modules" tab to add them.
+                            <div style={{ fontSize: 12, color: P.muted, fontWeight: 600, textAlign: 'center', padding: '24px 0', background: P.bg, borderRadius: 12 }}>
+                                No feature modules defined. Click "+ Add Module" to register one now.
                             </div>
                         )}
 
@@ -963,20 +1047,77 @@ export default function SubscriptionPlansManager() {
                                     {feats.map(f => {
                                         const on = !!(currentPlan.features?.[f.key])
                                         return (
-                                            <button key={f.key}
-                                                onClick={() => setCurrentPlan({ ...currentPlan, features: { ...currentPlan.features, [f.key]: !on } })}
+                                            <div key={f.key}
                                                 style={{
-                                                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                                                    padding: '7px 14px', borderRadius: 10, cursor: 'pointer',
+                                                    display: 'inline-flex', alignItems: 'center',
+                                                    borderRadius: 10,
                                                     border: `1.5px solid ${on ? P.brand : P.border}`,
                                                     background: on ? `${P.brand}10` : '#FAFAFA',
-                                                    color: on ? P.brand : P.muted,
-                                                    fontSize: 12, fontWeight: 800, transition: 'all 0.15s'
-                                                }}>
-                                                <DynIcon name={f.icon} size={13} color={on ? P.brand : P.muted} />
-                                                {f.label}
-                                                {on && <Check size={11} color={P.brand} strokeWidth={3} />}
-                                            </button>
+                                                    overflow: 'hidden',
+                                                    transition: 'all 0.15s'
+                                                }}
+                                            >
+                                                {/* Toggle chip for this plan */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCurrentPlan({ ...currentPlan, features: { ...(currentPlan.features || {}), [f.key]: !on } })}
+                                                    title={on ? `Enabled in this plan (click to disable)` : `Disabled in this plan (click to enable)`}
+                                                    style={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                                                        padding: '7px 11px', background: 'transparent', border: 'none',
+                                                        color: on ? P.brand : P.dark,
+                                                        fontSize: 12, fontWeight: 800, cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    <DynIcon name={f.icon} size={13} color={on ? P.brand : P.muted} />
+                                                    <span>{f.label}</span>
+                                                    {on && <Check size={12} color={P.brand} strokeWidth={3} />}
+                                                </button>
+
+                                                {/* Edit module button */}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setCurrentFeat(f)
+                                                        setEditFeatMode(true)
+                                                        setFeatDrawerOpen(true)
+                                                    }}
+                                                    title={`Edit "${f.label}" module settings`}
+                                                    style={{
+                                                        padding: '7px 7px', background: 'transparent', border: 'none',
+                                                        borderLeft: `1px solid ${on ? `${P.brand}30` : P.border}`,
+                                                        color: P.muted, cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                                        transition: 'color 0.15s'
+                                                    }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.color = P.brand)}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.color = P.muted)}
+                                                >
+                                                    <Pencil size={11} />
+                                                </button>
+
+                                                {/* Delete module button (for non-system modules) */}
+                                                {!f.is_system && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            handleDeleteFeature(f.id, f.label)
+                                                        }}
+                                                        title={`Delete "${f.label}" from system`}
+                                                        style={{
+                                                            padding: '7px 7px', background: 'transparent', border: 'none',
+                                                            borderLeft: `1px solid ${on ? `${P.brand}30` : P.border}`,
+                                                            color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                                            transition: 'opacity 0.15s'
+                                                        }}
+                                                        onMouseEnter={(e) => (e.currentTarget.style.color = '#B91C1C')}
+                                                        onMouseLeave={(e) => (e.currentTarget.style.color = '#EF4444')}
+                                                    >
+                                                        <Trash2 size={11} />
+                                                    </button>
+                                                )}
+                                            </div>
                                         )
                                     })}
                                 </div>
@@ -1081,7 +1222,7 @@ export default function SubscriptionPlansManager() {
             {/* ═══════════════════════════════════════════════════════════════
                 DRAWER: ADD / EDIT PLATFORM FEATURE MODULE
             ═══════════════════════════════════════════════════════════════ */}
-            <SideDrawer isOpen={featDrawerOpen} onClose={() => setFeatDrawerOpen(false)} title={editFeatMode ? 'Edit Feature Module' : 'Add Platform Module'}>
+            <SideDrawer isOpen={featDrawerOpen} onClose={() => setFeatDrawerOpen(false)} title={editFeatMode ? 'Edit Feature Module' : 'Add Platform Module'} zIndex={980}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 18, padding: '24px 28px' }}>
                     <FormField label="Feature Key (unique, no spaces)">
                         <input value={currentFeat.key} onChange={e => setCurrentFeat({ ...currentFeat, key: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_') })}
