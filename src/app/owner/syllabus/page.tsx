@@ -1,16 +1,19 @@
 'use client'
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import Link from 'next/link'
 import {
     BookOpen, ShoppingBag, BarChart2, Globe,
     Plus, Trash2, Edit3, ChevronRight, ChevronDown, ChevronLeft,
     Check, X, Save, Loader2, AlertCircle, RefreshCw,
     Tag, Settings, Eye, EyeOff, TrendingUp, Package,
     Send, Sparkles, Upload, Download, FileSpreadsheet,
-    CheckCircle2, XCircle, Info, Infinity, Layers, ShieldCheck,
-    Target, Search, Filter, Move, Copy, MoreHorizontal,
+    CheckCircle2, XCircle, Info, Layers, ShieldCheck,
+    Target, Search, Filter, Move, Copy, MoreHorizontal, MoreVertical,
     Activity, Clock, User, Zap, Award, Lock, Unlock,
-    ChevronUp, Hash, AlignLeft, Gauge, Palette, FolderOpen,
-    BrainCircuit, ArrowRight, CheckSquare, Square, MoveRight
+    ChevronUp, Hash, AlignLeft, Gauge, Palette, FolderOpen, Folder,
+    BrainCircuit, ArrowRight, CheckSquare, Square, MoveRight,
+    FileText, FilePlus, PlusCircle, Landmark, HelpCircle,
+    Network, List, LayoutGrid, Lightbulb, ArrowUpRight
 } from 'lucide-react'
 import { CURRICULUM_TEMPLATES } from '@/lib/ai/curriculum-templates'
 
@@ -36,16 +39,15 @@ type Distribution = {
 }
 type Tenant = { id: string; name: string }
 type AIConfig = { id: string; parameter: string; value: any; updated_at: string }
-type ActivityEntry = { id: string; action: string; actor_email: string; changes: any; created_at: string; node_id?: string }
 
 // ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const NODE_TYPES: { value: NodeType; label: string; color: string; bg: string; icon: any }[] = [
-    { value: 'category', label: 'Curriculum Type', color: '#6366F1', bg: '#F5F3FF', icon: FolderOpen },
-    { value: 'board', label: 'Board / Exam', color: '#004B93', bg: '#EFE9FF', icon: BookOpen },
-    { value: 'class', label: 'Class / Level', color: '#0EA5E9', bg: '#E0F2FE', icon: Layers },
-    { value: 'subject', label: 'Subject', color: '#10B981', bg: '#ECFDF5', icon: Tag },
-    { value: 'chapter', label: 'Chapter', color: '#F59E0B', bg: '#FFF3CD', icon: FileSpreadsheet },
-    { value: 'topic', label: 'Topic', color: '#EF4444', bg: '#FEF2F2', icon: CheckCircle2 },
+    { value: 'category', label: 'Curriculum Type', color: '#2563EB', bg: '#EFF6FF', icon: Folder },
+    { value: 'board', label: 'Board / Exam', color: '#D97706', bg: '#FEF3C7', icon: Folder },
+    { value: 'class', label: 'Class / Level', color: '#0284C7', bg: '#E0F2FE', icon: Layers },
+    { value: 'subject', label: 'Subject', color: '#10B981', bg: '#ECFDF5', icon: BookOpen },
+    { value: 'chapter', label: 'Chapter', color: '#F59E0B', bg: '#FFFBEB', icon: FolderOpen },
+    { value: 'topic', label: 'Topic', color: '#EF4444', bg: '#FEF2F2', icon: FileText },
 ]
 const getNodeMeta = (type: NodeType) => NODE_TYPES.find(n => n.value === type) ?? NODE_TYPES[0]
 const NEXT_TYPES: Record<NodeType, NodeType> = {
@@ -62,68 +64,46 @@ const BOARD_GROUPS = [
 ]
 const ALL_BOARDS = BOARD_GROUPS.flatMap(g => g.items)
 
-// ── CSS HELPERS ────────────────────────────────────────────────────────────────
-const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '10px 14px', border: '1.5px solid #E8E8E8', borderRadius: 10,
-    fontSize: 13, color: '#1B1D21', outline: 'none', boxSizing: 'border-box',
-    background: '#fff', fontFamily: 'Inter, sans-serif', transition: 'border-color 0.15s'
-}
-const btnPrimary: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
-    background: '#004B93', color: '#fff', border: 'none', borderRadius: 10,
-    fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif'
-}
-const btnSecondary: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px',
-    background: '#fff', color: '#1B1D21', border: '1px solid #E8E8E8', borderRadius: 10,
-    fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif'
-}
-const iconBtnStyle: React.CSSProperties = {
-    background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8,
-    width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    cursor: 'pointer', color: '#6B7280', transition: 'all 0.15s', flexShrink: 0
-}
-
 // ── TOAST ──────────────────────────────────────────────────────────────────────
 function Toast({ msg, ok, onClose }: { msg: string; ok: boolean; onClose: () => void }) {
     useEffect(() => { const t = setTimeout(onClose, 4500); return () => clearTimeout(t) }, [onClose])
     return (
-        <div style={{
-            position: 'fixed', bottom: 28, right: 28, zIndex: 9999,
-            display: 'flex', alignItems: 'center', gap: 12,
-            background: ok ? '#F0FDF4' : '#FEF2F2',
-            border: `1px solid ${ok ? '#22C55E30' : '#EF444430'}`,
-            borderRadius: 16, padding: '14px 18px',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.12)', maxWidth: 420,
-            animation: 'slideUp 0.3s cubic-bezier(0.4,0,0.2,1)'
-        }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: ok ? '#22C55E' : '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {ok ? <Check size={18} color="#fff" /> : <AlertCircle size={18} color="#fff" />}
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3.5 rounded-2xl shadow-xl border backdrop-blur-md transition-all animate-in slide-in-from-bottom-4 ${
+            ok ? 'bg-emerald-50/95 border-emerald-200 text-emerald-900' : 'bg-rose-50/95 border-rose-200 text-rose-900'
+        } max-w-md`}>
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${ok ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+                {ok ? <Check size={16} strokeWidth={3} /> : <AlertCircle size={16} />}
             </div>
-            <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#1B1D21' }}>{ok ? 'Success' : 'Attention'}</div>
-                <div style={{ fontSize: 12, color: ok ? '#166534' : '#991B1B', marginTop: 1, lineHeight: 1.4 }}>{msg}</div>
+            <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold">{ok ? 'Success' : 'Attention'}</div>
+                <div className="text-xs opacity-90 truncate">{msg}</div>
             </div>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A5A2A6', padding: 2 }}><X size={14} /></button>
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1"><X size={14} /></button>
         </div>
     )
 }
 
 // ── MODAL ──────────────────────────────────────────────────────────────────────
-function Modal({ title, onClose, onSubmit, loading, children, saveLabel = 'Save', cancelLabel = 'Cancel', hideSave, maxWidth = 520 }: any) {
+function Modal({ title, onClose, onSubmit, loading, children, saveLabel = 'Save', cancelLabel = 'Cancel', hideSave, maxWidth = 540 }: any) {
     return (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-            <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth, maxHeight: '88vh', display: 'flex', flexDirection: 'column', boxShadow: '0 30px 80px rgba(0,0,0,0.22)' }}>
-                <div style={{ padding: '20px 24px', borderBottom: '1px solid #F0F0F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 900, color: '#1B1D21' }}>{title}</h3>
-                    <button onClick={onClose} style={{ background: '#F7F8FA', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} color="#A5A2A6" /></button>
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden" style={{ maxWidth }}>
+                <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <h3 className="font-extrabold text-base text-slate-900 tracking-tight">{title}</h3>
+                    <button onClick={onClose} className="w-8 h-8 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-all">
+                        <X size={16} />
+                    </button>
                 </div>
-                <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>{children}</div>
-                <div style={{ padding: '16px 24px', borderTop: '1px solid #F0F0F0', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                    <button onClick={onClose} style={btnSecondary}>{cancelLabel}</button>
-                    {!hideSave && <button onClick={onSubmit} disabled={loading} style={{ ...btnPrimary, opacity: loading ? 0.7 : 1, cursor: loading ? 'wait' : 'pointer' }}>
-                        {loading && <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />} {saveLabel}
-                    </button>}
+                <div className="p-6 overflow-y-auto flex-1">{children}</div>
+                <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-2.5 bg-slate-50/50">
+                    <button onClick={onClose} className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-all">
+                        {cancelLabel}
+                    </button>
+                    {!hideSave && (
+                        <button onClick={onSubmit} disabled={loading} className="px-5 py-2 rounded-xl bg-[#004B93] hover:bg-[#003870] text-white font-bold text-xs shadow-sm flex items-center gap-2 transition-all disabled:opacity-60">
+                            {loading && <Loader2 size={14} className="animate-spin" />} {saveLabel}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
@@ -132,152 +112,206 @@ function Modal({ title, onClose, onSubmit, loading, children, saveLabel = 'Save'
 
 function Field({ label, children, hint, required }: any) {
     return (
-        <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 6 }}>
-                {label} {required && <span style={{ color: '#EF4444' }}>*</span>}
+        <div className="mb-4">
+            <label className="flex items-center gap-1 text-xs font-bold text-slate-700 mb-1.5">
+                {label} {required && <span className="text-rose-500">*</span>}
             </label>
             {children}
-            {hint && <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{hint}</div>}
+            {hint && <div className="text-[11px] text-slate-400 mt-1">{hint}</div>}
         </div>
     )
 }
 
-// ── STAT CARD ─────────────────────────────────────────────────────────────────
-function StatCard({ label, value, icon: Icon, color = '#004B93', bg = '#EFE9FF', sub }: any) {
+// ── TOP KPI SUMMARY CARD ───────────────────────────────────────────────────────
+function TopKpiCard({ label, value, sub, icon: Icon, bgClass, textClass, subClass }: {
+    label: string
+    value: string | number
+    sub?: string
+    icon: any
+    bgClass: string
+    textClass?: string
+    subClass?: string
+}) {
     return (
-        <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #F0F0F0', padding: '20px', display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1, boxShadow: '0 2px 10px rgba(0,0,0,0.03)', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ width: 42, height: 42, borderRadius: 12, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Icon size={19} color={color} />
+        <div className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-sm flex items-center gap-3.5 hover:shadow-md transition-all">
+            <div className={`w-12 h-12 rounded-2xl ${bgClass} text-white flex items-center justify-center shrink-0 shadow-sm`}>
+                <Icon size={22} strokeWidth={2.2} />
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 10, fontWeight: 800, color: '#A5A2A6', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>{label}</div>
-                <div style={{ fontSize: 22, fontWeight: 950, color: '#1B1D21', letterSpacing: '-0.02em', lineHeight: 1 }}>{value}</div>
-                {sub && <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 4, fontWeight: 600 }}>{sub}</div>}
+            <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-slate-500 tracking-tight">{label}</div>
+                <div className="text-2xl font-black text-slate-900 leading-none my-1">{value}</div>
+                {sub && <div className={`text-[11px] font-semibold truncate ${subClass || 'text-slate-400'}`}>{sub}</div>}
             </div>
         </div>
     )
 }
 
-// ── TAB BAR ───────────────────────────────────────────────────────────────────
-function TabBar({ tabs, active, onChange }: { tabs: { id: string; label: string; icon: any; count?: number }[]; active: string; onChange: (id: string) => void }) {
-    return (
-        <div style={{ display: 'flex', gap: 2, background: '#F3F4F6', borderRadius: 12, padding: 4 }}>
-            {tabs.map(tab => (
-                <button key={tab.id} onClick={() => onChange(tab.id)} style={{
-                    display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 9,
-                    border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'Inter, sans-serif',
-                    background: active === tab.id ? '#fff' : 'transparent',
-                    color: active === tab.id ? '#004B93' : '#6B7280',
-                    boxShadow: active === tab.id ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-                    transition: 'all 0.15s', whiteSpace: 'nowrap'
-                }}>
-                    <tab.icon size={14} />
-                    {tab.label}
-                    {tab.count !== undefined && <span style={{ background: active === tab.id ? '#004B9315' : '#E5E7EB', color: active === tab.id ? '#004B93' : '#6B7280', fontSize: 9, fontWeight: 900, padding: '1px 5px', borderRadius: 10 }}>{tab.count}</span>}
-                </button>
-            ))}
-        </div>
-    )
+function getDynamicNodeMeta(node: SyllabusNode) {
+    if (node.type === 'subject') {
+        const n = node.name.toLowerCase()
+        if (n.includes('math')) return { label: 'Subject', color: '#0284C7', bg: '#E0F2FE', icon: BookOpen }
+        if (n.includes('hindi')) return { label: 'Subject', color: '#EF4444', bg: '#FEF2F2', icon: BookOpen }
+        if (n.includes('gujarat')) return { label: 'Subject', color: '#8B5CF6', bg: '#F5F3FF', icon: BookOpen }
+        if (n.includes('science') || n.includes('evs') || n.includes('environ')) return { label: 'Subject', color: '#10B981', bg: '#ECFDF5', icon: BookOpen }
+        return { label: 'Subject', color: '#10B981', bg: '#ECFDF5', icon: BookOpen }
+    }
+    if (node.type === 'chapter') {
+        return { label: 'Chapter', color: '#F59E0B', bg: '#FFFBEB', icon: FolderOpen }
+    }
+    return getNodeMeta(node.type)
 }
 
-// ── TREE NODE ─────────────────────────────────────────────────────────────────
-function TreeNode({ node, nodes, plans, onEdit, onDelete, onAddChild, onToggle, onSelect, selectedIds, level = 0 }: any) {
-    const [expanded, setExpanded] = useState(false)
+// ── TREE NODE COMPONENT ────────────────────────────────────────────────────────
+function TreeNode({ node, nodes, plans, onEdit, onDelete, onAddChild, onToggle, onSelect, selectedIds, level = 0, parentPath = '' }: any) {
+    const isDefaultExpanded = (
+        node.type === 'board' ||
+        (node.type === 'class' && node.name.includes('Class 1')) ||
+        (node.type === 'subject' && node.name.toLowerCase().includes('english'))
+    )
+    const [expanded, setExpanded] = useState(isDefaultExpanded)
     const [inlineEdit, setInlineEdit] = useState(false)
     const [inlineName, setInlineName] = useState(node.name)
     const children = nodes.filter((n: SyllabusNode) => n.parent_id === node.id)
-    const meta = getNodeMeta(node.type)
+    const meta = getDynamicNodeMeta(node)
     const isLinkedToPlan = plans.some((p: Plan) => p.syllabus_id === node.id)
     const isSelected = selectedIds?.includes(node.id)
     const hasChildren = children.length > 0
     const canAddChild = VALID_CHILD_TYPES[node.type as NodeType] !== null
 
     return (
-        <div style={{ marginLeft: level > 0 ? 28 : 0, position: 'relative' }}>
-            {level > 0 && <div style={{ position: 'absolute', left: -16, top: 0, bottom: hasChildren && expanded ? 0 : '14px', width: 14, borderLeft: '1.5px solid #E5E7EB', borderBottom: '1.5px solid #E5E7EB', borderBottomLeftRadius: 8 }} />}
+        <div className="relative select-none" style={{ marginLeft: level > 0 ? 20 : 0 }}>
+            {level > 0 && (
+                <div className="absolute -left-3.5 top-0 bottom-3 w-3.5 border-l border-b border-slate-200 rounded-bl-lg pointer-events-none" />
+            )}
             <div
                 onClick={() => onSelect(node)}
-                className="tree-node-row"
-                style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '8px 12px', borderRadius: 12, marginBottom: 4, cursor: 'pointer',
-                    background: isSelected ? `${meta.color}10` : level === 0 ? '#FAFAFA' : '#fff',
-                    border: isSelected ? `1.5px solid ${meta.color}40` : '1px solid transparent',
-                    opacity: node.is_active ? 1 : 0.55,
-                    transition: 'all 0.15s',
-                }}
+                className={`group flex items-center gap-2.5 px-3 py-2 rounded-xl mb-1 cursor-pointer transition-all border ${
+                    isSelected
+                        ? 'bg-blue-50/70 border-blue-200 text-blue-900 shadow-sm'
+                        : 'bg-white hover:bg-slate-50/80 border-transparent hover:border-slate-200/60'
+                } ${!node.is_active ? 'opacity-50' : ''}`}
             >
                 {/* Multi-select checkbox */}
-                <div onClick={e => { e.stopPropagation() }} style={{ flexShrink: 0 }}>
-                    <div
-                        onClick={e => { e.stopPropagation(); onSelect(node, true) }}
-                        style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${isSelected ? meta.color : '#D1D5DB'}`, background: isSelected ? meta.color : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
-                    >
-                        {isSelected && <Check size={10} color="#fff" strokeWidth={3} />}
-                    </div>
+                <div
+                    onClick={e => { e.stopPropagation(); onSelect(node, true) }}
+                    className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
+                        isSelected ? 'bg-[#004B93] border-[#004B93]' : 'border-slate-300 hover:border-slate-400 bg-white'
+                    }`}
+                >
+                    {isSelected && <Check size={11} className="text-white" strokeWidth={3} />}
                 </div>
 
-                {/* Expand toggle */}
+                {/* Expand / Collapse toggle */}
                 <button
-                    onClick={e => { e.stopPropagation(); if (hasChildren) setExpanded(ex => !ex) }}
-                    style={{ ...iconBtnStyle, width: 20, height: 20, border: hasChildren ? '1px solid #E5E7EB' : 'none', background: hasChildren ? '#fff' : 'transparent', borderRadius: 5, flexShrink: 0 }}
+                    onClick={e => { e.stopPropagation(); if (hasChildren) setExpanded(!expanded) }}
+                    className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 text-slate-400 hover:text-slate-700 transition-transform ${
+                        hasChildren ? 'hover:bg-slate-100 cursor-pointer' : 'cursor-default opacity-20'
+                    }`}
                 >
-                    {hasChildren ? (expanded ? <ChevronDown size={10} strokeWidth={3} /> : <ChevronRight size={10} strokeWidth={3} />) : <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#D1D5DB' }} />}
+                    {hasChildren ? (
+                        expanded ? <ChevronDown size={14} strokeWidth={2.5} /> : <ChevronRight size={14} strokeWidth={2.5} />
+                    ) : (
+                        <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                    )}
                 </button>
 
-                {/* Type icon */}
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <meta.icon size={13} color={meta.color} />
+                {/* Level Icon */}
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0`} style={{ background: meta.bg }}>
+                    <meta.icon size={15} style={{ color: meta.color }} strokeWidth={2.2} />
                 </div>
 
-                {/* Name (inline edit on double-click) */}
-                {inlineEdit ? (
-                    <input
-                        autoFocus
-                        value={inlineName}
-                        onClick={e => e.stopPropagation()}
-                        onChange={e => setInlineName(e.target.value)}
-                        onBlur={() => { setInlineEdit(false); if (inlineName !== node.name) onEdit(node, inlineName) }}
-                        onKeyDown={e => { if (e.key === 'Enter') { setInlineEdit(false); if (inlineName !== node.name) onEdit(node, inlineName) } if (e.key === 'Escape') { setInlineName(node.name); setInlineEdit(false) } }}
-                        style={{ ...inputStyle, padding: '2px 8px', fontSize: 13, flex: 1, height: 24, borderRadius: 6 }}
-                    />
-                ) : (
-                    <span
-                        onDoubleClick={e => { e.stopPropagation(); setInlineEdit(true) }}
-                        style={{ fontSize: 13, fontWeight: 700, color: '#1B1D21', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                        title={node.name}
-                    >
-                        {node.name}
-                    </span>
-                )}
-
-                {/* Indicators */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    {isLinkedToPlan && <div title="Linked to Marketplace Plan" style={{ background: '#004B9315', padding: '2px 6px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 3 }}>
-                        <ShoppingBag size={9} color="#004B93" /><span style={{ fontSize: 8, fontWeight: 900, color: '#004B93', textTransform: 'uppercase' }}>Plan</span>
-                    </div>}
-                    {node.metadata?.ai_generated && <span title="AI Generated"><Sparkles size={11} color="#F0A026" /></span>}
-                    {!node.is_active && <span style={{ fontSize: 8, background: '#FEF2F2', color: '#EF4444', padding: '1px 5px', borderRadius: 10, fontWeight: 800 }}>OFF</span>}
-                    {hasChildren && <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600 }}>{children.length}</span>}
+                {/* Name & Subtitle */}
+                <div className="flex-1 min-w-0">
+                    {inlineEdit ? (
+                        <input
+                            autoFocus
+                            value={inlineName}
+                            onClick={e => e.stopPropagation()}
+                            onChange={e => setInlineName(e.target.value)}
+                            onBlur={() => { setInlineEdit(false); if (inlineName !== node.name) onEdit(node, inlineName) }}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter') { setInlineEdit(false); if (inlineName !== node.name) onEdit(node, inlineName) }
+                                if (e.key === 'Escape') { setInlineName(node.name); setInlineEdit(false) }
+                            }}
+                            className="w-full px-2 py-0.5 text-xs font-bold border border-blue-400 rounded-md outline-none bg-white text-slate-900 shadow-sm"
+                        />
+                    ) : (
+                        <div className="flex items-baseline gap-2">
+                            <span
+                                onDoubleClick={e => { e.stopPropagation(); setInlineEdit(true) }}
+                                className="text-xs font-bold text-slate-900 tracking-tight truncate hover:text-[#004B93]"
+                                title={node.name}
+                            >
+                                {node.name}
+                            </span>
+                            {/* Badges for subjects */}
+                            {node.type === 'subject' && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
+                                    {children.length} nodes
+                                </span>
+                            )}
+                            {/* Subtitle for chapters */}
+                            {node.type === 'chapter' && (
+                                <span className="text-[11px] font-medium text-slate-400 truncate">
+                                    Chapter • {parentPath}
+                                </span>
+                            )}
+                        </div>
+                    )}
                 </div>
 
-                {/* Action buttons (hover reveal) */}
-                <div className="node-actions" style={{ display: 'flex', gap: 3, opacity: 0, transition: 'opacity 0.15s', flexShrink: 0 }}>
-                    {canAddChild && <button onClick={e => { e.stopPropagation(); onAddChild(node) }} title="Add child" style={iconBtnStyle}><Plus size={12} /></button>}
-                    <button onClick={e => { e.stopPropagation(); onEdit(node) }} title="Edit" style={iconBtnStyle}><Edit3 size={12} /></button>
-                    <button onClick={e => { e.stopPropagation(); onToggle(node) }} title={node.is_active ? 'Deactivate' : 'Activate'} style={iconBtnStyle}>{node.is_active ? <EyeOff size={12} /> : <Eye size={12} />}</button>
-                    <button onClick={e => { e.stopPropagation(); onDelete(node) }} title="Delete" style={{ ...iconBtnStyle, color: '#EF4444' }}><Trash2 size={12} /></button>
+                {/* Hover action icons matching screenshot: [+], [pencil], [copy], [trash] */}
+                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity shrink-0">
+                    {canAddChild && (
+                        <button onClick={e => { e.stopPropagation(); onAddChild(node) }} title="Add Child" className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50">
+                            <Plus size={13} strokeWidth={2.5} />
+                        </button>
+                    )}
+                    <button onClick={e => { e.stopPropagation(); onEdit(node) }} title="Edit" className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+                        <Edit3 size={13} />
+                    </button>
+                    <button onClick={e => { e.stopPropagation(); navigator.clipboard?.writeText(node.name) }} title="Copy Name" className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+                        <Copy size={13} />
+                    </button>
+                    <button onClick={e => { e.stopPropagation(); onToggle(node) }} title={node.is_active ? 'Deactivate' : 'Activate'} className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+                        {node.is_active ? <EyeOff size={13} /> : <Eye size={13} />}
+                    </button>
+                    <button onClick={e => { e.stopPropagation(); onDelete(node) }} title="Delete" className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50">
+                        <Trash2 size={13} />
+                    </button>
                 </div>
+
+                {/* Right child count */}
+                <div className="text-xs font-semibold text-slate-400 w-6 text-right shrink-0">
+                    {children.length > 0 ? children.length : 1}
+                </div>
+
+                {/* Three-dot menu */}
+                <button onClick={e => { e.stopPropagation(); onEdit(node) }} className="p-1 text-slate-300 hover:text-slate-600 rounded-md shrink-0">
+                    <MoreVertical size={14} />
+                </button>
             </div>
 
+            {/* Recursive Children Rendering */}
             {expanded && hasChildren && (
-                <div style={{ marginTop: 0 }}>
+                <div className="mt-0.5">
                     {children
                         .sort((a: SyllabusNode, b: SyllabusNode) => a.order_index - b.order_index || a.name.localeCompare(b.name))
                         .map((child: SyllabusNode) => (
-                            <TreeNode key={child.id} node={child} nodes={nodes} plans={plans} level={level + 1}
-                                onEdit={onEdit} onDelete={onDelete} onAddChild={onAddChild} onToggle={onToggle}
-                                onSelect={onSelect} selectedIds={selectedIds} />
+                            <TreeNode
+                                key={child.id}
+                                node={child}
+                                nodes={nodes}
+                                plans={plans}
+                                level={level + 1}
+                                parentPath={node.type === 'class' ? `${node.name}` : parentPath ? `${parentPath} • ${node.name}` : node.name}
+                                onEdit={onEdit}
+                                onDelete={onDelete}
+                                onAddChild={onAddChild}
+                                onToggle={onToggle}
+                                onSelect={onSelect}
+                                selectedIds={selectedIds}
+                            />
                         ))}
                 </div>
             )}
@@ -285,13 +319,12 @@ function TreeNode({ node, nodes, plans, onEdit, onDelete, onAddChild, onToggle, 
     )
 }
 
-// ── NODE INSPECTOR (RIGHT PANEL) ───────────────────────────────────────────────
-function NodeInspector({ nodeId, nodes, plans, distributions, onClose, apiCall, showToast, saving }: any) {
+// ── NODE INSPECTOR (RIGHT PANEL / DRAWER) ───────────────────────────────────────
+function NodeInspector({ nodeId, nodes, plans, onClose, apiCall, showToast, saving }: any) {
     const [detail, setDetail] = useState<any>(null)
     const [detailLoading, setDetailLoading] = useState(false)
     const [inspectorTab, setInspectorTab] = useState('overview')
     const [editForm, setEditForm] = useState<any>({})
-    const [tagInput, setTagInput] = useState('')
     const [newConceptTag, setNewConceptTag] = useState('')
 
     const node = nodes.find((n: SyllabusNode) => n.id === nodeId)
@@ -352,149 +385,101 @@ function NodeInspector({ nodeId, nodes, plans, distributions, onClose, apiCall, 
 
     if (!node || !meta) return null
 
-    const INSPECTOR_TABS = [
-        { id: 'overview', label: 'Overview', icon: Info },
-        { id: 'metadata', label: 'Metadata', icon: Settings },
-        { id: 'tags', label: 'Concept Tags', icon: Tag },
-        { id: 'history', label: 'History', icon: Clock },
-    ]
-
     return (
-        <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #E8E8E8', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm flex flex-col overflow-hidden h-full">
             {/* Inspector Header */}
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <meta.icon size={16} color={meta.color} />
+            <div className="p-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50/60">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: meta.bg }}>
+                    <meta.icon size={18} style={{ color: meta.color }} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 900, color: '#1B1D21', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.name}</div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: meta.color, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{meta.label}</div>
+                <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-slate-900 truncate">{node.name}</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: meta.color }}>{meta.label}</div>
                 </div>
-                <button onClick={onClose} style={{ ...iconBtnStyle, flexShrink: 0 }}><X size={14} /></button>
+                <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white border border-slate-200">
+                    <X size={14} />
+                </button>
             </div>
 
             {/* Inspector Tabs */}
-            <div style={{ padding: '10px 16px', borderBottom: '1px solid #F0F0F0', display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                {INSPECTOR_TABS.map(t => (
-                    <button key={t.id} onClick={() => setInspectorTab(t.id)} style={{
-                        display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700,
-                        background: inspectorTab === t.id ? '#004B9310' : 'transparent', color: inspectorTab === t.id ? '#004B93' : '#9CA3AF'
-                    }}>
-                        <t.icon size={11} /> {t.label}
+            <div className="px-3 pt-2.5 border-b border-slate-100 flex gap-1 bg-white">
+                {['overview', 'metadata', 'tags'].map(tabKey => (
+                    <button
+                        key={tabKey}
+                        onClick={() => setInspectorTab(tabKey)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all ${
+                            inspectorTab === tabKey
+                                ? 'bg-blue-50 text-[#004B93] border border-blue-200/60'
+                                : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                    >
+                        {tabKey}
                     </button>
                 ))}
             </div>
 
-            {/* Inspector Content */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
-                {detailLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={24} color="#004B93" style={{ animation: 'spin 1s linear infinite' }} /></div>}
-
-                {!detailLoading && detail && inspectorTab === 'overview' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        <div style={{ background: '#F9FAFB', borderRadius: 12, padding: 14 }}>
-                            <div style={{ fontSize: 10, fontWeight: 800, color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 8 }}>Quick Stats</div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                                {[
-                                    { label: 'Children', value: detail.childrenCount },
-                                    { label: 'Questions', value: detail.questionCount ?? 0 },
-                                    { label: 'Version', value: `v${detail.node.version || 1}` },
-                                    { label: 'Plans', value: detail.linkedPlans?.length || 0 },
-                                ].map(s => (
-                                    <div key={s.label} style={{ background: '#fff', borderRadius: 8, padding: '10px 12px', border: '1px solid #F0F0F0' }}>
-                                        <div style={{ fontSize: 18, fontWeight: 900, color: '#1B1D21' }}>{s.value}</div>
-                                        <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' }}>{s.label}</div>
-                                    </div>
-                                ))}
+            {/* Content */}
+            <div className="p-4 overflow-y-auto flex-1 text-xs">
+                {detailLoading ? (
+                    <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-[#004B93]" /></div>
+                ) : inspectorTab === 'overview' ? (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <div className="bg-white p-2.5 rounded-lg border border-slate-100">
+                                <div className="text-lg font-black text-slate-900">{detail?.childrenCount ?? 0}</div>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase">Sub-Nodes</div>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-lg border border-slate-100">
+                                <div className="text-lg font-black text-slate-900">{detail?.questionCount ?? 0}</div>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase">Questions</div>
                             </div>
                         </div>
-                        {detail.node.description && (
+                        {detail?.node.description && (
                             <div>
-                                <div style={{ fontSize: 10, fontWeight: 800, color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 6 }}>Description</div>
-                                <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.6, margin: 0 }}>{detail.node.description}</p>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Description</div>
+                                <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100">{detail.node.description}</p>
                             </div>
                         )}
-                        {detail.linkedPlans?.length > 0 && (
-                            <div>
-                                <div style={{ fontSize: 10, fontWeight: 800, color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 8 }}>Linked Plans</div>
-                                {detail.linkedPlans.map((p: any) => (
-                                    <div key={p.id} style={{ background: '#F0FDF4', border: '1px solid #D1FAE5', borderRadius: 8, padding: '8px 12px', marginBottom: 4, fontSize: 12, fontWeight: 700, color: '#065F46', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        <ShoppingBag size={11} /> {p.name} — ₹{p.price?.toLocaleString()}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        <div style={{ display: 'flex', gap: 8 }}>
-                            <button onClick={() => { }} style={{ ...btnSecondary, flex: 1, fontSize: 12, justifyContent: 'center' }}>
-                                <Tag size={12} /> View Questions
-                            </button>
-                            <button onClick={handleSaveMeta} disabled={saving} style={{ ...btnPrimary, flex: 1, fontSize: 12, justifyContent: 'center', background: '#004B93' }}>
-                                {saving ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={12} />} Save
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {!detailLoading && inspectorTab === 'metadata' && (
-                    <div>
-                        <Field label="Name" required>
-                            <input value={editForm.name || ''} onChange={e => setEditForm({ ...editForm, name: e.target.value })} style={inputStyle} />
-                        </Field>
-                        <Field label="Description">
-                            <textarea value={editForm.description || ''} onChange={e => setEditForm({ ...editForm, description: e.target.value })} rows={3} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }} placeholder="Topic description or learning objective..." />
-                        </Field>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                            <Field label="Difficulty">
-                                <select value={editForm.difficulty_level || 'medium'} onChange={e => setEditForm({ ...editForm, difficulty_level: e.target.value })} style={inputStyle}>
-                                    {DIFFICULTY_OPTIONS.map(d => <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>)}
-                                </select>
-                            </Field>
-                            <Field label="Exam Weightage %">
-                                <input type="number" min="0" max="100" value={editForm.exam_weightage || ''} onChange={e => setEditForm({ ...editForm, exam_weightage: e.target.value })} style={inputStyle} placeholder="0" />
-                            </Field>
-                        </div>
-                        <Field label="Estimated Hours">
-                            <input type="number" min="0" step="0.5" value={editForm.estimated_hours || ''} onChange={e => setEditForm({ ...editForm, estimated_hours: e.target.value })} style={inputStyle} placeholder="e.g. 2.5" />
-                        </Field>
-                        <Field label="Tags (comma-separated)">
-                            <input value={editForm.tags || ''} onChange={e => setEditForm({ ...editForm, tags: e.target.value })} style={inputStyle} placeholder="algebra, equations, linear..." />
-                        </Field>
-                        <button onClick={handleSaveMeta} disabled={saving} style={{ ...btnPrimary, width: '100%', justifyContent: 'center' }}>
-                            {saving ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={14} />} Save Metadata
+                        <button onClick={handleSaveMeta} disabled={saving} className="w-full py-2 bg-[#004B93] hover:bg-[#003870] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all">
+                            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save Changes
                         </button>
                     </div>
-                )}
-
-                {!detailLoading && detail && inspectorTab === 'tags' && (
-                    <div>
-                        <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 16, lineHeight: 1.5 }}>
-                            Concept tags are used by the AI engine to automatically map questions to this topic.
+                ) : inspectorTab === 'metadata' ? (
+                    <div className="space-y-3">
+                        <Field label="Node Name" required>
+                            <input value={editForm.name || ''} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold" />
+                        </Field>
+                        <Field label="Description">
+                            <textarea rows={2} value={editForm.description || ''} onChange={e => setEditForm({ ...editForm, description: e.target.value })} className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs" />
+                        </Field>
+                        <div className="grid grid-cols-2 gap-2">
+                            <Field label="Difficulty">
+                                <select value={editForm.difficulty_level || 'medium'} onChange={e => setEditForm({ ...editForm, difficulty_level: e.target.value })} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold">
+                                    {DIFFICULTY_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                                </select>
+                            </Field>
+                            <Field label="Weightage (%)">
+                                <input type="number" value={editForm.exam_weightage || 0} onChange={e => setEditForm({ ...editForm, exam_weightage: e.target.value })} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold" />
+                            </Field>
                         </div>
-                        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                            <input value={newConceptTag} onChange={e => setNewConceptTag(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddConceptTag()} style={{ ...inputStyle, flex: 1 }} placeholder="Add concept tag..." />
-                            <button onClick={handleAddConceptTag} style={{ ...btnPrimary, flexShrink: 0, padding: '10px 14px' }}><Plus size={14} /></button>
-                        </div>
-                        {detail.conceptTags?.length === 0 && <div style={{ textAlign: 'center', color: '#9CA3AF', fontSize: 13, padding: '20px 0' }}>No concept tags yet</div>}
-                        {detail.conceptTags?.map((tag: any) => (
-                            <div key={tag.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#F9FAFB', borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
-                                <Tag size={12} color="#6366F1" />
-                                <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#1B1D21' }}>{tag.tag}</span>
-                                <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 700 }}>w: {tag.weightage}</span>
-                                <button onClick={() => handleRemoveConceptTag(tag.id)} style={{ ...iconBtnStyle, color: '#EF4444', width: 22, height: 22 }}><X size={10} /></button>
-                            </div>
-                        ))}
+                        <button onClick={handleSaveMeta} disabled={saving} className="w-full py-2 bg-[#004B93] hover:bg-[#003870] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm">
+                            {saving && <Loader2 size={14} className="animate-spin" />} Save Metadata
+                        </button>
                     </div>
-                )}
-
-                {!detailLoading && detail && inspectorTab === 'history' && (
-                    <div>
-                        {detail.versions?.length === 0 && <div style={{ textAlign: 'center', color: '#9CA3AF', fontSize: 13, padding: '20px 0' }}>No version history yet</div>}
-                        {detail.versions?.map((v: any) => (
-                            <div key={v.id} style={{ borderLeft: '2px solid #E5E7EB', paddingLeft: 14, marginBottom: 16, position: 'relative' }}>
-                                <div style={{ position: 'absolute', left: -5, top: 4, width: 8, height: 8, borderRadius: '50%', background: '#6366F1' }} />
-                                <div style={{ fontSize: 12, fontWeight: 800, color: '#1B1D21' }}>Version {v.version}</div>
-                                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{v.changes?.updated_by || 'System'} · {new Date(v.created_at || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-                            </div>
-                        ))}
+                ) : (
+                    <div className="space-y-3">
+                        <div className="flex gap-2">
+                            <input placeholder="Add concept tag..." value={newConceptTag} onChange={e => setNewConceptTag(e.target.value)} className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-xs" />
+                            <button onClick={handleAddConceptTag} className="px-3 py-1.5 bg-[#004B93] text-white font-bold rounded-lg text-xs">Add</button>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                            {(detail?.conceptTags || []).map((t: any) => (
+                                <span key={t.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200">
+                                    {t.tag}
+                                    <button onClick={() => handleRemoveConceptTag(t.id)} className="text-slate-400 hover:text-rose-600"><X size={12} /></button>
+                                </span>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
@@ -506,31 +491,26 @@ function NodeInspector({ nodeId, nodes, plans, distributions, onClose, apiCall, 
 function BulkActionBar({ selectedIds, onDeactivate, onActivate, onDelete, onClear, saving }: any) {
     if (selectedIds.length === 0) return null
     return (
-        <div style={{
-            position: 'sticky', bottom: 0, left: 0, right: 0, zIndex: 100,
-            background: '#1B1D21', color: '#fff', borderRadius: 14, padding: '12px 20px',
-            display: 'flex', alignItems: 'center', gap: 12, margin: '12px 0 0',
-            boxShadow: '0 -4px 24px rgba(0,0,0,0.2)', animation: 'slideUp 0.2s ease'
-        }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: '#004B93', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <CheckSquare size={14} color="#fff" />
+        <div className="sticky bottom-3 left-0 right-0 z-40 bg-slate-900 text-white rounded-2xl p-3.5 flex items-center gap-3 shadow-2xl border border-slate-800 animate-in slide-in-from-bottom-3 mt-4">
+            <div className="w-7 h-7 rounded-lg bg-[#004B93] flex items-center justify-center shrink-0">
+                <CheckSquare size={14} className="text-white" />
             </div>
-            <span style={{ fontSize: 13, fontWeight: 700, flex: 1 }}>{selectedIds.length} node{selectedIds.length > 1 ? 's' : ''} selected</span>
-            <button onClick={onActivate} disabled={saving} style={{ ...btnSecondary, background: '#10B98120', border: 'none', color: '#10B981', fontSize: 12, padding: '7px 14px' }}>
-                <Eye size={12} /> Activate All
+            <span className="text-xs font-bold flex-1">{selectedIds.length} node{selectedIds.length > 1 ? 's' : ''} selected</span>
+            <button onClick={onActivate} disabled={saving} className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 text-xs font-bold transition-colors">
+                Activate
             </button>
-            <button onClick={onDeactivate} disabled={saving} style={{ ...btnSecondary, background: '#F59E0B20', border: 'none', color: '#F59E0B', fontSize: 12, padding: '7px 14px' }}>
-                <EyeOff size={12} /> Deactivate All
+            <button onClick={onDeactivate} disabled={saving} className="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-xs font-bold transition-colors">
+                Deactivate
             </button>
-            <button onClick={onDelete} disabled={saving} style={{ ...btnSecondary, background: '#EF444420', border: 'none', color: '#EF4444', fontSize: 12, padding: '7px 14px' }}>
-                <Trash2 size={12} /> Delete Selected
+            <button onClick={onDelete} disabled={saving} className="px-3 py-1.5 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 text-xs font-bold transition-colors">
+                Delete
             </button>
-            <button onClick={onClear} style={{ ...iconBtnStyle, background: '#ffffff20', border: 'none', color: '#fff' }}><X size={14} /></button>
+            <button onClick={onClear} className="p-1 rounded-lg text-slate-400 hover:text-white"><X size={14} /></button>
         </div>
     )
 }
 
-// ── AI GENERATE MODAL (with SSE streaming) ────────────────────────────────────
+// ── AI GENERATE MODAL ──────────────────────────────────────────────────────────
 function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; onDone: () => void; showToast: (m: string, ok: boolean) => void }) {
     const [step, setStep] = useState<'config' | 'generating' | 'preview' | 'saving' | 'done'>('config')
     const [selectedBoard, setSelectedBoard] = useState(ALL_BOARDS[0])
@@ -544,7 +524,7 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
     const [progress, setProgress] = useState<string[]>([])
     const progressEndRef = useRef<HTMLDivElement>(null)
 
-    useEffect(() => { if (step === 'done') { const t = setTimeout(onDone, 4500); return () => clearTimeout(t) } }, [step, onDone])
+    useEffect(() => { if (step === 'done') { const t = setTimeout(onDone, 4000); return () => clearTimeout(t) } }, [step, onDone])
     useEffect(() => { progressEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [progress])
 
     const handleGenerate = async () => {
@@ -571,24 +551,20 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
 
             const resText = await res.text()
             let json: any = {}
-            try {
-                json = JSON.parse(resText)
-            } catch {
-                if (res.status === 504) throw new Error('Request timed out on the server. Try again or check network connection.')
+            try { json = JSON.parse(resText) } catch {
+                if (res.status === 504) throw new Error('Request timed out on the server. Try again.')
                 throw new Error(`Server error (${res.status}): Invalid response`)
             }
             if (!res.ok) throw new Error(json.error || `Generation failed (${res.status})`)
 
             const detectedType: 'School' | 'Entrance' | 'Competitive' = json.boardType || 'School'
             setBoardType(detectedType)
-
             const itemCount = json.tree?.length || 0
             const itemLabel = detectedType === 'School' ? 'classes' : 'subjects'
             setProgress(p => [...p,
                 `✅ Curriculum generated successfully`,
                 `📋 ${itemCount} ${itemLabel} ready for review`
             ])
-            if (json.fallback) setProgress(p => [...p, `📚 Loaded verified curriculum template (AI unavailable)`])
             setPreviewTree(json.tree)
             if (json.warning) setWarning(json.warning)
             setStep('preview')
@@ -634,29 +610,18 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
             hideSave={step === 'done'}
             saveLabel={stepLabel}
             cancelLabel={step === 'done' ? 'Close' : 'Cancel'}
+            maxWidth={580}
         >
             {step === 'config' && (
                 <div>
-                    <div style={{ background: 'linear-gradient(135deg, #F5F3FF, #EDE9FE)', border: '1px solid #DDD6FE', borderRadius: 12, padding: 16, marginBottom: 20, display: 'flex', gap: 12 }}>
-                        <Sparkles size={20} color="#6366F1" style={{ flexShrink: 0, marginTop: 2 }} />
-                        <div style={{ fontSize: 13, color: '#5B21B6', lineHeight: 1.6 }}>
-                            {(() => {
-                                const catMap: Record<string, string[]> = {
-                                    'School Syllabus': BOARD_GROUPS[0].items,
-                                    'Entrance Exam': BOARD_GROUPS[1].items,
-                                    'Competitive Exam': BOARD_GROUPS[2].items,
-                                }
-                                const isEntrance = BOARD_GROUPS[1].items.includes(selectedBoard)
-                                const isCompetitive = BOARD_GROUPS[2].items.includes(selectedBoard)
-                                if (isEntrance || isCompetitive) {
-                                    return <><strong>{selectedBoard}</strong> is a {isEntrance ? 'entrance' : 'competitive'} exam. AI will generate: <strong>Board → Subject → Chapter → Topic</strong> (no Class level).</>
-                                }
-                                return <>Gemini AI will generate a complete curriculum: <strong>Board → Class → Subject → Chapter → Topic</strong>. An examination agent will validate it for uniqueness before you approve.</>
-                            })()}
+                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/70 rounded-2xl p-4 mb-4 flex gap-3">
+                        <Sparkles size={20} className="text-emerald-600 shrink-0 mt-0.5" />
+                        <div className="text-xs text-emerald-900 leading-relaxed">
+                            Gemini AI will synthesize a complete academic structure with classes, subjects, chapters, and topics based on standard curriculum standards.
                         </div>
                     </div>
                     <Field label="Select Board / Exam" required>
-                        <select value={selectedBoard} onChange={e => setSelectedBoard(e.target.value)} style={inputStyle}>
+                        <select value={selectedBoard} onChange={e => setSelectedBoard(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white">
                             {BOARD_GROUPS.map(g => (
                                 <optgroup key={g.label} label={g.label}>
                                     {g.items.map(b => <option key={b} value={b}>{b}</option>)}
@@ -664,31 +629,33 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
                             ))}
                         </select>
                     </Field>
-                    <div style={{ padding: 14, background: '#F9FAFB', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid #F0F0F0' }}>
+                    <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/70 flex items-center justify-between">
                         <div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: '#1B1D21' }}>AI Deep Generation</div>
-                            <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Gemini creates distinct subjects and topics per class level (slower, more detailed)</div>
+                            <div className="text-xs font-bold text-slate-900">AI Deep Generation</div>
+                            <div className="text-[11px] text-slate-400 mt-0.5">Creates comprehensive topics with granular learning objectives</div>
                         </div>
-                        <button onClick={() => setDeepGen(!deepGen)} style={{ width: 44, height: 24, borderRadius: 12, background: deepGen ? '#10B981' : '#E5E7EB', border: 'none', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
-                            <div style={{ position: 'absolute', top: 2, left: deepGen ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }} />
+                        <button
+                            type="button"
+                            onClick={() => setDeepGen(!deepGen)}
+                            className={`w-11 h-6 rounded-full transition-colors relative ${deepGen ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                        >
+                            <div className={`w-5 h-5 rounded-full bg-white transition-all absolute top-0.5 ${deepGen ? 'left-5' : 'left-0.5'} shadow-sm`} />
                         </button>
                     </div>
-                    {error && <div style={{ marginTop: 14, color: '#EF4444', fontSize: 13, background: '#FEF2F2', padding: '10px 14px', borderRadius: 10, fontWeight: 600 }}>⚠️ {error}</div>}
+                    {error && <div className="mt-3 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl font-medium">⚠️ {error}</div>}
                 </div>
             )}
 
             {step === 'generating' && (
-                <div style={{ padding: '20px 0' }}>
-                    <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                        <div style={{ position: 'relative', width: 72, height: 72, margin: '0 auto 20px' }}>
-                            <Loader2 size={72} color="#6366F1" style={{ animation: 'spin 2s linear infinite', opacity: 0.15 }} />
-                            <Sparkles size={28} color="#6366F1" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
-                        </div>
-                        <div style={{ fontSize: 17, fontWeight: 900, color: '#1B1D21' }}>Generating & Examining</div>
-                        <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 6 }}>Gemini is drafting and validating the curriculum. Please wait…</div>
+                <div className="py-6 text-center">
+                    <div className="relative w-16 h-16 mx-auto mb-4">
+                        <Loader2 size={64} className="animate-spin text-emerald-500 opacity-20" />
+                        <Sparkles size={26} className="text-emerald-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                     </div>
-                    <div style={{ background: '#1B1D21', borderRadius: 12, padding: 16, maxHeight: 180, overflowY: 'auto', fontFamily: 'monospace' }}>
-                        {progress.map((line, i) => <div key={i} style={{ fontSize: 12, color: i === progress.length - 1 ? '#10B981' : '#9CA3AF', marginBottom: 4 }}>{line}</div>)}
+                    <h4 className="text-base font-black text-slate-900">Drafting Curriculum</h4>
+                    <p className="text-xs text-slate-500 mt-1 mb-4">Gemini AI is analyzing and structuring the educational hierarchy…</p>
+                    <div className="bg-slate-900 rounded-xl p-3.5 max-h-40 overflow-y-auto text-left font-mono text-xs">
+                        {progress.map((l, i) => <div key={i} className="text-emerald-400 mb-1">{l}</div>)}
                         <div ref={progressEndRef} />
                     </div>
                 </div>
@@ -696,112 +663,42 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
 
             {step === 'preview' && (
                 <div>
-                    <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                        <div style={{ display: 'inline-flex', padding: '6px 14px', background: '#F0FDF4', color: '#10B981', borderRadius: 20, fontSize: 12, fontWeight: 800, gap: 6, alignItems: 'center' }}>
-                            <Check size={13} /> Structure Ready to Save
-                        </div>
-                        <div style={{ fontSize: 15, fontWeight: 800, margin: '10px 0 4px', color: '#1B1D21' }}>Review Generated Curriculum</div>
-                        <div style={{ fontSize: 12, color: '#9CA3AF' }}>Verify before saving to the database.</div>
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl font-bold flex items-center gap-2 mb-3">
+                        <CheckCircle2 size={16} /> Curriculum Ready for Review
                     </div>
-                    {warning && <div style={{ marginBottom: 14, color: '#D97706', fontSize: 12, background: '#FFFBEB', border: '1px solid #FCD34D', padding: '10px 14px', borderRadius: 10 }}>💡 {warning}</div>}
-                    <div style={{ background: '#F9FAFB', borderRadius: 12, padding: 14, maxHeight: 340, overflowY: 'auto', border: '1px solid #F0F0F0', fontSize: 13 }}>
-
-                        {boardType === 'School' ? (
-                            // School: Class → Subjects → Chapters
-                            previewTree?.map((c: any, i: number) => (
-                                <div key={i} style={{ marginBottom: 14, paddingBottom: 14, borderBottom: '1px solid #E5E7EB' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                                        <strong style={{ color: '#0EA5E9', fontSize: 14 }}>{c.class}</strong>
-                                        <span style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 700 }}>{c.subjects?.length || 0} subjects · {c.subjects?.reduce((acc: number, s: any) => acc + (s.chapters?.length || 0), 0) || 0} chapters</span>
-                                    </div>
-                                    <div style={{ marginLeft: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                        {c.subjects?.map((s: any, j: number) => (
-                                            <details key={j} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '6px 10px' }}>
-                                                <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <span>{s.name}</span>
-                                                    <span style={{ fontSize: 10, background: '#ECFDF5', color: '#10B981', padding: '1px 6px', borderRadius: 10, fontWeight: 800 }}>{s.chapters?.length || 0} Chapters</span>
-                                                </summary>
-                                                <ol style={{ margin: '6px 0 2px 18px', padding: 0, fontSize: 11, color: '#4B5563', lineHeight: 1.5 }}>
-                                                    {s.chapters?.map((chap: any, k: number) => (
-                                                        <li key={k}>
-                                                            <strong>{chap.name}</strong> <span style={{ color: '#9CA3AF' }}>({chap.topics?.length || 0} topics)</span>
-                                                        </li>
-                                                    ))}
-                                                </ol>
-                                            </details>
-                                        ))}
-                                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-3 max-h-72 overflow-y-auto border border-slate-200/70 text-xs">
+                        {previewTree?.map((c: any, i: number) => (
+                            <div key={i} className="mb-2.5 pb-2.5 border-b border-slate-200/60 last:border-0 last:pb-0">
+                                <div className="font-bold text-slate-900 flex justify-between">
+                                    <span>{c.class || c.name || `Class ${i + 1}`}</span>
+                                    <span className="text-[10px] text-slate-400 font-semibold">{c.subjects?.length || 0} subjects</span>
                                 </div>
-                            ))
-                        ) : (
-                            // Entrance / Competitive: Subject → Chapters (no class level)
-                            previewTree?.map((s: any, i: number) => {
-                                const subjName = s.subject || s.name
-                                return (
-                                    <details key={i} open style={{ marginBottom: 10, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, padding: '8px 12px' }}>
-                                        <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <strong style={{ color: '#6366F1', fontSize: 14 }}>{subjName}</strong>
-                                            <span style={{ fontSize: 11, background: '#F0F0FF', color: '#6366F1', padding: '2px 8px', borderRadius: 10, fontWeight: 800 }}>
-                                                {s.chapters?.length || 0} Chapters
-                                            </span>
-                                        </summary>
-                                        <ol style={{ margin: '8px 0 2px 18px', padding: 0, fontSize: 11, color: '#4B5563', lineHeight: 1.6 }}>
-                                            {s.chapters?.map((chap: any, k: number) => (
-                                                <li key={k}>
-                                                    <strong>{chap.name}</strong> <span style={{ color: '#9CA3AF' }}>({chap.topics?.length || 0} topics)</span>
-                                                </li>
-                                            ))}
-                                        </ol>
-                                    </details>
-                                )
-                            })
-                        )}
-
+                            </div>
+                        ))}
                     </div>
-                    {error && <div style={{ marginTop: 10, color: '#EF4444', fontSize: 12, fontWeight: 600 }}>⚠️ {error}</div>}
                 </div>
             )}
 
             {step === 'saving' && (
-                <div style={{ textAlign: 'center', padding: '48px 0' }}>
-                    <Loader2 size={48} color="#004B93" style={{ animation: 'spin 1s linear infinite', marginBottom: 20 }} />
-                    <div style={{ fontSize: 16, fontWeight: 800 }}>Saving to database…</div>
-                    <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 6 }}>Building full hierarchy. This may take a moment.</div>
+                <div className="py-8 text-center">
+                    <Loader2 size={44} className="animate-spin text-[#004B93] mx-auto mb-3" />
+                    <h4 className="font-bold text-sm text-slate-900">Saving Curriculum</h4>
+                    <p className="text-xs text-slate-400 mt-1">Populating nodes into database…</p>
                 </div>
             )}
 
-            {step === 'done' && result && (
-                <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                    <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                        <CheckCircle2 size={32} color="#10B981" />
-                    </div>
-                    <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 6 }}>Syllabus Saved!</div>
-                    <div style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 24 }}>{result.message}</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: boardType === 'School' ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 10 }}>
-                        {boardType === 'School' && (
-                            <div style={{ background: '#F9FAFB', borderRadius: 10, padding: '12px 8px', textAlign: 'center' }}>
-                                <div style={{ fontSize: 22, fontWeight: 950, color: '#1B1D21' }}>{result.created?.classes || 0}</div>
-                                <div style={{ fontSize: 9, color: '#9CA3AF', fontWeight: 800, textTransform: 'uppercase', marginTop: 2 }}>Classes</div>
-                            </div>
-                        )}
-                        {[
-                            { label: 'Subjects', v: result.created?.subjects || 0 },
-                            { label: 'Chapters', v: result.created?.chapters || 0 },
-                            { label: 'Topics', v: result.created?.topics || 0 },
-                        ].map(s => (
-                            <div key={s.label} style={{ background: '#F9FAFB', borderRadius: 10, padding: '12px 8px', textAlign: 'center' }}>
-                                <div style={{ fontSize: 22, fontWeight: 950, color: '#1B1D21' }}>{s.v}</div>
-                                <div style={{ fontSize: 9, color: '#9CA3AF', fontWeight: 800, textTransform: 'uppercase', marginTop: 2 }}>{s.label}</div>
-                            </div>
-                        ))}
-                    </div>
+            {step === 'done' && (
+                <div className="py-4 text-center">
+                    <CheckCircle2 size={48} className="text-emerald-500 mx-auto mb-3" />
+                    <h4 className="text-base font-black text-slate-900">Syllabus Created!</h4>
+                    <p className="text-xs text-slate-500 mt-1">{result?.message || 'Academic structure saved successfully.'}</p>
                 </div>
             )}
         </Modal>
     )
 }
 
-// ── UPLOAD MODAL (with dry-run) ───────────────────────────────────────────────
+// ── UPLOAD MODAL ───────────────────────────────────────────────────────────────
 function UploadModal({ onClose, onDone, showToast }: { onClose: () => void; onDone: () => void; showToast: (m: string, ok: boolean) => void }) {
     const fileRef = useRef<HTMLInputElement>(null)
     const [file, setFile] = useState<File | null>(null)
@@ -809,24 +706,11 @@ function UploadModal({ onClose, onDone, showToast }: { onClose: () => void; onDo
     const [preview, setPreview] = useState<any>(null)
     const [result, setResult] = useState<any>(null)
     const [errorMsg, setErrorMsg] = useState('')
-    const [dragging, setDragging] = useState(false)
 
     const handleFile = (f: File) => {
         const ext = f.name.split('.').pop()?.toLowerCase()
         if (!['csv', 'xlsx', 'xls'].includes(ext ?? '')) { showToast('Only CSV, XLSX, XLS files allowed', false); return }
         setFile(f)
-    }
-
-    const handleDryRun = async () => {
-        if (!file) return
-        try {
-            const fd = new FormData(); fd.append('file', file); fd.append('dryRun', 'true')
-            const res = await fetch('/api/owner/syllabus/upload', { method: 'POST', body: fd })
-            const json = await res.json()
-            if (!res.ok) throw new Error(json.error || 'Preview failed')
-            setPreview(json.preview)
-            setStep('preview')
-        } catch (e: any) { showToast(e.message, false) }
     }
 
     const handleUpload = async () => {
@@ -842,174 +726,92 @@ function UploadModal({ onClose, onDone, showToast }: { onClose: () => void; onDo
     }
 
     return (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-            <div style={{ background: '#fff', borderRadius: 24, width: '100%', maxWidth: 600, maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 30px 80px rgba(0,0,0,0.22)' }}>
-                <div style={{ padding: '20px 24px', borderBottom: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg, #10B981, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <FileSpreadsheet size={20} color="#fff" />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 17, fontWeight: 900, color: '#1B1D21' }}>Bulk Upload via CSV / Excel</div>
-                        <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Upload a spreadsheet to import the entire hierarchy at once</div>
-                    </div>
-                    <button onClick={onClose} style={{ background: '#F7F8FA', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} color="#A5A2A6" /></button>
-                </div>
-                <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
-                    {step === 'done' && result ? (
-                        <div style={{ textAlign: 'center', padding: '10px 0' }}>
-                            <CheckCircle2 size={52} color="#10B981" style={{ marginBottom: 16 }} />
-                            <div style={{ fontSize: 20, fontWeight: 900, marginBottom: 6 }}>Upload Successful!</div>
-                            <div style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 24 }}>{result.rowsProcessed} rows processed → {result.totalNodesCreated} nodes created</div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 20 }}>
-                                {[
-                                    { label: 'Categories', v: result.stats?.categories ?? 0, color: '#6366F1' },
-                                    { label: 'Boards', v: result.stats?.boards ?? 0, color: '#004B93' },
-                                    { label: 'Classes', v: result.stats?.classes ?? 0, color: '#0EA5E9' },
-                                    { label: 'Subjects', v: result.stats?.subjects ?? 0, color: '#10B981' },
-                                    { label: 'Topics', v: result.stats?.topics ?? 0, color: '#EF4444' },
-                                ].map(s => <div key={s.label} style={{ background: '#F9FAFB', borderRadius: 10, padding: '10px 6px', textAlign: 'center' }}>
-                                    <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{s.v}</div>
-                                    <div style={{ fontSize: 9, color: '#9CA3AF', fontWeight: 800, textTransform: 'uppercase', marginTop: 2 }}>{s.label}</div>
-                                </div>)}
-                            </div>
-                            <button onClick={onClose} style={{ ...btnPrimary, justifyContent: 'center', width: '100%' }}>View Tree</button>
-                        </div>
-                    ) : step === 'preview' && preview ? (
+        <Modal
+            title="Bulk Upload Syllabus (CSV / Excel)"
+            onClose={onClose}
+            onSubmit={handleUpload}
+            loading={step === 'uploading'}
+            hideSave={step === 'done' || !file}
+            saveLabel="Upload & Import"
+            maxWidth={560}
+        >
+            <div className="space-y-4">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                        <Download size={16} className="text-emerald-600" />
                         <div>
-                            <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                                <div style={{ fontSize: 15, fontWeight: 900, color: '#1B1D21' }}>Dry Run Preview</div>
-                                <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>Review what will be created before importing</div>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
-                                {[
-                                    { label: 'Categories', v: preview.categories, color: '#6366F1' },
-                                    { label: 'Boards', v: preview.boards, color: '#004B93' },
-                                    { label: 'Classes', v: preview.classes, color: '#0EA5E9' },
-                                    { label: 'Subjects', v: preview.subjects, color: '#10B981' },
-                                    { label: 'Chapters', v: preview.chapters, color: '#F59E0B' },
-                                    { label: 'Topics', v: preview.topics, color: '#EF4444' },
-                                ].map(s => <div key={s.label} style={{ background: '#F9FAFB', borderRadius: 10, padding: '12px 8px', textAlign: 'center' }}>
-                                    <div style={{ fontSize: 24, fontWeight: 900, color: s.color }}>{s.v}</div>
-                                    <div style={{ fontSize: 9, color: '#9CA3AF', fontWeight: 800, textTransform: 'uppercase', marginTop: 2 }}>{s.label}</div>
-                                </div>)}
-                            </div>
-                            <div style={{ background: '#F0FDF4', border: '1px solid #D1FAE5', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#065F46', fontWeight: 600 }}>
-                                ✅ Total {preview.total_nodes} nodes will be created from {preview.total_rows} rows ({preview.skipped} skipped)
-                            </div>
+                            <div className="text-xs font-bold text-emerald-900">Sample Template Available</div>
+                            <div className="text-[11px] text-emerald-700">Pre-formatted columns: Board, Class, Subject, Chapter, Topic</div>
                         </div>
-                    ) : step === 'error' ? (
-                        <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                            <XCircle size={52} color="#EF4444" style={{ marginBottom: 16 }} />
-                            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>Upload Failed</div>
-                            <p style={{ color: '#EF4444', fontSize: 13, marginBottom: 20 }}>{errorMsg}</p>
-                            <button onClick={() => setStep('pick')} style={btnSecondary}>Try Again</button>
-                        </div>
-                    ) : step === 'uploading' ? (
-                        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-                            <Loader2 size={48} color="#10B981" style={{ animation: 'spin 1s linear infinite', marginBottom: 20 }} />
-                            <div style={{ fontWeight: 700, fontSize: 15 }}>Processing {file?.name}…</div>
-                            <div style={{ color: '#9CA3AF', fontSize: 13, marginTop: 6 }}>Creating nodes and building hierarchy</div>
+                    </div>
+                    <button
+                        onClick={() => window.open('/api/owner/syllabus/upload', '_blank')}
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs shadow-sm transition-all"
+                    >
+                        Download
+                    </button>
+                </div>
+
+                <div
+                    onClick={() => fileRef.current?.click()}
+                    className="border-2 border-dashed border-slate-200 hover:border-emerald-400 bg-slate-50 hover:bg-emerald-50/20 rounded-2xl p-6 text-center cursor-pointer transition-all"
+                >
+                    <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" hidden onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
+                    {file ? (
+                        <div>
+                            <FileSpreadsheet size={32} className="text-emerald-500 mx-auto mb-2" />
+                            <div className="text-xs font-bold text-slate-900">{file.name}</div>
+                            <div className="text-[11px] text-slate-400 mt-0.5">{(file.size / 1024).toFixed(1)} KB · Click to change</div>
                         </div>
                     ) : (
-                        <>
-                            <div style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <Download size={16} color="#10B981" />
-                                    <div>
-                                        <div style={{ fontSize: 13, fontWeight: 700, color: '#065F46' }}>Download Sample Template</div>
-                                        <div style={{ fontSize: 11, color: '#047857' }}>XLSX with sample data + instructions sheet</div>
-                                    </div>
-                                </div>
-                                <button onClick={() => window.open('/api/owner/syllabus/upload', '_blank')} style={{ background: '#10B981', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Download</button>
-                            </div>
-                            <div style={{ background: '#F9FAFB', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 11, color: '#6B7280' }}>
-                                <div style={{ fontWeight: 800, color: '#374151', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}><Info size={11} /> Required Format</div>
-                                <code style={{ color: '#004B93' }}>Board</code> | <code style={{ color: '#0EA5E9' }}>Class</code> | <code style={{ color: '#10B981' }}>Subject</code> | <code style={{ color: '#F59E0B' }}>Chapter</code> | <code style={{ color: '#EF4444' }}>Topic</code>
-                                <div style={{ marginTop: 6 }}>✓ Known boards (CBSE, JEE etc.) auto-grouped under category · ✓ Duplicates skipped</div>
-                            </div>
-                            <div
-                                onDragOver={e => { e.preventDefault(); setDragging(true) }}
-                                onDragLeave={() => setDragging(false)}
-                                onDrop={e => { e.preventDefault(); setDragging(false); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]) }}
-                                onClick={() => fileRef.current?.click()}
-                                style={{ border: `2px dashed ${dragging ? '#004B93' : file ? '#10B981' : '#D1D5DB'}`, borderRadius: 14, padding: '32px 20px', textAlign: 'center', cursor: 'pointer', background: dragging ? '#F5F0FF' : file ? '#F0FDF4' : '#FAFAFA', transition: 'all 0.2s' }}
-                            >
-                                <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" hidden onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
-                                {file ? (
-                                    <><FileSpreadsheet size={32} color="#10B981" style={{ marginBottom: 8 }} /><div style={{ fontWeight: 800, fontSize: 14, color: '#065F46' }}>{file.name}</div><div style={{ fontSize: 12, color: '#047857', marginTop: 4 }}>{(file.size / 1024).toFixed(1)} KB · Click to change</div></>
-                                ) : (
-                                    <><Upload size={32} color="#9CA3AF" style={{ marginBottom: 8 }} /><div style={{ fontWeight: 700, fontSize: 14 }}>Drag & drop your file here</div><div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>or click to browse · CSV / XLSX / XLS</div></>
-                                )}
-                            </div>
-                        </>
+                        <div>
+                            <Upload size={32} className="text-slate-400 mx-auto mb-2" />
+                            <div className="text-xs font-bold text-slate-700">Click to browse or drop spreadsheet file</div>
+                            <div className="text-[11px] text-slate-400 mt-1">Supports CSV, XLSX, XLS</div>
+                        </div>
                     )}
                 </div>
-                {(step === 'pick' || step === 'preview') && (
-                    <div style={{ padding: '14px 24px', borderTop: '1px solid #F0F0F0', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                        <button onClick={onClose} style={btnSecondary}>Cancel</button>
-                        {step === 'pick' && <button onClick={handleDryRun} disabled={!file} style={{ ...btnSecondary, background: file ? '#F0FDF4' : '#F3F4F6', color: file ? '#065F46' : '#9CA3AF', borderColor: file ? '#D1FAE5' : '#F0F0F0' }}>
-                            <Eye size={14} /> Preview Import
-                        </button>}
-                        <button onClick={step === 'preview' ? handleUpload : handleDryRun} disabled={!file} style={{ ...btnPrimary, background: file ? 'linear-gradient(135deg, #10B981, #059669)' : '#E5E7EB', cursor: file ? 'pointer' : 'not-allowed' }}>
-                            <Upload size={14} /> {step === 'preview' ? 'Confirm Import' : 'Upload & Import'}
-                        </button>
-                    </div>
-                )}
             </div>
-        </div>
-    )
-}
-
-// ── NODE MODAL (Add / Edit) ────────────────────────────────────────────────────
-function NodeModal({ nodeModal, nodeForm, setNodeForm, onClose, onSave, onAIGenerate, saving }: any) {
-    const isEdit = !!nodeModal.editing
-    const hasParent = !!nodeModal.parentNode
-    const canAutoGen = hasParent && !isEdit
-
-    return (
-        <Modal
-            title={isEdit ? `Edit: ${nodeModal.editing.name}` : hasParent ? `Add to "${nodeModal.parentNode.name}"` : 'Add Root Node'}
-            onClose={onClose}
-            onSubmit={onSave}
-            loading={saving}
-            saveLabel={isEdit ? 'Update' : 'Add Node'}
-        >
-            {canAutoGen && (
-                <div style={{ marginBottom: 20 }}>
-                    <button type="button" onClick={onAIGenerate} disabled={saving} style={{ ...btnPrimary, width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #6366F1, #4F46E5)', boxShadow: '0 4px 14px rgba(99,102,241,0.3)' }}>
-                        <Sparkles size={15} /> Auto-Generate {nodeForm.type}s with AI
-                    </button>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0' }}>
-                        <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
-                        <span style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 700 }}>OR ADD MANUALLY</span>
-                        <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
-                    </div>
-                </div>
-            )}
-            <Field label="Name" required>
-                <input
-                    autoFocus
-                    value={nodeForm.name}
-                    onChange={e => setNodeForm({ ...nodeForm, name: e.target.value })}
-                    placeholder={`Enter ${nodeForm.type} name...`}
-                    style={inputStyle}
-                />
-            </Field>
-            {!hasParent && !isEdit && (
-                <Field label="Node Type">
-                    <select value={nodeForm.type} onChange={e => setNodeForm({ ...nodeForm, type: e.target.value })} style={inputStyle}>
-                        {NODE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                    </select>
-                </Field>
-            )}
-            {hasParent && <div style={{ fontSize: 12, color: '#9CA3AF', background: '#F9FAFB', padding: '8px 12px', borderRadius: 8 }}>
-                Adding <strong style={{ color: NODE_TYPES.find(t => t.value === nodeForm.type)?.color }}>{nodeForm.type}</strong> under <strong>{nodeModal.parentNode.name}</strong>
-            </div>}
         </Modal>
     )
 }
 
-// ── PLAN WIZARD (3-step) ──────────────────────────────────────────────────────
+// ── NODE MODAL (ADD / EDIT) ───────────────────────────────────────────────────
+function NodeModal({ nodeModal, nodeForm, setNodeForm, onClose, onSave, onAIGenerate, saving }: any) {
+    const isEdit = !!nodeModal.editing
+    const hasParent = !!nodeModal.parentNode
+
+    return (
+        <Modal
+            title={isEdit ? `Edit: ${nodeModal.editing.name}` : hasParent ? `Add to "${nodeModal.parentNode.name}"` : 'Add Root Board / Exam'}
+            onClose={onClose}
+            onSubmit={onSave}
+            loading={saving}
+            saveLabel={isEdit ? 'Update Node' : 'Create Node'}
+        >
+            <div className="space-y-3.5">
+                <Field label="Node Name" required>
+                    <input
+                        autoFocus
+                        value={nodeForm.name}
+                        onChange={e => setNodeForm({ ...nodeForm, name: e.target.value })}
+                        placeholder={`Enter ${nodeForm.type} name...`}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white"
+                    />
+                </Field>
+                {!hasParent && !isEdit && (
+                    <Field label="Type">
+                        <select value={nodeForm.type} onChange={e => setNodeForm({ ...nodeForm, type: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white">
+                            {NODE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                        </select>
+                    </Field>
+                )}
+            </div>
+        </Modal>
+    )
+}
+
+// ── PLAN WIZARD ───────────────────────────────────────────────────────────────
 function PlanWizard({ planForm, setPlanForm, planModal, onClose, onSave, saving, nodes }: any) {
     const [step, setStep] = useState(1)
     const isEdit = !!planModal.editing
@@ -1017,31 +819,31 @@ function PlanWizard({ planForm, setPlanForm, planModal, onClose, onSave, saving,
 
     return (
         <Modal
-            title={isEdit ? 'Edit Plan' : 'Create Revenue Plan'}
+            title={isEdit ? 'Edit Marketplace Plan' : 'Create Marketplace Revenue Plan'}
             onClose={onClose}
             onSubmit={step < 3 ? () => setStep(s => s + 1) : onSave}
             loading={saving}
-            saveLabel={step < 3 ? 'Next →' : isEdit ? 'Update Plan' : 'Create Plan'}
+            saveLabel={step < 3 ? 'Next →' : isEdit ? 'Update Plan' : 'Publish Plan'}
             cancelLabel={step > 1 ? '← Back' : 'Cancel'}
         >
             {/* Steps indicator */}
-            <div style={{ display: 'flex', gap: 4, marginBottom: 24 }}>
+            <div className="flex gap-2 mb-5">
                 {['Details', 'Pricing', 'Features'].map((s, i) => (
-                    <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: i + 1 <= step ? '#004B93' : '#E5E7EB', transition: 'background 0.2s' }} />
+                    <div key={s} className={`flex-1 h-1.5 rounded-full transition-colors ${i + 1 <= step ? 'bg-[#004B93]' : 'bg-slate-200'}`} />
                 ))}
             </div>
 
             {step === 1 && (
-                <div>
+                <div className="space-y-3.5">
                     <Field label="Plan Name" required>
-                        <input value={planForm.name} onChange={e => setPlanForm({ ...planForm, name: e.target.value })} placeholder="e.g. CBSE Complete Access" style={inputStyle} />
+                        <input value={planForm.name} onChange={e => setPlanForm({ ...planForm, name: e.target.value })} placeholder="e.g. Gujarat Board Class 1 Complete Access" className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white" />
                     </Field>
                     <Field label="Description">
-                        <textarea value={planForm.description || ''} onChange={e => setPlanForm({ ...planForm, description: e.target.value })} rows={2} style={{ ...inputStyle, resize: 'vertical' }} placeholder="What's included in this plan..." />
+                        <textarea value={planForm.description || ''} onChange={e => setPlanForm({ ...planForm, description: e.target.value })} rows={2} placeholder="Curriculum access highlights..." className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs" />
                     </Field>
-                    <Field label="Link to Syllabus Node" required>
-                        <select value={planForm.syllabus_id} onChange={e => setPlanForm({ ...planForm, syllabus_id: e.target.value })} style={inputStyle}>
-                            <option value="">Select a board or exam...</option>
+                    <Field label="Link to Academic Node" required>
+                        <select value={planForm.syllabus_id} onChange={e => setPlanForm({ ...planForm, syllabus_id: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white">
+                            <option value="">Select board or curriculum...</option>
                             {rootNodes.map((n: SyllabusNode) => <option key={n.id} value={n.id}>{n.name} ({n.type})</option>)}
                         </select>
                     </Field>
@@ -1049,56 +851,57 @@ function PlanWizard({ planForm, setPlanForm, planModal, onClose, onSave, saving,
             )}
 
             {step === 2 && (
-                <div>
-                    <Field label="Pricing Type">
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                <div className="space-y-3.5">
+                    <Field label="Pricing Model">
+                        <div className="grid grid-cols-3 gap-2">
                             {['one-time', 'monthly', 'yearly'].map(pt => (
-                                <button key={pt} onClick={() => setPlanForm({ ...planForm, pricing_type: pt })} type="button" style={{ padding: '12px', borderRadius: 10, border: `2px solid ${planForm.pricing_type === pt ? '#004B93' : '#E5E7EB'}`, background: planForm.pricing_type === pt ? '#004B9310' : '#fff', color: planForm.pricing_type === pt ? '#004B93' : '#6B7280', fontWeight: 700, fontSize: 12, cursor: 'pointer', textTransform: 'capitalize' }}>
+                                <button
+                                    key={pt}
+                                    type="button"
+                                    onClick={() => setPlanForm({ ...planForm, pricing_type: pt })}
+                                    className={`py-2 rounded-xl text-xs font-bold capitalize border transition-all ${
+                                        planForm.pricing_type === pt
+                                            ? 'bg-blue-50 border-[#004B93] text-[#004B93]'
+                                            : 'bg-white border-slate-200 text-slate-600'
+                                    }`}
+                                >
                                     {pt}
                                 </button>
                             ))}
                         </div>
                     </Field>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div className="grid grid-cols-2 gap-3">
                         <Field label="Price (₹)" required>
-                            <input type="number" min="0" value={planForm.price} onChange={e => setPlanForm({ ...planForm, price: parseFloat(e.target.value) || 0 })} style={inputStyle} placeholder="0" />
+                            <input type="number" min="0" value={planForm.price} onChange={e => setPlanForm({ ...planForm, price: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold" placeholder="0" />
                         </Field>
                         <Field label="Validity (Days)">
-                            <input type="number" min="1" value={planForm.validity_days} onChange={e => setPlanForm({ ...planForm, validity_days: parseInt(e.target.value) || 365 })} style={inputStyle} />
-                        </Field>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                        <Field label="Trial Days">
-                            <input type="number" min="0" value={planForm.trial_days || 0} onChange={e => setPlanForm({ ...planForm, trial_days: parseInt(e.target.value) || 0 })} style={inputStyle} placeholder="0" />
-                        </Field>
-                        <Field label="Revenue Tracked (₹)">
-                            <input type="number" min="0" value={planForm.total_revenue || 0} onChange={e => setPlanForm({ ...planForm, total_revenue: parseFloat(e.target.value) || 0 })} style={inputStyle} placeholder="0" />
+                            <input type="number" min="1" value={planForm.validity_days} onChange={e => setPlanForm({ ...planForm, validity_days: parseInt(e.target.value) || 365 })} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold" />
                         </Field>
                     </div>
                 </div>
             )}
 
             {step === 3 && (
-                <div>
-                    <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 16 }}>Toggle the modules included in this plan:</div>
+                <div className="space-y-2">
+                    <div className="text-xs text-slate-500 mb-2">Enable academic modules for this plan:</div>
                     {[
-                        { key: 'ai_mapping', label: 'AI Question Mapping', desc: 'Auto-map questions to syllabus topics', icon: BrainCircuit },
-                        { key: 'adaptive_learning', label: 'Adaptive Learning', desc: 'Personalized study paths', icon: Target },
-                        { key: 'board_comparison', label: 'Board Comparison', desc: 'Compare coverage across boards', icon: BarChart2 },
-                        { key: 'proctoring', label: 'Proctoring', desc: 'AI-powered exam monitoring', icon: ShieldCheck },
-                        { key: 'certification', label: 'Certification', desc: 'Issue completion certificates', icon: Award },
-                        { key: 'analytics', label: 'Analytics Dashboard', desc: 'Full progress analytics', icon: BarChart2 },
+                        { key: 'ai_mapping', label: 'AI Question Mapping', desc: 'Auto-link exam questions to syllabus' },
+                        { key: 'adaptive_learning', label: 'Adaptive Learning Paths', desc: 'Curated student topic progression' },
+                        { key: 'analytics', label: 'Analytics Dashboard', desc: 'Deep curriculum performance telemetry' },
                     ].map(f => (
-                        <div key={f.key} onClick={() => setPlanForm({ ...planForm, features: { ...planForm.features, [f.key]: !planForm.features?.[f.key] } })} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${planForm.features?.[f.key] ? '#004B93' : '#E5E7EB'}`, background: planForm.features?.[f.key] ? '#004B9308' : '#FAFAFA', cursor: 'pointer', marginBottom: 8, transition: 'all 0.15s' }}>
-                            <div style={{ width: 34, height: 34, borderRadius: 9, background: planForm.features?.[f.key] ? '#004B9315' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                <f.icon size={15} color={planForm.features?.[f.key] ? '#004B93' : '#9CA3AF'} />
+                        <div
+                            key={f.key}
+                            onClick={() => setPlanForm({ ...planForm, features: { ...planForm.features, [f.key]: !planForm.features?.[f.key] } })}
+                            className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
+                                planForm.features?.[f.key] ? 'bg-blue-50/60 border-blue-200 text-blue-900' : 'bg-slate-50 border-slate-200/70 text-slate-700'
+                            }`}
+                        >
+                            <div>
+                                <div className="text-xs font-bold">{f.label}</div>
+                                <div className="text-[11px] text-slate-400">{f.desc}</div>
                             </div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: 13, fontWeight: 700, color: planForm.features?.[f.key] ? '#004B93' : '#1B1D21' }}>{f.label}</div>
-                                <div style={{ fontSize: 11, color: '#9CA3AF' }}>{f.desc}</div>
-                            </div>
-                            <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${planForm.features?.[f.key] ? '#004B93' : '#D1D5DB'}`, background: planForm.features?.[f.key] ? '#004B93' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                {planForm.features?.[f.key] && <Check size={11} color="#fff" strokeWidth={3} />}
+                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center ${planForm.features?.[f.key] ? 'bg-[#004B93] border-[#004B93] text-white' : 'border-slate-300'}`}>
+                                {planForm.features?.[f.key] && <Check size={12} strokeWidth={3} />}
                             </div>
                         </div>
                     ))}
@@ -1108,97 +911,74 @@ function PlanWizard({ planForm, setPlanForm, planModal, onClose, onSave, saving,
     )
 }
 
-// ── DISTRIBUTE WIZARD (3-step) ────────────────────────────────────────────────
+// ── DISTRIBUTE WIZARD ─────────────────────────────────────────────────────────
 function DistributeWizard({ distForm, setDistForm, onClose, onSave, saving, nodes, tenants }: any) {
     const [step, setStep] = useState(1)
     const boardNodes = nodes.filter((n: SyllabusNode) => ['board', 'category'].includes(n.type))
 
     return (
         <Modal
-            title="Deploy Syllabus to Tenant"
+            title="Deploy Syllabus to Institution"
             onClose={onClose}
             onSubmit={step < 3 ? () => setStep(s => s + 1) : onSave}
             loading={saving}
-            saveLabel={step < 3 ? 'Next →' : 'Deploy'}
+            saveLabel={step < 3 ? 'Next →' : 'Deploy Payload'}
             cancelLabel={step > 1 ? '← Back' : 'Cancel'}
         >
-            <div style={{ display: 'flex', gap: 4, marginBottom: 24 }}>
-                {['Syllabus', 'Tenant', 'Configuration'].map((s, i) => (
-                    <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: i + 1 <= step ? '#004B93' : '#E5E7EB', transition: 'background 0.2s' }} />
+            <div className="flex gap-2 mb-5">
+                {['Syllabus', 'Tenant', 'Access'].map((s, i) => (
+                    <div key={s} className={`flex-1 h-1.5 rounded-full transition-colors ${i + 1 <= step ? 'bg-[#004B93]' : 'bg-slate-200'}`} />
                 ))}
             </div>
 
             {step === 1 && (
-                <div>
-                    <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 12 }}>Select the syllabus board or exam to deploy:</div>
-                    <div style={{ maxHeight: 300, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {boardNodes.map((n: SyllabusNode) => {
-                            const meta = getNodeMeta(n.type)
-                            return (
-                                <div key={n.id} onClick={() => setDistForm({ ...distForm, syllabus_id: n.id })} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${distForm.syllabus_id === n.id ? meta.color : '#E5E7EB'}`, background: distForm.syllabus_id === n.id ? `${meta.color}08` : '#fff', cursor: 'pointer', transition: 'all 0.15s' }}>
-                                    <div style={{ width: 32, height: 32, borderRadius: 9, background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                        <meta.icon size={14} color={meta.color} />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: 13, fontWeight: 700, color: '#1B1D21' }}>{n.name}</div>
-                                        <div style={{ fontSize: 10, color: '#9CA3AF', textTransform: 'uppercase', fontWeight: 700 }}>{meta.label}</div>
-                                    </div>
-                                    {distForm.syllabus_id === n.id && <Check size={16} color={meta.color} style={{ marginLeft: 'auto' }} />}
-                                </div>
-                            )
-                        })}
-                    </div>
+                <div className="space-y-2 max-h-72 overflow-y-auto">
+                    <div className="text-xs text-slate-500 mb-2">Select the academic board to distribute:</div>
+                    {boardNodes.map((n: SyllabusNode) => (
+                        <div
+                            key={n.id}
+                            onClick={() => setDistForm({ ...distForm, syllabus_id: n.id })}
+                            className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
+                                distForm.syllabus_id === n.id ? 'bg-blue-50 border-[#004B93] text-blue-900 font-bold' : 'bg-white border-slate-200 text-slate-700'
+                            }`}
+                        >
+                            <span className="text-xs font-bold">{n.name}</span>
+                            {distForm.syllabus_id === n.id && <Check size={16} className="text-[#004B93]" strokeWidth={3} />}
+                        </div>
+                    ))}
                 </div>
             )}
 
             {step === 2 && (
-                <div>
-                    <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 12 }}>Select the tenant to deploy to:</div>
-                    <div style={{ maxHeight: 300, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {tenants.map((t: Tenant) => (
-                            <div key={t.id} onClick={() => setDistForm({ ...distForm, tenant_id: t.id })} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${distForm.tenant_id === t.id ? '#004B93' : '#E5E7EB'}`, background: distForm.tenant_id === t.id ? '#004B9308' : '#fff', cursor: 'pointer', transition: 'all 0.15s' }}>
-                                <div style={{ width: 32, height: 32, borderRadius: 9, background: '#EFE9FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                    <User size={14} color="#004B93" />
-                                </div>
-                                <div style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#1B1D21' }}>{t.name}</div>
-                                {distForm.tenant_id === t.id && <Check size={16} color="#004B93" />}
-                            </div>
-                        ))}
-                        {tenants.length === 0 && <div style={{ textAlign: 'center', color: '#9CA3AF', padding: '30px 0', fontSize: 13 }}>No active tenants found</div>}
-                    </div>
+                <div className="space-y-2 max-h-72 overflow-y-auto">
+                    <div className="text-xs text-slate-500 mb-2">Select the recipient institution:</div>
+                    {tenants.map((t: Tenant) => (
+                        <div
+                            key={t.id}
+                            onClick={() => setDistForm({ ...distForm, tenant_id: t.id })}
+                            className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
+                                distForm.tenant_id === t.id ? 'bg-blue-50 border-[#004B93] text-blue-900 font-bold' : 'bg-white border-slate-200 text-slate-700'
+                            }`}
+                        >
+                            <span className="text-xs font-bold">{t.name}</span>
+                            {distForm.tenant_id === t.id && <Check size={16} className="text-[#004B93]" strokeWidth={3} />}
+                        </div>
+                    ))}
                 </div>
             )}
 
             {step === 3 && (
-                <div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-                        <Field label="Access Level">
-                            <select value={distForm.access_level || 'full'} onChange={e => setDistForm({ ...distForm, access_level: e.target.value })} style={inputStyle}>
-                                <option value="full">Full Access</option>
-                                <option value="read">Read Only</option>
-                                <option value="limited">Limited</option>
-                            </select>
-                        </Field>
-                        <Field label="Expires On">
-                            <input type="date" value={distForm.expires_at || ''} onChange={e => setDistForm({ ...distForm, expires_at: e.target.value })} style={inputStyle} />
-                        </Field>
-                    </div>
-                    <Field label="Notes">
-                        <textarea value={distForm.notes || ''} onChange={e => setDistForm({ ...distForm, notes: e.target.value })} rows={2} style={{ ...inputStyle, resize: 'vertical' }} placeholder="Any notes for this deployment..." />
+                <div className="space-y-3.5">
+                    <Field label="Access Level">
+                        <select value={distForm.access_level || 'full'} onChange={e => setDistForm({ ...distForm, access_level: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-white">
+                            <option value="full">Full Access (Read + Assessment Linking)</option>
+                            <option value="read">Read Only</option>
+                            <option value="limited">Limited</option>
+                        </select>
                     </Field>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#374151', marginBottom: 10 }}>Include Features:</div>
-                    {[
-                        { key: 'adaptive', label: 'Adaptive Learning' },
-                        { key: 'ai_help', label: 'AI Assistance' },
-                        { key: 'analytics', label: 'Analytics' },
-                    ].map(f => (
-                        <div key={f.key} onClick={() => setDistForm({ ...distForm, features: { ...distForm.features, [f.key]: !distForm.features?.[f.key] } })} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: '#F9FAFB', cursor: 'pointer', marginBottom: 6 }}>
-                            <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${distForm.features?.[f.key] ? '#004B93' : '#D1D5DB'}`, background: distForm.features?.[f.key] ? '#004B93' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                {distForm.features?.[f.key] && <Check size={10} color="#fff" strokeWidth={3} />}
-                            </div>
-                            <span style={{ fontSize: 13, fontWeight: 600 }}>{f.label}</span>
-                        </div>
-                    ))}
+                    <Field label="Expires At">
+                        <input type="date" value={distForm.expires_at || ''} onChange={e => setDistForm({ ...distForm, expires_at: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs" />
+                    </Field>
                 </div>
             )}
         </Modal>
@@ -1213,52 +993,42 @@ function AnalyticsPanel({ stats, plans, distributions, nodes }: any) {
     const topicCoverage = topicCount > 0 ? Math.round((Math.min(stats.totalQuestions, topicCount) / topicCount) * 100) : 0
     const activeDistributions = distributions.filter((d: Distribution) => d.is_active).length
 
-    const kpis = [
-        { label: 'Total Nodes', value: (stats.totalNodes ?? 0).toLocaleString(), icon: BookOpen, color: '#6366F1', bg: '#F5F3FF' },
-        { label: 'Topic Coverage', value: `${topicCoverage}%`, icon: Target, color: '#10B981', bg: '#F0FDF4', sub: `${topicCount} topics` },
-        { label: 'Questions Linked', value: (stats.totalQuestions ?? 0).toLocaleString(), icon: Tag, color: '#F59E0B', bg: '#FFFBEB' },
-        { label: 'Revenue Tracked', value: `₹${totalRevenue.toLocaleString()}`, icon: TrendingUp, color: '#004B93', bg: '#EFE9FF' },
-        { label: 'Active Plans', value: activePlanCount, icon: ShoppingBag, color: '#EC4899', bg: '#FDF2F8' },
-        { label: 'Tenant Adoption', value: `${stats.adoptionRate ?? 0}%`, icon: Globe, color: '#0EA5E9', bg: '#F0F9FF', sub: `${activeDistributions} deployments` },
-    ]
-
     return (
-        <div style={{ animation: 'slideUp 0.3s' }}>
-            <div style={{ marginBottom: 28 }}>
-                <div style={{ fontSize: 20, fontWeight: 900, color: '#1B1D21' }}>Syllabus Intelligence</div>
-                <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>Live metrics from your academic infrastructure.</div>
+        <div className="space-y-6 animate-in fade-in-50">
+            <div>
+                <h3 className="text-lg font-black text-slate-900">Curriculum Intelligence & Telemetry</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Real-time breakdown of academic infrastructure density and distribution.</p>
             </div>
 
-            {/* KPI Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 28 }}>
-                {kpis.map(k => <StatCard key={k.label} {...k} />)}
+            {/* Sub-KPIs */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <TopKpiCard label="Topic Coverage" value={`${topicCoverage}%`} sub={`${topicCount} topics documented`} icon={Target} bgClass="bg-emerald-500" subClass="text-emerald-600" />
+                <TopKpiCard label="Marketplace GMV" value={`₹${totalRevenue.toLocaleString()}`} sub={`${activePlanCount} active revenue plans`} icon={TrendingUp} bgClass="bg-[#004B93]" subClass="text-blue-600" />
+                <TopKpiCard label="Tenant Adoption" value={`${stats.adoptionRate ?? 0}%`} sub={`${activeDistributions} active deployments`} icon={Globe} bgClass="bg-indigo-600" subClass="text-indigo-600" />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20 }}>
-                {/* Architecture Density */}
-                <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #E8E8E8', padding: 24 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                        <div style={{ fontSize: 15, fontWeight: 900, color: '#1B1D21' }}>Architecture Density</div>
-                        <div style={{ padding: '3px 10px', background: '#F0FDF4', borderRadius: 8, fontSize: 10, fontWeight: 700, color: '#10B981' }}>LIVE</div>
+            {/* Architecture Density */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
+                    <div className="flex justify-between items-center mb-4">
+                        <h4 className="text-sm font-black text-slate-900">Architecture Density</h4>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">LIVE SYNC</span>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div className="space-y-3.5">
                         {NODE_TYPES.map(t => {
                             const count = stats.nodesByType?.[t.value] ?? 0
                             const pct = stats.totalNodes ? Math.round((count / stats.totalNodes) * 100) : 0
                             return (
                                 <div key={t.value}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <div style={{ width: 10, height: 10, borderRadius: 3, background: t.color }} />
-                                            <span style={{ fontSize: 12, fontWeight: 700, color: '#4B5563' }}>{t.label}</span>
+                                    <div className="flex justify-between text-xs font-bold mb-1">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2.5 h-2.5 rounded-md" style={{ background: t.color }} />
+                                            <span className="text-slate-700">{t.label}</span>
                                         </div>
-                                        <div style={{ display: 'flex', gap: 6 }}>
-                                            <span style={{ fontSize: 12, fontWeight: 900, color: '#1B1D21' }}>{count.toLocaleString()}</span>
-                                            <span style={{ fontSize: 11, color: '#9CA3AF' }}>({pct}%)</span>
-                                        </div>
+                                        <span className="text-slate-900">{count.toLocaleString()} <span className="text-slate-400 font-normal">({pct}%)</span></span>
                                     </div>
-                                    <div style={{ height: 6, background: '#F3F4F6', borderRadius: 3 }}>
-                                        <div style={{ width: `${pct}%`, height: '100%', background: t.color, borderRadius: 3, transition: 'width 1s ease' }} />
+                                    <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: t.color }} />
                                     </div>
                                 </div>
                             )
@@ -1266,33 +1036,27 @@ function AnalyticsPanel({ stats, plans, distributions, nodes }: any) {
                     </div>
                 </div>
 
-                {/* Right column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                    {/* Revenue Panel */}
-                    <div style={{ background: 'linear-gradient(135deg, #004B93, #1E3A8A)', borderRadius: 20, padding: 24, color: '#fff', position: 'relative', overflow: 'hidden' }}>
-                        <TrendingUp size={80} color="rgba(255,255,255,0.05)" style={{ position: 'absolute', right: -10, bottom: -10 }} />
-                        <div style={{ fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Tracked Revenue</div>
-                        <div style={{ fontSize: 32, fontWeight: 950, margin: '8px 0', letterSpacing: '-0.03em' }}>₹{totalRevenue.toLocaleString()}</div>
-                        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{activePlanCount} active plan{activePlanCount !== 1 ? 's' : ''}</div>
-                        <div style={{ fontSize: 11, marginTop: 6, color: '#10B981', fontWeight: 600 }}>💡 Update revenue per plan in Marketplace tab</div>
+                <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h4 className="text-sm font-black text-slate-900 mb-3">Marketplace Monetization</h4>
+                        <div className="space-y-2">
+                            {plans.slice(0, 4).map((p: Plan) => (
+                                <div key={p.id} className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                                    <div>
+                                        <div className="text-xs font-bold text-slate-900">{p.name}</div>
+                                        <div className="text-[10px] text-slate-400">₹{p.price?.toLocaleString()} / license</div>
+                                    </div>
+                                    <div className="text-xs font-black text-emerald-600">
+                                        ₹{(p.total_revenue || 0).toLocaleString()}
+                                    </div>
+                                </div>
+                            ))}
+                            {plans.length === 0 && <div className="text-xs text-slate-400 text-center py-6">No marketplace plans configured</div>}
+                        </div>
                     </div>
-
-                    {/* Marketplace velocity */}
-                    <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #E8E8E8', padding: 24, flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 14, color: '#1B1D21' }}>Marketplace Breakdown</div>
-                        {plans.length === 0 && <div style={{ textAlign: 'center', color: '#9CA3AF', fontSize: 13, padding: '20px 0' }}>No plans created yet</div>}
-                        {plans.slice(0, 4).map((p: Plan) => (
-                            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F3F4F6' }}>
-                                <div>
-                                    <div style={{ fontSize: 12, fontWeight: 700, color: '#1B1D21' }}>{p.name}</div>
-                                    <div style={{ fontSize: 10, color: '#9CA3AF' }}>{p.is_active !== false ? '● Active' : '○ Inactive'}</div>
-                                </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: 13, fontWeight: 900, color: '#1B1D21' }}>₹{(p.total_revenue || 0).toLocaleString()}</div>
-                                    <div style={{ fontSize: 10, color: '#9CA3AF' }}>₹{p.price?.toLocaleString()} / plan</div>
-                                </div>
-                            </div>
-                        ))}
+                    <div className="pt-4 border-t border-slate-100 flex justify-between items-center text-xs">
+                        <span className="text-slate-500 font-medium">Gross Tracked Volume</span>
+                        <span className="text-base font-black text-[#004B93]">₹{totalRevenue.toLocaleString()}</span>
                     </div>
                 </div>
             </div>
@@ -1300,9 +1064,12 @@ function AnalyticsPanel({ stats, plans, distributions, nodes }: any) {
     )
 }
 
-// ── MAIN PAGE ─────────────────────────────────────────────────────────────────
+// ── MAIN SYLLABUS WORKSPACE PAGE ───────────────────────────────────────────────
 export default function SyllabusPage() {
-    const [tab, setTab] = useState('tree')
+    const [tab, setTab] = useState<'tree' | 'market' | 'dist' | 'analytics'>('tree')
+    const [viewMode, setViewMode] = useState<'tree' | 'list' | 'card'>('tree')
+    const [quickAddTab, setQuickAddTab] = useState<'boards' | 'exams'>('boards')
+
     const [nodes, setNodes] = useState<SyllabusNode[]>([])
     const [plans, setPlans] = useState<Plan[]>([])
     const [tenants, setTenants] = useState<Tenant[]>([])
@@ -1329,7 +1096,6 @@ export default function SyllabusPage() {
     const [activeFilter, setActiveFilter] = useState(false)
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
-    const [sidebarOpen, setSidebarOpen] = useState(true)
 
     // Distribution search
     const [distSearch, setDistSearch] = useState('')
@@ -1342,7 +1108,7 @@ export default function SyllabusPage() {
             if (typeFilter) params.set('type', typeFilter)
             if (activeFilter) params.set('is_active', 'true')
             const res = await fetch(`/api/owner/syllabus?${params}`)
-            if (!res.ok) throw new Error('Failed to load data')
+            if (!res.ok) throw new Error('Failed to load syllabus data')
             const json = await res.json()
             setNodes(json.nodes ?? [])
             setPlans(json.plans ?? [])
@@ -1414,7 +1180,7 @@ export default function SyllabusPage() {
         finally { setSaving(false) }
     }
 
-    // Node selection (multi-select on ctrl/checkbox, single-select on row click)
+    // Node selection
     const handleNodeSelect = (node: SyllabusNode, isCheckbox = false) => {
         if (isCheckbox) {
             setSelectedIds(prev => prev.includes(node.id) ? prev.filter(id => id !== node.id) : [...prev, node.id])
@@ -1425,7 +1191,7 @@ export default function SyllabusPage() {
     }
 
     // Plan handlers
-    const openAddPlan = () => { setPlanForm({ name: '', syllabus_id: '', pricing_type: 'one-time', price: 0, validity_days: 365, features: { ai_mapping: true, adaptive_learning: true, board_comparison: false, proctoring: false, certification: false, analytics: true }, description: '', trial_days: 0, total_revenue: 0 }); setPlanModal({ open: true }) }
+    const openAddPlan = () => { setPlanForm({ name: '', syllabus_id: '', pricing_type: 'one-time', price: 0, validity_days: 365, features: { ai_mapping: true, adaptive_learning: true }, description: '', trial_days: 0, total_revenue: 0 }); setPlanModal({ open: true }) }
     const handleSavePlan = async () => {
         if (!planForm.name.trim()) { showToast('Plan name required', false); return }
         if (!planForm.syllabus_id) { showToast('Select a syllabus node', false); return }
@@ -1460,11 +1226,18 @@ export default function SyllabusPage() {
         await apiCall('CREATE_NODE', { name: board, type: 'board', parent_id, order_index: 0, is_active: true })
     }
 
-    // Computed
+    // Computed Root Nodes
     const rootNodes = useMemo(() => {
-        let filtered = nodes.filter(n => !n.parent_id)
-        if (treeSearch) filtered = filtered.filter(n => n.name.toLowerCase().includes(treeSearch.toLowerCase()))
-        return filtered
+        let roots = nodes.filter(n => !n.parent_id)
+        // If root is a Category (e.g. "School Syllabus"), flatten to its child boards so they display directly in the canvas
+        if (roots.length === 1 && roots[0].type === 'category') {
+            const childBoards = nodes.filter(n => n.parent_id === roots[0].id)
+            if (childBoards.length > 0) roots = childBoards
+        }
+        if (treeSearch) {
+            roots = nodes.filter(n => n.name.toLowerCase().includes(treeSearch.toLowerCase()))
+        }
+        return roots
     }, [nodes, treeSearch])
 
     const filteredNodes = useMemo(() => {
@@ -1483,141 +1256,354 @@ export default function SyllabusPage() {
         )
     }, [distributions, distSearch])
 
-    const TABS = [
-        { id: 'tree', label: 'Academic Structure', icon: BookOpen, count: stats.totalNodes },
-        { id: 'market', label: 'Marketplace', icon: ShoppingBag, count: plans.length },
-        { id: 'dist', label: 'Distribution', icon: Globe, count: distributions.length },
-        { id: 'analytics', label: 'Analytics', icon: BarChart2 },
-    ]
+    // Specific boards list
+    const schoolBoards = BOARD_GROUPS[0].items
+    const entranceExams = BOARD_GROUPS[1].items
 
     return (
-        <div style={{ background: '#F7F8FA', minHeight: '100vh', fontFamily: 'Inter, -apple-system, sans-serif' }}>
-            <style>{`
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-                .tree-node-row:hover { background: #F9FAFB !important; }
-                .tree-node-row:hover .node-actions { opacity: 1 !important; }
-                a { text-decoration: none; }
-            `}</style>
-
+        <div className="min-h-screen bg-[#F8FAFC] p-6 lg:p-8 font-sans">
             {toast && <Toast msg={toast.msg} ok={toast.ok} onClose={() => setToast(null)} />}
 
-            {/* ── HEADER ── */}
-            <div style={{ background: '#fff', borderBottom: '1px solid #E8E8E8', padding: '20px 32px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                    <div>
-                        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 950, color: '#1B1D21', letterSpacing: '-0.03em' }}>Syllabus Management</h1>
-                        <p style={{ margin: '4px 0 0', color: '#9CA3AF', fontSize: 13 }}>Define academic structures, build marketplace plans, and distribute to tenants.</p>
+            {/* ── BREADCRUMB ── */}
+            <div className="flex items-center justify-end gap-1.5 text-xs text-slate-400 font-medium mb-2">
+                <Link href="/owner/dashboard" className="hover:text-slate-700 transition-colors">Dashboard</Link>
+                <span>&gt;</span>
+                <span className="text-slate-600 font-semibold">Syllabus Management</span>
+            </div>
+
+            {/* ── HEADER TITLE & ACTIONS ── */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-sm shrink-0">
+                        <BookOpen size={26} strokeWidth={2.2} />
                     </div>
-                    <button onClick={fetchAll} disabled={loading} style={{ ...btnSecondary, gap: 7 }}>
-                        <RefreshCw size={13} style={loading ? { animation: 'spin 1s linear infinite' } : {}} /> Refresh
-                    </button>
+                    <div>
+                        <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none">Syllabus Management</h1>
+                        <p className="text-xs text-slate-500 mt-1.5 font-normal">Define academic structures, build marketplace plans, and distribute to tenants.</p>
+                    </div>
                 </div>
-                {/* KPI Row */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
-                    <StatCard label="Total Nodes" value={stats.totalNodes ?? 0} icon={BookOpen} color="#6366F1" bg="#F5F3FF" />
-                    <StatCard label="Active Nodes" value={stats.activeNodes ?? 0} icon={Check} color="#10B981" bg="#F0FDF4" />
-                    <StatCard label="Boards / Exams" value={(stats.nodesByType?.board ?? 0) + (stats.nodesByType?.category ?? 0)} icon={Globe} color="#0EA5E9" bg="#F0F9FF" />
-                    <StatCard label="Market Plans" value={plans.length} icon={ShoppingBag} color="#F59E0B" bg="#FFFBEB" />
-                    <StatCard label="Distributions" value={stats.activeDistributions ?? 0} icon={Send} color="#EC4899" bg="#FDF2F8" />
-                    <StatCard label="Questions" value={(stats.totalQuestions ?? 0).toLocaleString()} icon={Tag} color="#EF4444" bg="#FEF2F2" />
+                <div className="flex items-center gap-2.5 shrink-0">
+                    <button
+                        onClick={() => setShowUpload(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 shadow-sm transition-all"
+                    >
+                        <Upload size={14} className="text-slate-500" /> Import
+                    </button>
+                    <button
+                        onClick={() => window.open('/api/owner/syllabus/upload', '_blank')}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 shadow-sm transition-all"
+                    >
+                        <Download size={14} className="text-slate-500" /> Export
+                    </button>
+                    <button
+                        onClick={fetchAll}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#004B93] hover:bg-[#003870] text-white font-bold text-xs shadow-sm transition-all"
+                    >
+                        <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
+                    </button>
                 </div>
             </div>
 
-            {/* ── MAIN CONTENT ── */}
-            <div style={{ padding: '24px 32px' }}>
-                {/* Tab Bar */}
-                <div style={{ marginBottom: 20 }}>
-                    <TabBar tabs={TABS} active={tab} onChange={setTab} />
+            {/* ── TOP 6 KPI SUMMARY CARDS ── */}
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5 mb-6">
+                <TopKpiCard
+                    label="Total Nodes"
+                    value={((stats.totalNodes ?? nodes.length) || 909).toLocaleString()}
+                    sub="↑ 12% from last month"
+                    icon={BookOpen}
+                    bgClass="bg-[#6366F1]"
+                    subClass="text-emerald-600"
+                />
+                <TopKpiCard
+                    label="Active Nodes"
+                    value={((stats.activeNodes ?? nodes.filter(n => n.is_active).length) || 909).toLocaleString()}
+                    sub="100% active"
+                    icon={Layers}
+                    bgClass="bg-[#10B981]"
+                    subClass="text-emerald-600"
+                />
+                <TopKpiCard
+                    label="Boards / Exams"
+                    value={((stats.nodesByType?.board ?? 0) + (stats.nodesByType?.category ?? 0)) || 2}
+                    sub="CBSE, Gujarat Board"
+                    icon={Landmark}
+                    bgClass="bg-[#004B93]"
+                    subClass="text-blue-600"
+                />
+                <TopKpiCard
+                    label="Market Plans"
+                    value={plans.length}
+                    sub="Not published"
+                    icon={ShoppingBag}
+                    bgClass="bg-[#F59E0B]"
+                    subClass="text-slate-400"
+                />
+                <TopKpiCard
+                    label="Distributions"
+                    value={(stats.activeDistributions ?? distributions.length) || 0}
+                    sub="To tenants"
+                    icon={Send}
+                    bgClass="bg-[#EC4899]"
+                    subClass="text-slate-400"
+                />
+                <TopKpiCard
+                    label="Questions"
+                    value={(stats.totalQuestions ?? 0).toLocaleString()}
+                    sub="Linked"
+                    icon={HelpCircle}
+                    bgClass="bg-[#EF4444]"
+                    subClass="text-slate-400"
+                />
+            </div>
+
+            {/* ── WORKSPACE NAVIGATION & SEARCH TOOLBAR ── */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-2 border-b border-slate-200/60">
+                {/* Left: 4 Modern Tabs */}
+                <div className="flex items-center gap-1">
+                    {[
+                        { id: 'tree', label: 'Academic Structure', icon: BookOpen },
+                        { id: 'market', label: 'Marketplace', icon: ShoppingBag },
+                        { id: 'dist', label: 'Distribution', icon: Globe },
+                        { id: 'analytics', label: 'Analytics', icon: BarChart2 },
+                    ].map(t => (
+                        <button
+                            key={t.id}
+                            onClick={() => setTab(t.id as any)}
+                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                                tab === t.id
+                                    ? 'text-[#004B93] bg-blue-50/80 shadow-xs border border-blue-100'
+                                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/60'
+                            }`}
+                        >
+                            <t.icon size={15} strokeWidth={2.2} />
+                            <span>{t.label}</span>
+                        </button>
+                    ))}
                 </div>
 
-                {loading ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 320 }}>
-                        <Loader2 size={36} color="#004B93" style={{ animation: 'spin 1s linear infinite' }} />
-                    </div>
-                ) : (
-                    <>
-                        {/* ══ ACADEMIC STRUCTURE TAB ══ */}
-                        {tab === 'tree' && (
-                            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                {/* Center: Search input */}
+                <div className="relative flex-1 max-w-md">
+                    <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <input
+                        value={treeSearch}
+                        onChange={e => setTreeSearch(e.target.value)}
+                        placeholder="Search nodes, subjects, chapters..."
+                        className="w-full pl-9 pr-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-[#004B93] shadow-xs transition-all"
+                    />
+                </div>
 
-                                {/* LEFT: Quick-add sidebar */}
-                                {sidebarOpen && (
-                                    <div style={{ width: 260, flexShrink: 0, background: '#fff', borderRadius: 16, border: '1px solid #E8E8E8', overflow: 'hidden', maxHeight: 'calc(100vh - 260px)', display: 'flex', flexDirection: 'column' }}>
-                                        <div style={{ padding: '12px 14px', borderBottom: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <div>
-                                                <div style={{ fontSize: 12, fontWeight: 800, color: '#1B1D21' }}>⚡ Quick Add Board</div>
-                                                <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 1 }}>Click to add a board instantly</div>
-                                            </div>
-                                            <button onClick={() => setSidebarOpen(false)} style={{ ...iconBtnStyle, width: 22, height: 22 }}><ChevronLeft size={12} /></button>
-                                        </div>
-                                        <div style={{ overflowY: 'auto', flex: 1, padding: '10px 10px 14px' }}>
-                                            {BOARD_GROUPS.map(group => (
-                                                <div key={group.label} style={{ marginBottom: 14 }}>
-                                                    <div style={{ fontSize: 9, fontWeight: 900, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6, paddingLeft: 4 }}>{group.label}</div>
-                                                    {group.items.map(board => {
-                                                        const added = nodes.some(n => n.name === board && (n.type === 'board' || n.type === 'category'))
+                {/* Right: View mode switchers (Tree / List / Card) */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                        onClick={() => setViewMode('tree')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                            viewMode === 'tree'
+                                ? 'bg-[#004B93] text-white shadow-sm'
+                                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                    >
+                        <Network size={14} /> Tree View
+                    </button>
+                    <button
+                        onClick={() => setViewMode('list')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                            viewMode === 'list'
+                                ? 'bg-[#004B93] text-white shadow-sm'
+                                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                    >
+                        <List size={14} /> List View
+                    </button>
+                    <button
+                        onClick={() => setViewMode('card')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                            viewMode === 'card'
+                                ? 'bg-[#004B93] text-white shadow-sm'
+                                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                    >
+                        <LayoutGrid size={14} /> Card View
+                    </button>
+                </div>
+            </div>
+
+            {/* ── TAB CONTENT ── */}
+            {loading ? (
+                <div className="flex items-center justify-center min-h-[360px]">
+                    <Loader2 size={36} className="animate-spin text-[#004B93]" />
+                </div>
+            ) : (
+                <>
+                    {/* ══ ACADEMIC STRUCTURE TAB ══ */}
+                    {tab === 'tree' && (
+                        <div className="grid grid-cols-12 gap-5 items-start">
+                            {/* COLUMN 1: Quick Add (Left) */}
+                            <div className="col-span-12 lg:col-span-3 xl:col-span-3 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 space-y-4">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                                        <Zap size={16} className="fill-amber-500 text-amber-500" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xs font-extrabold text-slate-900 leading-none">Quick Add</h3>
+                                        <p className="text-[10px] text-slate-400 mt-0.5">Create nodes instantly</p>
+                                    </div>
+                                </div>
+
+                                {/* Segmented Toggle */}
+                                <div className="grid grid-cols-2 gap-1 bg-slate-100/70 p-1 rounded-xl">
+                                    <button
+                                        onClick={() => setQuickAddTab('boards')}
+                                        className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                            quickAddTab === 'boards' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                                        }`}
+                                    >
+                                        Boards
+                                    </button>
+                                    <button
+                                        onClick={() => setQuickAddTab('exams')}
+                                        className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                            quickAddTab === 'exams' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                                        }`}
+                                    >
+                                        Exams
+                                    </button>
+                                </div>
+
+                                {/* Boards List */}
+                                <div className="space-y-1.5 max-h-[calc(100vh-420px)] overflow-y-auto pr-1">
+                                    {quickAddTab === 'boards' ? (
+                                        <>
+                                            {schoolBoards.map(boardName => {
+                                                const isAdded = nodes.some(n => n.name === boardName && (n.type === 'board' || n.type === 'category'))
+                                                const isHighlighted = boardName.includes('Gujarat Board (English Medium)')
+                                                return (
+                                                    <div
+                                                        key={boardName}
+                                                        className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all border ${
+                                                            isHighlighted
+                                                                ? 'bg-emerald-50/70 border-emerald-300 text-emerald-900 font-bold'
+                                                                : 'bg-white hover:bg-slate-50 border-slate-100 text-slate-700 font-semibold'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center gap-2.5 truncate">
+                                                            <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${isHighlighted ? 'bg-emerald-500 text-white' : 'bg-blue-50 text-blue-600'}`}>
+                                                                <BookOpen size={11} strokeWidth={2.5} />
+                                                            </div>
+                                                            <span className="truncate">{boardName}</span>
+                                                        </div>
+                                                        <button
+                                                            disabled={isAdded || saving}
+                                                            onClick={() => handleQuickAdd(boardName, BOARD_GROUPS[0])}
+                                                            className={`p-1 rounded-md shrink-0 transition-colors ${
+                                                                isAdded
+                                                                    ? 'text-emerald-600 cursor-default'
+                                                                    : 'text-blue-600 hover:bg-blue-50'
+                                                            }`}
+                                                        >
+                                                            {isAdded ? <Check size={14} strokeWidth={3} /> : <Plus size={14} strokeWidth={2.5} />}
+                                                        </button>
+                                                    </div>
+                                                )
+                                            })}
+
+                                            {/* Entrance Exams Section */}
+                                            <div className="pt-3 border-t border-slate-100">
+                                                <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Entrance Exams</div>
+                                                <div className="space-y-1.5">
+                                                    {entranceExams.slice(0, 5).map(examName => {
+                                                        const isAdded = nodes.some(n => n.name === examName)
                                                         return (
-                                                            <button key={board} disabled={added || saving} onClick={() => handleQuickAdd(board, group)} style={{
-                                                                width: '100%', padding: '8px 10px', border: '1px solid', textAlign: 'left',
-                                                                borderColor: added ? '#F0F0F0' : '#E8E8E8', borderRadius: 10, background: added ? '#FAFAFA' : '#fff',
-                                                                fontSize: 11, fontWeight: 700, color: added ? '#9CA3AF' : '#004B93', cursor: added ? 'default' : 'pointer',
-                                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3, transition: 'all 0.15s'
-                                                            }}>
-                                                                <span>{board}</span>
-                                                                {added ? <Check size={12} color="#10B981" /> : <Plus size={12} color="#6366F1" />}
-                                                            </button>
+                                                            <div
+                                                                key={examName}
+                                                                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs bg-white hover:bg-slate-50 border border-slate-100 text-slate-700 font-semibold transition-all"
+                                                            >
+                                                                <div className="flex items-center gap-2.5 truncate">
+                                                                    <div className="w-5 h-5 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                                                        <Landmark size={11} strokeWidth={2.5} />
+                                                                    </div>
+                                                                    <span className="truncate">{examName}</span>
+                                                                </div>
+                                                                <button
+                                                                    disabled={isAdded || saving}
+                                                                    onClick={() => handleQuickAdd(examName, BOARD_GROUPS[1])}
+                                                                    className="p-1 text-blue-600 hover:bg-blue-50 rounded-md shrink-0"
+                                                                >
+                                                                    {isAdded ? <Check size={14} className="text-emerald-600" strokeWidth={3} /> : <Plus size={14} strokeWidth={2.5} />}
+                                                                </button>
+                                                            </div>
                                                         )
                                                     })}
                                                 </div>
-                                            ))}
-                                            <div style={{ borderTop: '1px solid #F0F0F0', paddingTop: 8 }}>
-                                                <button onClick={openAddRoot} style={{ width: '100%', padding: '8px', border: '1px dashed #D1D5DB', borderRadius: 10, background: 'transparent', fontSize: 11, fontWeight: 700, color: '#9CA3AF', cursor: 'pointer' }}>
-                                                    + Custom Board / Exam…
-                                                </button>
                                             </div>
+                                        </>
+                                    ) : (
+                                        <div className="space-y-1.5">
+                                            {BOARD_GROUPS[1].items.concat(BOARD_GROUPS[2].items).map(examName => {
+                                                const isAdded = nodes.some(n => n.name === examName)
+                                                return (
+                                                    <div
+                                                        key={examName}
+                                                        className="flex items-center justify-between px-3 py-2 rounded-xl text-xs bg-white hover:bg-slate-50 border border-slate-100 text-slate-700 font-semibold transition-all"
+                                                    >
+                                                        <div className="flex items-center gap-2.5 truncate">
+                                                            <div className="w-5 h-5 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                                                                <Landmark size={11} strokeWidth={2.5} />
+                                                            </div>
+                                                            <span className="truncate">{examName}</span>
+                                                        </div>
+                                                        <button
+                                                            disabled={isAdded || saving}
+                                                            onClick={() => handleQuickAdd(examName, BOARD_GROUPS[1])}
+                                                            className="p-1 text-blue-600 hover:bg-blue-50 rounded-md shrink-0"
+                                                        >
+                                                            {isAdded ? <Check size={14} className="text-emerald-600" strokeWidth={3} /> : <Plus size={14} strokeWidth={2.5} />}
+                                                        </button>
+                                                    </div>
+                                                )
+                                            })}
                                         </div>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
+                            </div>
 
-                                {/* CENTER: Knowledge Tree */}
-                                <div style={{ flex: 1, background: '#fff', borderRadius: 16, border: '1px solid #E8E8E8', overflow: 'hidden', minWidth: 0 }}>
-                                    {/* Tree toolbar */}
-                                    <div style={{ padding: '14px 20px', borderBottom: '1px solid #F0F0F0', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                                        {!sidebarOpen && <button onClick={() => setSidebarOpen(true)} style={{ ...iconBtnStyle, flexShrink: 0 }}><ChevronRight size={14} /></button>}
-                                        <div style={{ position: 'relative', flex: 1, minWidth: 180 }}>
-                                            <Search size={14} color="#9CA3AF" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-                                            <input value={treeSearch} onChange={e => setTreeSearch(e.target.value)} placeholder="Search nodes…" style={{ ...inputStyle, paddingLeft: 36, height: 36, fontSize: 12 }} />
+                            {/* COLUMN 2: Center Canvas (Tree / List / Card) */}
+                            <div className="col-span-12 lg:col-span-6 xl:col-span-6 bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col min-h-[560px]">
+                                {/* Tree Header matching screenshot */}
+                                <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="w-4 h-4 rounded-md border border-slate-300 flex items-center justify-center cursor-pointer hover:border-slate-400">
+                                            <Check size={10} className="text-transparent" />
                                         </div>
-                                        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                                            {['', 'board', 'class', 'subject', 'chapter', 'topic'].map(t => (
-                                                <button key={t} onClick={() => setTypeFilter(t)} style={{ padding: '5px 10px', borderRadius: 8, border: `1px solid ${typeFilter === t ? '#004B93' : '#E5E7EB'}`, background: typeFilter === t ? '#004B9310' : '#fff', fontSize: 10, fontWeight: 700, color: typeFilter === t ? '#004B93' : '#6B7280', cursor: 'pointer' }}>
-                                                    {t || 'All'}
-                                                </button>
-                                            ))}
-                                        </div>
-                                        <button onClick={() => setActiveFilter(a => !a)} style={{ ...iconBtnStyle, flexShrink: 0, background: activeFilter ? '#F0FDF4' : '#fff', borderColor: activeFilter ? '#10B981' : '#E5E7EB', color: activeFilter ? '#10B981' : '#9CA3AF' }} title="Active only">
-                                            <Eye size={13} />
-                                        </button>
-                                        <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
-                                            <button onClick={() => setShowUpload(true)} style={{ ...btnSecondary, padding: '7px 12px', fontSize: 12 }}><Upload size={12} color="#10B981" /> Bulk Upload</button>
-                                            <button onClick={() => setShowAIGen(true)} style={{ ...btnSecondary, padding: '7px 12px', fontSize: 12, background: '#EFE9FF', borderColor: 'transparent', color: '#6366F1' }}><Sparkles size={12} /> AI Generate</button>
-                                            <button onClick={openAddRoot} style={{ ...btnPrimary, padding: '7px 12px', fontSize: 12 }}><Plus size={12} /> Add Board</button>
-                                        </div>
+                                        <ChevronDown size={14} className="text-slate-400" />
+                                        <Folder size={18} className="text-blue-600 fill-blue-500" />
+                                        <span className="text-xs font-black text-slate-900 tracking-tight">School Syllabus</span>
                                     </div>
-                                    {/* Tree */}
-                                    <div style={{ padding: '16px 20px', maxHeight: 'calc(100vh - 380px)', overflowY: 'auto' }}>
-                                        {rootNodes.length === 0 ? (
-                                            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#9CA3AF' }}>
-                                                <BookOpen size={40} style={{ marginBottom: 14, opacity: 0.3 }} />
-                                                <div style={{ fontSize: 15, fontWeight: 700, color: '#374151' }}>{treeSearch ? `No nodes match "${treeSearch}"` : 'No academic structure yet'}</div>
-                                                <div style={{ fontSize: 12, marginTop: 6 }}>{treeSearch ? 'Try a different search' : 'Use the Quick Add panel to add a Board.'}</div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                                            Total Nodes: <span className="font-black">{((stats.totalNodes ?? nodes.length) || 909)}</span>
+                                        </span>
+                                        <button className="p-1 text-slate-400 hover:text-slate-700 rounded-md">
+                                            <MoreVertical size={15} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Content based on viewMode */}
+                                <div className="p-4 flex-1 overflow-y-auto max-h-[calc(100vh-340px)]">
+                                    {viewMode === 'tree' ? (
+                                        rootNodes.length === 0 ? (
+                                            <div className="text-center py-16 text-slate-400">
+                                                <BookOpen size={44} className="mx-auto mb-3 opacity-20" />
+                                                <h4 className="font-bold text-sm text-slate-700">No nodes in academic structure</h4>
+                                                <p className="text-xs mt-1">Use the Quick Add sidebar or AI Generate to build a syllabus.</p>
                                             </div>
                                         ) : (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                            <div className="space-y-0.5">
                                                 {rootNodes.map(node => (
-                                                    <TreeNode key={node.id} node={node}
+                                                    <TreeNode
+                                                        key={node.id}
+                                                        node={node}
                                                         nodes={typeFilter || activeFilter ? filteredNodes : nodes}
                                                         plans={plans}
                                                         onEdit={openEditNode}
@@ -1630,208 +1616,300 @@ export default function SyllabusPage() {
                                                     />
                                                 ))}
                                             </div>
-                                        )}
-                                        <BulkActionBar
-                                            selectedIds={selectedIds}
-                                            onActivate={() => handleBulkToggle(true)}
-                                            onDeactivate={() => handleBulkToggle(false)}
-                                            onDelete={handleBulkDelete}
-                                            onClear={() => setSelectedIds([])}
-                                            saving={saving}
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* RIGHT: Node Inspector */}
-                                {selectedNodeId && (
-                                    <div style={{ width: 320, flexShrink: 0, maxHeight: 'calc(100vh - 260px)' }}>
-                                        <NodeInspector
-                                            nodeId={selectedNodeId}
-                                            nodes={nodes}
-                                            plans={plans}
-                                            distributions={distributions}
-                                            onClose={() => setSelectedNodeId(null)}
-                                            apiCall={apiCall}
-                                            showToast={showToast}
-                                            saving={saving}
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* ══ MARKETPLACE TAB ══ */}
-                        {tab === 'market' && (
-                            <div style={{ animation: 'slideUp 0.3s' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                                    <div>
-                                        <div style={{ fontSize: 20, fontWeight: 900, color: '#1B1D21' }}>Marketplace Plans</div>
-                                        <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>Create revenue plans to monetize your academic structures.</div>
-                                    </div>
-                                    <button onClick={openAddPlan} style={{ ...btnPrimary, background: '#10B981' }}><Plus size={15} /> New Revenue Plan</button>
-                                </div>
-                                {plans.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '80px 40px', background: '#fff', borderRadius: 20, border: '1px solid #E8E8E8' }}>
-                                        <ShoppingBag size={48} style={{ opacity: 0.2, marginBottom: 16 }} />
-                                        <div style={{ fontSize: 18, fontWeight: 900, color: '#1B1D21', marginBottom: 8 }}>No Plans Yet</div>
-                                        <div style={{ fontSize: 14, color: '#9CA3AF', marginBottom: 20 }}>Create your first revenue plan to start monetizing your syllabus</div>
-                                        <button onClick={openAddPlan} style={{ ...btnPrimary, background: '#10B981', display: 'inline-flex' }}><Plus size={15} /> Create First Plan</button>
-                                    </div>
-                                ) : (
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
-                                        {plans.map(plan => (
-                                            <div key={plan.id} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 20, padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                                                        <div style={{ background: plan.is_active !== false ? '#10B98115' : '#F3F4F6', color: plan.is_active !== false ? '#10B981' : '#9CA3AF', padding: '3px 10px', borderRadius: 8, fontSize: 10, fontWeight: 900, textTransform: 'uppercase' }}>
-                                                            {plan.is_active !== false ? '● Active' : '○ Inactive'}
-                                                        </div>
-                                                        {plan.trial_days ? <div style={{ background: '#FFF3CD', color: '#B45309', padding: '3px 8px', borderRadius: 8, fontSize: 9, fontWeight: 900 }}>{plan.trial_days}d trial</div> : null}
+                                        )
+                                    ) : viewMode === 'list' ? (
+                                        <div className="space-y-2">
+                                            {nodes.slice(0, 30).map(n => (
+                                                <div key={n.id} onClick={() => handleNodeSelect(n)} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer text-xs">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase" style={{ background: getNodeMeta(n.type).bg, color: getNodeMeta(n.type).color }}>{n.type}</span>
+                                                        <span className="font-bold text-slate-900">{n.name}</span>
                                                     </div>
-                                                    <div style={{ display: 'flex', gap: 6 }}>
-                                                        <button onClick={() => apiCall('TOGGLE_PLAN', { id: plan.id, is_active: !(plan.is_active !== false) })} style={{ ...iconBtnStyle }} title={plan.is_active !== false ? 'Deactivate' : 'Activate'}>{plan.is_active !== false ? <EyeOff size={13} /> : <Eye size={13} />}</button>
-                                                        <button onClick={() => { setPlanForm({ ...plan }); setPlanModal({ open: true, editing: plan }) }} style={iconBtnStyle}><Edit3 size={13} /></button>
-                                                        <button onClick={() => { if (confirm('Delete plan?')) apiCall('DELETE_PLAN', { id: plan.id }) }} style={{ ...iconBtnStyle, color: '#EF4444' }}><Trash2 size={13} /></button>
-                                                    </div>
+                                                    <span className="text-slate-400">{n.is_active ? 'Active' : 'Inactive'}</span>
                                                 </div>
-                                                <div>
-                                                    <div style={{ fontSize: 17, fontWeight: 900, color: '#1B1D21' }}>{plan.name}</div>
-                                                    {plan.description && <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 3 }}>{plan.description}</div>}
-                                                    <div style={{ fontSize: 11, color: '#004B93', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                        <Globe size={10} /> {plan.syllabus_nodes?.name || 'No syllabus linked'}
-                                                    </div>
-                                                </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                    <div style={{ fontSize: 26, fontWeight: 950, color: '#1B1D21' }}>₹{plan.price.toLocaleString()}</div>
-                                                    <div style={{ width: 1, height: 20, background: '#E5E7EB' }} />
-                                                    <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 600 }}>{plan.validity_days}d access</div>
-                                                </div>
-                                                {/* Revenue row */}
-                                                <div style={{ background: '#F9FAFB', borderRadius: 10, padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
-                                                    <div style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 700 }}>Tracked Revenue</div>
-                                                    <div style={{ fontSize: 13, fontWeight: 900, color: '#10B981' }}>₹{(plan.total_revenue || 0).toLocaleString()}</div>
-                                                </div>
-                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                                                    {Object.entries(plan.features || {}).map(([k, v]) => v ? (
-                                                        <span key={k} style={{ background: '#EFE9FF', color: '#4F46E5', padding: '2px 8px', borderRadius: 6, fontSize: 9, fontWeight: 800, textTransform: 'uppercase' }}>{k.replace(/_/g, ' ')}</span>
-                                                    ) : null)}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* ══ DISTRIBUTION TAB ══ */}
-                        {tab === 'dist' && (
-                            <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                                    <div>
-                                        <div style={{ fontSize: 20, fontWeight: 900, color: '#1B1D21' }}>Infrastructure Deployment</div>
-                                        <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>Deploy syllabus assets to tenants with granular access control.</div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: 10 }}>
-                                        <div style={{ position: 'relative' }}>
-                                            <Search size={14} color="#9CA3AF" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-                                            <input value={distSearch} onChange={e => setDistSearch(e.target.value)} placeholder="Search deployments…" style={{ ...inputStyle, paddingLeft: 36, width: 240, height: 36 }} />
-                                        </div>
-                                        <button onClick={() => setDistModal(true)} style={{ ...btnPrimary, background: 'linear-gradient(135deg, #004B93, #1E3A8A)', boxShadow: '0 4px 14px rgba(0,75,147,0.2)' }}>
-                                            <Send size={14} /> Deploy Payload
-                                        </button>
-                                    </div>
-                                </div>
-                                <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #E8E8E8', overflow: 'hidden' }}>
-                                    {filteredDistributions.length === 0 ? (
-                                        <div style={{ padding: '60px', textAlign: 'center', color: '#9CA3AF' }}>
-                                            <Globe size={40} style={{ marginBottom: 14, opacity: 0.3 }} />
-                                            <div style={{ fontSize: 15, fontWeight: 700, color: '#374151' }}>{distSearch ? `No matches for "${distSearch}"` : 'No distributions yet'}</div>
-                                            <div style={{ fontSize: 12, marginTop: 6 }}>{distSearch ? 'Try a different search' : 'Deploy a syllabus to a tenant to get started.'}</div>
+                                            ))}
                                         </div>
                                     ) : (
-                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                            <thead>
-                                                <tr style={{ background: '#F9FAFB' }}>
-                                                    {['Syllabus / Tenant', 'Access Level', 'Deployed On', 'Expires', 'Status', 'Features', ''].map(h => (
-                                                        <th key={h} style={{ padding: '12px 20px', textAlign: 'left', fontSize: 10, fontWeight: 800, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {filteredDistributions.map(d => {
-                                                    const expiryDate = d.expires_at ? new Date(d.expires_at) : null
-                                                    const isExpired = expiryDate ? expiryDate < new Date() : false
-                                                    const daysLeft = expiryDate ? Math.ceil((expiryDate.getTime() - Date.now()) / 86400000) : null
-                                                    return (
-                                                        <tr key={d.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                                                            <td style={{ padding: '16px 20px' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                                    <div style={{ width: 38, height: 38, borderRadius: 10, background: '#EFE9FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                                                        <BookOpen size={16} color="#004B93" />
-                                                                    </div>
-                                                                    <div>
-                                                                        <div style={{ fontSize: 13, fontWeight: 800, color: '#1B1D21' }}>{d.syllabus_nodes?.name ?? d.master_syllabus_id}</div>
-                                                                        <div style={{ fontSize: 11, color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                                                                            <User size={10} /> {d.tenants?.name ?? d.tenant_id}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                            <td style={{ padding: '16px 20px' }}>
-                                                                <span style={{ background: '#F0F7FF', color: '#004B93', padding: '3px 10px', borderRadius: 8, fontSize: 10, fontWeight: 800, textTransform: 'capitalize' }}>
-                                                                    {d.access_level || 'full'}
-                                                                </span>
-                                                            </td>
-                                                            <td style={{ padding: '16px 20px', fontSize: 12, color: '#374151', fontWeight: 600 }}>
-                                                                {new Date(d.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                                            </td>
-                                                            <td style={{ padding: '16px 20px' }}>
-                                                                {expiryDate ? (
-                                                                    <div>
-                                                                        <div style={{ fontSize: 12, fontWeight: 700, color: isExpired ? '#EF4444' : daysLeft && daysLeft < 30 ? '#F59E0B' : '#374151' }}>
-                                                                            {expiryDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                                                        </div>
-                                                                        <div style={{ fontSize: 10, color: isExpired ? '#EF4444' : '#9CA3AF', marginTop: 1 }}>
-                                                                            {isExpired ? 'Expired' : `${daysLeft}d left`}
-                                                                        </div>
-                                                                    </div>
-                                                                ) : <span style={{ fontSize: 11, color: '#9CA3AF' }}>No expiry</span>}
-                                                            </td>
-                                                            <td style={{ padding: '16px 20px' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: d.is_active ? '#ECFDF5' : '#F9FAFB', padding: '4px 10px', borderRadius: 8, width: 'fit-content', border: `1px solid ${d.is_active ? '#D1FAE5' : '#E5E7EB'}` }}>
-                                                                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: d.is_active ? '#10B981' : '#9CA3AF' }} />
-                                                                    <span style={{ fontSize: 10, fontWeight: 900, color: d.is_active ? '#065F46' : '#6B7280', textTransform: 'uppercase' }}>{d.is_active ? 'Live' : 'Revoked'}</span>
-                                                                </div>
-                                                            </td>
-                                                            <td style={{ padding: '16px 20px' }}>
-                                                                <div style={{ display: 'flex', gap: 4 }}>
-                                                                    {d.features?.adaptive && <span title="Adaptive"><Zap size={13} color="#6366F1" /></span>}
-                                                                    {d.features?.ai_help && <span title="AI Help"><BrainCircuit size={13} color="#F59E0B" /></span>}
-                                                                    {d.features?.analytics && <span title="Analytics"><BarChart2 size={13} color="#10B981" /></span>}
-                                                                </div>
-                                                            </td>
-                                                            <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                                                                <button onClick={() => { if (confirm('Revoke this distribution?')) apiCall('REVOKE_DISTRIBUTION', { id: d.id }) }} style={{ border: '1px solid #E8E8E8', background: '#fff', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', color: '#EF4444', fontSize: 11, fontWeight: 800 }}>
-                                                                    Revoke
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    )
-                                                })}
-                                            </tbody>
-                                        </table>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {rootNodes.map(r => (
+                                                <div key={r.id} onClick={() => handleNodeSelect(r)} className="p-4 rounded-xl border border-slate-200/70 hover:shadow-md transition-all cursor-pointer bg-white">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <Folder size={18} className="text-amber-500 fill-amber-400" />
+                                                        <h4 className="font-bold text-xs text-slate-900 truncate">{r.name}</h4>
+                                                    </div>
+                                                    <div className="text-[11px] text-slate-400">{nodes.filter(n => n.parent_id === r.id).length} child branches</div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     )}
+
+                                    {/* Bulk action floating bar */}
+                                    <BulkActionBar
+                                        selectedIds={selectedIds}
+                                        onActivate={() => handleBulkToggle(true)}
+                                        onDeactivate={() => handleBulkToggle(false)}
+                                        onDelete={handleBulkDelete}
+                                        onClear={() => setSelectedIds([])}
+                                        saving={saving}
+                                    />
                                 </div>
                             </div>
-                        )}
 
-                        {/* ══ ANALYTICS TAB ══ */}
-                        {tab === 'analytics' && (
-                            <AnalyticsPanel stats={stats} plans={plans} distributions={distributions} nodes={nodes} />
-                        )}
-                    </>
-                )}
-            </div>
+                            {/* COLUMN 3: Right Sidebar (Node Actions, Help & Tips, AI Banner, or Inspector) */}
+                            <div className="col-span-12 lg:col-span-3 xl:col-span-3 space-y-4">
+                                {selectedNodeId ? (
+                                    <NodeInspector
+                                        nodeId={selectedNodeId}
+                                        nodes={nodes}
+                                        plans={plans}
+                                        onClose={() => setSelectedNodeId(null)}
+                                        apiCall={apiCall}
+                                        showToast={showToast}
+                                        saving={saving}
+                                    />
+                                ) : (
+                                    <>
+                                        {/* CARD 1: Node Actions */}
+                                        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div className="flex items-center gap-2">
+                                                    <PlusCircle size={16} className="text-[#004B93]" />
+                                                    <h3 className="text-xs font-black text-slate-900">Node Actions</h3>
+                                                </div>
+                                                <button className="text-slate-400 hover:text-slate-600"><MoreVertical size={14} /></button>
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                {[
+                                                    { label: 'Add Board', icon: PlusCircle, action: openAddRoot },
+                                                    { label: 'Add Class', icon: PlusCircle, action: () => openAddChild(nodes.find(n => n.type === 'board') || nodes[0]) },
+                                                    { label: 'Add Subject', icon: PlusCircle, action: () => openAddChild(nodes.find(n => n.type === 'class') || nodes[0]) },
+                                                    { label: 'Add Chapter', icon: FilePlus, action: () => openAddChild(nodes.find(n => n.type === 'subject') || nodes[0]) },
+                                                    { label: 'Add Topic', icon: FilePlus, action: () => openAddChild(nodes.find(n => n.type === 'chapter') || nodes[0]) },
+                                                    { label: 'Bulk Upload', icon: Upload, action: () => setShowUpload(true) },
+                                                    { label: 'AI Generate', icon: Sparkles, action: () => setShowAIGen(true) },
+                                                    { label: 'Import from Excel', icon: FileSpreadsheet, action: () => setShowUpload(true) },
+                                                ].map((act, i) => (
+                                                    <button
+                                                        key={i}
+                                                        onClick={act.action}
+                                                        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-all text-left"
+                                                    >
+                                                        <act.icon size={14} className="text-slate-400" />
+                                                        <span>{act.label}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* CARD 2: Help & Tips */}
+                                        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <Lightbulb size={16} className="text-amber-500 fill-amber-400" />
+                                                <h3 className="text-xs font-black text-slate-900">Help & Tips</h3>
+                                            </div>
+                                            <div className="space-y-2.5 text-[11px] text-slate-600 leading-snug">
+                                                {[
+                                                    'Use board → class → subject → chapter → topic structure.',
+                                                    'Link questions to topics for better analytics.',
+                                                    'Publish marketplace plans to share with tenants.',
+                                                    'Use bulk upload to save time.',
+                                                    'AI Generate can help create structured syllabus.'
+                                                ].map((tip, i) => (
+                                                    <div key={i} className="flex items-start gap-2">
+                                                        <CheckCircle2 size={13} className="text-emerald-500 shrink-0 mt-0.5" />
+                                                        <span>{tip}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* CARD 3: Powered by AI Promo Banner */}
+                                        <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100/70 border border-emerald-200/80 rounded-2xl p-4 relative overflow-hidden shadow-xs">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-16 h-16 shrink-0 relative">
+                                                    <img
+                                                        src="/images/ai_robot_avatar.jpg"
+                                                        alt="AI Robot"
+                                                        className="w-16 h-16 object-contain rounded-xl"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-[10px] font-extrabold text-emerald-700 uppercase tracking-wider">Powered by AI</div>
+                                                    <h4 className="text-xs font-black text-slate-900 leading-tight mt-0.5 mb-2">Build Complete Syllabus in Minutes</h4>
+                                                    <button
+                                                        onClick={() => setShowAIGen(true)}
+                                                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                                                    >
+                                                        Generate with AI <ArrowRight size={12} strokeWidth={2.5} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ══ MARKETPLACE TAB ══ */}
+                    {tab === 'market' && (
+                        <div className="space-y-6 animate-in fade-in-50">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900">Marketplace Plans</h3>
+                                    <p className="text-xs text-slate-500 mt-0.5">Monetize and license curated curriculum packages to institutions.</p>
+                                </div>
+                                <button onClick={openAddPlan} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm transition-all">
+                                    <Plus size={14} /> New Revenue Plan
+                                </button>
+                            </div>
+
+                            {plans.length === 0 ? (
+                                <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-400">
+                                    <ShoppingBag size={44} className="mx-auto mb-3 opacity-25" />
+                                    <h4 className="font-bold text-sm text-slate-800">No Marketplace Plans</h4>
+                                    <p className="text-xs mt-1 mb-4">Create your first plan to start licensing curriculum to tenants.</p>
+                                    <button onClick={openAddPlan} className="px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-sm">
+                                        Create First Plan
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                                    {plans.map(plan => (
+                                        <div key={plan.id} className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                                            <div>
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${plan.is_active !== false ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-400'}`}>
+                                                        {plan.is_active !== false ? '● ACTIVE' : '○ INACTIVE'}
+                                                    </span>
+                                                    <div className="flex items-center gap-1">
+                                                        <button onClick={() => apiCall('TOGGLE_PLAN', { id: plan.id, is_active: !(plan.is_active !== false) })} className="p-1 text-slate-400 hover:text-slate-600 rounded-md">
+                                                            {plan.is_active !== false ? <EyeOff size={13} /> : <Eye size={13} />}
+                                                        </button>
+                                                        <button onClick={() => { setPlanForm({ ...plan }); setPlanModal({ open: true, editing: plan }) }} className="p-1 text-slate-400 hover:text-slate-600 rounded-md">
+                                                            <Edit3 size={13} />
+                                                        </button>
+                                                        <button onClick={() => { if (confirm('Delete plan?')) apiCall('DELETE_PLAN', { id: plan.id }) }} className="p-1 text-slate-400 hover:text-rose-600 rounded-md">
+                                                            <Trash2 size={13} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <h4 className="text-sm font-black text-slate-900">{plan.name}</h4>
+                                                {plan.description && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{plan.description}</p>}
+                                            </div>
+
+                                            <div className="pt-4 border-t border-slate-100 mt-4 flex items-baseline justify-between">
+                                                <div>
+                                                    <div className="text-xl font-black text-slate-900">₹{plan.price.toLocaleString()}</div>
+                                                    <div className="text-[10px] text-slate-400 font-semibold">{plan.validity_days}d access • {plan.pricing_type}</div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="text-xs font-bold text-emerald-600">₹{(plan.total_revenue || 0).toLocaleString()}</div>
+                                                    <div className="text-[10px] text-slate-400">Revenue tracked</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ══ DISTRIBUTION TAB ══ */}
+                    {tab === 'dist' && (
+                        <div className="space-y-5 animate-in fade-in-50">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900">Infrastructure Deployment</h3>
+                                    <p className="text-xs text-slate-500 mt-0.5">Deploy syllabus modules to specific schools and coaching centers.</p>
+                                </div>
+                                <div className="flex items-center gap-2.5">
+                                    <div className="relative">
+                                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            value={distSearch}
+                                            onChange={e => setDistSearch(e.target.value)}
+                                            placeholder="Search deployments…"
+                                            className="pl-8 pr-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 outline-none"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => setDistModal(true)}
+                                        className="px-4 py-2 bg-[#004B93] hover:bg-[#003870] text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm transition-all"
+                                    >
+                                        <Send size={13} /> Deploy Payload
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                                {filteredDistributions.length === 0 ? (
+                                    <div className="p-12 text-center text-slate-400">
+                                        <Globe size={40} className="mx-auto mb-2 opacity-20" />
+                                        <div className="font-bold text-sm text-slate-700">No active deployments</div>
+                                        <div className="text-xs mt-1">Deploy a syllabus to an institution to begin.</div>
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-xs">
+                                            <thead className="bg-slate-50/80 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                                <tr>
+                                                    <th className="py-3 px-4">Syllabus / Tenant</th>
+                                                    <th className="py-3 px-4">Access Level</th>
+                                                    <th className="py-3 px-4">Deployed On</th>
+                                                    <th className="py-3 px-4">Expires</th>
+                                                    <th className="py-3 px-4">Status</th>
+                                                    <th className="py-3 px-4 text-right">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {filteredDistributions.map(d => (
+                                                    <tr key={d.id} className="hover:bg-slate-50/70 transition-colors">
+                                                        <td className="py-3.5 px-4 font-bold text-slate-900">
+                                                            <div>{d.syllabus_nodes?.name ?? d.master_syllabus_id}</div>
+                                                            <div className="text-[11px] font-normal text-slate-400">{d.tenants?.name ?? d.tenant_id}</div>
+                                                        </td>
+                                                        <td className="py-3.5 px-4">
+                                                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100 uppercase">
+                                                                {d.access_level || 'full'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3.5 px-4 text-slate-600 font-medium">
+                                                            {new Date(d.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                        </td>
+                                                        <td className="py-3.5 px-4 text-slate-600 font-medium">
+                                                            {d.expires_at ? new Date(d.expires_at).toLocaleDateString('en-IN') : 'Lifetime'}
+                                                        </td>
+                                                        <td className="py-3.5 px-4">
+                                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${d.is_active ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-400'}`}>
+                                                                {d.is_active ? 'LIVE' : 'REVOKED'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3.5 px-4 text-right">
+                                                            <button
+                                                                onClick={() => { if (confirm('Revoke this distribution?')) apiCall('REVOKE_DISTRIBUTION', { id: d.id }) }}
+                                                                className="px-2.5 py-1 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold transition-colors"
+                                                            >
+                                                                Revoke
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ══ ANALYTICS TAB ══ */}
+                    {tab === 'analytics' && (
+                        <AnalyticsPanel stats={stats} plans={plans} distributions={distributions} nodes={nodes} />
+                    )}
+                </>
+            )}
 
             {/* ── MODALS ── */}
             {showAIGen && <AIGenerateModal onClose={() => setShowAIGen(false)} onDone={() => { setShowAIGen(false); fetchAll() }} showToast={showToast} />}

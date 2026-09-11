@@ -1,7 +1,11 @@
 import type { Metadata } from 'next'
-import { Inter, Manrope, Work_Sans } from 'next/font/google'
+import { Inter, Manrope, Work_Sans, Geist } from 'next/font/google'
 import './globals.css'
 import { ClientTimeZone } from '@/components/ClientTimeZone'
+import { cn } from "@/lib/utils"
+import { Toaster } from "@/components/ui/sonner"
+
+const geist = Geist({ subsets: ['latin'], variable: '--font-sans' })
 
 const inter = Inter({
   subsets: ['latin'],
@@ -41,10 +45,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${manrope.variable} ${workSans.variable}`} suppressHydrationWarning>
+    <html lang="en" className={cn(inter.variable, manrope.variable, workSans.variable, "font-sans", geist.variable)} suppressHydrationWarning>
       <body suppressHydrationWarning>
         <ClientTimeZone />
         {children}
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   )

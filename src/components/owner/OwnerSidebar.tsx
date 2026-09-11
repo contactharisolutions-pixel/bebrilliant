@@ -2,21 +2,17 @@
 
 import React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
     LayoutDashboard,
-    Building2,
-    Users,
     TrendingUp, 
     CreditCard, 
-    Share2, 
     BookOpenCheck, 
     ScrollText, 
     Globe, 
-    Bot, 
     ShieldCheck, 
-    BarChart4, 
     Settings2, 
     LogOut, 
     Zap, 
@@ -28,10 +24,23 @@ import {
     Megaphone,
     Video,
     Award,
-    BarChart2
+    ChevronRight,
+    Users
 } from 'lucide-react'
 
-const NAV_GROUPS = [
+interface NavItem {
+    label: string
+    icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>
+    href: string
+    permission?: string
+}
+
+interface NavGroup {
+    title: string
+    items: NavItem[]
+}
+
+const NAV_GROUPS: NavGroup[] = [
     {
         title: 'Main Dashboard',
         items: [
@@ -129,70 +138,20 @@ export function OwnerSidebar() {
 
     if (loading) {
         return (
-            <aside style={{
-                width: 280,
-                minWidth: 280,
-                height: '100vh',
-                background: '#FEFEFE',
-                borderRight: '1px solid #E5E7EB',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-            }}>
-                <span style={{ fontSize: 13, color: '#9CA3AF', fontWeight: 600 }}>Loading navigation...</span>
+            <aside className="w-[280px] min-w-[280px] h-full bg-gradient-to-b from-[#023E68] via-[#002D4E] to-[#001B30] border-r border-white/10 flex items-center justify-center">
+                <span className="text-xs text-sky-200/60 font-semibold animate-pulse">Loading navigation...</span>
             </aside>
         )
     }
 
     return (
-        <aside style={{
-            width: 280,
-            minWidth: 280,
-            height: '100vh',
-            background: 'linear-gradient(180deg, #FEFEFE 0%, #F9FAFB 100%)',
-            borderRight: '1px solid #E5E7EB',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            boxShadow: '4px 0 24px rgba(0,0,0,0.02)'
-        }}>
+        <aside className="w-[280px] min-w-[280px] h-full bg-gradient-to-b from-[#023E68] via-[#002C4D] to-[#00182B] border-r border-white/10 flex flex-col overflow-hidden shadow-2xl relative select-none">
+            {/* Ambient Background Wave / Glow Overlay */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(14,165,233,0.15),transparent_60%)] pointer-events-none" />
+            <div className="absolute bottom-0 inset-x-0 h-96 bg-[radial-gradient(ellipse_at_bottom,rgba(13,148,136,0.18),transparent_70%)] pointer-events-none" />
 
-            {/* ── BRAND ── */}
-            <div style={{
-                height: 120,
-                padding: '0 28px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'flex-start',
-                borderBottom: '1px solid rgba(0,0,0,0.05)',
-                flexShrink: 0,
-                gap: 8,
-                background: 'rgba(255,255,255,0.4)',
-                backdropFilter: 'blur(10px)'
-            }}>
-                <img 
-                    src="/logo.png" 
-                    alt="BeBrilliant Logo" 
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.png' }}
-                    style={{ height: 42, width: 'auto', maxWidth: '100%', objectFit: 'contain' }} 
-                />
-                <div style={{ 
-                    fontSize: 10, 
-                    fontWeight: 900, 
-                    color: '#004B93', 
-                    letterSpacing: '0.15em', 
-                    width: '100%', 
-                    textAlign: 'left',
-                    textTransform: 'uppercase',
-                    opacity: 0.8
-                }}>
-                    {role === 'owner' ? 'Super Admin Panel' : 'Platform Staff Portal'}
-                </div>
-            </div>
-
-            {/* ── NAV ITEMS ── */}
-            <nav style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 28 }}>
+            {/* ── NAV ITEMS LIST ── */}
+            <nav className="relative z-10 flex-1 overflow-y-auto px-3.5 py-3.5 flex flex-col gap-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                 {NAV_GROUPS.map((group, groupIdx) => {
                     const visibleItems = group.items.filter(item => {
                         if (!item.permission) return true
@@ -203,10 +162,12 @@ export function OwnerSidebar() {
 
                     return (
                         <div key={groupIdx}>
-                            <div style={{ fontSize: 10, fontWeight: 900, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.12em', padding: '0 12px 12px', opacity: 0.8 }}>
-                                {group.title}
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {groupIdx > 0 && (
+                                <div className="text-[10px] font-extrabold text-sky-200/40 uppercase tracking-[0.14em] px-3 pb-2 pt-1">
+                                    {group.title}
+                                </div>
+                            )}
+                            <div className="flex flex-col gap-1">
                                 {visibleItems.map(item => {
                                     const active = item.href === '/owner/exams' 
                                         ? pathname === '/owner/exams' 
@@ -215,29 +176,38 @@ export function OwnerSidebar() {
                                         : item.href === '/owner/settings'
                                         ? pathname === '/owner/settings'
                                         : (pathname === item.href || pathname?.startsWith(item.href + '/'))
+
                                     return (
-                                        <Link key={item.href} href={item.href} style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 12,
-                                            padding: '12px 16px',
-                                            borderRadius: 14,
-                                            textDecoration: 'none',
-                                            background: active ? '#004B93' : 'transparent',
-                                            color: active ? '#fff' : '#4B5563',
-                                            fontWeight: active ? 700 : 600,
-                                            fontSize: 13,
-                                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                            boxShadow: active ? '0 10px 20px rgba(0,75,147,0.15)' : 'none',
-                                            position: 'relative',
-                                            overflow: 'hidden'
-                                        }}
-                                            className="nav-link-premium"
+                                        <Link 
+                                            key={item.href} 
+                                            href={item.href}
+                                            className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 relative overflow-hidden ${
+                                                active 
+                                                    ? 'bg-gradient-to-r from-[#0284C7] to-[#0D9488] text-white shadow-[0_4px_16px_rgba(2,132,199,0.38)]'
+                                                    : 'text-white/80 hover:text-white hover:bg-white/[0.08]'
+                                            }`}
                                         >
-                                            <item.icon size={18} color={active ? '#fff' : '#9CA3AF'} strokeWidth={active ? 2.5 : 2} style={{ flexShrink: 0 }} />
-                                            <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
-                                            {active && (
-                                                <div style={{ position: 'absolute', left: 0, top: '20%', bottom: '20%', width: 4, background: '#F0A026', borderRadius: '0 4px 4px 0' }} />
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <item.icon 
+                                                    size={17} 
+                                                    strokeWidth={active ? 2.5 : 2}
+                                                    className={`shrink-0 transition-transform duration-200 group-hover:scale-105 ${
+                                                        active ? 'text-white' : 'text-white/70 group-hover:text-white'
+                                                    }`}
+                                                />
+                                                <span className="truncate">{item.label}</span>
+                                            </div>
+
+                                            {/* Submenu / Drilldown indicator */}
+                                            {groupIdx > 0 && (
+                                                <ChevronRight 
+                                                    size={14} 
+                                                    className={`shrink-0 transition-transform duration-200 ${
+                                                        active 
+                                                            ? 'text-white/90 translate-x-0.5' 
+                                                            : 'text-white/30 group-hover:text-white/70 group-hover:translate-x-0.5'
+                                                    }`}
+                                                />
                                             )}
                                         </Link>
                                     )
@@ -246,46 +216,33 @@ export function OwnerSidebar() {
                         </div>
                     )
                 })}
-            </nav>
 
-            {/* ── USER FOOTER ── */}
-            <div style={{
-                padding: '20px 16px',
-                borderTop: '1px solid rgba(0,0,0,0.05)',
-                background: 'rgba(255,255,255,0.4)',
-                backdropFilter: 'blur(10px)',
-                flexShrink: 0,
-            }}>
-                <div 
-                    onClick={handleLogout}
-                    className="hover-lift"
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: 12,
-                        padding: '12px',
-                        borderRadius: 14,
-                        cursor: 'pointer',
-                        background: '#fff',
-                        border: '1px solid #F3F4F6',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
-                    }}
-                >
-                    <div style={{
-                        width: 40, height: 40,
-                        borderRadius: 12,
-                        background: 'linear-gradient(135deg, #004B93 0%, #1FAC63 100%)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: '#fff', fontWeight: 900, fontSize: 16,
-                        boxShadow: '0 4px 10px rgba(0,75,147,0.1)'
-                    }}>R</div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Platform User</div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            {role === 'owner' ? 'Platform Owner' : 'Platform Staff'}
+                {/* ── BUILDING BRIGHTER FUTURES GRAPHIC BANNER ── */}
+                <div className="mt-4 rounded-2xl overflow-hidden relative shadow-lg border border-white/10 bg-[#00223D] h-[180px] shrink-0 flex flex-col justify-end p-4">
+                    {/* Background Illustration */}
+                    <div className="absolute inset-0">
+                        <Image
+                            src="/images/sidebar_graduation_art.jpg"
+                            alt="Building Brighter Futures"
+                            fill
+                            className="object-cover object-[center_55%] opacity-90"
+                            priority
+                        />
+                        {/* Smooth gradient blend overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#001424] via-[#001424]/40 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#001424]/90 via-transparent to-transparent" />
+                    </div>
+
+                    {/* Headline Typography */}
+                    <div className="relative z-10">
+                        <div className="text-white font-black text-lg leading-[1.15] tracking-tight drop-shadow-md">
+                            Building<br />
+                            Brighter<br />
+                            Futures
                         </div>
                     </div>
-                    <LogOut size={16} color="#9CA3AF" style={{ flexShrink: 0 }} />
                 </div>
-            </div>
+            </nav>
         </aside>
     )
 }

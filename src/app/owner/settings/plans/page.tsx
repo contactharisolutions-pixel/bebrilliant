@@ -8,7 +8,8 @@ import {
     CreditCard, DollarSign, Package, Layers, Search, Filter, Trash2,
     Copy, Archive, ArchiveRestore, Star, Download, ChevronDown,
     Video, UserCheck, MessageSquare, ShoppingBag, Palette, ShieldCheck,
-    BarChart2, ZapOff, Zap, GripVertical, Eye, EyeOff, Tag, Boxes
+    BarChart2, ZapOff, Zap, GripVertical, Eye, EyeOff, Tag, Boxes,
+    GraduationCap, Building2, Sparkles, CheckCheck
 } from 'lucide-react'
 import { P, GLASS_STYLES } from '@/components/shared/institutional/theme'
 import { KpiCard } from '@/components/shared/institutional/KpiCard'
@@ -20,7 +21,8 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
     CreditCard, DollarSign, Package, Layers, Star, Video, UserCheck,
     MessageSquare, ShoppingBag, Palette, ShieldCheck, BarChart2, Zap,
     ZapOff, Tag, Boxes, Activity, Settings, Key, Check, Eye, EyeOff,
-    Search, Download, Filter, Copy, Archive, Pencil, Plus
+    Search, Download, Filter, Copy, Archive, Pencil, Plus,
+    GraduationCap, Building2, Sparkles, CheckCheck
 }
 
 function DynIcon({ name, size = 16, color }: { name: string; size?: number; color?: string }) {
@@ -45,6 +47,7 @@ type SubscriptionPlan = {
     name: string
     type: 'institute' | 'personal_teacher' | string
     price: number
+    yearly_price?: number | null
     billing_cycle: 'monthly' | 'yearly'
     max_students: number
     max_teachers: number
@@ -100,16 +103,52 @@ type ExtraPack = {
 
 // ─── System Tenant Types (Strictly aligned with platform architecture) ───────
 export const SYSTEM_TENANT_TYPES = [
-    { value: 'school', label: 'School (K-12)', badgeColor: '#2563EB', badgeBg: '#EFF6FF', description: 'Schools, K-12 Academics, Multi-Branch & OMR' },
-    { value: 'institute', label: 'Institute / Coaching', badgeColor: '#059669', badgeBg: '#ECFDF5', description: 'Coaching centers, test prep, competitive exams' },
-    { value: 'independent_teacher', label: 'Independent Teacher', badgeColor: '#7C3AED', badgeBg: '#F5F3FF', description: 'Private tutors, solo educators, subject specialists' },
+    {
+        value: 'school',
+        label: 'School (K-12)',
+        badgeColor: '#2563EB',
+        badgeBg: '#EFF6FF',
+        border: '#BFDBFE',
+        icon: 'GraduationCap',
+        gradient: 'linear-gradient(90deg, #2563EB 0%, #60A5FA 100%)',
+        description: 'Comprehensive K-12 Academics, Multi-Branch & OMR'
+    },
+    {
+        value: 'institute',
+        label: 'Institute / Coaching',
+        badgeColor: '#059669',
+        badgeBg: '#ECFDF5',
+        border: '#A7F3D0',
+        icon: 'Building2',
+        gradient: 'linear-gradient(90deg, #059669 0%, #34D399 100%)',
+        description: 'Test Prep, Competitive Batches & Coaching Centers'
+    },
+    {
+        value: 'independent_teacher',
+        label: 'Independent Teacher',
+        badgeColor: '#7C3AED',
+        badgeBg: '#F5F3FF',
+        border: '#DDD6FE',
+        icon: 'UserCheck',
+        gradient: 'linear-gradient(90deg, #7C3AED 0%, #A78BFA 100%)',
+        description: 'Private Tutors, Subject Mentors & Solo Educators'
+    },
 ]
 
 export const getTenantTypeMeta = (type?: string) => {
     if (type === 'school') return SYSTEM_TENANT_TYPES[0]
     if (type === 'institute') return SYSTEM_TENANT_TYPES[1]
     if (type === 'independent_teacher' || type === 'personal_teacher') return SYSTEM_TENANT_TYPES[2]
-    return { value: type || 'custom', label: type || 'Custom', badgeColor: P.muted, badgeBg: P.bg, description: '' }
+    return {
+        value: type || 'custom',
+        label: type || 'Custom',
+        badgeColor: P.muted,
+        badgeBg: P.bg,
+        border: P.border,
+        icon: 'Star',
+        gradient: `linear-gradient(90deg, ${P.muted}, ${P.muted}88)`,
+        description: 'Custom Platform Tier'
+    }
 }
 
 const FEATURE_CATEGORIES = ['Core', 'Learning', 'AI & Smart', 'Examinations', 'Reporting', 'Communication', 'Revenue', 'Customisation', 'Advanced']
@@ -187,14 +226,16 @@ export default function SubscriptionPlansManager() {
 
     const [activeTab, setActiveTab] = useState<'tiers' | 'subscriptions' | 'invoices' | 'addons' | 'features'>('tiers')
     const [search, setSearch] = useState('')
+    const [planScopeFilter, setPlanScopeFilter] = useState<'all' | 'school' | 'institute' | 'independent_teacher'>('all')
     const [invoiceFilter, setInvoiceFilter] = useState<'all' | 'paid' | 'pending' | 'failed'>('all')
     const [showArchived, setShowArchived] = useState(false)
 
-    // ── Plan drawer ──
+    // ── Plan drawer & Billing cycle view ──
+    const [billingCycleView, setBillingCycleView] = useState<'monthly' | 'yearly'>('monthly')
     const [planDrawerOpen, setPlanDrawerOpen] = useState(false)
     const [editPlanMode, setEditPlanMode] = useState(false)
     const [currentPlan, setCurrentPlan] = useState<Partial<SubscriptionPlan>>({
-        name: '', type: 'institute', price: 4999, billing_cycle: 'monthly',
+        name: '', type: 'institute', price: 4999, yearly_price: 49990, billing_cycle: 'monthly',
         max_students: 500, max_teachers: 20, max_storage_gb: 50, max_ai_tokens: 1000000,
         features: {}, is_active: true
     })
@@ -241,10 +282,31 @@ export default function SubscriptionPlansManager() {
     useEffect(() => { fetchData() }, [fetchData])
 
     // ── Computed ──
-    const visiblePlans = useMemo(() =>
-        plans.filter(p => showArchived ? !p.is_active : p.is_active),
-        [plans, showArchived]
-    )
+    const visiblePlans = useMemo(() => {
+        return plans.filter(p => {
+            const matchesArchive = showArchived ? !p.is_active : p.is_active
+            if (!matchesArchive) return false
+            if (planScopeFilter !== 'all') {
+                const pType = p.type === 'personal_teacher' ? 'independent_teacher' : p.type
+                if (pType !== planScopeFilter) return false
+            }
+            if (search.trim()) {
+                const q = search.toLowerCase()
+                if (!p.name.toLowerCase().includes(q)) return false
+            }
+            return true
+        })
+    }, [plans, showArchived, planScopeFilter, search])
+
+    const scopeCounts = useMemo(() => {
+        const base = plans.filter(p => showArchived ? !p.is_active : p.is_active)
+        return {
+            all: base.length,
+            school: base.filter(p => p.type === 'school').length,
+            institute: base.filter(p => p.type === 'institute').length,
+            independent_teacher: base.filter(p => p.type === 'independent_teacher' || p.type === 'personal_teacher').length,
+        }
+    }, [plans, showArchived])
 
     const featuresByCategory = useMemo(() => {
         const map: Record<string, PlatformFeature[]> = {}
@@ -256,7 +318,7 @@ export default function SubscriptionPlansManager() {
     }, [featureRegistry])
 
     // ── Helpers ──
-    const billingAction = async (action: string, payload: any, successMsg: string) => {
+    const billingAction = async (action: string, payload: any, successMsg?: string) => {
         setActionSaving(true)
         try {
             const res = await fetch('/api/owner/billing', {
@@ -266,12 +328,12 @@ export default function SubscriptionPlansManager() {
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Operation failed')
-            showToast(successMsg, 'success')
-            fetchData(true)
-            return true
+            if (successMsg) showToast(successMsg, 'success')
+            await fetchData(true)
+            return data
         } catch (e: any) {
             showToast(e.message, 'error')
-            return false
+            return null
         } finally {
             setActionSaving(false)
         }
@@ -279,12 +341,19 @@ export default function SubscriptionPlansManager() {
 
     const handleSavePlan = async () => {
         if (!currentPlan.name?.trim()) return showToast('Plan name is required.', 'error')
-        const ok = await billingAction(
+        const payload = {
+            ...currentPlan,
+            price: parseFloat(String(currentPlan.price)) || 0,
+            yearly_price: currentPlan.yearly_price != null && String(currentPlan.yearly_price).trim() !== ''
+                ? parseFloat(String(currentPlan.yearly_price)) || 0
+                : null
+        }
+        const res = await billingAction(
             editPlanMode ? 'UPDATE_PLAN' : 'CREATE_PLAN',
-            currentPlan,
+            payload,
             editPlanMode ? 'Plan updated successfully.' : 'New plan created.'
         )
-        if (ok) setPlanDrawerOpen(false)
+        if (res) setPlanDrawerOpen(false)
     }
 
     const handleArchivePlan = (id: string) => {
@@ -295,8 +364,18 @@ export default function SubscriptionPlansManager() {
     const handleRestorePlan = (id: string) =>
         billingAction('RESTORE_PLAN', { id }, 'Plan restored and set to active.')
 
-    const handleDuplicatePlan = (id: string) =>
-        billingAction('DUPLICATE_PLAN', { id }, 'Plan duplicated as draft (inactive).')
+    const handleDuplicatePlan = async (id: string) => {
+        const res = await billingAction('DUPLICATE_PLAN', { id })
+        if (res?.plan) {
+            showToast(`Plan cloned successfully as "${res.plan.name}".`, 'success')
+            setCurrentPlan({
+                ...res.plan,
+                yearly_price: res.plan.yearly_price ?? Math.round(Number(res.plan.price) * 10)
+            })
+            setEditPlanMode(true)
+            setPlanDrawerOpen(true)
+        }
+    }
 
     // Override uses its own dedicated route (not the generic billing action)
     const handleOverrideSave = async () => {
@@ -452,114 +531,548 @@ export default function SubscriptionPlansManager() {
     // ── Plan card ──────────────────────────────────────────────────────────────
     const PlanCard = ({ plan }: { plan: SubscriptionPlan }) => {
         const enabledFeatures = featureRegistry.filter(f => plan.features?.[f.key])
+        const meta = getTenantTypeMeta(plan.type)
+        const isYearly = billingCycleView === 'yearly'
+        const regularMonthly = Number(plan.price) || 0
+        const regularAnnual = regularMonthly * 12
+        const yearlyPrice = Number(plan.yearly_price ?? Math.round(regularMonthly * 10))
+        const annualSavings = Math.max(0, regularAnnual - yearlyPrice)
+        const savingsPercent = regularAnnual > 0 ? Math.round((annualSavings / regularAnnual) * 100) : 0
+        const effectiveMonthly = Math.round(yearlyPrice / 12)
+
         return (
             <div style={{
-                background: '#fff', border: `2px solid ${plan.is_active ? P.border : '#E5E7EB'}`,
-                borderRadius: 24, padding: 28, display: 'flex', flexDirection: 'column',
-                position: 'relative', boxShadow: plan.is_active ? '0 4px 24px rgba(0,0,0,0.04)' : 'none',
-                opacity: plan.is_active ? 1 : 0.65
+                background: '#FFFFFF',
+                border: `1.5px solid ${plan.is_active ? '#E2E8F0' : '#E5E7EB'}`,
+                borderRadius: 22,
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+                boxShadow: plan.is_active
+                    ? '0 10px 28px -6px rgba(15, 23, 42, 0.05), 0 2px 8px -2px rgba(15, 23, 42, 0.03)'
+                    : 'none',
+                opacity: plan.is_active ? 1 : 0.72,
+                overflow: 'hidden',
+                transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
             }}>
-                {/* Target Scope System Tenant Type badge */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                    {(() => {
-                        const meta = getTenantTypeMeta(plan.type)
-                        return (
-                            <span style={{
-                                background: meta.badgeBg,
-                                color: meta.badgeColor,
-                                border: `1px solid ${meta.badgeColor}35`,
-                                borderRadius: 8,
-                                padding: '3px 10px',
-                                fontSize: 10.5,
-                                fontWeight: 900,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.06em'
-                            }}>
-                                {meta.label}
-                            </span>
-                        )
-                    })()}
-                </div>
+                {/* Top Accent Gradient Bar mapped to Tenant Scope */}
+                <div style={{
+                    height: 5,
+                    width: '100%',
+                    background: plan.is_active ? meta.gradient : '#CBD5E1'
+                }} />
 
-                {/* Title row */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                    <h3 style={{ margin: 0, fontSize: 20, fontWeight: 950, color: P.dark, lineHeight: 1.2 }}>{plan.name}</h3>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => handleDuplicatePlan(plan.id)} title="Duplicate plan"
-                            style={{ width: 32, height: 32, background: P.bg, border: `1px solid ${P.border}`, borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Copy size={13} color={P.muted} />
-                        </button>
-                        <button onClick={() => { setCurrentPlan(plan); setEditPlanMode(true); setPlanDrawerOpen(true) }} title="Edit plan"
-                            style={{ width: 32, height: 32, background: P.bg, border: `1px solid ${P.border}`, borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Pencil size={13} color={P.brand} />
-                        </button>
-                    </div>
-                </div>
+                <div style={{ padding: '24px 26px 22px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                    {/* Header Row: Tenant Scope Badge + Quick Actions */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                        <div style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            background: meta.badgeBg,
+                            color: meta.badgeColor,
+                            border: `1px solid ${meta.border}`,
+                            borderRadius: 10,
+                            padding: '4px 11px',
+                            fontSize: 11,
+                            fontWeight: 900,
+                            letterSpacing: '0.04em',
+                            textTransform: 'uppercase'
+                        }}>
+                            <DynIcon name={meta.icon} size={13} color={meta.badgeColor} />
+                            <span>{meta.label}</span>
+                        </div>
 
-                {/* Price */}
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 20 }}>
-                    <span style={{ fontSize: 34, fontWeight: 950, color: P.dark, letterSpacing: '-0.04em' }}>
-                        ₹{Number(plan.price).toLocaleString('en-IN')}
-                    </span>
-                    <span style={{ color: P.muted, fontSize: 13, fontWeight: 700 }}>
-                        /{plan.billing_cycle === 'monthly' ? 'mo' : 'yr'}
-                    </span>
-                </div>
+                        {/* Squircle Action Buttons */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <button
+                                type="button"
+                                onClick={() => handleDuplicatePlan(plan.id)}
+                                title="Duplicate / Clone Plan"
+                                style={{
+                                    width: 34,
+                                    height: 34,
+                                    background: '#F8FAFC',
+                                    border: '1.5px solid #E2E8F0',
+                                    borderRadius: 10,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.15s ease'
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor = P.brand; e.currentTarget.style.background = '#EEF2FF' }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#F8FAFC' }}
+                            >
+                                <Copy size={13.5} color="#64748B" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setCurrentPlan({
+                                        ...plan,
+                                        yearly_price: plan.yearly_price ?? Math.round(Number(plan.price) * 10)
+                                    })
+                                    setEditPlanMode(true)
+                                    setPlanDrawerOpen(true)
+                                }}
+                                title="Edit Plan Configuration"
+                                style={{
+                                    width: 34,
+                                    height: 34,
+                                    background: '#F8FAFC',
+                                    border: '1.5px solid #E2E8F0',
+                                    borderRadius: 10,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.15s ease'
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor = P.brand; e.currentTarget.style.background = '#EEF2FF' }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#F8FAFC' }}
+                            >
+                                <Pencil size={13.5} color={P.brand} />
+                            </button>
+                        </div>
+                    </div>
 
-                {/* Quotas */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '18px 0', borderTop: `1px solid ${P.border}`, flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: P.dark, fontWeight: 700 }}>
-                        <Users size={15} color={P.brand} /> {plan.max_students.toLocaleString()} Students
+                    {/* Plan Name & Tagline */}
+                    <div style={{ marginBottom: 18 }}>
+                        <h3 style={{
+                            margin: 0,
+                            fontSize: 22,
+                            fontWeight: 950,
+                            color: '#0F172A',
+                            letterSpacing: '-0.03em',
+                            lineHeight: 1.2
+                        }}>
+                            {plan.name}
+                        </h3>
+                        <p style={{
+                            margin: '4px 0 0',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: '#64748B',
+                            lineHeight: 1.4
+                        }}>
+                            {meta.description}
+                        </p>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: P.dark, fontWeight: 700 }}>
-                        <Shield size={15} color={P.brand} /> {plan.max_teachers} Teachers
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: P.dark, fontWeight: 700 }}>
-                        <Database size={15} color={P.brand} /> {plan.max_storage_gb} GB Storage
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: P.dark, fontWeight: 700 }}>
-                        <Cpu size={15} color={P.brand} /> {(plan.max_ai_tokens || 0).toLocaleString('en-IN')} AI Tokens
-                    </div>
-                </div>
 
-                {/* Feature chips */}
-                {enabledFeatures.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 14, borderTop: `1px solid ${P.border}` }}>
-                        {enabledFeatures.slice(0, 5).map(f => (
-                            <span key={f.key} style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 4,
-                                background: `${P.brand}10`, color: P.brand,
-                                borderRadius: 8, padding: '3px 9px', fontSize: 11, fontWeight: 800
-                            }}>
-                                <DynIcon name={f.icon} size={11} color={P.brand} />
-                                {f.label}
-                            </span>
-                        ))}
-                        {enabledFeatures.length > 5 && (
-                            <span style={{ background: P.bg, color: P.muted, borderRadius: 8, padding: '3px 9px', fontSize: 11, fontWeight: 800 }}>
-                                +{enabledFeatures.length - 5} more
-                            </span>
+                    {/* Hero Pricing Section Box */}
+                    <div style={{
+                        background: '#F8FAFC',
+                        border: '1.5px solid #E2E8F0',
+                        borderRadius: 16,
+                        padding: '16px 18px',
+                        marginBottom: 18
+                    }}>
+                        {isYearly ? (
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: 32, fontWeight: 950, color: '#0F172A', letterSpacing: '-0.04em' }}>
+                                        ₹{yearlyPrice.toLocaleString('en-IN')}
+                                    </span>
+                                    <span style={{ color: '#64748B', fontSize: 13, fontWeight: 800 }}>
+                                        /year
+                                    </span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: 12, color: '#475569', fontWeight: 700 }}>
+                                        ₹{effectiveMonthly.toLocaleString('en-IN')}/mo billed annually
+                                    </span>
+                                    {annualSavings > 0 && (
+                                        <span style={{
+                                            background: '#ECFDF5',
+                                            color: '#047857',
+                                            border: '1px solid #A7F3D0',
+                                            padding: '2px 8px',
+                                            borderRadius: 6,
+                                            fontSize: 11,
+                                            fontWeight: 900,
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 4
+                                        }}>
+                                            <Sparkles size={11} color="#059669" />
+                                            Save ₹{annualSavings.toLocaleString('en-IN')} ({savingsPercent}% OFF)
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: 32, fontWeight: 950, color: '#0F172A', letterSpacing: '-0.04em' }}>
+                                        ₹{regularMonthly.toLocaleString('en-IN')}
+                                    </span>
+                                    <span style={{ color: '#64748B', fontSize: 13, fontWeight: 800 }}>
+                                        /month
+                                    </span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: 12, color: '#475569', fontWeight: 700 }}>
+                                        or ₹{yearlyPrice.toLocaleString('en-IN')}/yr
+                                    </span>
+                                    {savingsPercent > 0 && (
+                                        <span style={{
+                                            background: '#ECFDF5',
+                                            color: '#047857',
+                                            border: '1px solid #A7F3D0',
+                                            padding: '2px 8px',
+                                            borderRadius: 6,
+                                            fontSize: 11,
+                                            fontWeight: 900,
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 4
+                                        }}>
+                                            <Sparkles size={11} color="#059669" />
+                                            Save {savingsPercent}% yearly
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
                         )}
                     </div>
-                )}
 
-                {/* Footer */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, paddingTop: 14, borderTop: `1px solid ${P.border}` }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 900, color: plan.is_active ? '#059669' : P.muted }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: plan.is_active ? '#059669' : P.muted }} />
-                        {plan.is_active ? 'ACTIVE' : 'ARCHIVED'}
-                    </span>
-                    {plan.is_active ? (
-                        <button onClick={() => handleArchivePlan(plan.id)}
-                            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8, color: '#C2410C', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>
-                            <Archive size={12} /> Archive
-                        </button>
-                    ) : (
-                        <button onClick={() => handleRestorePlan(plan.id)}
-                            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 8, color: '#059669', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>
-                            <ArchiveRestore size={12} /> Restore
-                        </button>
-                    )}
+                    {/* Capacity Limits: 2x2 Resource Matrix (Fully mapped with DB) */}
+                    <div style={{ marginBottom: 18 }}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: 10
+                        }}>
+                            <span style={{ fontSize: 10.5, fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                Capacity Allocations
+                            </span>
+                        </div>
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(2, 1fr)',
+                            gap: 10
+                        }}>
+                            {/* Students */}
+                            <div style={{
+                                background: '#F8FAFC',
+                                border: '1px solid #F1F5F9',
+                                borderRadius: 12,
+                                padding: '10px 12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 10
+                            }}>
+                                <div style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 9,
+                                    background: '#EFF6FF',
+                                    border: '1px solid #DBEAFE',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <Users size={15} color="#2563EB" />
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: 13, fontWeight: 950, color: '#0F172A', lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {plan.max_students.toLocaleString('en-IN')}
+                                    </div>
+                                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B' }}>Students</div>
+                                </div>
+                            </div>
+
+                            {/* Teachers */}
+                            <div style={{
+                                background: '#F8FAFC',
+                                border: '1px solid #F1F5F9',
+                                borderRadius: 12,
+                                padding: '10px 12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 10
+                            }}>
+                                <div style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 9,
+                                    background: '#F5F3FF',
+                                    border: '1px solid #EDE9FE',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <Shield size={15} color="#7C3AED" />
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: 13, fontWeight: 950, color: '#0F172A', lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {plan.max_teachers.toLocaleString('en-IN')}
+                                    </div>
+                                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B' }}>
+                                        {plan.max_teachers === 1 ? 'Teacher' : 'Teachers'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Storage */}
+                            <div style={{
+                                background: '#F8FAFC',
+                                border: '1px solid #F1F5F9',
+                                borderRadius: 12,
+                                padding: '10px 12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 10
+                            }}>
+                                <div style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 9,
+                                    background: '#ECFDF5',
+                                    border: '1px solid #D1FAE5',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <Database size={15} color="#059669" />
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: 13, fontWeight: 950, color: '#0F172A', lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {plan.max_storage_gb} GB
+                                    </div>
+                                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B' }}>Storage</div>
+                                </div>
+                            </div>
+
+                            {/* AI Smart Tokens */}
+                            <div style={{
+                                background: '#F8FAFC',
+                                border: '1px solid #F1F5F9',
+                                borderRadius: 12,
+                                padding: '10px 12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 10
+                            }}>
+                                <div style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 9,
+                                    background: '#FFFBEB',
+                                    border: '1px solid #FEF3C7',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <Cpu size={15} color="#D97706" />
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: 13, fontWeight: 950, color: '#0F172A', lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {Number(plan.max_ai_tokens || 0) >= 1000000
+                                            ? `${(Number(plan.max_ai_tokens) / 1000000).toFixed(1)}M`
+                                            : (plan.max_ai_tokens || 0).toLocaleString('en-IN')}
+                                    </div>
+                                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B' }}>AI Tokens</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Included Feature Modules Section */}
+                    <div style={{
+                        paddingTop: 16,
+                        borderTop: '1px solid #F1F5F9',
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'flex-start'
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: 10
+                        }}>
+                            <span style={{ fontSize: 10.5, fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                Feature Modules
+                            </span>
+                            <span style={{
+                                fontSize: 10.5,
+                                fontWeight: 800,
+                                color: enabledFeatures.length > 0 ? '#4F46E5' : '#94A3B8',
+                                background: enabledFeatures.length > 0 ? '#EEF2FF' : '#F1F5F9',
+                                padding: '2px 7px',
+                                borderRadius: 6
+                            }}>
+                                {enabledFeatures.length} Active
+                            </span>
+                        </div>
+
+                        {enabledFeatures.length > 0 ? (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {enabledFeatures.slice(0, 5).map(f => (
+                                    <span
+                                        key={f.key}
+                                        title={f.description || f.label}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 5,
+                                            background: '#F8FAFC',
+                                            color: '#1E293B',
+                                            border: '1px solid #E2E8F0',
+                                            borderRadius: 8,
+                                            padding: '4px 9px',
+                                            fontSize: 11,
+                                            fontWeight: 700
+                                        }}
+                                    >
+                                        <DynIcon name={f.icon} size={12} color="#4F46E5" />
+                                        <span>{f.label}</span>
+                                    </span>
+                                ))}
+                                {enabledFeatures.length > 5 && (
+                                    <span style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        background: '#EEF2FF',
+                                        color: '#4F46E5',
+                                        border: '1px solid #C7D2FE',
+                                        borderRadius: 8,
+                                        padding: '4px 9px',
+                                        fontSize: 11,
+                                        fontWeight: 800
+                                    }}>
+                                        +{enabledFeatures.length - 5} more
+                                    </span>
+                                )}
+                            </div>
+                        ) : (
+                            <div style={{ fontSize: 11.5, color: '#94A3B8', fontWeight: 600, fontStyle: 'italic', padding: '4px 0' }}>
+                                Essential platform features included
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Card Footer: Status & Quick Action Buttons */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginTop: 20,
+                        paddingTop: 16,
+                        borderTop: '1.5px solid #F1F5F9'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                            <span style={{
+                                width: 9,
+                                height: 9,
+                                borderRadius: '50%',
+                                background: plan.is_active ? '#10B981' : '#94A3B8',
+                                boxShadow: plan.is_active ? '0 0 0 3px rgba(16, 185, 129, 0.2)' : 'none',
+                                animation: plan.is_active ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none'
+                            }} />
+                            <span style={{
+                                fontSize: 11,
+                                fontWeight: 950,
+                                letterSpacing: '0.06em',
+                                color: plan.is_active ? '#047857' : '#64748B'
+                            }}>
+                                {plan.is_active ? 'ACTIVE' : 'ARCHIVED'}
+                            </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            {plan.is_active ? (
+                                <button
+                                    type="button"
+                                    onClick={() => handleArchivePlan(plan.id)}
+                                    title="Archive plan"
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 5,
+                                        padding: '6px 12px',
+                                        background: '#FFF7ED',
+                                        border: '1.5px solid #FED7AA',
+                                        borderRadius: 9,
+                                        color: '#C2410C',
+                                        fontSize: 11.5,
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease'
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = '#FFEDD5' }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = '#FFF7ED' }}
+                                >
+                                    <Archive size={12.5} />
+                                    <span>Archive</span>
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => handleRestorePlan(plan.id)}
+                                    title="Restore plan"
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 5,
+                                        padding: '6px 12px',
+                                        background: '#ECFDF5',
+                                        border: '1.5px solid #A7F3D0',
+                                        borderRadius: 9,
+                                        color: '#047857',
+                                        fontSize: 11.5,
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease'
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = '#D1FAE5' }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = '#ECFDF5' }}
+                                >
+                                    <ArchiveRestore size={12.5} />
+                                    <span>Restore</span>
+                                </button>
+                            )}
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setCurrentPlan({
+                                        ...plan,
+                                        yearly_price: plan.yearly_price ?? Math.round(Number(plan.price) * 10)
+                                    })
+                                    setEditPlanMode(true)
+                                    setPlanDrawerOpen(true)
+                                }}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 5,
+                                    padding: '6px 12px',
+                                    background: '#F8FAFC',
+                                    border: '1.5px solid #E2E8F0',
+                                    borderRadius: 9,
+                                    color: '#0F172A',
+                                    fontSize: 11.5,
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease'
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor = P.brand; e.currentTarget.style.color = P.brand }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#0F172A' }}
+                            >
+                                <Pencil size={11.5} />
+                                <span>Edit</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         )
@@ -568,7 +1081,7 @@ export default function SubscriptionPlansManager() {
     // ─── Render ────────────────────────────────────────────────────────────────
     return (
         <div style={{ background: P.bg, minHeight: '100vh', padding: '36px 40px', fontFamily: 'var(--font-sans)' }}>
-            <style>{GLASS_STYLES + `@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+            <style>{GLASS_STYLES + `@keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(1.2)}}`}</style>
             {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
             {/* ── HEADER ──────────────────────────────────────────────────────── */}
@@ -594,7 +1107,7 @@ export default function SubscriptionPlansManager() {
                                 style={{ display: 'flex', alignItems: 'center', gap: 8, background: showArchived ? '#FFF7ED' : '#fff', border: `1px solid ${showArchived ? '#FED7AA' : P.border}`, borderRadius: 12, padding: '11px 18px', fontSize: 12, fontWeight: 800, color: showArchived ? '#C2410C' : P.dark, cursor: 'pointer' }}>
                                 <Archive size={14} /> {showArchived ? 'Showing Archived' : 'Show Archived'}
                             </button>
-                            <button onClick={() => { setEditPlanMode(false); setCurrentPlan({ name: '', type: 'institute', price: 4999, billing_cycle: 'monthly', max_students: 500, max_teachers: 20, max_storage_gb: 50, max_ai_tokens: 1000000, features: {}, is_active: true }); setPlanDrawerOpen(true) }}
+                            <button onClick={() => { setEditPlanMode(false); setCurrentPlan({ name: '', type: 'institute', price: 4999, yearly_price: 49990, billing_cycle: 'monthly', max_students: 500, max_teachers: 20, max_storage_gb: 50, max_ai_tokens: 1000000, features: {}, is_active: true }); setPlanDrawerOpen(true) }}
                                 style={{ display: 'flex', alignItems: 'center', gap: 8, background: P.brand, color: '#fff', border: 'none', borderRadius: 12, padding: '11px 22px', fontSize: 12, fontWeight: 900, cursor: 'pointer', boxShadow: `0 6px 20px ${P.brand}30` }}>
                                 <Plus size={16} strokeWidth={3} /> Add Plan
                             </button>
@@ -658,6 +1171,278 @@ export default function SubscriptionPlansManager() {
             ───────────────────────────────────────────────────────────────── */}
             {activeTab === 'tiers' && (
                 <>
+                    {/* Controls & Scope Filter Toolbar */}
+                    <div style={{
+                        background: '#FFFFFF',
+                        border: `1.5px solid ${P.border}`,
+                        borderRadius: 18,
+                        padding: '16px 20px',
+                        marginBottom: 26,
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 14
+                    }}>
+                        {/* Top Bar: Billing Switcher + Search */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                            gap: 14
+                        }}>
+                            {/* Billing Cycle Switcher */}
+                            <div style={{
+                                display: 'inline-flex',
+                                background: '#F1F5F9',
+                                border: '1px solid #E2E8F0',
+                                borderRadius: 12,
+                                padding: 3
+                            }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setBillingCycleView('monthly')}
+                                    style={{
+                                        padding: '7px 16px',
+                                        borderRadius: 9,
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        fontSize: 12.5,
+                                        fontWeight: 800,
+                                        background: billingCycleView === 'monthly' ? '#FFFFFF' : 'transparent',
+                                        color: billingCycleView === 'monthly' ? '#0F172A' : '#64748B',
+                                        boxShadow: billingCycleView === 'monthly' ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
+                                        transition: 'all 0.15s ease'
+                                    }}
+                                >
+                                    Monthly Billing
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setBillingCycleView('yearly')}
+                                    style={{
+                                        padding: '7px 16px',
+                                        borderRadius: 9,
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        fontSize: 12.5,
+                                        fontWeight: 800,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 7,
+                                        background: billingCycleView === 'yearly' ? '#FFFFFF' : 'transparent',
+                                        color: billingCycleView === 'yearly' ? '#0F172A' : '#64748B',
+                                        boxShadow: billingCycleView === 'yearly' ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
+                                        transition: 'all 0.15s ease'
+                                    }}
+                                >
+                                    <span>Yearly Billing</span>
+                                    <span style={{
+                                        background: '#ECFDF5',
+                                        color: '#047857',
+                                        border: '1px solid #A7F3D0',
+                                        fontSize: 10,
+                                        fontWeight: 900,
+                                        padding: '1px 6px',
+                                        borderRadius: 6
+                                    }}>
+                                        Save up to 20%
+                                    </span>
+                                </button>
+                            </div>
+
+                            {/* Search Plans Input */}
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                background: '#F8FAFC',
+                                border: '1.5px solid #E2E8F0',
+                                borderRadius: 12,
+                                padding: '8px 14px',
+                                width: 280,
+                                maxWidth: '100%'
+                            }}>
+                                <Search size={14} color="#64748B" />
+                                <input
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                    placeholder="Search plans by name..."
+                                    style={{
+                                        border: 'none',
+                                        outline: 'none',
+                                        background: 'transparent',
+                                        fontSize: 12.5,
+                                        fontWeight: 700,
+                                        color: '#0F172A',
+                                        width: '100%'
+                                    }}
+                                />
+                                {search && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearch('')}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                                    >
+                                        <X size={13} color="#94A3B8" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Bottom Bar: System Tenant Scope Filter Pills */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                            gap: 10,
+                            paddingTop: 12,
+                            borderTop: '1px solid #F1F5F9'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: 11, fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginRight: 4 }}>
+                                    Target Scope:
+                                </span>
+
+                                {/* All Plans Filter Pill */}
+                                <button
+                                    type="button"
+                                    onClick={() => setPlanScopeFilter('all')}
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        padding: '5px 12px',
+                                        borderRadius: 10,
+                                        border: `1.5px solid ${planScopeFilter === 'all' ? P.brand : '#E2E8F0'}`,
+                                        background: planScopeFilter === 'all' ? `${P.brand}12` : '#FFFFFF',
+                                        color: planScopeFilter === 'all' ? P.brand : '#475569',
+                                        fontSize: 12,
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease'
+                                    }}
+                                >
+                                    <span>All Tiers</span>
+                                    <span style={{
+                                        background: planScopeFilter === 'all' ? P.brand : '#F1F5F9',
+                                        color: planScopeFilter === 'all' ? '#FFFFFF' : '#64748B',
+                                        fontSize: 10,
+                                        fontWeight: 900,
+                                        padding: '1px 6px',
+                                        borderRadius: 20
+                                    }}>
+                                        {scopeCounts.all}
+                                    </span>
+                                </button>
+
+                                {/* School (K-12) */}
+                                <button
+                                    type="button"
+                                    onClick={() => setPlanScopeFilter('school')}
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        padding: '5px 12px',
+                                        borderRadius: 10,
+                                        border: `1.5px solid ${planScopeFilter === 'school' ? '#2563EB' : '#E2E8F0'}`,
+                                        background: planScopeFilter === 'school' ? '#EFF6FF' : '#FFFFFF',
+                                        color: planScopeFilter === 'school' ? '#2563EB' : '#475569',
+                                        fontSize: 12,
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease'
+                                    }}
+                                >
+                                    <GraduationCap size={13} color={planScopeFilter === 'school' ? '#2563EB' : '#64748B'} />
+                                    <span>Schools (K-12)</span>
+                                    <span style={{
+                                        background: planScopeFilter === 'school' ? '#2563EB' : '#F1F5F9',
+                                        color: planScopeFilter === 'school' ? '#FFFFFF' : '#64748B',
+                                        fontSize: 10,
+                                        fontWeight: 900,
+                                        padding: '1px 6px',
+                                        borderRadius: 20
+                                    }}>
+                                        {scopeCounts.school}
+                                    </span>
+                                </button>
+
+                                {/* Institute / Coaching */}
+                                <button
+                                    type="button"
+                                    onClick={() => setPlanScopeFilter('institute')}
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        padding: '5px 12px',
+                                        borderRadius: 10,
+                                        border: `1.5px solid ${planScopeFilter === 'institute' ? '#059669' : '#E2E8F0'}`,
+                                        background: planScopeFilter === 'institute' ? '#ECFDF5' : '#FFFFFF',
+                                        color: planScopeFilter === 'institute' ? '#059669' : '#475569',
+                                        fontSize: 12,
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease'
+                                    }}
+                                >
+                                    <Building2 size={13} color={planScopeFilter === 'institute' ? '#059669' : '#64748B'} />
+                                    <span>Institutes</span>
+                                    <span style={{
+                                        background: planScopeFilter === 'institute' ? '#059669' : '#F1F5F9',
+                                        color: planScopeFilter === 'institute' ? '#FFFFFF' : '#64748B',
+                                        fontSize: 10,
+                                        fontWeight: 900,
+                                        padding: '1px 6px',
+                                        borderRadius: 20
+                                    }}>
+                                        {scopeCounts.institute}
+                                    </span>
+                                </button>
+
+                                {/* Independent Teacher */}
+                                <button
+                                    type="button"
+                                    onClick={() => setPlanScopeFilter('independent_teacher')}
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        padding: '5px 12px',
+                                        borderRadius: 10,
+                                        border: `1.5px solid ${planScopeFilter === 'independent_teacher' ? '#7C3AED' : '#E2E8F0'}`,
+                                        background: planScopeFilter === 'independent_teacher' ? '#F5F3FF' : '#FFFFFF',
+                                        color: planScopeFilter === 'independent_teacher' ? '#7C3AED' : '#475569',
+                                        fontSize: 12,
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease'
+                                    }}
+                                >
+                                    <UserCheck size={13} color={planScopeFilter === 'independent_teacher' ? '#7C3AED' : '#64748B'} />
+                                    <span>Independent Tutors</span>
+                                    <span style={{
+                                        background: planScopeFilter === 'independent_teacher' ? '#7C3AED' : '#F1F5F9',
+                                        color: planScopeFilter === 'independent_teacher' ? '#FFFFFF' : '#64748B',
+                                        fontSize: 10,
+                                        fontWeight: 900,
+                                        padding: '1px 6px',
+                                        borderRadius: 20
+                                    }}>
+                                        {scopeCounts.independent_teacher}
+                                    </span>
+                                </button>
+                            </div>
+
+                            <div style={{ fontSize: 12, color: '#64748B', fontWeight: 700 }}>
+                                Showing <span style={{ color: '#0F172A', fontWeight: 900 }}>{visiblePlans.length}</span> {showArchived ? 'archived' : 'active'} {visiblePlans.length === 1 ? 'plan' : 'plans'}
+                            </div>
+                        </div>
+                    </div>
+
                     {visiblePlans.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '80px 40px', color: P.muted }}>
                             <Archive size={48} style={{ opacity: 0.3, marginBottom: 16 }} />
@@ -944,9 +1729,6 @@ export default function SubscriptionPlansManager() {
                     </FormField>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                        <FormField label="Price (₹)">
-                            <input type="number" value={currentPlan.price} onChange={e => setCurrentPlan({ ...currentPlan, price: parseFloat(e.target.value) || 0 })} style={inputStyle} />
-                        </FormField>
                         <FormField label="Target Scope (System Tenant Type)">
                             <select
                                 value={currentPlan.type === 'personal_teacher' ? 'independent_teacher' : (currentPlan.type || 'institute')}
@@ -956,21 +1738,139 @@ export default function SubscriptionPlansManager() {
                                 {SYSTEM_TENANT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                             </select>
                         </FormField>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                        <FormField label="Billing Cycle">
-                            <select value={currentPlan.billing_cycle} onChange={e => setCurrentPlan({ ...currentPlan, billing_cycle: e.target.value as any })} style={{ ...inputStyle, appearance: 'none' }}>
-                                <option value="monthly">Monthly</option>
-                                <option value="yearly">Yearly</option>
-                            </select>
-                        </FormField>
                         <FormField label="Status">
                             <select value={currentPlan.is_active ? 'active' : 'inactive'} onChange={e => setCurrentPlan({ ...currentPlan, is_active: e.target.value === 'active' })} style={{ ...inputStyle, appearance: 'none' }}>
                                 <option value="active">Active</option>
                                 <option value="inactive">Draft / Archived</option>
                             </select>
                         </FormField>
+                    </div>
+
+                    {/* ── Separate Monthly & Yearly Discounted Pricing ── */}
+                    <div style={{
+                        background: '#F8FAFC',
+                        border: `1.5px solid ${P.border}`,
+                        borderRadius: 16,
+                        padding: '16px 18px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 14
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Tag size={14} color={P.brand} />
+                                <span style={{ fontSize: 11, fontWeight: 900, color: P.dark, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                    Pricing Structure
+                                </span>
+                            </div>
+                            <span style={{ fontSize: 10.5, fontWeight: 800, color: P.brand, background: `${P.brand}12`, padding: '2px 8px', borderRadius: 6 }}>
+                                Separate Monthly &amp; Yearly Rates
+                            </span>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                            <FormField label="Monthly Price (₹ / month)">
+                                <input
+                                    type="number"
+                                    value={currentPlan.price ?? ''}
+                                    onChange={e => {
+                                        const mPrice = parseFloat(e.target.value) || 0
+                                        const oldM = currentPlan.price || 0
+                                        // If yearly was default ~10x or not customized, keep in sync with ~17% off / 2 months free
+                                        const autoYearly = (!currentPlan.yearly_price || currentPlan.yearly_price === oldM * 10)
+                                            ? Math.round(mPrice * 10)
+                                            : currentPlan.yearly_price
+                                        setCurrentPlan({ ...currentPlan, price: mPrice, yearly_price: autoYearly })
+                                    }}
+                                    placeholder="e.g. 1999"
+                                    style={inputStyle}
+                                />
+                            </FormField>
+
+                            <FormField label="Yearly Discounted Price (₹ / year)">
+                                <input
+                                    type="number"
+                                    value={currentPlan.yearly_price ?? ''}
+                                    onChange={e => setCurrentPlan({ ...currentPlan, yearly_price: parseFloat(e.target.value) || 0 })}
+                                    placeholder="e.g. 19990"
+                                    style={inputStyle}
+                                />
+                            </FormField>
+                        </div>
+
+                        {/* Live Savings & Discount Analysis */}
+                        {Number(currentPlan.price) > 0 && (
+                            <div style={{
+                                background: '#ECFDF5',
+                                border: '1px solid #A7F3D0',
+                                borderRadius: 12,
+                                padding: '10px 14px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 4
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5, fontWeight: 800, color: '#065F46' }}>
+                                    <span>Regular 12-Month Total: ₹{(Number(currentPlan.price) * 12).toLocaleString('en-IN')}</span>
+                                    {Number(currentPlan.yearly_price) > 0 && Number(currentPlan.yearly_price) < Number(currentPlan.price) * 12 ? (
+                                        <span style={{ background: '#059669', color: '#fff', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 900 }}>
+                                            Save ₹{((Number(currentPlan.price) * 12) - Number(currentPlan.yearly_price)).toLocaleString('en-IN')} ({Math.round((((Number(currentPlan.price) * 12) - Number(currentPlan.yearly_price)) / (Number(currentPlan.price) * 12)) * 100)}% OFF)
+                                        </span>
+                                    ) : (
+                                        <span style={{ color: '#6B7280', fontSize: 11 }}>No discount on yearly</span>
+                                    )}
+                                </div>
+                                {Number(currentPlan.yearly_price) > 0 && (
+                                    <div style={{ fontSize: 11, color: '#047857', fontWeight: 700 }}>
+                                        Effective: ₹{Math.round(Number(currentPlan.yearly_price) / 12).toLocaleString('en-IN')} / month when billed annually
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Quick 1-Click Discount Presets */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: 10.5, fontWeight: 800, color: P.muted }}>Quick Presets:</span>
+                            {[
+                                { label: '2 Months Free (~17% off)', fn: (p: number) => Math.round(p * 10) },
+                                { label: '15% Off', fn: (p: number) => Math.round(p * 12 * 0.85) },
+                                { label: '20% Off', fn: (p: number) => Math.round(p * 12 * 0.80) },
+                                { label: '25% Off', fn: (p: number) => Math.round(p * 12 * 0.75) },
+                            ].map(preset => (
+                                <button
+                                    key={preset.label}
+                                    type="button"
+                                    onClick={() => setCurrentPlan({ ...currentPlan, yearly_price: preset.fn(Number(currentPlan.price) || 0) })}
+                                    style={{
+                                        padding: '4px 9px',
+                                        borderRadius: 8,
+                                        background: '#fff',
+                                        border: `1px solid ${P.border}`,
+                                        fontSize: 10.5,
+                                        fontWeight: 800,
+                                        color: P.dark,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s'
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.borderColor = P.brand; e.currentTarget.style.color = P.brand }}
+                                    onMouseLeave={e => { e.currentTarget.style.borderColor = P.border; e.currentTarget.style.color = P.dark }}
+                                >
+                                    {preset.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10, paddingTop: 6, borderTop: `1px dashed ${P.border}` }}>
+                            <FormField label="Default Billing Cycle">
+                                <select
+                                    value={currentPlan.billing_cycle || 'monthly'}
+                                    onChange={e => setCurrentPlan({ ...currentPlan, billing_cycle: e.target.value as any })}
+                                    style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}
+                                >
+                                    <option value="monthly">Monthly (Default)</option>
+                                    <option value="yearly">Yearly (Default)</option>
+                                </select>
+                            </FormField>
+                        </div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>

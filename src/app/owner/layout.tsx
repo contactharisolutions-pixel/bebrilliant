@@ -1,5 +1,6 @@
 import React from 'react'
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar'
+import { OwnerHeader } from '@/components/owner/OwnerHeader'
 
 export default function OwnerLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -15,13 +16,19 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
         ::-webkit-scrollbar-thumb:hover { background: #A5A2A6; }
       `}} />
 
-            <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', background: '#F7F8FA' }}>
-                {/* SIDEBAR */}
-                <OwnerSidebar />
+            <div className="flex flex-col w-screen h-screen overflow-hidden bg-[#F7F8FA]">
+                {/* GLOBAL SUPER ADMIN HEADER */}
+                <OwnerHeader />
 
-                {/* MAIN SCROLL AREA */}
-                <div style={{ flex: 1, minWidth: 0, height: '100vh', overflowY: 'auto', background: '#F7F8FA' }}>
-                    {children}
+                {/* MAIN CONTENT SPLIT: SIDEBAR + CONTENT */}
+                <div className="flex flex-1 min-h-0 w-full overflow-hidden">
+                    {/* SIDEBAR */}
+                    <OwnerSidebar />
+
+                    {/* MAIN SCROLL AREA */}
+                    <main className="flex-1 min-w-0 h-full overflow-y-auto bg-[#F7F8FA]">
+                        {children}
+                    </main>
                 </div>
             </div>
         </>

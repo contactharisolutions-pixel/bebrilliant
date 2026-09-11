@@ -184,8 +184,8 @@ export async function POST(request: NextRequest) {
                 .from('plans')
                 .insert([{
                     ...rest,
-                    name: `Copy of ${src.name}`,
-                    is_active: false,
+                    name: `${src.name} (Copy)`,
+                    is_active: true,
                     updated_at: new Date().toISOString()
                 }])
                 .select()
