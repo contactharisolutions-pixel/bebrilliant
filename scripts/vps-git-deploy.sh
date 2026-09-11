@@ -66,11 +66,13 @@ npm run build
 # 7. Reload PM2 Applications
 echo "[+] Reloading PM2 applications with zero-downtime..."
 if command -v pm2 &> /dev/null; then
-    pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js
+    pm2 reload bebrilliant-next --update-env || pm2 start ecosystem.config.js --only bebrilliant-next
+    pm2 reload bebrilliant-express --update-env || pm2 start ecosystem.config.js --only bebrilliant-express
 else
     echo "[!] PM2 not found globally. Installing PM2..."
     npm install -g pm2
-    pm2 start ecosystem.config.js
+    pm2 start ecosystem.config.js --only bebrilliant-next
+    pm2 start ecosystem.config.js --only bebrilliant-express
 fi
 
 # Save PM2 state across server reboots

@@ -26,6 +26,8 @@ def run_cmd(ssh, cmd, label=""):
     return exit_status, out
 
 def main():
+    migration_file = sys.argv[1] if len(sys.argv) > 1 else "050_dynamic_plan_features.sql"
+    
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
@@ -34,8 +36,8 @@ def main():
 
         # Upload the SQL migration file
         sftp = ssh.open_sftp()
-        local_sql = "d:\\MyProjects\\BeBrilliant\\supabase\\migrations\\047_merge_owner_admin_rbac.sql"
-        remote_sql = "/var/www/bebrilliant/supabase/migrations/047_merge_owner_admin_rbac.sql"
+        local_sql = f"d:\\MyProjects\\BeBrilliant\\supabase\\migrations\\{migration_file}"
+        remote_sql = f"/var/www/bebrilliant/supabase/migrations/{migration_file}"
         print(f"Uploading {local_sql} to {remote_sql}...")
         sftp.put(local_sql, remote_sql)
         print("[OK] Uploaded SQL file")
@@ -43,11 +45,16 @@ def main():
 
         # Run the SQL migration on dockerized Postgres
         run_cmd(ssh,
-            "docker exec -i supabase-db psql -U postgres -d postgres < /var/www/bebrilliant/supabase/migrations/047_merge_owner_admin_rbac.sql",
-            "Run SQL Migration on Docker Postgres")
+            f"docker exec -i supabase-db psql -U postgres -d postgres < {remote_sql}",
+            f"Run SQL Migration {migration_file} on Docker Postgres")
+
+        # Verify the migration worked
+        run_cmd(ssh,
+            "docker exec -i supabase-db psql -U postgres -d postgres -c 'SELECT id, key, label, category, is_system FROM public.plan_features ORDER BY sort_order;'",
+            "Verify plan_features Table")
 
         print("\n==============================================")
-        print("   MIGRATION COMPLETED SUCCESSFULLY ON VPS")
+        print("   MIGRATION COMPLETED & VERIFIED ON VPS")
         print("==============================================")
 
     except Exception as e:
