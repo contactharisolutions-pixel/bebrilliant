@@ -294,9 +294,19 @@ export default function DemoManagementPage() {
                                             {lead.phone && <span>• {lead.phone}</span>}
                                             <span>• {lead.email}</span>
                                         </div>
+                                        {demo.scheduled_at && (
+                                            <div style={{ fontSize: 12, color: '#7C3AED', fontWeight: 800, marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                <Calendar size={13} /> Scheduled: {new Date(demo.scheduled_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                                            </div>
+                                        )}
                                         {demo.preferred_date && (
-                                            <div style={{ fontSize: 12, color: P.brand, fontWeight: 800, marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <div style={{ fontSize: 12, color: P.brand, fontWeight: 800, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
                                                 <Clock size={13} /> Customer Preferred Slot: {demo.preferred_date} {demo.preferred_time || ''}
+                                            </div>
+                                        )}
+                                        {demo.demo_notes && (
+                                            <div style={{ fontSize: 12, color: P.text, marginTop: 4, fontStyle: 'italic' }}>
+                                                Agenda: {demo.demo_notes}
                                             </div>
                                         )}
                                     </div>

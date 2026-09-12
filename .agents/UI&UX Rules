@@ -1,0 +1,816 @@
+============================================================
+ANTIGRAVITY MASTER VISUAL UI/UX SYSTEM
+PREMIUM • ART-DIRECTED • IMAGE-LED • PRODUCTION-GRADE
+============================================================
+
+PURPOSE
+
+Build websites that look intentionally designed by a senior
+UI/UX designer, visual designer and art director.
+
+The website must NOT look like a generic AI-generated SaaS
+template.
+
+The visual design must prioritize:
+
+1. Visual storytelling
+2. Strong typography
+3. Premium imagery
+4. Full-width compositions
+5. Intentional whitespace
+6. Asymmetric layouts
+7. Depth and visual hierarchy
+8. Brand identity
+9. Content-to-image relationship
+10. Responsive composition
+
+Do not optimize for "more UI".
+
+Optimize for:
+"better visual composition with less unnecessary UI."
+
+============================================================
+1. CORE DESIGN PRINCIPLE
+============================================================
+
+DO NOT start by creating cards, containers, buttons and grids.
+
+Start by determining:
+
+- What is the purpose of the section?
+- What should the user notice first?
+- What is the primary visual story?
+- Does the section need imagery?
+- Where should the visual focal point be?
+- Where should the content-safe negative space be?
+- How should the user's eye move through the section?
+
+Then design the UI around that visual composition.
+
+The visual composition comes BEFORE component construction.
+
+============================================================
+2. NO GENERIC AI WEBSITE RULE
+============================================================
+
+The website must NOT resemble a generic AI-generated website.
+
+AVOID:
+
+- repetitive card grids
+- excessive rounded cards
+- excessive containers
+- excessive borders
+- generic gradients
+- generic blobs
+- generic glassmorphism
+- unnecessary shadows
+- excessive pills
+- repetitive CTA buttons
+- identical section layouts
+- image-inside-card patterns
+- card-inside-card patterns
+- excessive dashboard aesthetics
+- excessive boxed content
+- stock-looking imagery
+- repetitive illustrations
+- decorative elements without purpose
+
+Never use a card simply because a card is easy to generate.
+
+============================================================
+3. BACKGROUND IMAGE RULE
+============================================================
+
+Background imagery is a PRIMARY DESIGN ELEMENT.
+
+It is NOT merely decorative.
+
+When a section benefits from visual storytelling, use a
+purpose-designed full-width background composition.
+
+Background artwork should:
+
+- extend naturally to the section edges
+- have intentional composition
+- have foreground/midground/background depth
+- contain a clear focal point
+- contain appropriate negative space
+- support the typography
+- support the brand identity
+- create atmosphere
+- visually communicate the section's purpose
+
+Do NOT:
+
+- put the background image inside a generic card
+- put the image inside a rounded image container
+- treat the image as a thumbnail
+- automatically blur every image
+- automatically apply a dark overlay
+- use the same background concept repeatedly
+- use unrelated stock photography
+
+============================================================
+4. IMAGE-FIRST DESIGN PROCESS
+============================================================
+
+For every major visual section:
+
+STEP 1:
+Define the visual concept.
+
+STEP 2:
+Define the focal point.
+
+STEP 3:
+Define the content-safe area.
+
+STEP 4:
+Define image subject placement.
+
+STEP 5:
+Generate/select the visual asset.
+
+STEP 6:
+Build the section around the visual.
+
+STEP 7:
+Place typography and CTA.
+
+STEP 8:
+Evaluate contrast and readability.
+
+STEP 9:
+Create mobile-specific composition.
+
+Never design the UI first and simply place an image behind it.
+
+============================================================
+5. UNIQUE VISUAL CONCEPT RULE
+============================================================
+
+Every major section must have a distinct visual concept.
+
+DO NOT generate the same visual concept repeatedly.
+
+For example:
+
+Hero:
+Primary brand story.
+
+Statistics:
+Data/analytics visualization.
+
+Technology:
+Technology/AI concept.
+
+Security:
+Security infrastructure concept.
+
+Performance:
+Growth/performance concept.
+
+Global:
+Global network/world concept.
+
+CTA:
+Premium atmospheric brand concept.
+
+Each section must feel visually related to the brand
+but conceptually different.
+
+============================================================
+6. BACKGROUND IMAGE COMPOSITION
+============================================================
+
+Before using an image, determine content placement.
+
+IF CONTENT IS ON LEFT:
+
+- visual focal point should generally be toward the right
+- left side should contain readable negative space
+- avoid placing high-detail subjects behind text
+
+IF CONTENT IS ON RIGHT:
+
+- visual focal point should generally be toward the left
+- right side should contain readable negative space
+
+IF CONTENT IS CENTER:
+
+- create controlled visual depth
+- keep the center readable
+- avoid visual clutter behind typography
+
+Never place the primary subject directly behind important text.
+
+============================================================
+7. FULL-WIDTH DESIGN RULE
+============================================================
+
+Major visual sections should be allowed to use the full viewport.
+
+Do not automatically wrap everything inside:
+
+max-width container
++
+white background
++
+rounded card.
+
+Use full-width compositions when appropriate.
+
+Content may still use a readable max-width,
+but the VISUAL environment should extend beyond it.
+
+============================================================
+8. CONTAINER RULE
+============================================================
+
+Containers should exist for content readability,
+not because every section requires a box.
+
+Use:
+
+- max-width content alignment
+- grid systems
+- spacing
+- typography
+- dividers
+- whitespace
+
+instead of unnecessary visible containers.
+
+Invisible structure is preferred over visible boxes.
+
+============================================================
+9. CARD RULE
+============================================================
+
+Cards are OPTIONAL.
+
+Cards should only be used when they provide a clear
+functional or information hierarchy.
+
+Good reasons for a card:
+
+- independent interactive item
+- pricing plan
+- product
+- transaction
+- selectable option
+- important data group
+- dashboard module
+- comparison item
+
+Bad reasons:
+
+- "because the section needs design"
+- "because there are three items"
+- "because AI normally creates cards"
+
+If cards are used:
+
+- keep them visually refined
+- avoid excessive radius
+- avoid excessive shadows
+- maintain consistent hierarchy
+- do not nest cards
+- do not turn every section into a card grid
+
+============================================================
+10. SECTION LAYOUT VARIETY
+============================================================
+
+Never use the same section composition repeatedly.
+
+Rotate between:
+
+- full-width hero
+- editorial layout
+- asymmetric split
+- image + typography
+- immersive background
+- overlapping composition
+- large statistic
+- horizontal feature strip
+- visual timeline
+- storytelling section
+- product showcase
+- interactive visualization
+- comparison layout
+- minimal CTA
+- editorial grid
+- full-bleed image
+- layered composition
+
+The page must have visual rhythm.
+
+============================================================
+11. TYPOGRAPHY RULE
+============================================================
+
+Typography is a PRIMARY visual element.
+
+Use strong hierarchy:
+
+Display
+↓
+Headline
+↓
+Supporting statement
+↓
+Body
+↓
+Metadata
+↓
+CTA
+
+Do not compensate for weak typography by adding cards,
+icons or decorative elements.
+
+Use:
+
+- large editorial headlines
+- controlled line lengths
+- meaningful font weights
+- intentional spacing
+- strong contrast
+- responsive typography
+
+Avoid excessive text inside small UI boxes.
+
+============================================================
+12. BUTTON RULE
+============================================================
+
+Buttons must NOT dominate the design.
+
+Use clear hierarchy:
+
+PRIMARY CTA
+SECONDARY CTA
+TEXT/TERTIARY ACTION
+
+Avoid:
+
+- excessive pill-shaped buttons
+- multiple primary buttons competing
+- gradients unless brand direction requires them
+- oversized buttons without purpose
+- buttons inside every card
+
+CTA design must reflect the brand.
+
+============================================================
+13. ICON RULE
+============================================================
+
+Icons should communicate meaning.
+
+Do not add icons merely to make a section look more
+"modern".
+
+Avoid:
+
+icon
++
+heading
++
+paragraph
++
+card
+
+repeated across the entire page.
+
+Use icons selectively.
+
+============================================================
+14. COLOR RULE
+============================================================
+
+Follow the established brand color system.
+
+Do not randomly introduce:
+
+- gradients
+- neon colors
+- excessive accent colors
+- unrelated background colors
+
+Color should establish:
+
+- hierarchy
+- emotion
+- brand recognition
+- interaction states
+- visual rhythm
+
+============================================================
+15. LIGHT THEME RULE
+============================================================
+
+When the project is specified as light theme:
+
+Use a premium light visual language.
+
+Prefer:
+
+- white
+- warm/cool neutral surfaces
+- subtle tonal separation
+- brand accent colors
+- high-quality imagery
+- soft depth
+
+Do NOT automatically convert sections into dark cards.
+
+Do NOT use dark backgrounds merely to make the website
+appear "premium".
+
+============================================================
+16. IMAGE QUALITY RULE
+============================================================
+
+Images must feel intentionally created for the website.
+
+Prefer:
+
+- cinematic compositions
+- realistic lighting
+- sophisticated 3D
+- premium photography
+- abstract visual systems
+- editorial imagery
+- realistic product visualization
+- brand-specific environments
+
+Avoid:
+
+- generic stock images
+- obvious AI clichés
+- random people looking at laptops
+- generic crypto coins
+- generic handshake images
+- generic office imagery
+- unrelated decorative illustrations
+
+============================================================
+17. IMAGE GENERATION RULE
+============================================================
+
+When a custom background image is required:
+
+GENERATE THE IMAGE SEPARATELY.
+
+The image should contain:
+
+- NO UI
+- NO cards
+- NO buttons
+- NO website text
+- NO headings
+- NO logo unless explicitly requested
+- NO watermark
+
+The image must be designed specifically for the
+website section.
+
+The website UI is added AFTER the artwork is approved.
+
+============================================================
+18. IMAGE VARIATION RULE
+============================================================
+
+Never reuse the same image concept across multiple sections.
+
+Even when the same brand is being represented:
+
+Change:
+
+- composition
+- camera angle
+- perspective
+- subject
+- lighting
+- depth
+- environment
+- visual metaphor
+- focal point
+
+Maintain brand consistency without visual repetition.
+
+============================================================
+19. OVERLAY RULE
+============================================================
+
+Do not automatically place a heavy black overlay over
+every background image.
+
+Use overlays only when necessary for readability.
+
+Prefer:
+
+- subtle gradients
+- controlled tonal transitions
+- localized overlays
+- content-safe areas
+- image composition that already provides contrast
+
+The artwork should remain visible.
+
+============================================================
+20. VISUAL DEPTH RULE
+============================================================
+
+Whenever appropriate, create depth using:
+
+- foreground elements
+- midground elements
+- background atmosphere
+- lighting
+- shadows
+- blur
+- scale
+- perspective
+- overlapping elements
+
+Avoid flat compositions.
+
+============================================================
+21. SECTION TRANSITION RULE
+============================================================
+
+Sections must flow visually into each other.
+
+Avoid:
+
+Section 1 white
+↓
+Section 2 white
+↓
+Section 3 white
+↓
+Section 4 white
+
+Use controlled variation:
+
+- imagery
+- tonal backgrounds
+- whitespace
+- visual separators
+- typography
+- full-width artwork
+- subtle gradients
+- overlap
+
+The page should feel like ONE composition.
+
+============================================================
+22. RESPONSIVE IMAGE RULE
+============================================================
+
+Never blindly use the desktop image on mobile.
+
+For mobile:
+
+- evaluate focal point
+- change crop
+- reposition content
+- change image positioning
+- change height
+- change overlay
+- preserve subject visibility
+
+If necessary, use a mobile-specific image composition.
+
+============================================================
+23. MOBILE UI RULE
+============================================================
+
+Mobile is NOT a compressed desktop.
+
+Redesign the composition for mobile.
+
+Check:
+
+- typography
+- image crop
+- content order
+- CTA placement
+- spacing
+- navigation
+- touch targets
+- section height
+- visual hierarchy
+
+Do not simply stack every desktop card vertically.
+
+============================================================
+24. MOTION RULE
+============================================================
+
+Use subtle premium motion.
+
+Preferred:
+
+- reveal animations
+- image parallax
+- subtle scale
+- opacity transitions
+- text reveal
+- scroll-linked movement
+- hover micro-interactions
+
+Avoid:
+
+- excessive bouncing
+- unnecessary spinning
+- aggressive animations
+- animation on every element
+- distracting effects
+
+Motion must communicate hierarchy.
+
+============================================================
+25. VISUAL HIERARCHY RULE
+============================================================
+
+Every section must have ONE dominant visual priority.
+
+Example:
+
+1. Hero headline
+2. Hero visual
+3. Supporting content
+4. CTA
+
+Do not make:
+
+headline
++
+image
++
+three cards
++
+four icons
++
+three buttons
++
+statistics
+
+all equally important.
+
+============================================================
+26. WHITESPACE RULE
+============================================================
+
+Whitespace is an intentional design element.
+
+Do not fill empty space simply because it looks empty.
+
+Empty space can:
+
+- highlight typography
+- emphasize imagery
+- create premium feeling
+- separate concepts
+- improve readability
+
+============================================================
+27. BRAND STORY RULE
+============================================================
+
+Every visual must reinforce the brand.
+
+Ask:
+
+"Could this section belong to any random company?"
+
+If YES:
+
+The visual direction is too generic.
+
+Make it more specific to:
+
+- brand
+- industry
+- product
+- audience
+- value proposition
+- emotional positioning
+
+============================================================
+28. DESIGN CONSISTENCY RULE
+============================================================
+
+Consistency does NOT mean every section must look identical.
+
+Maintain consistency through:
+
+- typography
+- color system
+- spacing system
+- interaction language
+- border treatment
+- imagery style
+- motion language
+
+Allow layouts to vary.
+
+============================================================
+29. DESIGN CRITIC PASS
+============================================================
+
+After completing a page, perform a separate visual critique.
+
+Review as:
+
+Senior UI Designer
++
+UX Designer
++
+Visual Designer
++
+Art Director
+
+Check:
+
+1. Does the website look AI-generated?
+2. Are there too many cards?
+3. Are there too many containers?
+4. Are sections repetitive?
+5. Are backgrounds visually meaningful?
+6. Are images generic?
+7. Is typography strong?
+8. Is the visual hierarchy clear?
+9. Is the brand recognizable?
+10. Does the page have visual rhythm?
+11. Are there unnecessary UI elements?
+12. Does mobile preserve the visual story?
+
+Then improve the composition.
+
+IMPORTANT:
+
+Do NOT solve weak design by adding more UI.
+
+Prefer removing unnecessary UI and improving composition.
+
+============================================================
+30. FINAL QUALITY GATE
+============================================================
+
+Before declaring the page complete, verify:
+
+[ ] No generic AI-template appearance
+[ ] No unnecessary card usage
+[ ] No unnecessary containers
+[ ] Background imagery is intentional
+[ ] Each major section has distinct visual identity
+[ ] Images support the content
+[ ] Typography has strong hierarchy
+[ ] CTA hierarchy is clear
+[ ] Brand identity is visible
+[ ] Sections have visual rhythm
+[ ] Desktop composition is polished
+[ ] Tablet composition is polished
+[ ] Mobile composition is intentionally designed
+[ ] Images are not awkwardly cropped
+[ ] No excessive gradients
+[ ] No excessive shadows
+[ ] No excessive rounded elements
+[ ] No repetitive layouts
+[ ] No decorative elements without purpose
+[ ] Overall result looks professionally art-directed
+
+============================================================
+FINAL DIRECTIVE
+============================================================
+
+DO NOT BUILD A WEBSITE THAT SIMPLY LOOKS "MODERN".
+
+BUILD A WEBSITE THAT LOOKS:
+
+ART-DIRECTED
+BRAND-SPECIFIC
+VISUALLY DISTINCTIVE
+IMAGE-LED
+EDITORIAL
+PREMIUM
+INTENTIONAL
+RESPONSIVE
+PRODUCTION-GRADE
+
+The website should feel designed by a professional creative
+team, not assembled from generic AI-generated components.
+
+When forced to choose between:
+
+MORE UI
+vs.
+BETTER COMPOSITION
+
+ALWAYS CHOOSE BETTER COMPOSITION.
+============================================================

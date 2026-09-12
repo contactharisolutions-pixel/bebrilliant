@@ -1,11 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { verifyPlatformAccess } from '@/lib/platform-auth'
+import { pool } from '@/lib/db'
+
+async function syncDemosWithRequests() {
+    try {
+        const { rows: missingDemos } = await pool.query(`
+            SELECT d.*, l.name as lead_name, l.organization as lead_org 
+            FROM public.demos d
+            JOIN public.owner_leads l ON l.id = d.lead_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM public.lead_demo_requests ldr 
+                WHERE (ldr.demo_id = d.id OR (ldr.lead_id = d.lead_id AND ldr.scheduled_at = d.scheduled_at))
+            )
+        `)
+
+        for (const d of missingDemos) {
+            const status = d.status === 'completed' ? 'completed' : 'scheduled'
+            await pool.query(`
+                INSERT INTO public.lead_demo_requests (
+                    lead_id, demo_id, demo_type, status, assigned_staff_id, 
+                    confirmed_by, confirmed_at, scheduled_at, meeting_link, 
+                    demo_notes, created_at, updated_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            `, [
+                d.lead_id,
+                d.id,
+                'online',
+                status,
+                d.conducted_by || null,
+                d.conducted_by || null,
+                d.conducted_by ? (d.created_at || new Date()) : null,
+                d.scheduled_at,
+                d.join_url || d.video_link || null,
+                d.notes || '',
+                d.created_at || new Date(),
+                d.created_at || new Date()
+            ])
+        }
+    } catch (e) {
+        console.error('syncDemosWithRequests error:', e)
+    }
+}
 
 /** GET /api/owner/demos — List all demo requests */
 export async function GET(request: NextRequest) {
     const user = await verifyPlatformAccess('crm.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    // Self-healing synchronization from CRM demos table
+    await syncDemosWithRequests()
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') || 'all'

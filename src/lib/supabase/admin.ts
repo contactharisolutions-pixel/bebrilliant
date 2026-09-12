@@ -223,6 +223,7 @@ class SupabaseQueryBuilder {
         for (const sql of sqls) {
             try { await pool.query(sql) } catch (e) { /* ignore if exists */ }
         }
+        try { await pool.query('ALTER TABLE lead_demo_requests ADD COLUMN IF NOT EXISTS demo_id UUID') } catch (e) { /* ignore */ }
     }
 
     private async execute() {
@@ -303,6 +304,30 @@ class SupabaseQueryBuilder {
             let isCreatedByWithRelations = false
             let isAssignedToWithRelations = false
             let isTenantSubWithRelations = false
+            let isLeadDemoRequestsRelations = false
+            let isPlatformTasksRelations = false
+
+            if (this.table === 'lead_demo_requests') {
+                isLeadDemoRequestsRelations = true
+                selectStr = selectStr
+                    .replace(/,\s*lead:lead_id\s*\([^)]*\)/gi, '')
+                    .replace(/,\s*suggested_staff:suggested_staff_id\s*\([^)]*\)/gi, '')
+                    .replace(/,\s*assigned_staff:assigned_staff_id\s*\([^)]*\)/gi, '')
+                    .replace(/,\s*confirmed_by_user:confirmed_by\s*\([^)]*\)/gi, '')
+                    .trim()
+            }
+
+            if (this.table === 'platform_tasks') {
+                isPlatformTasksRelations = true
+                selectStr = selectStr
+                    .replace(/,\s*lead:lead_id\s*\([^)]*\)/gi, '')
+                    .replace(/,\s*assigned_user:assigned_to\s*\([^)]*\)/gi, '')
+                    .replace(/,\s*created_user:created_by\s*\([^)]*\)/gi, '')
+                    .trim()
+            }
+
+            // Universal safeguard: strip any leftover alias:col(...) patterns from selectStr so Postgres never throws syntax error at or near ":"
+            selectStr = selectStr.replace(/,\s*[a-zA-Z0-9_]+:[a-zA-Z0-9_]+\s*\([^)]*\)/gi, '').trim()
 
             if (selectStr.includes('tenants:tenant_id')) {
                 selectStr = 'up.*, t.name as tenant_name, t.logo as tenant_logo, t.tenant_type'
@@ -635,6 +660,72 @@ class SupabaseQueryBuilder {
                 } else {
                     rows.forEach((r: any) => { r.tenant = null })
                 }
+            }
+
+            if (isLeadDemoRequestsRelations) {
+                const leadIds = [...new Set(rows.map((r: any) => r.lead_id).filter(Boolean))]
+                let leadMap: any = {}
+                if (leadIds.length > 0) {
+                    const { rows: leadRows } = await pool.query(
+                        `SELECT id, name, organization, email, phone, priority FROM public.owner_leads WHERE id = ANY($1)`,
+                        [leadIds]
+                    )
+                    leadMap = Object.fromEntries(leadRows.map((l: any) => [l.id, l]))
+                }
+
+                const staffIds = [...new Set([
+                    ...rows.map((r: any) => r.suggested_staff_id),
+                    ...rows.map((r: any) => r.assigned_staff_id),
+                    ...rows.map((r: any) => r.confirmed_by)
+                ].filter(Boolean))]
+
+                let staffMap: any = {}
+                if (staffIds.length > 0) {
+                    const { rows: staffRows } = await pool.query(
+                        `SELECT id, first_name, last_name, email, role FROM public.user_profiles WHERE id = ANY($1)`,
+                        [staffIds]
+                    )
+                    staffMap = Object.fromEntries(staffRows.map((s: any) => [s.id, s]))
+                }
+
+                rows.forEach((r: any) => {
+                    r.lead = leadMap[r.lead_id] || null
+                    r.suggested_staff = staffMap[r.suggested_staff_id] || null
+                    r.assigned_staff = staffMap[r.assigned_staff_id] || null
+                    r.confirmed_by_user = staffMap[r.confirmed_by] || null
+                })
+            }
+
+            if (isPlatformTasksRelations) {
+                const leadIds = [...new Set(rows.map((r: any) => r.lead_id).filter(Boolean))]
+                let leadMap: any = {}
+                if (leadIds.length > 0) {
+                    const { rows: leadRows } = await pool.query(
+                        `SELECT id, name, organization, email, phone FROM public.owner_leads WHERE id = ANY($1)`,
+                        [leadIds]
+                    )
+                    leadMap = Object.fromEntries(leadRows.map((l: any) => [l.id, l]))
+                }
+
+                const userIds = [...new Set([
+                    ...rows.map((r: any) => r.assigned_to),
+                    ...rows.map((r: any) => r.created_by)
+                ].filter(Boolean))]
+
+                let userMap: any = {}
+                if (userIds.length > 0) {
+                    const { rows: userRows } = await pool.query(
+                        `SELECT id, first_name, last_name, email, role FROM public.user_profiles WHERE id = ANY($1)`,
+                        [userIds]
+                    )
+                    userMap = Object.fromEntries(userRows.map((u: any) => [u.id, u]))
+                }
+
+                rows.forEach((r: any) => {
+                    r.lead = leadMap[r.lead_id] || null
+                    r.assigned_user = userMap[r.assigned_to] || null
+                    r.created_user = userMap[r.created_by] || null
+                })
             }
 
             const data = this.singleRow ? (rows[0] || null) : rows

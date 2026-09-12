@@ -64,6 +64,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
                 staff_id: user.id,
                 metadata: { demo_id: demoId, assigned_staff_id: staffToAssign }
             })
+
+            // Sync to demos table
+            try {
+                const { pool } = await import('@/lib/db')
+                if (demo.demo_id) {
+                    await pool.query(`UPDATE public.demos SET conducted_by = $1 WHERE id = $2`, [staffToAssign, demo.demo_id])
+                }
+            } catch (e) {
+                console.error('Failed to sync staff to demos table:', e)
+            }
         } else if (action === 'schedule') {
             if (!scheduled_at) return NextResponse.json({ error: 'Scheduled date and time are required.' }, { status: 400 })
 
@@ -88,6 +98,29 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
                 staff_id: user.id,
                 metadata: { scheduled_at, meeting_link }
             })
+
+            // Sync to demos table
+            try {
+                const { pool } = await import('@/lib/db')
+                if (demo.demo_id) {
+                    await pool.query(`
+                        UPDATE public.demos
+                        SET scheduled_at = $1, conducted_by = COALESCE($2, conducted_by), join_url = $3, video_link = $3, status = 'scheduled'
+                        WHERE id = $4
+                    `, [updateData.scheduled_at, assigned_staff_id || demo.assigned_staff_id || null, meeting_link || null, demo.demo_id])
+                } else {
+                    const { rows: insertedDemo } = await pool.query(`
+                        INSERT INTO public.demos (lead_id, scheduled_at, status, notes, conducted_by, join_url, video_link)
+                        VALUES ($1, $2, 'scheduled', $3, $4, $5, $5)
+                        RETURNING id
+                    `, [demo.lead_id, updateData.scheduled_at, demo.demo_notes || '', assigned_staff_id || demo.assigned_staff_id || null, meeting_link || null])
+                    if (insertedDemo[0]?.id) {
+                        updateData.demo_id = insertedDemo[0].id
+                    }
+                }
+            } catch (dErr) {
+                console.error('Failed to sync schedule to demos table:', dErr)
+            }
         } else if (action === 'complete') {
             if (!outcome) return NextResponse.json({ error: 'Demo outcome is required to complete.' }, { status: 400 })
 
@@ -117,6 +150,26 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
                 staff_id: user.id,
                 metadata: { outcome, interest_level, deal_probability }
             })
+
+            // Sync complete to demos table
+            try {
+                const { pool } = await import('@/lib/db')
+                if (demo.demo_id) {
+                    await pool.query(`
+                        UPDATE public.demos
+                        SET status = 'completed', outcome = $1, notes = COALESCE($2, notes)
+                        WHERE id = $3
+                    `, [outcome, demo_notes || null, demo.demo_id])
+                } else {
+                    await pool.query(`
+                        UPDATE public.demos
+                        SET status = 'completed', outcome = $1, notes = COALESCE($2, notes)
+                        WHERE lead_id = $3 AND status = 'scheduled'
+                    `, [outcome, demo_notes || null, demo.lead_id])
+                }
+            } catch (dErr) {
+                console.error('Failed to sync complete to demos table:', dErr)
+            }
         } else if (action === 'cancel') {
             updateData.status = 'cancelled'
 

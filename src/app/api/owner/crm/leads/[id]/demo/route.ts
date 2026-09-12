@@ -60,6 +60,32 @@ export async function POST(
         return NextResponse.json({ error: 'Failed to schedule demo' }, { status: 500 })
     }
 
+    // Insert/Sync into lead_demo_requests for Demo Operations & Staff Manager
+    try {
+        const { pool } = await import('@/lib/db')
+        await pool.query(`
+            INSERT INTO public.lead_demo_requests (
+                lead_id, demo_id, demo_type, status, assigned_staff_id,
+                confirmed_by, confirmed_at, scheduled_at, demo_notes,
+                created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        `, [
+            id,
+            demo.id,
+            'online',
+            'scheduled',
+            conducted_by || null,
+            conducted_by ? user.id : null,
+            conducted_by ? new Date().toISOString() : null,
+            scheduled_at,
+            notes || '',
+            new Date().toISOString(),
+            new Date().toISOString()
+        ])
+    } catch (ldrErr) {
+        console.error('Failed to sync demo to lead_demo_requests:', ldrErr)
+    }
+
     // Log activity on the lead
     await supabaseAdmin
         .from('lead_activities')
@@ -70,6 +96,39 @@ export async function POST(
             metadata: { demo_id: demo.id, scheduled_at, conducted_by },
             created_by: user.id,
         })
+
+    // Log timeline event
+    try {
+        await supabaseAdmin.from('lifecycle_timeline').insert({
+            lead_id: id,
+            event_type: 'demo_scheduled',
+            event_label: 'Demo Scheduled',
+            description: `Demo scheduled for ${new Date(scheduled_at).toLocaleString('en-IN')}`,
+            staff_id: user.id,
+            metadata: { demo_id: demo.id, scheduled_at, conducted_by }
+        })
+    } catch (tlErr) {
+        console.error('Failed to log timeline event:', tlErr)
+    }
+
+    // Create staff task if staff member is assigned
+    if (conducted_by) {
+        try {
+            await supabaseAdmin.from('platform_tasks').insert({
+                task_type: 'conduct_demo',
+                title: `Conduct Demo for ${lead.organization || lead.name || 'Prospect'}`,
+                description: notes || 'Demo presentation scheduled via CRM',
+                lead_id: id,
+                assigned_to: conducted_by,
+                created_by: user.id,
+                due_at: scheduled_at,
+                priority: 'high',
+                sla_minutes: 1440
+            })
+        } catch (taskErr) {
+            console.error('Failed to create task:', taskErr)
+        }
+    }
 
     return NextResponse.json({ demo }, { status: 201 })
 }
@@ -136,6 +195,27 @@ export async function PATCH(
                 metadata: { demo_id },
                 created_by: user.id,
             })
+
+        // Sync with lead_demo_requests and timeline
+        try {
+            const { pool } = await import('@/lib/db')
+            await pool.query(`
+                UPDATE public.lead_demo_requests
+                SET status = 'completed', completed_at = $1, outcome = 'completed', demo_notes = COALESCE($2, demo_notes), updated_at = $1
+                WHERE demo_id = $3 OR (lead_id = $4 AND status = 'scheduled')
+            `, [new Date().toISOString(), notes || null, demo_id, id])
+
+            await supabaseAdmin.from('lifecycle_timeline').insert({
+                lead_id: id,
+                event_type: 'demo_completed',
+                event_label: 'Demo Completed',
+                description: notes || 'Demo completed successfully',
+                staff_id: user.id,
+                metadata: { demo_id }
+            })
+        } catch (syncErr) {
+            console.error('Failed to sync complete to lead_demo_requests:', syncErr)
+        }
     }
 
     const { data, error } = await supabaseAdmin
