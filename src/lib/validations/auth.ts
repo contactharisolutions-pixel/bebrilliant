@@ -81,7 +81,19 @@ export type ForgotPasswordSchema = z.infer<typeof forgotPasswordSchema>
 // ─── Tenant Creation (Owner Only) ────────────────────────────────────────────
 export const createTenantSchema = z.object({
     name: z.string().min(2, 'Institution name must be at least 2 characters'),
-    type: z.enum(['INSTITUTE', 'PERSONAL_TEACHER']),
+    type: z.enum([
+        'SCHOOL',
+        'INSTITUTE',
+        'PERSONAL_TEACHER',
+        'school',
+        'institute',
+        'independent_teacher',
+        'personal_teacher'
+    ]).transform((val) => {
+        const upper = val.toUpperCase()
+        if (upper === 'INDEPENDENT_TEACHER') return 'PERSONAL_TEACHER'
+        return upper as 'SCHOOL' | 'INSTITUTE' | 'PERSONAL_TEACHER'
+    }),
     email: z.string().email('Enter a valid email address'),
     admin_first_name: z.string().min(1, 'Admin first name is required'),
     admin_last_name: z.string().min(1, 'Admin last name is required'),
@@ -90,6 +102,16 @@ export const createTenantSchema = z.object({
         .min(8, 'Password must be at least 8 characters')
         .regex(/[A-Z]/, 'Must include at least one uppercase letter')
         .regex(/[0-9]/, 'Must include at least one number'),
-})
+    tenant_type: z.enum(['school', 'institute', 'independent_teacher', 'personal_teacher']).optional(),
+    subdomain: z.string().optional(),
+    lead_id: z.string().optional().nullable(),
+    plan_id: z.string().optional().nullable(),
+    max_students: z.number().optional(),
+    max_teachers: z.number().optional(),
+    max_storage_gb: z.number().optional(),
+    max_ai_tokens: z.number().optional(),
+    is_white_label: z.boolean().optional(),
+}).passthrough()
 
 export type CreateTenantSchema = z.infer<typeof createTenantSchema>
+

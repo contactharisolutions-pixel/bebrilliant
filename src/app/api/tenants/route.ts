@@ -33,14 +33,18 @@ export async function POST(request: Request) {
         const result = createTenantSchema.safeParse(body)
 
         if (!result.success) {
+            const fieldErrors = result.error.flatten().fieldErrors
+            const errorDetails = Object.entries(fieldErrors)
+                .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(', ')}`)
+                .join('; ')
             return NextResponse.json(
-                { error: 'Validation failed', details: result.error.flatten().fieldErrors },
+                { error: `Validation failed${errorDetails ? `: ${errorDetails}` : ''}`, details: fieldErrors },
                 { status: 400 }
             )
         }
 
         const { name, type, email, admin_first_name, admin_last_name, admin_password } = result.data
-        const tenant_type = (body.tenant_type as string) || 'institute'
+        const tenant_type = (body.tenant_type as string) || (type === 'SCHOOL' ? 'school' : (type === 'INSTITUTE' ? 'institute' : 'independent_teacher'))
         const rawSubdomain = (body.subdomain as string) || name.toLowerCase().replace(/[^a-z0-9]/g, '-')
         // Clean subdomain to keep alphanumeric and dashes only
         const subdomain = rawSubdomain.replace(/[^a-z0-9-]/g, '')
@@ -59,6 +63,8 @@ export async function POST(request: Request) {
                 subscription_status: 'active',
                 max_students: body.max_students || 100,
                 max_teachers: body.max_teachers || 10,
+                max_storage_gb: body.max_storage_gb || 50,
+                max_ai_tokens: body.max_ai_tokens || 25000,
                 is_white_label: body.is_white_label || false
             })
             .select()

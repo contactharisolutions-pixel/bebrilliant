@@ -307,7 +307,18 @@ export default function TenantManagementPage() {
                 })
             });
             const json = await res.json();
-            if (!res.ok) throw new Error(json.error || 'Failed to create tenant');
+            if (!res.ok) {
+                let errorMsg = json.error || 'Failed to create tenant';
+                if (json.details && typeof json.details === 'object') {
+                    const detailList = Object.entries(json.details)
+                        .map(([k, v]: [string, any]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+                        .join('; ');
+                    if (detailList && !errorMsg.includes(detailList)) {
+                        errorMsg += ` (${detailList})`;
+                    }
+                }
+                throw new Error(errorMsg);
+            }
 
             // If a specific plan was selected, link it immediately
             if (provisionForm.plan_id && json.tenant?.id) {
