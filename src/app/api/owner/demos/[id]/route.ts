@@ -170,6 +170,22 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             } catch (dErr) {
                 console.error('Failed to sync complete to demos table:', dErr)
             }
+
+            // Sync to lead_activities so it appears in CRM Notes & Activities
+            try {
+                const outcomeLabel = outcome.replace('_', ' ').toUpperCase()
+                const noteText = `Demo Completed [${outcomeLabel} | Interest: ${interest_level || 4}/5 | Probability: ${deal_probability || 70}%]\n${demo_notes || 'Demo conducted successfully.'}`
+                await supabaseAdmin.from('lead_activities').insert({
+                    lead_id: demo.lead_id,
+                    type: 'meeting',
+                    content: noteText,
+                    notes: noteText,
+                    created_by: user.id,
+                    metadata: { outcome, interest_level, deal_probability, demo_id: demoId }
+                })
+            } catch (actErr) {
+                console.error('Failed to sync demo note to lead_activities:', actErr)
+            }
         } else if (action === 'cancel') {
             updateData.status = 'cancelled'
 
