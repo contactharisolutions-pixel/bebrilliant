@@ -326,9 +326,6 @@ class SupabaseQueryBuilder {
                     .trim()
             }
 
-            // Universal safeguard: strip any leftover alias:col(...) patterns from selectStr so Postgres never throws syntax error at or near ":"
-            selectStr = selectStr.replace(/,\s*[a-zA-Z0-9_]+:[a-zA-Z0-9_]+\s*\([^)]*\)/gi, '').trim()
-
             if (selectStr.includes('tenants:tenant_id')) {
                 selectStr = 'up.*, t.name as tenant_name, t.logo as tenant_logo, t.tenant_type'
                 leftJoinStr = ' LEFT JOIN public.tenants t ON up.tenant_id = t.id'
@@ -387,6 +384,9 @@ class SupabaseQueryBuilder {
                     selectStr = selectStr.replace(/,\s*plans\s*\([^)]*\)/gi, '').trim()
                 }
             }
+
+            // Universal safeguard: strip any leftover alias:col(...) patterns from selectStr so Postgres never throws syntax error at or near ":"
+            selectStr = selectStr.replace(/,\s*[a-zA-Z0-9_]+:[a-zA-Z0-9_]+\s*\([^)]*\)/gi, '').trim()
 
             const tableAlias = this.table === 'user_profiles' ? 'up' : this.table
             sql = `SELECT ${selectStr} FROM ${this.table} ${tableAlias}${leftJoinStr}`

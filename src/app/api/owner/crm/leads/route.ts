@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { verifyPlatformAccess } from '@/lib/platform-auth'
+import { pool } from '@/lib/db'
 
-/** GET /api/owner/crm/leads - List all owner leads with demos */
+/** GET /api/owner/crm/leads - List all owner leads with demos and activity counts */
 export async function GET(request: NextRequest) {
     const user = await verifyPlatformAccess('crm.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
         .from('owner_leads')
         .select(`
       id, name, organization, email, phone, source, status, type,
-      assigned_to, allocated_at, tenant_id,
+      assigned_to, allocated_at, tenant_id, priority, expected_value, lead_score,
       created_at, updated_at,
       demos(id, scheduled_at, status, notes)
     `, { count: 'exact' })
@@ -38,6 +39,22 @@ export async function GET(request: NextRequest) {
     const { data, error, count } = await query
 
     if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+
+    const leadIds = (data ?? []).map((l: any) => l.id)
+    if (leadIds.length > 0) {
+        try {
+            const { rows: actCounts } = await pool.query(
+                `SELECT lead_id, COUNT(*)::int AS count FROM public.lead_activities WHERE lead_id = ANY($1) GROUP BY lead_id`,
+                [leadIds]
+            )
+            const actMap = Object.fromEntries(actCounts.map((r: any) => [r.lead_id, r.count]))
+            data?.forEach((l: any) => {
+                l.activity_count = actMap[l.id] || 0
+            })
+        } catch (e) {
+            // graceful fallback
+        }
+    }
 
     return NextResponse.json({ leads: data ?? [], total: count ?? 0, page, pageSize: limit })
 }

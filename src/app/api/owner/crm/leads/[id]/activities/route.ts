@@ -19,10 +19,16 @@ export async function GET(
 
     if (error) return NextResponse.json({ error: 'Failed to load activities' }, { status: 500 })
 
-    return NextResponse.json({ activities: data ?? [] })
+    const formatted = (data ?? []).map((r: any) => ({
+        ...r,
+        content: r.content || r.notes || '',
+        notes: r.notes || r.content || '',
+    }))
+
+    return NextResponse.json({ activities: formatted })
 }
 
-/** POST /api/owner/crm/leads/[id]/activities — Log a new activity */
+/** POST /api/owner/crm/leads/[id]/activities — Log a new activity / note */
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -33,15 +39,30 @@ export async function POST(
 
     const body = await request.json()
     const { type, content, metadata } = body
+    const noteText = (content || body.notes || '').trim()
 
-    const VALID_TYPES = ['call', 'email', 'note', 'meeting', 'status_change', 'stage_change', 'assignment']
+    const VALID_TYPES = [
+        'call', 'email', 'note', 'meeting', 'status_change', 
+        'stage_change', 'assignment', 'insight', 'urgent', 'requirement'
+    ]
     if (!type || !VALID_TYPES.includes(type)) {
         return NextResponse.json({ error: 'Valid activity type is required' }, { status: 400 })
     }
 
+    if (!noteText && ['note', 'insight', 'urgent', 'requirement'].includes(type)) {
+        return NextResponse.json({ error: 'Note content cannot be empty' }, { status: 400 })
+    }
+
     const { data, error } = await supabaseAdmin
         .from('lead_activities')
-        .insert({ lead_id: id, type, content, metadata: metadata || {}, created_by: user.id })
+        .insert({ 
+            lead_id: id, 
+            type, 
+            content: noteText, 
+            notes: noteText, 
+            metadata: metadata || {}, 
+            created_by: user.id 
+        })
         .select()
         .single()
 

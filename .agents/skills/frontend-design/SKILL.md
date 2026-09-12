@@ -73,3 +73,27 @@ Use active voice as default. A CTA says exactly what happens when it is used: "S
 Treat failure and emptiness as moments for direction, not mood. Explain what went wrong and how to fix it, in the interface's voice rather than a person's. Errors don't apologize, and they are never vague about what happened. An empty screen is an invitation to act.
 
 Keep the tone conversational: plain verbs, sentence case, no filler, with tone matched to the brand and the audience. Let each written element do exactly one job.
+
+IMAGE GENERATION SKILL
+
+Purpose:
+Create premium, realistic, brand-specific visual assets for
+website sections.
+
+Rules:
+
+1. Never generate generic stock-style imagery.
+2. Every image must have a defined visual concept.
+3. Background artwork must be designed for the section's layout.
+4. Reserve intentional negative space for website typography.
+5. Never place UI, cards or buttons inside generated artwork.
+6. Never generate website screenshots as backgrounds.
+7. Do not automatically reuse the same visual concept.
+8. Maintain brand visual consistency.
+9. Generate desktop composition intentionally.
+10. Define mobile crop/composition separately.
+11. Save approved assets into the project's image directory.
+12. Do not replace approved images without explicit instruction.
+13. Use realistic lighting, materials, depth and perspective.
+14. Prefer photorealistic/cinematic results where appropriate.
+15. Perform visual QA before accepting an image.
