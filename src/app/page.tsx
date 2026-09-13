@@ -14,6 +14,7 @@ import {
 import { PublicHeader } from '@/components/public/PublicHeader'
 import { PublicFooter } from '@/components/public/PublicFooter'
 import { ExperimentalHero } from '@/components/home/ExperimentalHero'
+import { EditorialCapabilitiesSection } from '@/components/home/EditorialCapabilitiesSection'
 
 /* ── Animated counter ──────────────────────────────────────────────────────── */
 function CountUp({ end, suffix = '' }: { end: number; suffix?: string }) {
@@ -1279,23 +1280,9 @@ export default function LandingPage() {
                     </div>
                 </section>
 
-                {/* ─── SECTION: ENTERPRISE CORE CAPABILITIES SHOWCASE ──────────────── */}
-                <section style={{ padding: '96px 5%', background: '#FFFFFF' }}>
-                    <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#FFFFFF', border: '1px solid #E2E8F0', color: '#1E3A8A', borderRadius: 999, padding: '6px 18px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 20, boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
-                            <Layers size={14} /> Modular Enterprise Architecture
-                        </div>
-                        <h2 style={{ fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.02em', marginBottom: 16, fontFamily: 'var(--font-manrope, sans-serif)' }}>
-                            Everything your academic ecosystem needs,{' '}
-                            <span style={{ background: 'linear-gradient(135deg,#1E3A8A,#0CA35C)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>in one unified suite.</span>
-                        </h2>
-                        <p style={{ fontSize: 16, color: '#64748B', fontWeight: 500, maxWidth: 680, margin: '0 auto 48px', lineHeight: 1.6 }}>
-                            Explore four enterprise-grade technology pillars designed to scale assessment, revenue, security, and student performance insights simultaneously.
-                        </p>
+                {/* ─── SECTION: BESPOKE EDITORIAL CORE CAPABILITIES ────────────────── */}
+                <EditorialCapabilitiesSection />
 
-                        <EnterpriseCapabilityShowcase />
-                    </div>
-                </section>
 
                 {/* ─── SECTION: MULTI-ROLE EXPERIENCE MATRIX ───────────────────────── */}
                 <section style={{ padding: '96px 5%', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', borderBottom: '1px solid #E2E8F0' }}>
