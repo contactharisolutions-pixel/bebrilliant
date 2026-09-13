@@ -842,19 +842,46 @@ export const supabaseAdmin = {
         admin: {
             createUser: async (payload: any) => {
                 try {
-                    const id = crypto.randomUUID()
                     const { email, password, user_metadata } = payload
-                    const hashedPassword = await bcrypt.hash(password, 12)
-                    await pool.query(
-                        `INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, aud, role, raw_app_meta_data, raw_user_meta_data)
-                         VALUES ($1, $2, $3, NOW(), 'authenticated', 'authenticated',
-                                 '{"provider": "email", "providers": ["email"]}'::jsonb, $4)
-                         ON CONFLICT (email) DO NOTHING`,
-                        [id, email, hashedPassword, JSON.stringify(user_metadata || {})]
+                    const cleanEmail = (email || '').trim().toLowerCase()
+
+                    // Check if user already exists
+                    const existing = await pool.query(
+                        `SELECT id FROM auth.users WHERE LOWER(email) = LOWER($1) LIMIT 1`,
+                        [cleanEmail]
                     )
-                    // Return existing id if conflict
-                    const { rows } = await pool.query(`SELECT id FROM auth.users WHERE email = $1`, [email])
-                    return { data: { user: { id: rows[0]?.id ?? id } }, error: null }
+
+                    if (existing.rows.length > 0) {
+                        const existingId = existing.rows[0].id
+                        if (password) {
+                            const hashedPassword = await bcrypt.hash(password, 12)
+                            await pool.query(
+                                `UPDATE auth.users 
+                                 SET encrypted_password = $1, 
+                                     raw_user_meta_data = $2,
+                                     updated_at = NOW()
+                                 WHERE id = $3`,
+                                [hashedPassword, JSON.stringify(user_metadata || {}), existingId]
+                            )
+                        }
+                        return { data: { user: { id: existingId } }, error: null }
+                    }
+
+                    const id = crypto.randomUUID()
+                    const hashedPassword = await bcrypt.hash(password, 12)
+                    const insertRes = await pool.query(
+                        `INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, aud, role, raw_app_meta_data, raw_user_meta_data, is_sso_user)
+                         VALUES ($1, $2, $3, NOW(), 'authenticated', 'authenticated',
+                                 '{"provider": "email", "providers": ["email"]}'::jsonb, $4, false)
+                         ON CONFLICT (email) WHERE (is_sso_user = false) DO UPDATE SET
+                             encrypted_password = EXCLUDED.encrypted_password,
+                             raw_user_meta_data = EXCLUDED.raw_user_meta_data,
+                             updated_at = NOW()
+                         RETURNING id`,
+                        [id, cleanEmail, hashedPassword, JSON.stringify(user_metadata || {})]
+                    )
+                    const finalId = insertRes.rows[0]?.id || id
+                    return { data: { user: { id: finalId } }, error: null }
                 } catch (err: any) {
                     console.error('[Admin CreateUser Error]:', err)
                     return { data: { user: null }, error: err }

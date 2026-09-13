@@ -40,6 +40,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
                         plan_name: plan.name,
                         plan_type: plan.type,
                         amount: plan.price,
+                        billing_cycle: plan.billing_cycle || 'monthly',
+                        start_date: new Date().toISOString(),
+                        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                         status: 'active',
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'tenant_id' })
