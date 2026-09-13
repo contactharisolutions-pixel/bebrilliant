@@ -8,7 +8,8 @@ import {
     PhoneCall, Video, StickyNote, Trophy, Ban, Sparkles,
     ArrowUpRight, Target, History, Layers, LayoutGrid, BarChart2,
     Users, DollarSign, Percent, Save, Copy, Check,
-    AlertCircle, MessageSquare, Tag, ChevronDown, Activity
+    AlertCircle, MessageSquare, Tag, ChevronDown, Activity,
+    ShieldCheck, ArrowRight
 } from 'lucide-react'
 
 // ── PALETTE ──────────────────────────────────────────────────────────────────
@@ -46,6 +47,7 @@ const DEFAULT_STAGES = [
     { key: 'contacted',      label: 'Contacted',      color: '#D97706', bg: '#FFFBEB', icon: PhoneCall },
     { key: 'demo_scheduled', label: 'Demo Scheduled', color: '#2563EB', bg: '#EFF6FF', icon: Calendar },
     { key: 'demo_completed', label: 'Demo Completed', color: '#7C3AED', bg: '#F5F3FF', icon: Video },
+    { key: 'onboarding',     label: 'Onboarding',     color: '#004B93', bg: '#EEF4FF', icon: ShieldCheck },
     { key: 'converted',      label: 'Enrolled',       color: '#059669', bg: '#ECFDF5', icon: Trophy },
     { key: 'lost',           label: 'Closed',         color: '#DC2626', bg: '#FEF2F2', icon: Ban },
 ]
@@ -510,6 +512,28 @@ function LeadDetailDrawer({
                                 <span style={{ background: currentStage.bg, color: currentStage.color, borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>
                                     {currentStage.label}
                                 </span>
+                                {(fullLead.status === 'demo_completed' || fullLead.status === 'onboarding') && (
+                                    <a
+                                        href={`/owner/onboarding?leadId=${fullLead.id}&search=${encodeURIComponent(fullLead.organization || fullLead.name)}`}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                            padding: '2px 8px',
+                                            background: '#ECFDF5',
+                                            border: '1px solid #A7F3D0',
+                                            borderRadius: 6,
+                                            color: '#065F46',
+                                            fontSize: 11,
+                                            fontWeight: 800,
+                                            textDecoration: 'none'
+                                        }}
+                                    >
+                                        <ShieldCheck size={12} color="#059669" />
+                                        <span>Onboarding Process</span>
+                                        <ArrowRight size={10} color="#059669" />
+                                    </a>
+                                )}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, color: P.muted, fontSize: 12 }}>
                                 <Building2 size={13} color={P.muted} />
@@ -1539,7 +1563,7 @@ export default function CRMPage() {
             </div>
 
             {/* KPI Metric Strip */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 12, marginBottom: 24 }}>
                 {DEFAULT_STAGES.map(s => {
                     const count = stageCounts[s.key] ?? leads.filter(l => l.status === s.key).length
                     const isSelected = statusFilter === s.key
@@ -1894,11 +1918,38 @@ export default function CRMPage() {
                                                                 <Video size={13} />
                                                             </button>
 
-                                                            {/* Converted -> Create School CTA */}
+                                                            {/* Onboarding Lifecycle Action for Completed Demos or Onboarding Leads */}
+                                                            {(l.status === 'demo_completed' || l.status === 'onboarding') && (
+                                                                <button
+                                                                    type="button"
+                                                                    title="Proceed to Institutional Onboarding Lifecycle"
+                                                                    onClick={() => window.location.href = `/owner/onboarding?leadId=${l.id}&search=${encodeURIComponent(l.organization || l.name)}`}
+                                                                    style={{
+                                                                        padding: '6px 12px',
+                                                                        borderRadius: 7,
+                                                                        border: 'none',
+                                                                        background: '#059669',
+                                                                        color: '#fff',
+                                                                        cursor: 'pointer',
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 5,
+                                                                        fontSize: 11,
+                                                                        fontWeight: 800,
+                                                                        boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)',
+                                                                        whiteSpace: 'nowrap'
+                                                                    }}
+                                                                >
+                                                                    <ShieldCheck size={13} /> Onboarding Process <ArrowRight size={12} />
+                                                                </button>
+                                                            )}
+
+                                                            {/* Converted -> View Tenant / School */}
                                                             {l.status === 'converted' && (
                                                                 <button
                                                                     type="button"
-                                                                    onClick={() => window.location.href = `/owner/tenants?provision=true&leadId=${l.id}`}
+                                                                    title="View Registered School Tenant"
+                                                                    onClick={() => window.location.href = l.tenant_id ? `/owner/tenants?search=${encodeURIComponent(l.organization || l.name)}` : `/owner/onboarding?leadId=${l.id}`}
                                                                     style={{
                                                                         padding: '6px 12px',
                                                                         borderRadius: 7,
@@ -1910,10 +1961,11 @@ export default function CRMPage() {
                                                                         alignItems: 'center',
                                                                         gap: 4,
                                                                         fontSize: 11,
-                                                                        fontWeight: 800
+                                                                        fontWeight: 800,
+                                                                        whiteSpace: 'nowrap'
                                                                     }}
                                                                 >
-                                                                    <ArrowUpRight size={12} /> Create School
+                                                                    <Building2 size={12} /> {l.tenant_id ? 'View School' : 'Onboarding'}
                                                                 </button>
                                                             )}
 

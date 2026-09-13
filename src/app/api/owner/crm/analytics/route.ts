@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const stages = stagesRes.data ?? []
 
     // Funnel by status
-    const statusGroups = ['new', 'contacted', 'demo_scheduled', 'demo_completed', 'converted', 'lost']
+    const statusGroups = ['new', 'contacted', 'demo_scheduled', 'demo_completed', 'onboarding', 'converted', 'lost']
     const funnel = statusGroups.map(s => ({
         status: s,
         count: leads.filter(l => l.status === s).length,

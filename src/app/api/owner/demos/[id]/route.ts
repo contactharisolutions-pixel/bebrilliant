@@ -131,10 +131,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             if (demo_notes !== undefined) updateData.demo_notes = demo_notes
             if (deal_probability !== undefined) updateData.deal_probability = deal_probability
 
-            // Update lead status based on outcome
+            // Update lead status based on outcome (marks demo completed so it reflects in CRM)
             let newLeadStatus = 'demo_completed'
-            if (outcome === 'closed_won') newLeadStatus = 'onboarding'
-            else if (outcome === 'closed_lost') newLeadStatus = 'lost'
+            if (outcome === 'closed_lost') newLeadStatus = 'lost'
 
             await supabaseAdmin
                 .from('owner_leads')
