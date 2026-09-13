@@ -43,22 +43,53 @@ export async function GET(request: NextRequest) {
             .order('sort_order', { ascending: true })
         const planFeatures = featData ?? []
 
-        // 4. Enrich Tenants with user count, capacity fallbacks, and linked plan info
+        // 4. Fetch Tenant Subscriptions
+        const { data: allSubscriptions } = await supabaseAdmin
+            .from('tenant_subscriptions')
+            .select('*')
+            .order('created_at', { ascending: false })
+
+        // 5. Enrich Tenants with active subscription, real-time capacities, and plan info
         const enriched = (tenants ?? []).map((t: any) => {
-            const matchedPlan = plans.find((p: any) => p.id === t.current_plan_id) || 
-                                plans.find((p: any) => p.name?.toLowerCase() === t.subscription_plan?.toLowerCase()) || null;
+            // Locate active subscription for tenant
+            const activeSub = (allSubscriptions ?? []).find(
+                (s: any) => s.tenant_id === t.id && s.status === 'active'
+            ) || (allSubscriptions ?? []).find(
+                (s: any) => s.tenant_id === t.id
+            ) || null
+
+            // Match active plan by subscription plan_id or current_plan_id or name
+            const matchedPlan = (activeSub?.plan_id ? plans.find((p: any) => p.id === activeSub.plan_id) : null) ||
+                                plans.find((p: any) => p.id === t.current_plan_id) || 
+                                plans.find((p: any) => p.name?.toLowerCase() === (activeSub?.plan_name || t.subscription_plan)?.toLowerCase()) || null
+
+            const overrides = activeSub?.limit_overrides || {}
+
+            // Effective capacities dynamically resolved from active subscription plan
+            const effectiveMaxStudents = overrides.max_students ?? matchedPlan?.max_students ?? t.max_students ?? 1000
+            const effectiveMaxTeachers = overrides.max_teachers ?? matchedPlan?.max_teachers ?? t.max_teachers ?? 60
+            const effectiveMaxStorageGb = overrides.max_storage_gb ?? matchedPlan?.max_storage_gb ?? t.max_storage_gb ?? 250
+            const effectiveMaxAiTokens = overrides.max_ai_tokens ?? matchedPlan?.max_ai_tokens ?? t.max_ai_tokens ?? 50000
+
+            const effectivePlanName = activeSub?.plan_name || matchedPlan?.name || t.subscription_plan || 'School (Standard)'
+            const effectiveSubStatus = activeSub?.status || t.subscription_status || 'active'
+
             return {
                 ...t,
                 total_users: t.user_profiles?.[0]?.count ?? 0,
-                max_storage_gb: t.max_storage_gb ?? matchedPlan?.max_storage_gb ?? 50,
-                max_ai_tokens: t.max_ai_tokens ?? matchedPlan?.max_ai_tokens ?? 25000,
-                subscription_plan: t.subscription_plan || matchedPlan?.name || 'School (Basic)',
-                current_plan_id: t.current_plan_id || matchedPlan?.id || null,
-                current_plan: matchedPlan
+                max_students: effectiveMaxStudents,
+                max_teachers: effectiveMaxTeachers,
+                max_storage_gb: effectiveMaxStorageGb,
+                max_ai_tokens: effectiveMaxAiTokens,
+                subscription_plan: effectivePlanName,
+                subscription_status: effectiveSubStatus,
+                current_plan_id: matchedPlan?.id || t.current_plan_id || null,
+                current_plan: matchedPlan,
+                active_subscription: activeSub
             }
         })
 
-        // 5. Calculate live platform KPI metrics
+        // 6. Calculate live platform KPI metrics
         let schoolsCount = 0
         let institutesCount = 0
         let educatorsCount = 0

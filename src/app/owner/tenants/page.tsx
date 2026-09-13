@@ -64,6 +64,7 @@ type Tenant = {
     examCount?: number;
     avgAccuracy?: string | number | null;
     revenueInPeriod?: number;
+    active_subscription?: any;
 };
 
 const SYSTEM_TENANT_TYPES = [
@@ -358,10 +359,10 @@ export default function TenantManagementPage() {
         setSelectedPlanId(tenant.current_plan_id || tenant.current_plan?.id || '');
         setTenantFeatureOverrides(tenant.features || {});
         setLimitsForm({
-            max_students: tenant.max_students ?? 500,
-            max_teachers: tenant.max_teachers ?? 25,
-            max_storage_gb: tenant.max_storage_gb ?? 100,
-            max_ai_tokens: tenant.max_ai_tokens ?? 25000,
+            max_students: tenant.max_students ?? 1000,
+            max_teachers: tenant.max_teachers ?? 60,
+            max_storage_gb: tenant.max_storage_gb ?? 250,
+            max_ai_tokens: tenant.max_ai_tokens ?? 50000,
             is_white_label: tenant.is_white_label ?? false,
             domain: tenant.domain || ''
         });
@@ -615,7 +616,7 @@ export default function TenantManagementPage() {
                         <RefreshCw size={14} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} /> Sync
                     </button>
                     <button onClick={() => {
-                        const defaultPlan = availablePlans.find(p => p.type === 'school') || availablePlans[0];
+                        const defaultPlan = availablePlans.find(p => p.name === 'School (Standard)') || availablePlans.find(p => p.type === 'school') || availablePlans[0];
                         setProvisionForm({
                             name: '',
                             tenant_type: 'school',
@@ -625,10 +626,10 @@ export default function TenantManagementPage() {
                             admin_first_name: '',
                             admin_last_name: '',
                             admin_password: '',
-                            max_students: defaultPlan ? defaultPlan.max_students : 500,
-                            max_teachers: defaultPlan ? defaultPlan.max_teachers : 25,
-                            max_storage_gb: defaultPlan?.max_storage_gb ?? 100,
-                            max_ai_tokens: defaultPlan?.max_ai_tokens ?? 25000,
+                            max_students: defaultPlan ? defaultPlan.max_students : 1000,
+                            max_teachers: defaultPlan ? defaultPlan.max_teachers : 60,
+                            max_storage_gb: defaultPlan?.max_storage_gb ?? 250,
+                            max_ai_tokens: defaultPlan?.max_ai_tokens ?? 50000,
                             is_white_label: false,
                             lead_id: ''
                         });
@@ -667,7 +668,7 @@ export default function TenantManagementPage() {
                             <button
                                 key={cand.onboarding_case_id}
                                 onClick={() => {
-                                    const defaultPlan = availablePlans.find(p => p.type === 'school') || availablePlans[0];
+                                    const defaultPlan = availablePlans.find(p => p.name === 'School (Standard)') || availablePlans.find(p => p.type === 'school') || availablePlans[0];
                                     const rawSub = cand.organization_name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
                                     setProvisionForm({
                                         name: cand.organization_name,
@@ -679,8 +680,8 @@ export default function TenantManagementPage() {
                                         admin_last_name: 'Administrator',
                                         admin_password: '',
                                         max_students: defaultPlan ? defaultPlan.max_students : 1000,
-                                        max_teachers: defaultPlan ? defaultPlan.max_teachers : 50,
-                                        max_storage_gb: defaultPlan?.max_storage_gb ?? 100,
+                                        max_teachers: defaultPlan ? defaultPlan.max_teachers : 60,
+                                        max_storage_gb: defaultPlan?.max_storage_gb ?? 250,
                                         max_ai_tokens: defaultPlan?.max_ai_tokens ?? 50000,
                                         is_white_label: true,
                                         lead_id: cand.lead_id || ''
@@ -881,12 +882,27 @@ export default function TenantManagementPage() {
                     {
                         header: 'Subscription Plan',
                         render: item => {
-                            const planName = item.subscription_plan || 'School (Basic)';
+                            const planName = item.subscription_plan || item.active_subscription?.plan_name || 'School (Standard)';
+                            const isSubActive = item.is_active && (item.subscription_status === 'active' || item.active_subscription?.status === 'active');
                             return (
-                                <div>
-                                    <span style={{ background: P.brandBg, color: P.brand, fontSize: 11, fontWeight: 800, padding: '4px 10px', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                                        <Crown size={12} /> {planName.toUpperCase()}
-                                    </span>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                        <span style={{ background: P.brandBg, color: P.brand, fontSize: 11, fontWeight: 900, padding: '4px 9px', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                            <Crown size={12} /> {planName}
+                                        </span>
+                                        <span style={{
+                                            background: isSubActive ? '#DCFCE7' : '#FEE2E2',
+                                            color: isSubActive ? '#15803D' : '#B91C1C',
+                                            fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 6
+                                        }}>
+                                            {isSubActive ? '(Active)' : '(Suspended)'}
+                                        </span>
+                                    </div>
+                                    {item.active_subscription?.billing_cycle && (
+                                        <div style={{ fontSize: 10, color: P.muted, fontWeight: 600 }}>
+                                            ₹{Number(item.active_subscription.amount || 9999).toLocaleString('en-IN')}/{item.active_subscription.billing_cycle === 'yearly' ? 'yr' : 'mo'}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         }
@@ -895,10 +911,13 @@ export default function TenantManagementPage() {
                         header: 'Resource Capacities',
                         render: item => {
                             const totalUsers = item.total_users ?? 0;
-                            const maxStud = item.max_students || 500;
+                            const maxStud = item.max_students || 1000;
                             const pct = Math.min(100, Math.round((totalUsers / maxStud) * 100));
+                            const maxStaff = item.max_teachers || 60;
+                            const storageGb = item.max_storage_gb || 250;
+                            const aiTokensK = ((item.max_ai_tokens || 50000)/1000).toFixed(0);
                             return (
-                                <div style={{ width: 160 }}>
+                                <div style={{ minWidth: 175 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 800, color: P.dark, marginBottom: 4 }}>
                                         <span>{totalUsers} / {maxStud} Students</span>
                                         <span style={{ color: P.muted }}>{pct}%</span>
@@ -907,7 +926,7 @@ export default function TenantManagementPage() {
                                         <div style={{ width: `${pct}%`, height: '100%', background: P.brand, borderRadius: 4 }} />
                                     </div>
                                     <div style={{ fontSize: 10, color: P.muted, fontWeight: 700 }}>
-                                        {item.max_teachers || 25} Teachers • {item.max_storage_gb || 100} GB • {((item.max_ai_tokens || 25000)/1000).toFixed(0)}k AI
+                                        {maxStaff} Staff • {storageGb} GB Storage • {aiTokensK}k AI
                                     </div>
                                 </div>
                             );
