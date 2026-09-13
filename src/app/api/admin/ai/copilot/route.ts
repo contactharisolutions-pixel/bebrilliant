@@ -3,6 +3,66 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getOpenAIClient } from '@/lib/ai/openai'
 
+function getSamplePreviewData(action: string, subject: string, grade: string) {
+    if (action === 'generate_quiz') {
+        return {
+            questions: [
+                {
+                    question: `In CBSE ${grade} ${subject}, which process best illustrates Newton's Third Law in action?`,
+                    options: [
+                        'A rocket propelling forward by expelling exhaust gases downward',
+                        'A car decelerating due to friction without applying brakes',
+                        'An apple accelerating towards the ground under gravity',
+                        'A body remaining at rest on a frictionless surface'
+                    ],
+                    correct_index: 0,
+                    explanation: 'The expulsion of exhaust gases downward exerts an equal and opposite upward thrust on the rocket.'
+                },
+                {
+                    question: `Which fundamental principle is evaluated during high-frequency diagnostic assessments in ${subject}?`,
+                    options: [
+                        'Rote memorization of numerical constants',
+                        'Conceptual mastery and logical deduction under applied contexts',
+                        'Speed of hand-written calculations without units',
+                        'Reproduction of verbatim textbook definitions'
+                    ],
+                    correct_index: 1,
+                    explanation: 'Competency-based assessment frameworks evaluate deep conceptual understanding and application over rote recall.'
+                },
+                {
+                    question: `When preparing for CBSE Board Examinations in ${subject}, what is the primary purpose of pre-board mock testing?`,
+                    options: [
+                        'To identify individual subject-matter gap areas and refine time allocation',
+                        'To finalize final term report cards prematurely',
+                        'To reduce the total number of school instructional days',
+                        'To replace classroom syllabus coverage'
+                    ],
+                    correct_index: 0,
+                    explanation: 'Mock examinations serve as formative diagnostics allowing students and teachers to remediate specific weak competencies.'
+                }
+            ]
+        }
+    } else if (action === 'draft_circular') {
+        return {
+            title: `Term-1 Examination Guidelines & Academic Conduct (${grade})`,
+            category: 'Examinations',
+            content: `Dear Parents and Students,\n\nAs we approach the Term-1 Assessments, the Academic Directorate has finalized the examination schedule, syllabus blueprints, and proctoring protocol.\n\nStudents are advised to review the chapter-wise weightage and ensure attendance in all revision clinics organized this week. Hall tickets will be issued through the student portal.\n\nLet us maintain rigorous focus and academic integrity throughout this cycle.`,
+            action_required: 'Parents are requested to acknowledge the examination circular in the portal before Friday.',
+            date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+        }
+    } else {
+        return {
+            summary: 'Institutional licensure and capacity metrics indicate excellent headroom with standard onboarding benchmarks on track.',
+            priorities: [
+                'Complete faculty profile onboarding to activate department-level exam authorizations.',
+                'Trigger the 1-Click Starter Demo Roster to run an end-to-end diagnostic assessment.',
+                'Publish the Term-1 assessment blueprint to the student mobile app and portal.'
+            ],
+            recommendation: 'Initiate a baseline CBT or OMR mock assessment to validate optical scanning and latency before the official examination term.'
+        }
+    }
+}
+
 export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient()
@@ -90,6 +150,20 @@ Return ONLY valid JSON:
         })
     } catch (e: any) {
         console.error('[admin/ai/copilot] Error:', e)
+        const isQuotaOrCredit = e?.status === 429 || e?.message?.includes('credits') || e?.message?.includes('quota') || e?.error?.code === 'insufficient_quota'
+        if (isQuotaOrCredit) {
+            const body = await request.clone().json().catch(() => ({}))
+            const { action = 'generate_quiz', subject = 'General Science', grade = 'Class 10' } = body
+            const fallbackData = getSamplePreviewData(action, subject, grade)
+            return NextResponse.json({
+                success: true,
+                action,
+                data: fallbackData,
+                model: 'gpt-4o (preview fallback)',
+                warning: 'OpenAI API quota or credits are currently depleted on this API key. Showing curated curriculum preview. Please recharge credits on platform.openai.com.',
+                timestamp: new Date().toISOString()
+            })
+        }
         return NextResponse.json({ error: e.message || 'AI generation failed' }, { status: 500 })
     }
 }
