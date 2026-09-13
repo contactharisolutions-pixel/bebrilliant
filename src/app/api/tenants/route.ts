@@ -24,7 +24,7 @@ export async function POST(request: Request) {
             .eq('id', user.id)
             .single()
 
-        const PLATFORM_ROLES = ['owner', 'sales_exec', 'demo_exec', 'onboarding_spec']
+        const PLATFORM_ROLES = ['owner', 'sales_exec', 'demo_exec', 'onboarding_spec', 'super_admin', 'admin']
         if (!callerProfile || !PLATFORM_ROLES.includes(callerProfile.role)) {
             return NextResponse.json({ error: 'Level 1 Clearance Required' }, { status: 403 })
         }
@@ -75,6 +75,7 @@ export async function POST(request: Request) {
         }
 
         // Create the tenant admin auth user
+        let adminUserId: string | null = null
         const { data: adminAuth, error: adminAuthError } = await supabaseAdmin.auth.admin.createUser({
             email,
             password: admin_password,
@@ -87,29 +88,50 @@ export async function POST(request: Request) {
             },
         })
 
-        if (adminAuthError || !adminAuth?.user) {
-            // Rollback tenant
-            await supabaseAdmin.from('tenants').delete().eq('id', tenant.id)
-            return NextResponse.json({ error: adminAuthError?.message || 'Failed to create admin user' }, { status: 400 })
+        if (adminAuth?.user?.id) {
+            adminUserId = adminAuth.user.id
+            await supabaseAdmin.from('user_profiles').insert({
+                id: adminUserId,
+                first_name: admin_first_name,
+                last_name: admin_last_name,
+                email,
+                role: 'tenant_admin',
+                tenant_id: tenant.id,
+                is_active: true,
+                is_first_login: true,
+            })
+        } else {
+            // User might already exist in auth, check user_profiles
+            const { data: existingProfile } = await supabaseAdmin
+                .from('user_profiles')
+                .select('id')
+                .eq('email', email)
+                .maybeSingle()
+
+            if (existingProfile?.id) {
+                adminUserId = existingProfile.id
+                await supabaseAdmin.from('user_profiles').update({
+                    tenant_id: tenant.id,
+                    role: 'tenant_admin',
+                    is_active: true
+                }).eq('id', adminUserId)
+            } else {
+                // Rollback tenant
+                await supabaseAdmin.from('tenants').delete().eq('id', tenant.id)
+                return NextResponse.json({ error: adminAuthError?.message || 'Failed to create admin user' }, { status: 400 })
+            }
         }
 
-        // Create tenant admin profile
-        const { error: adminProfileError } = await supabaseAdmin.from('user_profiles').insert({
-            id: adminAuth.user.id,
-            first_name: admin_first_name,
-            last_name: admin_last_name,
-            email,
-            role: 'tenant_admin',
-            tenant_id: tenant.id,
-            is_active: true,
-            is_first_login: true,
-        })
-
-        if (adminProfileError) {
-            // Rollback
-            await supabaseAdmin.auth.admin.deleteUser(adminAuth.user.id)
-            await supabaseAdmin.from('tenants').delete().eq('id', tenant.id)
-            return NextResponse.json({ error: 'Failed to create admin profile' }, { status: 500 })
+        // Link any matching onboarding or training case by lead or organization name
+        try {
+            if (lead_id) {
+                await supabaseAdmin.from('onboarding_cases').update({ tenant_id: tenant.id }).eq('lead_id', lead_id)
+                await supabaseAdmin.from('training_cases').update({ tenant_id: tenant.id }).eq('lead_id', lead_id)
+            }
+            await supabaseAdmin.from('onboarding_cases').update({ tenant_id: tenant.id }).ilike('organization_name', `%${name}%`)
+            await supabaseAdmin.from('training_cases').update({ tenant_id: tenant.id }).ilike('organization_name', `%${name}%`)
+        } catch (linkErr) {
+            console.warn('Lifecycle auto-link notice:', linkErr)
         }
 
         // Handle CRM Lead conversion and create Onboarding Checklist

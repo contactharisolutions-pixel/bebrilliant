@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { verifyPlatformAccess } from '@/lib/platform-auth'
+import { pool } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
     const user = await verifyPlatformAccess('settings.manage')
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
         if (status === 'suspended') query = query.eq('is_active', false)
         if (tenant_type && tenant_type !== 'all') query = query.eq('tenant_type', tenant_type)
         if (search) {
-            query = query.or(`name.ilike.%${search}%,subdomain.ilike.%${search}%,email.ilike.%${search}%`)
+            query = query.or(`name.ilike.%${search}%,subdomain.ilike.%${search}%,email.ilike.%${search}%,domain.ilike.%${search}%`)
         }
 
         const { data: tenants, error, count } = await query
@@ -57,11 +58,66 @@ export async function GET(request: NextRequest) {
             }
         })
 
+        // 5. Calculate live platform KPI metrics
+        let schoolsCount = 0
+        let institutesCount = 0
+        let educatorsCount = 0
+        let activeCount = 0
+        let suspendedCount = 0
+        let totalStudentCapacity = 0
+        let totalTeacherCapacity = 0
+        let totalStorageGb = 0
+
+        enriched.forEach((t: any) => {
+            const type = (t.tenant_type || t.type || '').toLowerCase()
+            if (type.includes('school')) schoolsCount++
+            else if (type.includes('institute')) institutesCount++
+            else educatorsCount++
+
+            if (t.is_active && t.subscription_status !== 'suspended') activeCount++
+            else suspendedCount++
+
+            totalStudentCapacity += Number(t.max_students || 0)
+            totalTeacherCapacity += Number(t.max_teachers || 0)
+            totalStorageGb += Number(t.max_storage_gb || 0)
+        })
+
+        // 6. Check for completed onboarding/training institutions not yet provisioned as tenants
+        let unprovisionedCandidates: any[] = []
+        try {
+            const { rows: candidateRows } = await pool.query(`
+                SELECT oc.id as onboarding_case_id, oc.organization_name, oc.lead_id, oc.completed_at,
+                       tc.id as training_case_id, tc.status as training_status
+                FROM public.onboarding_cases oc
+                LEFT JOIN public.training_cases tc ON tc.onboarding_case_id = oc.id
+                WHERE (oc.tenant_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.tenants t WHERE t.id = oc.tenant_id))
+                ORDER BY oc.updated_at DESC
+                LIMIT 10
+            `)
+            unprovisionedCandidates = candidateRows
+        } catch (candidateErr) {
+            console.warn('Unable to query candidate tenants:', candidateErr)
+        }
+
         return NextResponse.json({
             tenants: enriched,
             total: count ?? 0,
             plans,
-            planFeatures
+            planFeatures,
+            metrics: {
+                total: enriched.length,
+                schoolsCount,
+                institutesCount,
+                educatorsCount,
+                activeCount,
+                suspendedCount,
+                totalStudentCapacity,
+                totalTeacherCapacity,
+                totalStorageGb,
+                activePlansCount: plans.length,
+                featureModulesCount: planFeatures.length
+            },
+            unprovisionedCandidates
         })
     } catch (error: any) {
         console.error('Tenant list error:', error)
@@ -163,6 +219,42 @@ export async function POST(request: NextRequest) {
             }
 
             return NextResponse.json({ success: true, plan })
+        }
+
+        if (action === 'RESET_PASSWORD') {
+            const { tenant_id, new_password } = payload
+            if (!tenant_id || !new_password) {
+                return NextResponse.json({ error: 'Tenant ID and new password are required.' }, { status: 400 })
+            }
+
+            // Find primary tenant admin profile
+            const { data: adminProfile } = await supabaseAdmin
+                .from('user_profiles')
+                .select('id, email')
+                .eq('tenant_id', tenant_id)
+                .in('role', ['tenant_admin', 'admin'])
+                .order('created_at', { ascending: true })
+                .limit(1)
+                .single()
+
+            if (!adminProfile) {
+                return NextResponse.json({ error: 'No tenant admin found for this account.' }, { status: 404 })
+            }
+
+            const { error: updateAuthErr } = await supabaseAdmin.auth.admin.updateUserById(
+                adminProfile.id,
+                { password: new_password }
+            )
+
+            if (updateAuthErr) {
+                return NextResponse.json({ error: 'Failed to update auth password: ' + updateAuthErr.message }, { status: 500 })
+            }
+
+            return NextResponse.json({
+                success: true,
+                message: 'Admin password updated successfully.',
+                email: adminProfile.email
+            })
         }
 
         return NextResponse.json({ error: 'Invalid action payload' }, { status: 400 })

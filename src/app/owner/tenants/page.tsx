@@ -7,7 +7,8 @@ import {
     XCircle, Loader2, AlertTriangle, Globe, Crown, UserCheck,
     Download, Mail, Pencil, Trash2, ShieldAlert, Zap, Award,
     School, Key, Database, ExternalLink, GraduationCap,
-    Sparkles, HardDrive, Cpu, Check, Layers, ChevronRight, LogIn
+    Sparkles, HardDrive, Cpu, Check, Layers, ChevronRight, LogIn,
+    Copy, ArrowRight
 } from 'lucide-react';
 import { P, SHADOWS } from '@/styles/tokens';
 import { DataTable } from '@/components/owner/DataTable';
@@ -75,6 +76,8 @@ export default function TenantManagementPage() {
     const [tenants, setTenants] = useState<Tenant[]>([]);
     const [availablePlans, setAvailablePlans] = useState<SubscriptionPlan[]>([]);
     const [availableFeatures, setAvailableFeatures] = useState<PlanFeature[]>([]);
+    const [serverMetrics, setServerMetrics] = useState<any>(null);
+    const [unprovisionedCandidates, setUnprovisionedCandidates] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
     const pageSize = 20;
@@ -126,6 +129,12 @@ export default function TenantManagementPage() {
         domain: ''
     });
 
+    // Direct Password Reset Modal State
+    const [resetTargetTenant, setResetTargetTenant] = useState<Tenant | null>(null);
+    const [resetNewPassword, setResetNewPassword] = useState('');
+    const [resetSaving, setResetSaving] = useState(false);
+    const [credentialsCard, setCredentialsCard] = useState<{ email: string; pass: string; subdomain: string } | null>(null);
+
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
     const showToast = (msg: string, ok = true) => {
@@ -168,6 +177,8 @@ export default function TenantManagementPage() {
                 setTotal(json.total ?? 0);
                 if (json.plans) setAvailablePlans(json.plans);
                 if (json.planFeatures) setAvailableFeatures(json.planFeatures);
+                if (json.metrics) setServerMetrics(json.metrics);
+                if (json.unprovisionedCandidates) setUnprovisionedCandidates(json.unprovisionedCandidates);
             }
 
             // Enrich with platform dashboard activity if available
@@ -218,9 +229,11 @@ export default function TenantManagementPage() {
                             }
                             pass += "A1#";
                             
+                            const defaultType = (lead.type || '').toLowerCase() === 'institute' ? 'institute' : 'school';
                             setProvisionForm(f => ({
                                 ...f,
                                 name: lead.organization || lead.name || '',
+                                tenant_type: defaultType,
                                 email: lead.email || '',
                                 admin_first_name: firstName,
                                 admin_last_name: lastName,
@@ -248,6 +261,16 @@ export default function TenantManagementPage() {
         pass += "A1#";
         setProvisionForm(f => ({ ...f, admin_password: pass }));
         setShowPass(true);
+    };
+
+    const generateResetPassword = () => {
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
+        let pass = "";
+        for (let i = 0; i < 10; i++) {
+            pass += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        pass += "A1#";
+        setResetNewPassword(pass);
     };
 
     // When institution type changes in provision form, pick a recommended plan
@@ -320,27 +343,11 @@ export default function TenantManagementPage() {
                 throw new Error(errorMsg);
             }
 
-            // If a specific plan was selected, link it immediately
-            if (provisionForm.plan_id && json.tenant?.id) {
-                await fetch('/api/owner/tenants', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'ASSIGN_PLAN',
-                        payload: {
-                            tenant_id: json.tenant.id,
-                            plan_id: provisionForm.plan_id,
-                            apply_defaults: false
-                        }
-                    })
-                });
-            }
-
-            showToast(`Tenant "${provisionForm.name}" registered successfully`);
+            showToast(`Tenant "${provisionForm.name}" provisioned successfully!`);
             setProvisionDrawerOpen(false);
             fetchTenants(true);
         } catch (e: any) {
-            setProvisionError(e.message);
+            setProvisionError(e.message || 'Error occurred during provisioning');
         } finally {
             setProvisionSaving(false);
         }
@@ -348,22 +355,22 @@ export default function TenantManagementPage() {
 
     const openInspector = (tenant: Tenant) => {
         setSelectedTenant(tenant);
-        setSelectedPlanId(tenant.current_plan_id || availablePlans.find(p => p.name?.toLowerCase() === tenant.subscription_plan?.toLowerCase())?.id || '');
+        setSelectedPlanId(tenant.current_plan_id || tenant.current_plan?.id || '');
         setTenantFeatureOverrides(tenant.features || {});
         setLimitsForm({
-            max_students: tenant.max_students || 500,
-            max_teachers: tenant.max_teachers || 25,
-            max_storage_gb: tenant.max_storage_gb || 100,
-            max_ai_tokens: tenant.max_ai_tokens || 25000,
-            is_white_label: tenant.is_white_label || false,
+            max_students: tenant.max_students ?? 500,
+            max_teachers: tenant.max_teachers ?? 25,
+            max_storage_gb: tenant.max_storage_gb ?? 100,
+            max_ai_tokens: tenant.max_ai_tokens ?? 25000,
+            is_white_label: tenant.is_white_label ?? false,
             domain: tenant.domain || ''
         });
         setInspectTab('overview');
         setInspectDrawerOpen(true);
     };
 
-    const handleAssignPlan = async (applyDefaults: boolean) => {
-        if (!selectedTenant || !selectedPlanId) return;
+    const handleAssignPlan = async (planId: string, applyDefaults = true) => {
+        if (!selectedTenant) return;
         setInspectSaving(true);
         try {
             const res = await fetch('/api/owner/tenants', {
@@ -373,25 +380,26 @@ export default function TenantManagementPage() {
                     action: 'ASSIGN_PLAN',
                     payload: {
                         tenant_id: selectedTenant.id,
-                        plan_id: selectedPlanId,
+                        plan_id: planId,
                         apply_defaults: applyDefaults
                     }
                 })
             });
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.error || 'Failed to assign plan');
-            
-            showToast(`Plan updated to ${json.plan?.name || 'new plan'} successfully`);
-            if (applyDefaults && json.plan) {
-                setLimitsForm(f => ({
-                    ...f,
-                    max_students: json.plan.max_students || f.max_students,
-                    max_teachers: json.plan.max_teachers || f.max_teachers,
-                    max_storage_gb: json.plan.max_storage_gb || f.max_storage_gb,
-                    max_ai_tokens: json.plan.max_ai_tokens || f.max_ai_tokens
-                }));
-                if (json.plan.features) {
-                    setTenantFeatureOverrides(json.plan.features);
+            if (!res.ok) throw new Error('Failed to assign subscription plan');
+            const data = await res.json();
+            showToast(`Plan upgraded to "${data.plan?.name}"!`);
+            setSelectedPlanId(planId);
+            if (applyDefaults && data.plan) {
+                setLimitsForm({
+                    max_students: data.plan.max_students,
+                    max_teachers: data.plan.max_teachers,
+                    max_storage_gb: data.plan.max_storage_gb ?? 100,
+                    max_ai_tokens: data.plan.max_ai_tokens ?? 25000,
+                    is_white_label: limitsForm.is_white_label,
+                    domain: limitsForm.domain
+                });
+                if (data.plan.features) {
+                    setTenantFeatureOverrides(data.plan.features);
                 }
             }
             fetchTenants(true);
@@ -402,10 +410,12 @@ export default function TenantManagementPage() {
         }
     };
 
-    const handleToggleFeature = async (featureKey: string) => {
+    const handleToggleFeature = async (featureKey: string, currentVal: boolean) => {
         if (!selectedTenant) return;
-        const currentVal = tenantFeatureOverrides[featureKey] ?? false;
-        const updated = { ...tenantFeatureOverrides, [featureKey]: !currentVal };
+        const updated = {
+            ...tenantFeatureOverrides,
+            [featureKey]: !currentVal
+        };
         setTenantFeatureOverrides(updated);
 
         try {
@@ -452,14 +462,15 @@ export default function TenantManagementPage() {
         }
     };
 
-    const handleToggleSuspension = async () => {
-        if (!selectedTenant) return;
-        const futureActive = !selectedTenant.is_active;
-        if (!confirm(`Are you sure you want to ${futureActive ? 'unsuspend' : 'suspend'} this account?`)) return;
+    const handleToggleSuspension = async (tenantToToggle?: Tenant) => {
+        const target = tenantToToggle || selectedTenant;
+        if (!target) return;
+        const futureActive = !target.is_active;
+        if (!confirm(`Are you sure you want to ${futureActive ? 'unsuspend' : 'suspend'} ${target.name}?`)) return;
         
         setInspectSaving(true);
         try {
-            const res = await fetch(`/api/owner/tenants/${selectedTenant.id}`, {
+            const res = await fetch(`/api/owner/tenants/${target.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -469,7 +480,9 @@ export default function TenantManagementPage() {
             });
             if (!res.ok) throw new Error('Failed to change tenant status');
             showToast(futureActive ? 'Tenant reactivated successfully' : 'Tenant access suspended');
-            setSelectedTenant({ ...selectedTenant, is_active: futureActive });
+            if (selectedTenant && selectedTenant.id === target.id) {
+                setSelectedTenant({ ...selectedTenant, is_active: futureActive });
+            }
             fetchTenants(true);
         } catch (e: any) {
             showToast(e.message, false);
@@ -478,15 +491,16 @@ export default function TenantManagementPage() {
         }
     };
 
-    const handleImpersonate = async () => {
-        if (!selectedTenant) return;
+    const handleImpersonate = async (tenantToImpersonate?: Tenant) => {
+        const target = tenantToImpersonate || selectedTenant;
+        if (!target) return;
         try {
-            const res = await fetch(`/api/owner/tenants/${selectedTenant.id}/impersonate`, {
+            const res = await fetch(`/api/owner/tenants/${target.id}/impersonate`, {
                 method: 'POST'
             });
             const json = await res.json();
             if (res.ok) {
-                showToast(`Session established for ${selectedTenant.name}. Opening dashboard...`);
+                showToast(`Session established for ${target.name}. Opening dashboard...`);
                 setTimeout(() => {
                     window.open(json.redirectUrl || '/dashboard', '_blank');
                 }, 400);
@@ -498,8 +512,55 @@ export default function TenantManagementPage() {
         }
     };
 
-    // Calculate Summary Metrics
+    const handleExecuteResetPassword = async () => {
+        if (!resetTargetTenant || !resetNewPassword.trim()) {
+            showToast('Please enter or generate a new password.', false);
+            return;
+        }
+        setResetSaving(true);
+        try {
+            const res = await fetch('/api/owner/tenants', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'RESET_PASSWORD',
+                    payload: {
+                        tenant_id: resetTargetTenant.id,
+                        new_password: resetNewPassword
+                    }
+                })
+            });
+            const j = await res.json();
+            if (res.ok) {
+                showToast('Master admin password updated successfully!');
+                setCredentialsCard({
+                    email: j.email || resetTargetTenant.email,
+                    pass: resetNewPassword,
+                    subdomain: resetTargetTenant.subdomain || ''
+                });
+            } else {
+                showToast(j.error || 'Failed to update password', false);
+            }
+        } catch (e: any) {
+            showToast('Error resetting password: ' + e.message, false);
+        } finally {
+            setResetSaving(false);
+        }
+    };
+
+    // Calculate Summary Metrics (Uses server-provided metrics if available)
     const metrics = useMemo(() => {
+        if (serverMetrics) {
+            return {
+                totalTenants: serverMetrics.total,
+                activeTenants: serverMetrics.activeCount,
+                schoolCount: serverMetrics.schoolsCount,
+                instituteCount: serverMetrics.institutesCount,
+                teacherCount: serverMetrics.educatorsCount,
+                totalAllocatedStudents: serverMetrics.totalStudentCapacity,
+                totalCurrentUsers: tenants.reduce((acc, t) => acc + (t.total_users || 0), 0)
+            };
+        }
         const totalTenants = tenants.length;
         const activeTenants = tenants.filter(t => t.is_active).length;
         const schoolCount = tenants.filter(t => t.tenant_type === 'school').length;
@@ -508,7 +569,7 @@ export default function TenantManagementPage() {
         const totalAllocatedStudents = tenants.reduce((acc, t) => acc + (t.max_students || 0), 0);
         const totalCurrentUsers = tenants.reduce((acc, t) => acc + (t.total_users || 0), 0);
         return { totalTenants, activeTenants, schoolCount, instituteCount, teacherCount, totalAllocatedStudents, totalCurrentUsers };
-    }, [tenants]);
+    }, [serverMetrics, tenants]);
 
     const getTenantTypeMeta = (type?: string) => {
         return SYSTEM_TENANT_TYPES.find(t => t.key === type) || SYSTEM_TENANT_TYPES[0];
@@ -535,7 +596,7 @@ export default function TenantManagementPage() {
             )}
 
             {/* HEADER */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                         <span style={{ background: P.brandBg, color: P.brand, borderRadius: 6, padding: '3px 10px', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -554,7 +615,7 @@ export default function TenantManagementPage() {
                         <RefreshCw size={14} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} /> Sync
                     </button>
                     <button onClick={() => {
-                        const defaultPlan = availablePlans[0];
+                        const defaultPlan = availablePlans.find(p => p.type === 'school') || availablePlans[0];
                         setProvisionForm({
                             name: '',
                             tenant_type: 'school',
@@ -578,6 +639,68 @@ export default function TenantManagementPage() {
                     </button>
                 </div>
             </div>
+
+            {/* CANDIDATE INTAKE ALERT BANNER */}
+            {unprovisionedCandidates.length > 0 && (
+                <div style={{
+                    background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
+                    border: '1px solid #BFDBFE', borderRadius: 16, padding: '14px 20px',
+                    marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    gap: 16, flexWrap: 'wrap'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                            <Sparkles size={18} />
+                        </div>
+                        <div>
+                            <div style={{ fontSize: 14, fontWeight: 900, color: '#1E3A8A' }}>
+                                {unprovisionedCandidates.length} Completed Institutional Client{unprovisionedCandidates.length > 1 ? 's' : ''} Ready for Tenant Provisioning
+                            </div>
+                            <div style={{ fontSize: 12, color: '#3B82F6', fontWeight: 600 }}>
+                                Onboarding setup & training completed. Ready to allocate production subdomain, quota, and master admin credentials.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        {unprovisionedCandidates.slice(0, 2).map(cand => (
+                            <button
+                                key={cand.onboarding_case_id}
+                                onClick={() => {
+                                    const defaultPlan = availablePlans.find(p => p.type === 'school') || availablePlans[0];
+                                    const rawSub = cand.organization_name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+                                    setProvisionForm({
+                                        name: cand.organization_name,
+                                        tenant_type: 'school',
+                                        plan_id: defaultPlan ? defaultPlan.id : '',
+                                        email: 'admin@' + (rawSub || 'school') + '.edu.in',
+                                        subdomain: rawSub,
+                                        admin_first_name: 'Principal',
+                                        admin_last_name: 'Administrator',
+                                        admin_password: '',
+                                        max_students: defaultPlan ? defaultPlan.max_students : 1000,
+                                        max_teachers: defaultPlan ? defaultPlan.max_teachers : 50,
+                                        max_storage_gb: defaultPlan?.max_storage_gb ?? 100,
+                                        max_ai_tokens: defaultPlan?.max_ai_tokens ?? 50000,
+                                        is_white_label: true,
+                                        lead_id: cand.lead_id || ''
+                                    });
+                                    generatePassword();
+                                    setProvisionError('');
+                                    setProvisionDrawerOpen(true);
+                                }}
+                                style={{
+                                    padding: '7px 14px', background: '#2563EB', color: '#fff',
+                                    border: 'none', borderRadius: 10, fontSize: 12, fontWeight: 800,
+                                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+                                }}
+                            >
+                                Provision {cand.organization_name} <ArrowRight size={13} />
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* TOP METRIC KPI CARDS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
@@ -614,15 +737,15 @@ export default function TenantManagementPage() {
                 <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 16, padding: '18px 20px', boxShadow: SHADOWS.sm }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                         <span style={{ fontSize: 12, fontWeight: 700, color: P.muted }}>STUDENT CAPACITY</span>
-                        <div style={{ width: 34, height: 34, borderRadius: 9, background: P.purpleBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Users size={18} color={P.purple} />
+                        <div style={{ width: 34, height: 34, borderRadius: 9, background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Users size={18} color="#7C3AED" />
                         </div>
                     </div>
                     <div style={{ fontSize: 26, fontWeight: 900, color: P.dark }}>
                         {metrics.totalCurrentUsers} <span style={{ fontSize: 14, fontWeight: 700, color: P.muted }}>/ {metrics.totalAllocatedStudents}</span>
                     </div>
                     <div style={{ width: '100%', height: 6, background: '#F1F5F9', borderRadius: 4, overflow: 'hidden', marginTop: 10 }}>
-                        <div style={{ width: `${Math.min(100, Math.round((metrics.totalCurrentUsers / (metrics.totalAllocatedStudents || 1)) * 100))}%`, height: '100%', background: P.purple, borderRadius: 4 }} />
+                        <div style={{ width: `${Math.min(100, Math.round((metrics.totalCurrentUsers / (metrics.totalAllocatedStudents || 1)) * 100))}%`, height: '100%', background: '#7C3AED', borderRadius: 4 }} />
                     </div>
                 </div>
 
@@ -643,8 +766,8 @@ export default function TenantManagementPage() {
             </div>
 
             {/* FILTER PANEL */}
-            <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 16, padding: 18, display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, boxShadow: SHADOWS.sm }}>
-                <div style={{ position: 'relative', flex: 1 }}>
+            <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 16, padding: 18, display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, boxShadow: SHADOWS.sm, flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative', flex: '1 1 300px' }}>
                     <Search size={16} color={P.muted} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
                     <input
                         value={search}
@@ -659,7 +782,7 @@ export default function TenantManagementPage() {
                     )}
                 </div>
 
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {/* TYPE FILTER PILLS */}
                     <div style={{ display: 'flex', gap: 4, background: P.bg, border: `1px solid ${P.border}`, borderRadius: 12, padding: 4 }}>
                         {[
@@ -704,7 +827,7 @@ export default function TenantManagementPage() {
                 data={tenants}
                 loading={loading}
                 getRowId={item => item.id}
-                minWidth={940}
+                minWidth={980}
                 columns={[
                     {
                         header: 'Institution Details',
@@ -791,38 +914,167 @@ export default function TenantManagementPage() {
                         }
                     },
                     {
-                        header: 'Activity',
-                        render: item => (
-                            <div style={{ fontSize: 12, color: P.text }}>
-                                <div style={{ fontWeight: 700, color: P.dark }}>{item.examCount ?? 0} Exams</div>
-                                <div style={{ color: P.success, fontWeight: 800, fontSize: 11 }}>{item.avgAccuracy ?? 0}% Accuracy</div>
-                            </div>
-                        )
-                    },
-                    {
                         header: 'Status',
                         render: item => (
-                            <span style={{
-                                background: item.is_active ? P.successBg : P.errorBg,
-                                color: item.is_active ? P.success : P.error,
-                                padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800,
-                                display: 'inline-flex', alignItems: 'center', gap: 5
-                            }}>
+                            <button
+                                onClick={e => {
+                                    e.stopPropagation();
+                                    handleToggleSuspension(item);
+                                }}
+                                title="Click to toggle Active / Suspended state"
+                                style={{
+                                    background: item.is_active ? P.successBg : P.errorBg,
+                                    color: item.is_active ? P.success : P.error,
+                                    padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800,
+                                    display: 'inline-flex', alignItems: 'center', gap: 5, border: 'none',
+                                    cursor: 'pointer'
+                                }}
+                            >
                                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: item.is_active ? P.success : P.error }} />
                                 {item.is_active ? 'ACTIVE' : 'SUSPENDED'}
-                            </span>
+                            </button>
                         )
                     },
                     {
                         header: 'Actions',
                         render: item => (
-                            <button onClick={() => openInspector(item)} style={{ padding: '7px 14px', background: P.brandBg, border: 'none', borderRadius: 9, color: P.brand, fontWeight: 800, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <Settings size={13} /> Manage
-                            </button>
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                <button
+                                    onClick={() => handleImpersonate(item)}
+                                    title="Platform Direct Login / Impersonate"
+                                    style={{
+                                        padding: '7px 11px', background: '#EFF6FF', border: '1px solid #BFDBFE',
+                                        borderRadius: 8, color: '#2563EB', fontWeight: 800, fontSize: 11,
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5
+                                    }}
+                                >
+                                    <LogIn size={13} /> Login
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setResetTargetTenant(item);
+                                        setResetNewPassword('');
+                                        setCredentialsCard(null);
+                                        generateResetPassword();
+                                    }}
+                                    title="Reset Master Admin Password"
+                                    style={{
+                                        padding: '7px 11px', background: '#F8FAFC', border: '1px solid ' + P.border,
+                                        borderRadius: 8, color: P.dark, fontWeight: 800, fontSize: 11,
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5
+                                    }}
+                                >
+                                    <Key size={13} /> Reset Pass
+                                </button>
+                                <button
+                                    onClick={() => openInspector(item)}
+                                    style={{
+                                        padding: '7px 12px', background: P.brandBg, border: 'none',
+                                        borderRadius: 8, color: P.brand, fontWeight: 800, fontSize: 11,
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5
+                                    }}
+                                >
+                                    <Settings size={13} /> Manage
+                                </button>
+                            </div>
                         )
                     }
                 ]}
             />
+
+            {/* MODAL: DIRECT RESET ADMIN PASSWORD */}
+            {resetTargetTenant && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.65)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: 20 }}>
+                    <div style={{ background: '#fff', borderRadius: 22, width: '100%', maxWidth: 480, padding: 28, boxShadow: SHADOWS.xl, border: `1px solid ${P.border}` }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div style={{ width: 36, height: 36, borderRadius: 10, background: P.brandBg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: P.brand }}>
+                                    <Key size={18} />
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 950, color: P.dark }}>Reset Master Admin Password</h3>
+                                    <p style={{ margin: '2px 0 0', fontSize: 12, color: P.muted, fontWeight: 600 }}>{resetTargetTenant.name}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setResetTargetTenant(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} color={P.muted} /></button>
+                        </div>
+
+                        {!credentialsCard ? (
+                            <div>
+                                <div style={{ marginBottom: 14 }}>
+                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 6, textTransform: 'uppercase' }}>Target Admin Account</label>
+                                    <input
+                                        disabled
+                                        value={resetTargetTenant.email}
+                                        style={{ width: '100%', padding: '10px 14px', border: `1px solid ${P.border}`, borderRadius: 10, fontSize: 13, fontWeight: 700, background: '#F8FAFC', color: P.dark }}
+                                    />
+                                </div>
+
+                                <div style={{ marginBottom: 20 }}>
+                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 6, textTransform: 'uppercase' }}>New Password</label>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        <input
+                                            value={resetNewPassword}
+                                            onChange={e => setResetNewPassword(e.target.value)}
+                                            placeholder="Enter strong password..."
+                                            style={{ flex: 1, padding: '10px 14px', border: `1px solid ${P.border}`, borderRadius: 10, fontSize: 13, fontWeight: 700, outline: 'none' }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={generateResetPassword}
+                                            style={{ padding: '10px 14px', background: P.brandBg, border: 'none', borderRadius: 10, color: P.brand, fontWeight: 800, fontSize: 12, cursor: 'pointer' }}
+                                        >
+                                            Generate
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: 10 }}>
+                                    <button onClick={() => setResetTargetTenant(null)} style={{ flex: 1, padding: 12, background: P.bg, border: `1px solid ${P.border}`, borderRadius: 10, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+                                    <button onClick={handleExecuteResetPassword} disabled={resetSaving} style={{ flex: 2, padding: 12, background: P.brand, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 900, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                                        {resetSaving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Key size={16} />} Save New Password
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <div style={{
+                                    background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14,
+                                    padding: 16, marginBottom: 20
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#16A34A', fontWeight: 900, fontSize: 14, marginBottom: 10 }}>
+                                        <CheckCircle2 size={18} /> Password Updated Successfully!
+                                    </div>
+                                    <div style={{ fontSize: 12, color: P.dark, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                        <div><strong>Portal URL:</strong> https://{credentialsCard.subdomain}.bebrilliant.in</div>
+                                        <div><strong>Admin Email:</strong> {credentialsCard.email}</div>
+                                        <div><strong>New Password:</strong> <code style={{ background: '#fff', padding: '2px 6px', borderRadius: 4, fontWeight: 900, color: '#004B93' }}>{credentialsCard.pass}</code></div>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: 10 }}>
+                                    <button
+                                        onClick={() => {
+                                            const txt = `BeBrilliant Institution Portal Access\nPortal: https://${credentialsCard.subdomain}.bebrilliant.in\nEmail: ${credentialsCard.email}\nPassword: ${credentialsCard.pass}`;
+                                            navigator.clipboard.writeText(txt);
+                                            showToast('Credentials copied to clipboard!');
+                                        }}
+                                        style={{ flex: 1, padding: 12, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, color: '#2563EB', fontWeight: 800, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                                    >
+                                        <Copy size={15} /> Copy Credentials
+                                    </button>
+                                    <button
+                                        onClick={() => setResetTargetTenant(null)}
+                                        style={{ flex: 1, padding: 12, background: P.brand, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 900, fontSize: 13, cursor: 'pointer' }}
+                                    >
+                                        Done
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* DRAWER: REGISTER NEW TENANT */}
             <SideDrawer
@@ -1100,99 +1352,38 @@ export default function TenantManagementPage() {
                                             CURRENT: {(selectedTenant.subscription_plan || 'School (Basic)').toUpperCase()}
                                         </span>
                                     </div>
-
-                                    <div style={{ marginBottom: 14 }}>
-                                        <label style={{ fontSize: 11, fontWeight: 800, color: P.muted, display: 'block', marginBottom: 6 }}>Select System Plan from Catalog</label>
-                                        <select
-                                            value={selectedPlanId}
-                                            onChange={e => setSelectedPlanId(e.target.value)}
-                                            style={{ width: '100%', padding: '10px 12px', border: '1px solid ' + P.border, borderRadius: 10, fontSize: 13, background: P.bg, fontWeight: 700, color: P.dark }}
-                                        >
-                                            <option value="">-- Choose Plan to Assign --</option>
-                                            {availablePlans.map(p => (
-                                                <option key={p.id} value={p.id}>
-                                                    {p.name} (₹{Number(p.price).toLocaleString('en-IN')}/mo) — {p.max_students} Students
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    {activeSelectedPlan && (
-                                        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: 12, marginBottom: 14 }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                                <span style={{ fontSize: 13, fontWeight: 800, color: P.dark }}>{activeSelectedPlan.name} Specs</span>
-                                                <span style={{ fontSize: 12, fontWeight: 900, color: P.brand }}>
-                                                    ₹{Number(activeSelectedPlan.price).toLocaleString('en-IN')} / mo
-                                                    {activeSelectedPlan.yearly_price && <span style={{ fontSize: 10, color: P.muted, marginLeft: 6 }}>or ₹{Number(activeSelectedPlan.yearly_price).toLocaleString('en-IN')}/yr</span>}
-                                                </span>
-                                            </div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, fontSize: 11 }}>
-                                                <div><span style={{ color: P.muted }}>Students:</span> <strong>{activeSelectedPlan.max_students}</strong></div>
-                                                <div><span style={{ color: P.muted }}>Teachers:</span> <strong>{activeSelectedPlan.max_teachers}</strong></div>
-                                                <div><span style={{ color: P.muted }}>Storage:</span> <strong>{activeSelectedPlan.max_storage_gb ?? 50}GB</strong></div>
-                                                <div><span style={{ color: P.muted }}>AI Tokens:</span> <strong>{((activeSelectedPlan.max_ai_tokens ?? 25000)/1000).toFixed(0)}k</strong></div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div style={{ display: 'flex', gap: 8 }}>
-                                        <button
-                                            onClick={() => handleAssignPlan(false)}
-                                            disabled={inspectSaving || !selectedPlanId}
-                                            style={{ flex: 1, padding: '10px', background: P.bg, border: '1px solid ' + P.border, borderRadius: 8, fontSize: 12, fontWeight: 800, color: P.dark, cursor: 'pointer' }}
-                                        >
-                                            Assign Plan Only
-                                        </button>
-                                        <button
-                                            onClick={() => handleAssignPlan(true)}
-                                            disabled={inspectSaving || !selectedPlanId}
-                                            style={{ flex: 1.5, padding: '10px', background: P.brand, border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 800, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-                                        >
-                                            <Zap size={13} /> Assign & Apply Quotas
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Dynamic Feature Modules Registry */}
-                                <div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                        <div>
-                                            <div style={{ fontSize: 13, fontWeight: 900, color: P.dark }}>AVAILABLE FEATURE MODULES</div>
-                                            <div style={{ fontSize: 11, color: P.muted }}>Toggle specific system features ON or OFF for this tenant</div>
-                                        </div>
-                                    </div>
+                                    <p style={{ fontSize: 12, color: P.muted, marginBottom: 14 }}>
+                                        Upgrading or assigning a plan sets default capacities and feature permissions automatically.
+                                    </p>
 
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                        {availableFeatures.map(feat => {
-                                            const isEnabled = tenantFeatureOverrides[feat.key] ?? false;
+                                        {availablePlans.map(plan => {
+                                            const isCurrent = plan.id === selectedPlanId;
                                             return (
-                                                <div
-                                                    key={feat.key}
-                                                    onClick={() => handleToggleFeature(feat.key)}
-                                                    style={{
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                        padding: '12px 16px', background: isEnabled ? '#F0FDF4' : P.card,
-                                                        border: `1px solid ${isEnabled ? '#86EFAC' : P.border}`,
-                                                        borderRadius: 12, cursor: 'pointer', transition: 'all 0.15s'
-                                                    }}
-                                                >
+                                                <div key={plan.id} style={{
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                    padding: '12px 14px', borderRadius: 10, border: `1.5px solid ${isCurrent ? P.brand : P.border}`,
+                                                    background: isCurrent ? P.brandBg : P.bg
+                                                }}>
                                                     <div>
-                                                        <div style={{ fontSize: 13, fontWeight: 800, color: isEnabled ? '#166534' : P.dark, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                            <span>{feat.label}</span>
-                                                            <span style={{ fontSize: 10, color: P.muted, background: '#F1F5F9', padding: '1px 6px', borderRadius: 4 }}>{feat.category}</span>
+                                                        <div style={{ fontSize: 13, fontWeight: 800, color: isCurrent ? P.brand : P.dark }}>
+                                                            {plan.name} {isCurrent && <span style={{ fontSize: 10, color: P.brand }}>(Active)</span>}
                                                         </div>
-                                                        <div style={{ fontSize: 11, color: P.muted, marginTop: 2 }}>{feat.description}</div>
+                                                        <div style={{ fontSize: 11, color: P.muted, marginTop: 2 }}>
+                                                            {plan.max_students} Students • {plan.max_teachers} Staff • {plan.max_storage_gb ?? 50} GB Storage
+                                                        </div>
                                                     </div>
-                                                    <div style={{
-                                                        width: 44, height: 24, borderRadius: 12,
-                                                        background: isEnabled ? P.success : '#CBD5E1',
-                                                        position: 'relative', transition: 'all 0.2s', flexShrink: 0
-                                                    }}>
-                                                        <div style={{
-                                                            width: 18, height: 18, borderRadius: '50%', background: '#fff',
-                                                            position: 'absolute', top: 3, left: isEnabled ? 23 : 3,
-                                                            transition: 'all 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                                                        }} />
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                        <span style={{ fontSize: 13, fontWeight: 900, color: P.dark }}>₹{Number(plan.price).toLocaleString('en-IN')}/mo</span>
+                                                        {!isCurrent && (
+                                                            <button
+                                                                onClick={() => handleAssignPlan(plan.id, true)}
+                                                                disabled={inspectSaving}
+                                                                style={{ padding: '6px 12px', background: P.brand, color: '#fff', border: 'none', borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: 'pointer' }}
+                                                            >
+                                                                Switch Plan
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
                                             );
@@ -1205,9 +1396,11 @@ export default function TenantManagementPage() {
                         {/* TAB 2: CAPACITY MATRIX */}
                         {inspectTab === 'capacity' && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                <div style={{ fontSize: 13, fontWeight: 800, color: P.dark }}>Resource Capacity Allocation</div>
+                                <div style={{ fontSize: 13, color: P.muted }}>
+                                    Override resource capacities independently from plan defaults.
+                                </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                                     <div style={{ background: P.bg, padding: 16, borderRadius: 12, border: '1px solid ' + P.border }}>
                                         <label style={{ fontSize: 11, color: P.muted, fontWeight: 800, display: 'block', marginBottom: 6 }}>MAX STUDENT SLOTS</label>
                                         <input
@@ -1293,10 +1486,32 @@ export default function TenantManagementPage() {
                                         Instantly launch the live admin dashboard for this institution to review curriculum, exams, or troubleshoot issues.
                                     </div>
                                     <button
-                                        onClick={handleImpersonate}
+                                        onClick={() => handleImpersonate(selectedTenant)}
                                         style={{ width: '100%', padding: '11px', background: P.brand, color: '#fff', border: 'none', borderRadius: 9, fontWeight: 800, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                                     >
                                         <ExternalLink size={14} /> Open Tenant Workspace
+                                    </button>
+                                </div>
+
+                                {/* Password Reset Direct Tool */}
+                                <div style={{ padding: 16, background: '#F8FAFC', border: '1px solid ' + P.border, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <Key size={16} color={P.dark} />
+                                        <div style={{ fontSize: 13, fontWeight: 800, color: P.dark }}>Master Admin Credentials & Password</div>
+                                    </div>
+                                    <div style={{ fontSize: 11, color: P.muted }}>
+                                        Generate and set a new temporary password for <strong>{selectedTenant.email}</strong> with 1-click copy.
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setResetTargetTenant(selectedTenant);
+                                            setResetNewPassword('');
+                                            setCredentialsCard(null);
+                                            generateResetPassword();
+                                        }}
+                                        style={{ width: '100%', padding: '10px', background: '#fff', color: P.brand, border: `1px solid ${P.brand}40`, borderRadius: 8, fontWeight: 800, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                                    >
+                                        <Key size={13} /> Reset / Change Master Password
                                     </button>
                                 </div>
 
@@ -1311,39 +1526,11 @@ export default function TenantManagementPage() {
                                             : 'Reactivating will restore instant access across all portals.'}
                                     </div>
                                     <button
-                                        onClick={handleToggleSuspension}
+                                        onClick={() => handleToggleSuspension(selectedTenant)}
                                         disabled={inspectSaving}
                                         style={{ width: '100%', padding: '10px', background: selectedTenant.is_active ? P.error : P.success, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 800, fontSize: 12, cursor: 'pointer' }}
                                     >
                                         {selectedTenant.is_active ? 'SUSPEND TENANT ACCESS' : 'REACTIVATE TENANT ACCESS'}
-                                    </button>
-                                </div>
-
-                                {/* Password Reset Box */}
-                                <div style={{ padding: 16, background: P.bg, border: '1px solid ' + P.border, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                    <div style={{ fontSize: 13, fontWeight: 800, color: P.dark }}>Admin Password Reset</div>
-                                    <div style={{ fontSize: 11, color: P.muted }}>Send an automated password reset link to the account owner ({selectedTenant.email}).</div>
-                                    <button
-                                        onClick={async () => {
-                                            try {
-                                                const res = await fetch('/api/owner/tenants/reset-password', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({ email: selectedTenant.email })
-                                                });
-                                                const j = await res.json();
-                                                if (res.ok) {
-                                                    showToast('Password reset link sent to ' + selectedTenant.email);
-                                                } else {
-                                                    showToast(j.error || 'Failed to send reset email', false);
-                                                }
-                                            } catch {
-                                                showToast('Failed to send reset email', false);
-                                            }
-                                        }}
-                                        style={{ width: '100%', padding: '10px', background: '#F1F5F9', color: P.dark, border: '1px solid ' + P.border, borderRadius: 8, fontWeight: 800, fontSize: 12, cursor: 'pointer' }}
-                                    >
-                                        Send Password Reset Email
                                     </button>
                                 </div>
                             </div>
