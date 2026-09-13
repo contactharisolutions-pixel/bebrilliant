@@ -80,6 +80,34 @@ export default function OnboardingPage() {
     useEffect(() => { fetchCases() }, [fetchCases])
     useEffect(() => { fetchStaff() }, [fetchStaff])
 
+    // Handle URL Search & auto-open case matching leadId or search
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const params = new URLSearchParams(window.location.search)
+        const qSearch = params.get('search')
+        const qLeadId = params.get('leadId')
+        if (qSearch && !search) {
+            setSearch(qSearch)
+        }
+        if ((qLeadId || qSearch) && cases.length > 0 && !selectedCase) {
+            let match = null
+            if (qLeadId) {
+                match = cases.find(c => c.lead_id === qLeadId)
+            }
+            if (!match && qSearch) {
+                const s = qSearch.toLowerCase()
+                match = cases.find(c => 
+                    c.organization_name?.toLowerCase().includes(s) ||
+                    c.contact_name?.toLowerCase().includes(s) ||
+                    c.contact_email?.toLowerCase().includes(s)
+                )
+            }
+            if (match) {
+                setSelectedCase(match)
+            }
+        }
+    }, [cases])
+
     async function handleCreateCase() {
         if (!createForm.organization_name) return showToast('Organization name is required.', 'error')
         setCreateSaving(true)
@@ -374,6 +402,73 @@ export default function OnboardingPage() {
                         </div>
 
                         <div style={{ padding: '24px 28px', overflowY: 'auto', flex: 1 }}>
+                            {/* School Tenant Provisioning Action Card */}
+                            {!selectedCase.tenant_id ? (
+                                <div style={{
+                                    background: '#EFF6FF',
+                                    border: '1px solid #BFDBFE',
+                                    borderRadius: 14,
+                                    padding: '16px 18px',
+                                    marginBottom: 20
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                                        <div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                                <Sparkles size={16} color="#2563EB" />
+                                                <span style={{ fontSize: 13, fontWeight: 900, color: '#1E40AF' }}>Institutional Account Setup Required</span>
+                                            </div>
+                                            <p style={{ fontSize: 12, color: '#3B82F6', margin: 0, fontWeight: 600 }}>
+                                                Provision dedicated school tenant instance, allocate student capacity limits, and generate master administrator credentials.
+                                            </p>
+                                        </div>
+                                        <a
+                                            href={`/owner/tenants?provision=true&leadId=${selectedCase.lead_id || ''}`}
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 6,
+                                                padding: '8px 14px',
+                                                background: '#2563EB',
+                                                color: '#fff',
+                                                borderRadius: 10,
+                                                fontSize: 12,
+                                                fontWeight: 900,
+                                                textDecoration: 'none',
+                                                whiteSpace: 'nowrap',
+                                                boxShadow: '0 4px 12px rgba(37,99,235,0.25)'
+                                            }}
+                                        >
+                                            Register & Provision <ArrowUpRight size={14} />
+                                        </a>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{
+                                    background: '#ECFDF5',
+                                    border: '1px solid #A7F3D0',
+                                    borderRadius: 14,
+                                    padding: '12px 16px',
+                                    marginBottom: 20,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <CheckCircle2 size={16} color="#059669" />
+                                        <div>
+                                            <div style={{ fontSize: 13, fontWeight: 900, color: '#065F46' }}>Institutional Tenant Active</div>
+                                            <div style={{ fontSize: 11, color: '#047857', fontWeight: 600 }}>Instance provisioned with dedicated database scope.</div>
+                                        </div>
+                                    </div>
+                                    <a
+                                        href={`/owner/tenants?search=${encodeURIComponent(selectedCase.organization_name || '')}`}
+                                        style={{ fontSize: 11, fontWeight: 900, color: '#059669', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}
+                                    >
+                                        Manage Tenant <ChevronRight size={13} />
+                                    </a>
+                                </div>
+                            )}
+
                             <div style={{ marginBottom: 20 }}>
                                 <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: P.muted, marginBottom: 6, textTransform: 'uppercase' }}>Current Stage</label>
                                 <select

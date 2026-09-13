@@ -133,7 +133,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
             // Update lead status based on outcome
             let newLeadStatus = 'demo_completed'
-            if (outcome === 'closed_won') newLeadStatus = 'converted'
+            if (outcome === 'closed_won') newLeadStatus = 'onboarding'
             else if (outcome === 'closed_lost') newLeadStatus = 'lost'
 
             await supabaseAdmin
@@ -150,6 +150,61 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
                 staff_id: user.id,
                 metadata: { outcome, interest_level, deal_probability }
             })
+
+            // Automatically transition completed demo to Onboarding Lifecycle
+            if (outcome !== 'closed_lost') {
+                try {
+                    const { data: existingCase } = await supabaseAdmin
+                        .from('onboarding_cases')
+                        .select('id')
+                        .eq('lead_id', demo.lead_id)
+                        .maybeSingle()
+
+                    if (!existingCase) {
+                        const { data: leadInfo } = await supabaseAdmin
+                            .from('owner_leads')
+                            .select('name, organization, email, phone, assigned_to')
+                            .eq('id', demo.lead_id)
+                            .single()
+
+                        const orgName = leadInfo?.organization || leadInfo?.name || 'New Educational Institution'
+                        const staffId = demo.assigned_staff_id || leadInfo?.assigned_to || user.id
+                        const targetDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                        const slaDeadline = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+                        const { data: newCase } = await supabaseAdmin
+                            .from('onboarding_cases')
+                            .insert({
+                                lead_id: demo.lead_id,
+                                organization_name: orgName,
+                                contact_name: leadInfo?.name || '',
+                                contact_email: leadInfo?.email || '',
+                                contact_phone: leadInfo?.phone || '',
+                                assigned_staff_id: staffId,
+                                assigned_at: new Date().toISOString(),
+                                stage: 'account_setup',
+                                stage_progress_pct: 38,
+                                target_completion_date: targetDate,
+                                sla_deadline: slaDeadline,
+                            })
+                            .select()
+                            .single()
+
+                        if (newCase) {
+                            await supabaseAdmin.from('lifecycle_timeline').insert({
+                                lead_id: demo.lead_id,
+                                event_type: 'onboarding_started',
+                                event_label: 'Moved to Onboarding Process',
+                                description: `Automatic transition from completed demo to Onboarding Lifecycle for ${orgName}`,
+                                staff_id: staffId,
+                                metadata: { case_id: newCase.id }
+                            })
+                        }
+                    }
+                } catch (obErr) {
+                    console.error('Failed to auto-create onboarding case:', obErr)
+                }
+            }
 
             // Sync complete to demos table
             try {

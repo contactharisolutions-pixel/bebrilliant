@@ -134,6 +134,17 @@ export async function POST(request: Request) {
                         updated_at: new Date().toISOString()
                     })
                     .eq('id', lead_id)
+
+                // Update Onboarding Case with tenant_id and advance past account_setup
+                await supabaseAdmin
+                    .from('onboarding_cases')
+                    .update({
+                        tenant_id: tenant.id,
+                        stage: 'data_setup',
+                        stage_progress_pct: 50,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('lead_id', lead_id)
             }
 
             // Create Onboarding Checklist

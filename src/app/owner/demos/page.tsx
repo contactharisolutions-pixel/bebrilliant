@@ -226,16 +226,18 @@ export default function DemoManagementPage() {
             })
             if (res.ok) {
                 const leadId = reportTarget.lead_id
-                if (reportForm.outcome === 'closed_won') {
-                    showToast('Demo marked as Closed Won! Ready to provision school.', 'success', {
-                        label: 'Provision School',
+                showToast(
+                    reportForm.outcome === 'closed_won'
+                        ? 'Demo Closed Won! Moved to Onboarding Process.'
+                        : 'Demo report completed! Moved to Onboarding Lifecycle.',
+                    'success',
+                    {
+                        label: 'Open Onboarding',
                         onClick: () => {
-                            window.location.href = `/owner/tenants?provision=true&leadId=${leadId}`
+                            window.location.href = `/owner/onboarding?leadId=${leadId}`
                         }
-                    })
-                } else {
-                    showToast('Demo report saved and synced to CRM timeline!', 'success')
-                }
+                    }
+                )
                 setReportTarget(null)
                 fetchDemos(true)
             } else {
@@ -559,13 +561,38 @@ export default function DemoManagementPage() {
                                         </a>
                                     )}
 
-                                    <button
-                                        onClick={() => window.location.href = `/owner/crm`}
-                                        title="View in CRM"
-                                        style={{ padding: '8px 10px', background: P.bg, border: `1px solid ${P.border}`, borderRadius: 8, color: P.text, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                                    >
-                                        <ArrowRight size={14} />
-                                    </button>
+                                    {demo.status === 'completed' ? (
+                                        <button
+                                            onClick={() => window.location.href = `/owner/onboarding?leadId=${demo.lead_id}&search=${encodeURIComponent(lead.organization || lead.name || '')}`}
+                                            title="Move to Onboarding Process"
+                                            style={{
+                                                padding: '8px 14px',
+                                                background: P.success,
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: 8,
+                                                fontWeight: 800,
+                                                fontSize: 12,
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 6,
+                                                boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)',
+                                                transition: 'all 0.15s ease'
+                                            }}
+                                        >
+                                            <ShieldCheck size={14} /> Onboarding Process
+                                            <ArrowRight size={13} />
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => window.location.href = `/owner/crm`}
+                                            title="View in CRM"
+                                            style={{ padding: '8px 10px', background: P.bg, border: `1px solid ${P.border}`, borderRadius: 8, color: P.text, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                        >
+                                            <ArrowRight size={14} />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         )
