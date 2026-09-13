@@ -37,7 +37,7 @@ Define:
 - section rhythm
 - visual concepts
 
-PHASE 4 — IMAGE ART DIRECTION
+PHASE 4 — IMAGE ART DIRECTION & ASSET MANAGEMENT
 
 For image-led sections:
 
@@ -45,8 +45,17 @@ For image-led sections:
 - define focal point
 - define negative space
 - define content-safe area
-- generate artwork
-- review artwork
+- generate artwork using server-side OpenAI utility (`/api/generate-image` or `src/lib/ai/openai.ts`)
+- review artwork against design QA standards
+
+Asset Management Rules:
+- Treat generated images as permanent project assets
+- Save approved imagery into `public/assets/images/{brand|hero|backgrounds|sections|products|mobile|generated}/`
+- Maintain descriptive filenames: `[section]_[subject]_[descriptor]_[aspect-ratio].[ext]`
+- Use optimized web formats (`.webp`, progressive `.jpg`)
+- Do NOT regenerate approved artwork unnecessarily
+- Do NOT replace an approved image without explicit user instruction
+
 
 PHASE 5 — UI DESIGN
 

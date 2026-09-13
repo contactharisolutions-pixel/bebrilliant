@@ -109,3 +109,46 @@ Authentic cinematic documentary photography of a focused Class 11 Indian high sc
   - **Section 2 (Platform Infrastructure)**: Tangible physical artifacts (OMR paper, optical sensors, high-speed camera lenses).
   - **Section 3 (Academic Pedagogy)**: Intimate student concentration & classroom engagement.
   - **Section 4 (Institutional Scale)**: Broad architectural school campus & state-of-the-art academic auditoriums.
+
+---
+
+## 6. Image Asset Preservation & Lifecycle Protocol
+
+### A. Treat Generated Images as Permanent Project Assets
+1. **Permanent Local Storage**: DALL-E temporary image URLs expire after 60 minutes. Every generated image intended for the project must be downloaded and persisted locally into the corresponding directory under:
+   ```
+   public/assets/images/
+   ├── brand/          # Logos, official insignias, institutional crests
+   ├── hero/           # Primary page hero focal imagery
+   ├── backgrounds/    # Content-safe backdrop artwork & atmospheric textures
+   ├── sections/       # Feature, pedagogy, and editorial section visuals
+   ├── products/       # Tangible hardware, OMR scanner, and software demonstrations
+   ├── mobile/         # Viewport-specific vertical crops (9:16 or 1:1)
+   └── generated/      # Output cache for newly synthesized visual assets
+   ```
+2. **Never Regenerate Approved Artwork Unnecessarily**:
+   - Once an image has been reviewed, approved, and integrated into a page or component, it is considered a locked asset.
+   - Do NOT regenerate approved images on routine rebuilds, layout refactorings, or content edits.
+   - Protect API quotas and maintain visual brand continuity across the team.
+3. **No Replacements Without Explicit Instruction**:
+   - An approved image must never be swapped out or overwritten based on agent assumptions.
+   - Replacement requires explicit user directive to change or re-generate that specific asset.
+
+### B. Strict Descriptive Naming Standard
+Every image file stored in `public/assets/images/` must use semantic, human-readable kebab-case describing context, subject, and orientation:
+- **Format**: `[domain]_[subject]_[descriptor]_[aspect-ratio].[ext]`
+- **Examples**:
+  - `public/assets/images/hero/hero_cbse_principal_academic_director_16x9.webp`
+  - `public/assets/images/backgrounds/bg_conference_hall_daylight_safe_left_16x9.webp`
+  - `public/assets/images/products/product_omr_sheet_highspeed_optical_scanner.webp`
+  - `public/assets/images/mobile/mobile_hero_principal_discussion_vertical_9x16.webp`
+- **Strictly Prohibited Names**: `img1.png`, `image.jpg`, `test.png`, `output.webp`, `dalle_17892.png`, `temp.png`.
+
+### C. Web Format & Performance Optimization
+1. **Modern Formats**: Convert and store web background and photographic images in **WebP** (or progressive JPEG where WebP is unavailable) for 3x–5x smaller payloads at visually lossless fidelity.
+2. **Budget & Sizing**:
+   - Full-bleed desktop hero / background: Target **120 KB – 250 KB** at `1920x1080` or `1792x1024`.
+   - Feature & editorial section visuals: Target **80 KB – 150 KB** at `1024x1024` or `1200x800`.
+   - Mobile vertical crops: Target **60 KB – 100 KB** at `750x1334` or `1024x1792`.
+3. **Responsive Next.js Integration**: Always use `next/image` with `sizes`, `priority` (for above-the-fold hero images), and `placeholder="blur"` where appropriate to eliminate layout shift (CLS).
+
