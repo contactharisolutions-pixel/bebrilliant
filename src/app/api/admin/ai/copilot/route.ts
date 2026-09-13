@@ -64,6 +64,10 @@ function getSamplePreviewData(action: string, subject: string, grade: string) {
 }
 
 export async function POST(request: NextRequest) {
+    let action = 'generate_quiz'
+    let subject = 'General Science'
+    let grade = 'Class 10'
+
     try {
         const supabase = await createClient()
         const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -82,7 +86,11 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json().catch(() => ({}))
-        const { action = 'generate_quiz', prompt = '', subject = 'General Science', grade = 'Class 10', count = 3 } = body
+        action = body.action || 'generate_quiz'
+        subject = body.subject || 'General Science'
+        grade = body.grade || 'Class 10'
+        const prompt = body.prompt || ''
+        const count = body.count || 3
 
         const openai = getOpenAIClient()
 
@@ -150,17 +158,19 @@ Return ONLY valid JSON:
         })
     } catch (e: any) {
         console.error('[admin/ai/copilot] Error:', e)
-        const isQuotaOrCredit = e?.status === 429 || e?.message?.includes('credits') || e?.message?.includes('quota') || e?.error?.code === 'insufficient_quota'
+        const isQuotaOrCredit = e?.status === 429 || 
+            e?.code === 'credit_balance_exhausted' || 
+            e?.type === 'insufficient_quota' ||
+            e?.message?.includes('credits') || 
+            e?.message?.includes('quota')
         if (isQuotaOrCredit) {
-            const body = await request.clone().json().catch(() => ({}))
-            const { action = 'generate_quiz', subject = 'General Science', grade = 'Class 10' } = body
             const fallbackData = getSamplePreviewData(action, subject, grade)
             return NextResponse.json({
                 success: true,
                 action,
                 data: fallbackData,
-                model: 'gpt-4o (preview fallback)',
-                warning: 'OpenAI API quota or credits are currently depleted on this API key. Showing curated curriculum preview. Please recharge credits on platform.openai.com.',
+                model: 'gpt-4o (curated preview)',
+                warning: 'OpenAI API quota or credit balance is currently exhausted on this API key. Showing curated curriculum preview. Please recharge credits at https://platform.openai.com/settings/organization/billing/.',
                 timestamp: new Date().toISOString()
             })
         }
