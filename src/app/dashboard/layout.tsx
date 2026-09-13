@@ -384,29 +384,52 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "flex-end",
+                alignItems: "flex-start",
+                gap: 2,
               }}
             >
               <div
                 style={{
                   fontSize: 13,
-                  fontWeight: 900,
+                  fontWeight: 800,
                   color: C.primaryBlue,                  /* official: #1E3A8A */
-                  textAlign: "right",
+                  textAlign: "left",
+                  lineHeight: 1.3,
                 }}
               >
                 {instituteName}
               </div>
               <div
                 style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: C.textSecondary,                /* role label — muted, not red */
-                  textTransform: "uppercase",
-                  textAlign: "right",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  marginTop: 2,
                 }}
               >
-                {userName}
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: C.textSecondary,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {userName}
+                </span>
+                <span
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 800,
+                    padding: "1px 6px",
+                    borderRadius: 4,
+                    background: "#EFF6FF",
+                    color: "#2563EB",
+                    border: "1px solid #DBEAFE",
+                  }}
+                >
+                  ADMIN
+                </span>
               </div>
             </div>
           </div>
