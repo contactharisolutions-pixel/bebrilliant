@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { verifyPlatformAccess } from '@/lib/platform-auth'
 import { STAGE_PROGRESS_MAP, normalizeStage } from '@/app/api/owner/onboarding/cases/route'
+import { pool } from '@/lib/db'
 
 /** PATCH /api/owner/onboarding/cases/[id] — Advance stage, update inner setup state, checklists, or training handover */
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
@@ -43,6 +44,42 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             const adminEmail = payload?.admin_email || obCase.contact_email || 'admin@school.edu'
             const tempPassword = payload?.temp_password || 'Admin@' + Math.random().toString(36).substring(2, 7).toUpperCase() + '2026!'
             const subdomain = payload?.subdomain || (obCase.organization_name.toLowerCase().replace(/[^a-z0-9]/g, '') + '.bebrilliant.in')
+
+            // Synchronize with auth.users & user_profiles so login works immediately with the entered password
+            try {
+                const { data: authUser } = await supabaseAdmin.auth.admin.createUser({
+                    email: adminEmail,
+                    password: tempPassword,
+                    email_confirm: true,
+                    user_metadata: {
+                        first_name: obCase.contact_name?.split(' ')[0] || 'School',
+                        last_name: obCase.contact_name?.split(' ').slice(1).join(' ') || 'Admin',
+                        role: 'tenant_admin',
+                        tenant_id: obCase.tenant_id || undefined
+                    }
+                })
+
+                const userId = authUser?.user?.id
+                if (userId) {
+                    await pool.query(`
+                        INSERT INTO public.user_profiles (id, first_name, last_name, email, role, tenant_id, is_active, is_first_login)
+                        VALUES ($1, $2, $3, $4, 'tenant_admin', $5, true, false)
+                        ON CONFLICT (id) DO UPDATE SET 
+                            tenant_id = COALESCE(EXCLUDED.tenant_id, user_profiles.tenant_id),
+                            role = 'tenant_admin',
+                            is_active = true,
+                            is_first_login = false
+                    `, [
+                        userId,
+                        obCase.contact_name?.split(' ')[0] || 'School',
+                        obCase.contact_name?.split(' ').slice(1).join(' ') || 'Admin',
+                        adminEmail,
+                        obCase.tenant_id || null
+                    ])
+                }
+            } catch (authCreateErr) {
+                console.error('Error provisioning auth user in onboarding:', authCreateErr)
+            }
 
             currentSetupState.provisioning = {
                 ...currentSetupState.provisioning,

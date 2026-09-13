@@ -110,10 +110,13 @@ export async function POST(request: Request) {
 
             if (existingProfile?.id) {
                 adminUserId = existingProfile.id
+                // Update password for existing user with newly specified admin_password
+                await supabaseAdmin.auth.admin.updateUserById(adminUserId, { password: admin_password })
                 await supabaseAdmin.from('user_profiles').update({
                     tenant_id: tenant.id,
                     role: 'tenant_admin',
-                    is_active: true
+                    is_active: true,
+                    is_first_login: false
                 }).eq('id', adminUserId)
             } else {
                 // Rollback tenant

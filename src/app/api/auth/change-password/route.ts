@@ -18,8 +18,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
         }
 
-        // Update password via the user's own session
-        const { error: updateError } = await supabase.auth.updateUser({ password })
+        // Update password via admin client with bcrypt hash into auth.users
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password })
 
         if (updateError) {
             return NextResponse.json({ error: updateError.message }, { status: 400 })
