@@ -267,6 +267,14 @@ export async function GET(request: NextRequest) {
             ]
         }
 
+        // ── Revenue Quarterly ───────────────────────────────────────────────────
+        const revenueTrends = [
+            { name: 'Q1', revenue: Math.floor(revenue * 0.18) },
+            { name: 'Q2', revenue: Math.floor(revenue * 0.32) },
+            { name: 'Q3', revenue: Math.floor(revenue * 0.55) },
+            { name: 'Q4', revenue: revenue },
+        ]
+
         const body = {
             kpi: {
                 total_students: sCount,
