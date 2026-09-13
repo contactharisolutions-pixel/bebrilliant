@@ -2,24 +2,58 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { verifyPlatformAccess } from '@/lib/platform-auth'
 
-const ONBOARDING_STAGES = [
-    'assigned', 'kickoff', 'account_setup', 'data_setup',
-    'configuration', 'quality_check', 'customer_review',
-    'ready_for_training', 'completed'
-]
+export const COMPACT_STAGES = ['provisioning', 'data_setup', 'configuration', 'handover', 'completed'] as const
+export type CompactStage = typeof COMPACT_STAGES[number]
 
-const DEFAULT_STAGE_CHECKLISTS: Record<string, string[]> = {
-    assigned: ['Initial case review', 'Assign onboarding specialist', 'Set target completion date'],
-    kickoff: ['Schedule kickoff meeting', 'Identify key stakeholders', 'Confirm software requirement checklist'],
-    account_setup: ['Create tenant account profile', 'Provision admin credentials', 'Configure subscription plan & limits'],
-    data_setup: ['Import master data (teachers & students)', 'Verify data integrity & relationships'],
-    configuration: ['Configure branding & custom domain', 'Setup academic structure & courses', 'Configure notification rules'],
-    quality_check: ['Internal system validation test', 'Verify permissions & security scopes'],
-    customer_review: ['Conduct customer review walkthrough', 'Gather customer feedback & signoff'],
-    ready_for_training: ['Prepare training hand-off case', 'Notify training department']
+export const LEGACY_STAGE_MAP: Record<string, CompactStage> = {
+    assigned: 'provisioning',
+    kickoff: 'provisioning',
+    account_setup: 'provisioning',
+    data_setup: 'data_setup',
+    configuration: 'configuration',
+    quality_check: 'configuration',
+    customer_review: 'handover',
+    ready_for_training: 'handover',
+    handover: 'handover',
+    completed: 'completed',
 }
 
-/** GET /api/owner/onboarding/cases — List all onboarding cases */
+export function normalizeStage(stage: string): CompactStage {
+    return LEGACY_STAGE_MAP[stage] || (COMPACT_STAGES.includes(stage as any) ? (stage as CompactStage) : 'provisioning')
+}
+
+export const DEFAULT_STAGE_CHECKLISTS: Record<string, string[]> = {
+    provisioning: [
+        'Kickoff briefing & stakeholder identification',
+        'Tenant database & school subdomain routing provisioned',
+        'School super-admin initial credentials dispatched'
+    ],
+    data_setup: [
+        'Academic calendar & term dates established',
+        'Grade tiers (Grades 1–12) and section groupings defined',
+        'Faculty & student baseline master roster imported'
+    ],
+    configuration: [
+        'School branding, crest & color palette configured',
+        'Curriculum framework & subject matrix configured',
+        'Assessment & CBT examination engines enabled'
+    ],
+    handover: [
+        'End-to-end data & security verification audit passed',
+        'Executive stakeholder walkthrough & customer acceptance signoff',
+        'Training case scheduled and handoff package dispatched'
+    ]
+}
+
+export const STAGE_PROGRESS_MAP: Record<string, number> = {
+    provisioning: 25,
+    data_setup: 50,
+    configuration: 75,
+    handover: 90,
+    completed: 100
+}
+
+/** GET /api/owner/onboarding/cases — List all onboarding cases with compact 4-stage metadata */
 export async function GET(request: NextRequest) {
     const user = await verifyPlatformAccess('crm.manage')
     if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -38,8 +72,9 @@ export async function GET(request: NextRequest) {
             `)
             .order('created_at', { ascending: false })
 
-        if (stage !== 'all') query = query.eq('stage', stage)
-        if (search) query = query.or(`organization_name.ilike.%${search}%,contact_name.ilike.%${search}%,contact_email.ilike.%${search}%`)
+        if (search) {
+            query = query.or(`organization_name.ilike.%${search}%,contact_name.ilike.%${search}%,contact_email.ilike.%${search}%`)
+        }
 
         const { data: cases, error } = await query
         if (error) {
@@ -47,14 +82,49 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Failed to fetch onboarding cases.' }, { status: 500 })
         }
 
-        // Get stage counts for tab badges
-        const { data: stageRows } = await supabaseAdmin.from('onboarding_cases').select('stage')
-        const stageCounts: Record<string, number> = {}
-        for (const row of stageRows ?? []) {
-            stageCounts[row.stage] = (stageCounts[row.stage] ?? 0) + 1
+        // Normalize stage and ensure setup_state for every case
+        const normalizedCases = (cases ?? []).map(c => {
+            const normStage = normalizeStage(c.stage)
+            return {
+                ...c,
+                stage: normStage,
+                original_stage: c.stage,
+                setup_state: c.setup_state && typeof c.setup_state === 'object' ? c.setup_state : {}
+            }
+        })
+
+        // Compute stage counts across normalized stages
+        const stageCounts: Record<string, number> = {
+            all: normalizedCases.length,
+            provisioning: 0,
+            data_setup: 0,
+            configuration: 0,
+            handover: 0,
+            completed: 0,
         }
 
-        return NextResponse.json({ cases: cases ?? [], stageCounts })
+        for (const c of normalizedCases) {
+            const st = c.stage
+            if (stageCounts[st] !== undefined) {
+                stageCounts[st]++
+            }
+        }
+
+        // Apply stage filter
+        const filteredCases = stage === 'all'
+            ? normalizedCases
+            : normalizedCases.filter(c => c.stage === stage)
+
+        return NextResponse.json({
+            cases: filteredCases,
+            stageCounts,
+            milestones: [
+                { id: 'provisioning', number: 1, title: 'Kickoff & Account Provisioning', targetPct: 25 },
+                { id: 'data_setup', number: 2, title: 'Academic Structure & Data Import', targetPct: 50 },
+                { id: 'configuration', number: 3, title: 'Portal Branding & Exam Engine', targetPct: 75 },
+                { id: 'handover', number: 4, title: 'Quality Signoff & Training Handover', targetPct: 100 },
+            ]
+        })
     } catch (err: any) {
         console.error('GET /onboarding/cases crash:', err)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -74,7 +144,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Organization name is required.' }, { status: 400 })
         }
 
-        // Auto-suggest onboarding staff if not specified (workload matching)
+        // Auto-suggest onboarding staff if not specified
         let staffToAssign = assigned_staff_id
         if (!staffToAssign) {
             const { data: staffMembers } = await supabaseAdmin
@@ -83,12 +153,46 @@ export async function POST(request: NextRequest) {
                 .in('role', ['onboarding_spec', 'platform_staff', 'admin'])
                 .eq('is_active', true)
             if (staffMembers && staffMembers.length > 0) {
-                staffToAssign = staffMembers[0].id // First available active onboarding staff
+                staffToAssign = staffMembers[0].id
             }
         }
 
-        const targetDate = target_completion_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-        const slaDeadline = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        const targetDate = target_completion_date || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        const slaDeadline = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+
+        const defaultSubdomain = organization_name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'school'
+
+        const initialSetupState = {
+            provisioning: {
+                db_status: 'ready',
+                subdomain: `${defaultSubdomain}.bebrilliant.in`,
+                admin_email: contact_email || `admin@${defaultSubdomain}.edu`,
+                credentials_dispatched: false,
+                created_at: new Date().toISOString()
+            },
+            data_setup: {
+                academic_year: '2026-2027',
+                grades_count: 0,
+                teachers_count: 0,
+                students_count: 0,
+                roster_status: 'pending'
+            },
+            configuration: {
+                brand_color: '#2563eb',
+                syllabus: 'CBSE',
+                exam_modules: {
+                    online_cbt: true,
+                    omr_hybrid: true,
+                    proctoring_ai: true,
+                    question_bank: true
+                }
+            },
+            handover: {
+                audit_passed: false,
+                customer_signoff: false,
+                training_case_id: null
+            }
+        }
 
         const { data: obCase, error } = await supabaseAdmin
             .from('onboarding_cases')
@@ -101,10 +205,11 @@ export async function POST(request: NextRequest) {
                 contact_phone: contact_phone || null,
                 assigned_staff_id: staffToAssign || null,
                 assigned_at: staffToAssign ? new Date().toISOString() : null,
-                stage: 'assigned',
-                stage_progress_pct: 12,
+                stage: 'provisioning',
+                stage_progress_pct: 25,
                 target_completion_date: targetDate,
                 sla_deadline: slaDeadline,
+                setup_state: initialSetupState
             })
             .select()
             .single()
@@ -114,7 +219,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Failed to create onboarding case.' }, { status: 500 })
         }
 
-        // Seed initial checklists for stage 1 (assigned) and stage 2 (kickoff)
+        // Seed checklists for the 4 compact stages
         const checklistInserts: any[] = []
         for (const [st, tasks] of Object.entries(DEFAULT_STAGE_CHECKLISTS)) {
             for (const task_name of tasks) {
@@ -133,8 +238,8 @@ export async function POST(request: NextRequest) {
             await supabaseAdmin.from('lifecycle_timeline').insert({
                 lead_id,
                 event_type: 'onboarding_started',
-                event_label: 'Onboarding Case Started',
-                description: `Onboarding started for ${organization_name}`,
+                event_label: 'Onboarding Milestone 1 (Kickoff) Started',
+                description: `Institutional onboarding started for ${organization_name}. Milestone 1: Provisioning.`,
                 staff_id: user.id,
                 metadata: { case_id: obCase.id, assigned_staff_id: staffToAssign }
             })

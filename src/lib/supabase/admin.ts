@@ -194,6 +194,7 @@ class SupabaseQueryBuilder {
                 stage TEXT NOT NULL DEFAULT 'assigned', stage_progress_pct INTEGER NOT NULL DEFAULT 12,
                 target_completion_date DATE, sla_deadline TIMESTAMPTZ, sla_breached BOOLEAN DEFAULT FALSE,
                 completed_at TIMESTAMPTZ, completed_by UUID, notes TEXT,
+                setup_state JSONB DEFAULT '{}'::jsonb,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )`,
             `CREATE TABLE IF NOT EXISTS onboarding_checklists (
@@ -224,6 +225,7 @@ class SupabaseQueryBuilder {
             try { await pool.query(sql) } catch (e) { /* ignore if exists */ }
         }
         try { await pool.query('ALTER TABLE lead_demo_requests ADD COLUMN IF NOT EXISTS demo_id UUID') } catch (e) { /* ignore */ }
+        try { await pool.query('ALTER TABLE onboarding_cases ADD COLUMN IF NOT EXISTS setup_state JSONB DEFAULT \'{}\'::jsonb') } catch (e) { /* ignore */ }
     }
 
     private async execute() {
