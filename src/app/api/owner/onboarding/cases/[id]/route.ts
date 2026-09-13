@@ -234,20 +234,30 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             if (notes !== undefined) updateData.notes = notes
         }
 
-        const { data: updatedCase, error: updateErr } = await supabaseAdmin
+        const { error: updateErr } = await supabaseAdmin
             .from('onboarding_cases')
             .update(updateData)
             .eq('id', caseId)
+
+        if (updateErr) {
+            console.error('PATCH /onboarding/cases/[id] update error:', updateErr)
+            return NextResponse.json({ error: 'Failed to update onboarding case.' }, { status: 500 })
+        }
+
+        // Fetch fresh hydrated case with checklists and assigned staff
+        const { data: updatedCase, error: fetchErr2 } = await supabaseAdmin
+            .from('onboarding_cases')
             .select(`
                 *,
                 assigned_staff:assigned_staff_id(id, first_name, last_name, email, role),
                 checklists:onboarding_checklists(*)
             `)
+            .eq('id', caseId)
             .single()
 
-        if (updateErr) {
-            console.error('PATCH /onboarding/cases/[id] update error:', updateErr)
-            return NextResponse.json({ error: 'Failed to update onboarding case.' }, { status: 500 })
+        if (fetchErr2 || !updatedCase) {
+            console.error('PATCH /onboarding/cases/[id] fetch updated error:', fetchErr2)
+            return NextResponse.json({ error: 'Failed to fetch updated onboarding case.' }, { status: 500 })
         }
 
         return NextResponse.json({

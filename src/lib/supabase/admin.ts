@@ -226,6 +226,18 @@ class SupabaseQueryBuilder {
         }
         try { await pool.query('ALTER TABLE lead_demo_requests ADD COLUMN IF NOT EXISTS demo_id UUID') } catch (e) { /* ignore */ }
         try { await pool.query('ALTER TABLE onboarding_cases ADD COLUMN IF NOT EXISTS setup_state JSONB DEFAULT \'{}\'::jsonb') } catch (e) { /* ignore */ }
+        try {
+            await pool.query(`
+                ALTER TABLE public.onboarding_checklists 
+                ADD COLUMN IF NOT EXISTS case_id UUID,
+                ADD COLUMN IF NOT EXISTS stage TEXT,
+                ADD COLUMN IF NOT EXISTS task_name TEXT,
+                ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT FALSE,
+                ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ,
+                ADD COLUMN IF NOT EXISTS completed_by UUID;
+                ALTER TABLE public.onboarding_checklists ALTER COLUMN tenant_id DROP NOT NULL;
+            `)
+        } catch (e) { /* ignore */ }
     }
 
     private async execute() {
@@ -308,6 +320,15 @@ class SupabaseQueryBuilder {
             let isTenantSubWithRelations = false
             let isLeadDemoRequestsRelations = false
             let isPlatformTasksRelations = false
+            let isOnboardingCasesRelations = false
+
+            if (this.table === 'onboarding_cases') {
+                isOnboardingCasesRelations = true
+                selectStr = selectStr
+                    .replace(/,\s*assigned_staff:assigned_staff_id\s*\([^)]*\)/gi, '')
+                    .replace(/,\s*checklists:onboarding_checklists\s*\([^)]*\)/gi, '')
+                    .trim()
+            }
 
             if (this.table === 'lead_demo_requests') {
                 isLeadDemoRequestsRelations = true
@@ -727,6 +748,36 @@ class SupabaseQueryBuilder {
                     r.lead = leadMap[r.lead_id] || null
                     r.assigned_user = userMap[r.assigned_to] || null
                     r.created_user = userMap[r.created_by] || null
+                })
+            }
+
+            if (isOnboardingCasesRelations) {
+                const caseIds = rows.map((r: any) => r.id).filter(Boolean)
+                let checklistMap: Record<string, any[]> = {}
+                if (caseIds.length > 0) {
+                    const { rows: checklistRows } = await pool.query(
+                        `SELECT * FROM public.onboarding_checklists WHERE case_id = ANY($1) ORDER BY created_at ASC`,
+                        [caseIds]
+                    )
+                    for (const chk of checklistRows) {
+                        if (!checklistMap[chk.case_id]) checklistMap[chk.case_id] = []
+                        checklistMap[chk.case_id].push(chk)
+                    }
+                }
+
+                const staffIds = [...new Set(rows.map((r: any) => r.assigned_staff_id).filter(Boolean))]
+                let staffMap: Record<string, any> = {}
+                if (staffIds.length > 0) {
+                    const { rows: staffRows } = await pool.query(
+                        `SELECT id, first_name, last_name, email, role FROM public.user_profiles WHERE id = ANY($1)`,
+                        [staffIds]
+                    )
+                    staffMap = Object.fromEntries(staffRows.map((s: any) => [s.id, s]))
+                }
+
+                rows.forEach((r: any) => {
+                    r.assigned_staff = staffMap[r.assigned_staff_id] || null
+                    r.checklists = checklistMap[r.id] || []
                 })
             }
 

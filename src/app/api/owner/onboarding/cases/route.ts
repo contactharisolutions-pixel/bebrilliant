@@ -85,10 +85,26 @@ export async function GET(request: NextRequest) {
         // Normalize stage and ensure setup_state for every case
         const normalizedCases = (cases ?? []).map(c => {
             const normStage = normalizeStage(c.stage)
+            let checklists = c.checklists || []
+            if (checklists.length === 0) {
+                checklists = []
+                for (const [st, tasks] of Object.entries(DEFAULT_STAGE_CHECKLISTS)) {
+                    for (const task_name of tasks) {
+                        checklists.push({
+                            id: `gen-${c.id}-${st}-${task_name.substring(0, 8)}`,
+                            case_id: c.id,
+                            stage: st,
+                            task_name,
+                            is_completed: false
+                        })
+                    }
+                }
+            }
             return {
                 ...c,
                 stage: normStage,
                 original_stage: c.stage,
+                checklists,
                 setup_state: c.setup_state && typeof c.setup_state === 'object' ? c.setup_state : {}
             }
         })

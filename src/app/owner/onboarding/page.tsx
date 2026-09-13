@@ -63,6 +63,29 @@ export const MILESTONES = [
     }
 ]
 
+export const DEFAULT_STAGE_TASKS: Record<string, string[]> = {
+    provisioning: [
+        'Kickoff briefing & stakeholder identification',
+        'Tenant database & school subdomain routing provisioned',
+        'School super-admin initial credentials dispatched'
+    ],
+    data_setup: [
+        'Academic calendar & term dates established',
+        'Grade tiers (Grades 1–12) and section groupings defined',
+        'Faculty & student baseline master roster imported'
+    ],
+    configuration: [
+        'School branding, crest & color palette configured',
+        'Curriculum framework & subject matrix configured',
+        'Assessment & CBT examination engines enabled'
+    ],
+    handover: [
+        'End-to-end data & security verification audit passed',
+        'Executive stakeholder walkthrough & customer acceptance signoff',
+        'Training case scheduled and handoff package dispatched'
+    ]
+}
+
 export default function OnboardingPage() {
     const [cases, setCases] = useState<any[]>([])
     const [stageCounts, setStageCounts] = useState<Record<string, number>>({})
@@ -234,6 +257,18 @@ export default function OnboardingPage() {
 
     async function handleToggleChecklist(caseId: string, checklistId: string, isCompleted: boolean) {
         try {
+            if (checklistId.startsWith('fallback-') || checklistId.startsWith('gen-')) {
+                if (selectedCase && selectedCase.id === caseId) {
+                    const currentList = selectedCase.checklists || []
+                    const exists = currentList.some((c: any) => c.id === checklistId)
+                    const updatedChecklists = exists
+                        ? currentList.map((c: any) => c.id === checklistId ? { ...c, is_completed: !isCompleted } : c)
+                        : [...currentList, { id: checklistId, stage: activeWorkspaceTab, is_completed: !isCompleted }]
+                    setSelectedCase({ ...selectedCase, checklists: updatedChecklists })
+                }
+                return
+            }
+
             const res = await fetch(`/api/owner/onboarding/cases/${caseId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -241,7 +276,6 @@ export default function OnboardingPage() {
             })
             if (res.ok) {
                 if (selectedCase && selectedCase.id === caseId) {
-                    // Update checklist item locally in selectedCase
                     const updatedChecklists = (selectedCase.checklists || []).map((c: any) =>
                         c.id === checklistId ? { ...c, is_completed: !isCompleted } : c
                     )
@@ -1203,12 +1237,16 @@ export default function OnboardingPage() {
                                 </div>
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                    {((selectedCase.checklists || []).filter((c: any) => c.stage === activeWorkspaceTab)).length === 0 ? (
-                                        <div style={{ padding: 20, textAlign: 'center', color: P.muted, fontSize: 12 }}>
-                                            No explicit tasks found for this stage.
-                                        </div>
-                                    ) : (
-                                        (selectedCase.checklists || []).filter((c: any) => c.stage === activeWorkspaceTab).map((chk: any) => (
+                                    {(() => {
+                                        const stageChecklists = (selectedCase.checklists || []).filter((c: any) => c.stage === activeWorkspaceTab)
+                                        const effectiveTasks = stageChecklists.length > 0 ? stageChecklists : (DEFAULT_STAGE_TASKS[activeWorkspaceTab] || []).map((t, idx) => ({
+                                            id: `fallback-${activeWorkspaceTab}-${idx}`,
+                                            stage: activeWorkspaceTab,
+                                            task_name: t,
+                                            is_completed: false
+                                        }))
+
+                                        return effectiveTasks.map((chk: any) => (
                                             <div
                                                 key={chk.id}
                                                 onClick={() => handleToggleChecklist(selectedCase.id, chk.id, chk.is_completed)}
@@ -1226,7 +1264,7 @@ export default function OnboardingPage() {
                                                 </span>
                                             </div>
                                         ))
-                                    )}
+                                    })()}
                                 </div>
                             </div>
                         </div>
