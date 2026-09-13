@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { PublicHeader } from '@/components/public/PublicHeader'
 import { PublicFooter } from '@/components/public/PublicFooter'
+import { ExperimentalHero } from '@/components/home/ExperimentalHero'
 
 /* ── Animated counter ──────────────────────────────────────────────────────── */
 function CountUp({ end, suffix = '' }: { end: number; suffix?: string }) {
@@ -1208,52 +1209,9 @@ export default function LandingPage() {
                     <Link href="/features" style={{ color: '#fff', textDecoration: 'underline', opacity: 0.85 }}>Explore now &rarr;</Link>
                 </div>
 
-                {/* ─── HERO ─────────────────────────────────────────────────── */}
-                <section style={{ position: 'relative', padding: '130px 5% 88px', background: '#fff', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                    {/* Subtle bg blobs as per Academic Atelier design system */}
-                    <div style={{ position: 'absolute', top: '-120px', right: '-120px', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(30,58,138,0.05),transparent 70%)', pointerEvents: 'none' }} />
-                    <div style={{ position: 'absolute', bottom: '-80px', left: '-80px', width: 380, height: 380, borderRadius: '50%', background: 'radial-gradient(circle,rgba(12,163,92,0.04),transparent 70%)', pointerEvents: 'none' }} />
-                    {/* Hero background image watermark representing Indian education */}
-                    <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(180deg, rgba(15, 23, 42, 0.65) 0%, rgba(15, 23, 42, 0.8) 100%), url("/indian_school_hero.png")', backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: 'none' }} />
+                {/* ─── EXPERIMENTAL ART-DIRECTED HERO ─────────────────────── */}
+                <ExperimentalHero />
 
-                    <div className="max-w-5xl w-full relative z-10 flex flex-col items-center" style={{ margin: '0 auto' }}>
-                        {/* Badge */}
-                        <div className="inline-flex items-center gap-2 bg-white/15 border border-white/25 backdrop-blur-md text-white rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider mb-8 shadow-sm">
-                            <Sparkles size={12} className="text-[#38BDF8]" /> Institutional Excellence Platform
-                        </div>
-
-                        {/* Headline */}
-                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight font-manrope mb-6 text-center" style={{ letterSpacing: '-0.02em', textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
-                            Empowering Schools, Teachers & Institutes
-                            <br />
-                            with One Complete Digital Examination & Assessment Platform.
-                        </h1>
-
-                        {/* Sub */}
-                        <p className="text-lg md:text-xl text-gray-200 font-medium leading-relaxed max-w-2xl mx-auto mb-10 font-worksans text-center" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}>
-                            India's most trusted multi-role platform — smart anti-cheat exams, AI question building, real-time analytics, and automated fee collection in one place.
-                        </p>
-
-                        {/* CTA row */}
-                        <div className="flex flex-wrap justify-center items-center gap-4 mb-8 w-full">
-                            <Link href="/request-demo" className="inline-flex items-center gap-2 bg-gradient-to-br from-[#152A6E] to-[#1E3A8A] text-white px-8 py-4 rounded-2xl font-bold text-[15px] transition-all hover:scale-[1.02] shadow-lg shadow-[#1E3A8A]/20">
-                                Get Started Free <ArrowRight size={16} />
-                            </Link>
-                            <Link href="/pricing" className="inline-flex items-center gap-2 bg-white text-[#191c20] px-8 py-4 rounded-2xl font-bold text-[15px] border border-gray-200 transition-all hover:bg-gray-50 hover:scale-[1.02]">
-                                <Play size={14} className="text-[#1E3A8A]" /> View Pricing
-                            </Link>
-                        </div>
-
-                        {/* Trust strip */}
-                        <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-xs md:text-sm text-gray-200 font-semibold font-worksans w-full" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
-                            {['No credit card required', 'DPDP & data-compliant', 'Setup in under 24h'].map(t => (
-                                <span key={t} className="flex items-center gap-2">
-                                    <CheckCircle size={14} className="text-[#34D399] flex-shrink-0" /> {t}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                </section>
 
                 {/* ─── STATS ────────────────────────────────────────────────── */}
                 <section style={{ background: 'linear-gradient(135deg, #051329 0%, #0A2246 100%)', padding: '64px 5%', display: 'flex', justifyContent: 'center', width: '100%' }}>
