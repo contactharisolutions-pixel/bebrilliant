@@ -223,7 +223,7 @@ export async function GET(request: NextRequest) {
                     .maybeSingle(),
                 supabaseAdmin
                     .from('onboarding_cases')
-                    .select('setup_state, status, organization_name')
+                    .select('setup_state, stage, organization_name')
                     .eq('tenant_id', tenant_id)
                     .maybeSingle(),
             ])
