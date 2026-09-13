@@ -238,6 +238,23 @@ class SupabaseQueryBuilder {
                 ALTER TABLE public.onboarding_checklists ALTER COLUMN tenant_id DROP NOT NULL;
             `)
         } catch (e) { /* ignore */ }
+        try {
+            await pool.query(`
+                ALTER TABLE public.training_cases 
+                ADD COLUMN IF NOT EXISTS training_package TEXT DEFAULT 'Full Enterprise Suite',
+                ADD COLUMN IF NOT EXISTS dry_run_status TEXT DEFAULT 'pending',
+                ADD COLUMN IF NOT EXISTS dry_run_notes TEXT,
+                ADD COLUMN IF NOT EXISTS signoff_by TEXT,
+                ADD COLUMN IF NOT EXISTS signoff_role TEXT,
+                ADD COLUMN IF NOT EXISTS signoff_at TIMESTAMPTZ,
+                ADD COLUMN IF NOT EXISTS certificate_id TEXT,
+                ADD COLUMN IF NOT EXISTS certificate_issued_at TIMESTAMPTZ;
+                ALTER TABLE public.training_sessions 
+                ADD COLUMN IF NOT EXISTS recording_url TEXT,
+                ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'scheduled',
+                ADD COLUMN IF NOT EXISTS key_learnings TEXT;
+            `)
+        } catch (e) { /* ignore */ }
     }
 
     private async execute() {
@@ -321,6 +338,15 @@ class SupabaseQueryBuilder {
             let isLeadDemoRequestsRelations = false
             let isPlatformTasksRelations = false
             let isOnboardingCasesRelations = false
+            let isTrainingCasesRelations = false
+
+            if (this.table === 'training_cases') {
+                isTrainingCasesRelations = true
+                selectStr = selectStr
+                    .replace(/,\s*assigned_trainer:assigned_trainer_id\s*\([^)]*\)/gi, '')
+                    .replace(/,\s*sessions:training_sessions\s*\([^)]*\)/gi, '')
+                    .trim()
+            }
 
             if (this.table === 'onboarding_cases') {
                 isOnboardingCasesRelations = true
@@ -778,6 +804,36 @@ class SupabaseQueryBuilder {
                 rows.forEach((r: any) => {
                     r.assigned_staff = staffMap[r.assigned_staff_id] || null
                     r.checklists = checklistMap[r.id] || []
+                })
+            }
+
+            if (isTrainingCasesRelations) {
+                const caseIds = rows.map((r: any) => r.id).filter(Boolean)
+                let sessionMap: Record<string, any[]> = {}
+                if (caseIds.length > 0) {
+                    const { rows: sessionRows } = await pool.query(
+                        `SELECT * FROM public.training_sessions WHERE case_id = ANY($1) ORDER BY session_no ASC, conducted_at ASC`,
+                        [caseIds]
+                    )
+                    for (const s of sessionRows) {
+                        if (!sessionMap[s.case_id]) sessionMap[s.case_id] = []
+                        sessionMap[s.case_id].push(s)
+                    }
+                }
+
+                const trainerIds = [...new Set(rows.map((r: any) => r.assigned_trainer_id).filter(Boolean))]
+                let trainerMap: Record<string, any> = {}
+                if (trainerIds.length > 0) {
+                    const { rows: trainerRows } = await pool.query(
+                        `SELECT id, first_name, last_name, email, role FROM public.user_profiles WHERE id = ANY($1)`,
+                        [trainerIds]
+                    )
+                    trainerMap = Object.fromEntries(trainerRows.map((t: any) => [t.id, t]))
+                }
+
+                rows.forEach((r: any) => {
+                    r.assigned_trainer = trainerMap[r.assigned_trainer_id] || null
+                    r.sessions = sessionMap[r.id] || []
                 })
             }
 
