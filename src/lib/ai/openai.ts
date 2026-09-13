@@ -1,3 +1,5 @@
+import OpenAI from 'openai'
+
 /**
  * Server-side OpenAI Service
  * 
@@ -7,12 +9,16 @@
  * and is NEVER exposed or prefixed with NEXT_PUBLIC_.
  */
 
-function getOpenAIKey(): string {
-    const key = process.env.OPENAI_API_KEY
-    if (!key) {
+let cachedClient: OpenAI | null = null
+
+export function getOpenAIClient(): OpenAI {
+    if (cachedClient) return cachedClient
+    const apiKey = process.env.OPENAI_API_KEY
+    if (!apiKey) {
         throw new Error('OPENAI_API_KEY is not configured in server environment variables.')
     }
-    return key
+    cachedClient = new OpenAI({ apiKey })
+    return cachedClient
 }
 
 export interface ImageGenerationOptions {
@@ -29,10 +35,10 @@ export interface ImageGenerationResult {
 }
 
 /**
- * Generate high-fidelity images using DALL-E 3 / OpenAI Images API
+ * Generate high-fidelity images using DALL-E 3 / OpenAI Images API via official SDK
  */
 export async function generateAIImage(options: ImageGenerationOptions): Promise<ImageGenerationResult> {
-    const apiKey = getOpenAIKey()
+    const openai = getOpenAIClient()
     const {
         prompt,
         model = 'dall-e-3',
@@ -41,30 +47,17 @@ export async function generateAIImage(options: ImageGenerationOptions): Promise<
         style = 'vivid'
     } = options
 
-    const res = await fetch('https://api.openai.com/v1/images/generations', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-            model,
-            prompt,
-            n: 1,
-            size,
-            quality: model === 'dall-e-3' ? quality : undefined,
-            style: model === 'dall-e-3' ? style : undefined,
-            response_format: 'url'
-        })
+    const response = await openai.images.generate({
+        model,
+        prompt,
+        n: 1,
+        size,
+        quality: model === 'dall-e-3' ? quality : undefined,
+        style: model === 'dall-e-3' ? style : undefined,
+        response_format: 'url'
     })
 
-    if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        throw new Error(errorData?.error?.message || `OpenAI Image API error: ${res.statusText}`)
-    }
-
-    const data = await res.json()
-    const item = data?.data?.[0]
+    const item = response.data?.[0]
     if (!item?.url) {
         throw new Error('No image URL returned from OpenAI.')
     }
@@ -89,10 +82,10 @@ export interface UILayoutResult {
 }
 
 /**
- * Generate enterprise UI layouts, design systems, and component code using GPT-4o
+ * Generate enterprise UI layouts, design systems, and component code using GPT-4o via official SDK
  */
 export async function generateUILayout(options: UILayoutOptions): Promise<UILayoutResult> {
-    const apiKey = getOpenAIKey()
+    const openai = getOpenAIClient()
     const { prompt, context, currentLayout, designTokens } = options
 
     const systemPrompt = `You are a Principal UI/UX Architect for EduBrilliant, an enterprise institutional education SaaS platform.
@@ -110,29 +103,16 @@ ${context ? `Context: ${context}` : ''}
 ${currentLayout ? `Current Layout to Improve: \n${currentLayout}` : ''}
 ${designTokens ? `Design Tokens: ${JSON.stringify(designTokens, null, 2)}` : ''}`
 
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-            model: 'gpt-4o',
-            temperature: 0.2,
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userPrompt }
-            ]
-        })
+    const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        temperature: 0.2,
+        messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+        ]
     })
 
-    if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        throw new Error(errorData?.error?.message || `OpenAI Chat API error: ${res.statusText}`)
-    }
-
-    const data = await res.json()
-    const content = data?.choices?.[0]?.message?.content || ''
+    const content = response.choices?.[0]?.message?.content || ''
 
     return {
         layoutCode: content,

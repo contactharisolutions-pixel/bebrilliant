@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-
-function getOpenAIKey(): string {
-    const key = process.env.OPENAI_API_KEY
-    if (!key) {
-        throw new Error('OPENAI_API_KEY is not configured in server environment variables.')
-    }
-    return key
-}
+import { getOpenAIClient } from '@/lib/ai/openai'
 
 export async function POST(request: NextRequest) {
     try {
@@ -31,7 +24,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json().catch(() => ({}))
         const { action = 'generate_quiz', prompt = '', subject = 'General Science', grade = 'Class 10', count = 3 } = body
 
-        const apiKey = getOpenAIKey()
+        const openai = getOpenAIClient()
 
         let systemPrompt = ''
         let userPrompt = ''
@@ -75,30 +68,17 @@ Return ONLY valid JSON:
             userPrompt = prompt || 'Analyze readiness for a newly onboarded school with Standard Plan capacity (1,000 students).'
         }
 
-        const res = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: 'gpt-4o',
-                temperature: 0.3,
-                response_format: { type: 'json_object' },
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt }
-                ]
-            })
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            temperature: 0.3,
+            response_format: { type: 'json_object' },
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt }
+            ]
         })
 
-        if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}))
-            throw new Error(errorData?.error?.message || `OpenAI API error: ${res.statusText}`)
-        }
-
-        const data = await res.json()
-        const rawContent = data?.choices?.[0]?.message?.content || '{}'
+        const rawContent = completion.choices?.[0]?.message?.content || '{}'
         const parsed = JSON.parse(rawContent)
 
         return NextResponse.json({
