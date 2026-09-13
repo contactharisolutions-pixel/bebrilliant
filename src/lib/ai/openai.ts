@@ -1,7 +1,7 @@
 import OpenAI from 'openai'
 
 /**
- * Server-side OpenAI Service
+ * Server-side OpenAI Service & Central AI Client
  * 
  * SECURITY NOTICE:
  * This module strictly executes on the Node.js server runtime.
@@ -14,60 +14,35 @@ let cachedClient: OpenAI | null = null
 export function getOpenAIClient(): OpenAI {
     if (cachedClient) return cachedClient
     const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey) {
+    if (!apiKey || apiKey.trim() === '') {
         throw new Error('OPENAI_API_KEY is not configured in server environment variables.')
     }
-    cachedClient = new OpenAI({ apiKey })
+    cachedClient = new OpenAI({ apiKey: apiKey.trim() })
     return cachedClient
 }
 
-export interface ImageGenerationOptions {
-    prompt: string
-    model?: 'dall-e-3' | 'dall-e-2'
-    size?: '1024x1024' | '1024x1792' | '1792x1024' | '512x512' | '256x256'
-    quality?: 'standard' | 'hd'
-    style?: 'vivid' | 'natural'
-}
+// Re-export production-grade image generation utilities
+export {
+    generateCustomImage,
+    generateWebsiteBackground,
+    generateRealisticArtwork,
+    generateAIImage,
+    buildWebsiteBackgroundPrompt,
+    buildRealisticArtworkPrompt
+} from './image-generation'
+export type {
+    ImageAspectRatio,
+    ImageQuality,
+    ImageStyle,
+    ImageErrorCode,
+    ImageGenerationResult,
+    ImageGenerationMetadata,
+    CustomImageOptions,
+    WebsiteBackgroundOptions,
+    RealisticArtworkOptions
+} from './image-generation'
 
-export interface ImageGenerationResult {
-    url: string
-    revisedPrompt?: string
-}
-
-/**
- * Generate high-fidelity images using DALL-E 3 / OpenAI Images API via official SDK
- */
-export async function generateAIImage(options: ImageGenerationOptions): Promise<ImageGenerationResult> {
-    const openai = getOpenAIClient()
-    const {
-        prompt,
-        model = 'dall-e-3',
-        size = '1024x1024',
-        quality = 'standard',
-        style = 'vivid'
-    } = options
-
-    const response = await openai.images.generate({
-        model,
-        prompt,
-        n: 1,
-        size,
-        quality: model === 'dall-e-3' ? quality : undefined,
-        style: model === 'dall-e-3' ? style : undefined,
-        response_format: 'url'
-    })
-
-    const item = response.data?.[0]
-    if (!item?.url) {
-        throw new Error('No image URL returned from OpenAI.')
-    }
-
-    return {
-        url: item.url,
-        revisedPrompt: item.revised_prompt
-    }
-}
-
+// UI Layout Generation Types & Utilities
 export interface UILayoutOptions {
     prompt: string
     context?: string
