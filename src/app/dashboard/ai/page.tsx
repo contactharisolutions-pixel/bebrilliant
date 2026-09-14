@@ -1,304 +1,1183 @@
 'use client'
-import React, { useState, useEffect, useCallback } from 'react'
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import Image from 'next/image'
 import {
-    Sparkles, Bot, BrainCircuit, Activity, Settings2, Zap, LayoutTemplate,
-    MessageSquare, Sliders, CheckCircle, XCircle, Loader2, PlayCircle, ShieldCheck,
-    Cpu, Globe, Lock, Workflow, CpuIcon, Binary, RefreshCcw, Send
+    Sparkles, BookOpen, Layers, CheckCircle2, AlertCircle, Loader2,
+    RefreshCcw, Download, Printer, Plus, Trash2, Edit3, Eye, Search,
+    Filter, FileText, Settings, ShieldCheck, GraduationCap, School,
+    Check, X, ChevronRight, HelpCircle, ArrowRight, Sliders, Zap
 } from 'lucide-react'
-// ── TYPES ───────────────────
-type AISettings = {
-    adaptive_learning: boolean;
-    auto_grading: boolean;
-    ai_question_generation: boolean;
-    strict_syllabus_mapping: boolean;
-    tokens_used: number;
-    questions_generated: number;
-    llm_model: string;
+
+interface QuestionItem {
+    id: string
+    subject?: string
+    topic?: string
+    type: 'objective' | 'subjective'
+    sub_type?: string
+    difficulty: 'easy' | 'medium' | 'hard'
+    marks: number
+    negative_marks?: number
+    text?: string
+    question_text?: string
+    options?: string[] | null
+    correct_answer?: string
+    explanation?: string
+    created_at?: string
+    subject_name?: string
 }
-const COLORS = {
-    primary: '#004B93',
-    success: '#1FAC63',
-    warning: '#F0A026',
-    danger: '#EF4444',
-    dark: '#0F172A',
-    slate: '#64748B',
-    border: 'rgba(255, 255, 255, 0.1)',
-    glass: 'rgba(15, 23, 42, 0.7)'
+
+interface AISettings {
+    adaptive_learning: boolean
+    auto_grading: boolean
+    ai_question_generation: boolean
+    strict_syllabus_mapping: boolean
+    include_marking_scheme: boolean
+    llm_model: string
 }
-// ── COMPONENTS ─────────────────
-function TerminalModal({ title, onClose, content, generating }: any) {
-    return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(2, 6, 23, 0.9)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)', padding: 24 }}>
-            <div style={{ background: '#020617', borderRadius: 24, width: '100%', maxWidth: 740, overflow: 'hidden', boxShadow: '0 32px 64px rgba(0,0,0,0.8)', maxHeight: '85vh', display: 'flex', flexDirection: 'column', border: '1px solid #1E293B' }}>
-                <div style={{ padding: '20px 28px', borderBottom: '1px solid #1E293B', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0B0F1A' }}>
-                    <h3 style={{ margin: 0, fontSize: 13, fontWeight: 900, color: '#38BDF8', letterSpacing: '0.15em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <Binary size={16} /> {title}
-                    </h3>
-                    <button onClick={onClose} disabled={generating} style={{ background: 'transparent', border: 'none', cursor: generating ? 'not-allowed' : 'pointer', color: COLORS.slate }}><XCircle size={20} /></button>
-                </div>
-                <div style={{ padding: '40px', overflowY: 'auto', fontFamily: '"JetBrains Mono", monospace', color: COLORS.success, fontSize: 14, lineHeight: 1.6, position: 'relative' }}>
-                    {generating ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: '#38BDF8' }}>
-                                <Loader2 size={18} className="spin" /> <span>Initializing curriculum sync...</span>
-                            </div>
-                            <div style={{ color: COLORS.slate, marginLeft: 32 }}>&gt; Scraping Syllabus roots [GEMINI-FLASH ACTIVE]</div>
-                            <div style={{ color: COLORS.slate, marginLeft: 32, animation: 'pulse 1.5s infinite' }}>&gt; Formatting data mapping...</div>
-                            <div style={{ color: COLORS.slate, marginLeft: 32 }}>&gt; Authenticating curriculum lock...</div>
-                        </div>
-                    ) : (
-                        <div style={{ animation: 'fadeIn 0.4s ease-out' }}>
-                            <div style={{ color: '#FCD34D', marginBottom: 16, borderLeft: `3px solid #FCD34D`, paddingLeft: 16 }}>[SYSTEM LOG]: Array successfully structured. Extracted 124 topics.</div>
-                            <pre style={{ margin: 0, background: 'rgba(255,255,255,0.03)', padding: 20, borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>{content}</pre>
-                            <div style={{ marginTop: 40, display: 'flex', gap: 16 }}>
-                                <button onClick={onClose} style={{ padding: '12px 32px', background: COLORS.success, border: 'none', borderRadius: 12, color: '#020617', fontWeight: 900, cursor: 'pointer', fontFamily: 'Inter' }}>SAVE SETTINGS</button>
-                                <button onClick={onClose} style={{ padding: '12px 32px', background: 'transparent', border: '1px solid #1E293B', borderRadius: 12, color: '#F1F5F9', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter' }}>CANCEL</button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    )
+
+interface StatsSummary {
+    total_questions: number
+    objective_count: number
+    subjective_count: number
+    easy_count: number
+    medium_count: number
+    hard_count: number
+    ai_generated_count: number
+    subjects_covered: number
 }
-function ControlToggle({ label, checked, onChange, desc, premium = false, disabled = false }: any) {
-    return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', border: `1px solid ${checked ? 'rgba(56, 189, 248, 0.3)' : 'rgba(255,255,255,0.05)'}`, borderRadius: 24, background: checked ? 'rgba(56, 189, 248, 0.03)' : 'rgba(255,255,255,0.02)', marginBottom: 20, cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', opacity: disabled ? 0.6 : 1 }} onClick={() => !disabled && onChange(!checked)}>
-            <div style={{ flex: 1, paddingRight: 24 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 16, fontWeight: 900, color: checked ? '#38BDF8' : '#F1F5F9' }}>
-                    {label} {premium && <div style={{ padding: '4px 8px', background: `${COLORS.success}20`, color: COLORS.success, fontSize: 9, borderRadius: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Enterprise</div>}
-                </div>
-                {desc && <div style={{ fontSize: 14, color: COLORS.slate, fontWeight: 500, marginTop: 6, lineHeight: 1.5 }}>{desc}</div>}
-            </div>
-            <div style={{ width: 52, height: 28, borderRadius: 100, background: checked ? COLORS.success : '#334155', position: 'relative', transition: 'background 0.3s ease', flexShrink: 0 }}>
-                <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#FFF', position: 'absolute', top: 3, left: checked ? 27 : 3, transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }} />
-            </div>
-        </div>
-    )
-}
-// ── MAIN APPLICATION ───────────────────
-export default function IntelligenceCenter() {
-    const [settings, setSettings] = useState<AISettings | null>(null)
+
+export default function AIQuestionGeneratorPage() {
     const [loading, setLoading] = useState(true)
-    const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-    const [showTerminal, setShowTerminal] = useState(false)
-    const [generating, setGenerating] = useState(false)
-    const [mockContent, setMockContent] = useState('')
-    const showToast = (msg: string, ok: boolean) => {
-        setToast({ msg, ok }); setTimeout(() => setToast(null), 3500)
+    const [refreshing, setRefreshing] = useState(false)
+    const [activeTab, setActiveTab] = useState<'generate' | 'bank' | 'settings'>('generate')
+
+    // Data states
+    const [stats, setStats] = useState<StatsSummary>({
+        total_questions: 0,
+        objective_count: 0,
+        subjective_count: 0,
+        easy_count: 0,
+        medium_count: 0,
+        hard_count: 0,
+        ai_generated_count: 0,
+        subjects_covered: 0
+    })
+    const [savedQuestions, setSavedQuestions] = useState<QuestionItem[]>([])
+    const [classes, setClasses] = useState<{ id: string; name: string }[]>([])
+    const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([])
+    const [settings, setSettings] = useState<AISettings>({
+        adaptive_learning: true,
+        auto_grading: true,
+        ai_question_generation: true,
+        strict_syllabus_mapping: true,
+        include_marking_scheme: true,
+        llm_model: 'gemini-2.5-flash'
+    })
+
+    // Question generation form states
+    const [genClass, setGenClass] = useState('')
+    const [genSubject, setGenSubject] = useState('')
+    const [genTopic, setGenTopic] = useState('')
+    const [genType, setGenType] = useState<'objective' | 'subjective'>('objective')
+    const [genDifficulty, setGenDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium')
+    const [genCount, setGenCount] = useState<number>(5)
+    const [includeAnswers, setIncludeAnswers] = useState<boolean>(true)
+    const [isGenerating, setIsGenerating] = useState(false)
+    const [generatedPool, setGeneratedPool] = useState<QuestionItem[]>([])
+    const [isSavingPool, setIsSavingPool] = useState(false)
+
+    // Bank search & filters
+    const [bankSearch, setBankSearch] = useState('')
+    const [bankSubjectFilter, setBankSubjectFilter] = useState('all')
+    const [bankDifficultyFilter, setBankDifficultyFilter] = useState('all')
+    const [bankTypeFilter, setBankTypeFilter] = useState('all')
+
+    // Modal & Toast states
+    const [selectedQuestionForModal, setSelectedQuestionForModal] = useState<QuestionItem | null>(null)
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+
+    const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+        setToast({ message, type })
+        setTimeout(() => setToast(null), 4000)
     }
-    const fetchAI = useCallback(async () => {
-        setLoading(true)
+
+    // ── FETCH INITIAL DATA ────────────────────────────────────
+    const loadModuleData = useCallback(async (isSilent = false) => {
+        if (!isSilent) setLoading(true)
+        else setRefreshing(true)
+
         try {
             const res = await fetch('/api/dashboard/ai')
             const json = await res.json()
-            if (res.ok) setSettings(json)
-        } catch (e) { console.error(e) }
-        finally { setLoading(false) }
-    }, [])
-    useEffect(() => { fetchAI() }, [fetchAI])
-    const updateSettings = async (override: Partial<AISettings>) => {
-        if (!settings) return
-        const newSettings = { ...settings, ...override }
-        setSettings(newSettings)
+
+            if (json.success && json.data) {
+                setStats(json.data.stats)
+                setSavedQuestions(json.data.questions || [])
+                setClasses(json.data.classes || [])
+                setSubjects(json.data.subjects || [])
+                if (json.data.settings) setSettings(json.data.settings)
+
+                // Initialize form defaults if empty
+                if (json.data.classes?.length > 0 && !genClass) {
+                    setGenClass(json.data.classes[0].name)
+                }
+                if (json.data.subjects?.length > 0 && !genSubject) {
+                    setGenSubject(json.data.subjects[0].name)
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load AI question generator data:', error)
+            showToast('Unable to connect to school question service', 'error')
+        } finally {
+            setLoading(false)
+            setRefreshing(false)
+        }
+    }, [genClass, genSubject])
+
+    useEffect(() => {
+        loadModuleData()
+    }, [loadModuleData])
+
+    // ── GENERATE QUESTIONS ACTION ─────────────────────────────
+    const handleGenerate = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!genSubject) {
+            showToast('Please select a subject to continue', 'error')
+            return
+        }
+
+        setIsGenerating(true)
         try {
+            const matchedSubject = subjects.find(s => s.name === genSubject)
             const res = await fetch('/api/dashboard/ai', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'UPDATE_SETTINGS', payload: newSettings })
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'GENERATE_QUESTIONS',
+                    payload: {
+                        class_name: genClass,
+                        subject_name: genSubject,
+                        subject_id: matchedSubject?.id,
+                        topic: genTopic || 'Core Syllabus Curriculum',
+                        question_type: genType,
+                        difficulty: genDifficulty,
+                        count: genCount,
+                        include_answers: includeAnswers
+                    }
+                })
             })
-            if (!res.ok) throw new Error()
-            showToast('Settings Saved Successfully', true)
-        } catch (e) {
-            showToast('Failed to save settings', false)
-            fetchAI()
+
+            const json = await res.json()
+            if (json.success && Array.isArray(json.questions)) {
+                setGeneratedPool(json.questions)
+                showToast(`Generated ${json.questions.length} examination questions successfully!`, 'success')
+            } else {
+                showToast(json.error || 'Failed to generate questions. Please try again.', 'error')
+            }
+        } catch (err: any) {
+            console.error(err)
+            showToast('Error generating questions', 'error')
+        } finally {
+            setIsGenerating(false)
         }
     }
-    const handleOnboardAgent = async () => {
-        setShowTerminal(true)
-        setGenerating(true)
-        // Simulated neuro-onboarding logic
-        await new Promise(r => setTimeout(r, 2000))
-        setMockContent(`{\n  "cluster_id": "GEMINI-2.5-FLASH-C7",\n  "status": "OPERATIONAL",\n  "metrics": {\n    "latency": "14ms",\n    "curriculum_lock": true,\n    "nodes_indexed": 1247,\n    "accuracy_drift": 0.002\n  },\n  "timestamp": "${new Date().toISOString()}"\n}`)
-        setGenerating(false)
+
+    // ── SAVE GENERATED QUESTIONS TO QUESTION BANK ────────────
+    const handleSaveGeneratedToBank = async () => {
+        if (!generatedPool.length) return
+        setIsSavingPool(true)
+
+        try {
+            const matchedSubject = subjects.find(s => s.name === genSubject)
+            const res = await fetch('/api/dashboard/ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'SAVE_QUESTIONS',
+                    payload: {
+                        questions: generatedPool,
+                        subject_id: matchedSubject?.id
+                    }
+                })
+            })
+
+            const json = await res.json()
+            if (json.success) {
+                showToast(json.message || 'Questions saved to bank!', 'success')
+                setGeneratedPool([])
+                loadModuleData(true)
+                setActiveTab('bank')
+            } else {
+                showToast(json.error || 'Failed to save questions to bank', 'error')
+            }
+        } catch (err) {
+            console.error(err)
+            showToast('Error saving questions to bank', 'error')
+        } finally {
+            setIsSavingPool(false)
+        }
     }
-    if (loading || !settings) {
+
+    // ── DELETE QUESTION FROM BANK ─────────────────────────────
+    const handleDeleteQuestion = async (id: string) => {
+        if (!confirm('Are you sure you want to remove this question from the school bank?')) return
+
+        try {
+            const res = await fetch('/api/dashboard/ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'DELETE_QUESTION',
+                    payload: { question_id: id }
+                })
+            })
+
+            const json = await res.json()
+            if (json.success) {
+                showToast('Question removed from school bank', 'success')
+                setSavedQuestions(prev => prev.filter(q => q.id !== id))
+                loadModuleData(true)
+            } else {
+                showToast(json.error || 'Failed to remove question', 'error')
+            }
+        } catch (err) {
+            console.error(err)
+            showToast('Error removing question', 'error')
+        }
+    }
+
+    // ── UPDATE INSTITUTIONAL SETTINGS ─────────────────────────
+    const handleUpdateSettings = async (override: Partial<AISettings>) => {
+        const updated = { ...settings, ...override }
+        setSettings(updated)
+
+        try {
+            const res = await fetch('/api/dashboard/ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'UPDATE_SETTINGS',
+                    payload: updated
+                })
+            })
+
+            const json = await res.json()
+            if (json.success) {
+                showToast('School AI Settings Saved Successfully', 'success')
+            } else {
+                showToast(json.error || 'Failed to save settings', 'error')
+            }
+        } catch (err) {
+            console.error(err)
+            showToast('Failed to save settings', 'error')
+        }
+    }
+
+    // ── FILTERED QUESTIONS IN BANK ────────────────────────────
+    const filteredBankQuestions = useMemo(() => {
+        return savedQuestions.filter(q => {
+            const textMatch = !bankSearch ||
+                (q.question_text || q.text || '').toLowerCase().includes(bankSearch.toLowerCase()) ||
+                (q.subject_name || '').toLowerCase().includes(bankSearch.toLowerCase())
+
+            const subjectMatch = bankSubjectFilter === 'all' || q.subject_name === bankSubjectFilter
+            const difficultyMatch = bankDifficultyFilter === 'all' || q.difficulty === bankDifficultyFilter
+            const typeMatch = bankTypeFilter === 'all' || q.type === bankTypeFilter
+
+            return textMatch && subjectMatch && difficultyMatch && typeMatch
+        })
+    }, [savedQuestions, bankSearch, bankSubjectFilter, bankDifficultyFilter, bankTypeFilter])
+
+    if (loading && !stats.total_questions && !subjects.length) {
         return (
-            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#020617' }}>
-                <Loader2 size={48} color="#38BDF8" className="spin" style={{ margin: '0 auto 24px' }} />
-                <div style={{ color: '#38BDF8', fontWeight: 900, fontSize: 13, letterSpacing: '0.2em' }}>LOADING AI SETTINGS...</div>
+            <div className="w-full min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
+                <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-4 shadow-sm">
+                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Loading Question Generator & Bank</h3>
+                <p className="text-sm text-slate-500 font-medium mt-1">Connecting to school syllabus and question repository...</p>
             </div>
         )
     }
+
     return (
-        <div style={{ padding: '40px 48px', background: '#020617', minHeight: '100vh', position: 'relative', overflowX: 'hidden', color: '#F1F5F9', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            <style>{`
-                @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.98); } }
-                .grid-bg { background-image: radial-gradient(rgba(56, 189, 248, 0.1) 1px, transparent 1px); background-size: 40px 40px; position: absolute; inset: 0; opacity: 0.15; pointer-events: none; }
-                .glow-card { background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-                .glow-card:hover { transform: translateY(-4px); border-color: rgba(56, 189, 248, 0.3); box-shadow: 0 20px 80px rgba(0, 0, 0, 0.5); }
-                select { -webkit-appearance: none; appearance: none; }
-            `}</style>
-            <div className="grid-bg" />
-            {/* TOAST SYSTEM */}
+        <div className="w-full px-4 sm:px-8 py-6 pb-24 bg-slate-50/60 min-h-screen text-slate-800 antialiased">
+            {/* ── TOAST NOTIFICATIONS ───────────────────────────────── */}
             {toast && (
-                <div style={{ position: 'fixed', top: 32, right: 32, background: toast.ok ? '#064E3B' : '#7F1D1D', border: `1px solid ${toast.ok ? COLORS.success : COLORS.danger}80`, borderRadius: 16, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 24px 60px rgba(0,0,0,0.6)', zIndex: 10000, animation: 'fadeIn 0.3s ease-out' }}>
-                    {toast.ok ? <ShieldCheck size={20} color={COLORS.success} /> : <XCircle size={20} color={COLORS.danger} />}
-                    <span style={{ fontSize: 14, fontWeight: 900, letterSpacing: '0.01em' }}>{toast.msg}</span>
+                <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg border text-sm font-semibold transition-all animate-slideDown ${
+                    toast.type === 'success'
+                        ? 'bg-emerald-900 text-white border-emerald-700'
+                        : 'bg-rose-900 text-white border-rose-700'
+                }`}>
+                    {toast.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <AlertCircle className="w-5 h-5 text-rose-400" />}
+                    <span>{toast.message}</span>
                 </div>
             )}
-            <div style={{ position: 'relative', zIndex: 10 }}>
-                {/* HEADER */}
-                <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48 }}>
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
-                            <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg, #004B93, #38BDF8)', borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(56, 189, 248, 0.2)' }}>
-                                <BrainCircuit size={32} color="#FFF" />
-                            </div>
-                            <div>
-                                <h1 style={{ margin: 0, fontSize: 38, fontWeight: 1000, letterSpacing: '-0.04em', color: '#F8FAFC' }}>AI Assistant Settings</h1>
-                                <p style={{ margin: '4px 0 0', fontSize: 16, color: COLORS.slate, fontWeight: 500 }}>Manage your AI tools &bull; Gemini 2.5 Flash &bull; Connects to your Syllabus</p>
-                            </div>
+
+            {/* ── CINEMATIC ENTERPRISE HERO BANNER ────────────────────── */}
+            <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-900 shadow-sm mb-8">
+                <div className="absolute inset-0 z-0">
+                    <Image
+                        src="/assets/images/dashboard/ai_question_gen_banner.jpg"
+                        alt="Academic Faculty Reviewing Examination Question Papers"
+                        fill
+                        priority
+                        className="object-cover object-center opacity-35 filter brightness-95"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/80 to-transparent" />
+                </div>
+
+                <div className="relative z-10 px-6 sm:px-10 py-8 sm:py-10 max-w-4xl text-white">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-600/30 border border-blue-400/30 text-blue-300 text-xs font-semibold uppercase tracking-wider mb-3">
+                        <GraduationCap className="w-3.5 h-3.5" />
+                        Evaluation & Question Authoring Hub
+                    </div>
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white mb-2">
+                        AI Question Generator & Paper Creator
+                    </h1>
+                    <p className="text-sm sm:text-base text-slate-300 font-normal leading-relaxed">
+                        Create curriculum-aligned test questions, build comprehensive school question banks, and customize institutional AI grading features with simple controls.
+                    </p>
+
+                    <div className="mt-6 flex flex-wrap items-center gap-3">
+                        <button
+                            onClick={() => setActiveTab('generate')}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 text-xs sm:text-sm font-bold shadow transition-all active:scale-95"
+                        >
+                            <Sparkles className="w-4 h-4 text-blue-600" />
+                            Create New Questions
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('bank')}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-200 border border-slate-700/80 text-xs sm:text-sm font-semibold transition-all active:scale-95"
+                        >
+                            <BookOpen className="w-4 h-4 text-blue-400" />
+                            School Question Bank ({stats.total_questions})
+                        </button>
+                        <button
+                            onClick={() => loadModuleData(true)}
+                            disabled={refreshing}
+                            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-300 border border-slate-700/60 text-xs sm:text-sm font-medium transition-all"
+                        >
+                            <RefreshCcw className={`w-3.5 h-3.5 text-emerald-400 ${refreshing ? 'animate-spin' : ''}`} />
+                            {refreshing ? 'Refreshing...' : 'Sync'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── TOP KPI METRIC SUMMARY CARDS ─────────────────────────── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-8">
+                {/* 1. Questions in Bank */}
+                <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:border-blue-300 transition-all">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">School Question Bank</span>
+                        <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                            <BookOpen className="w-5 h-5" />
                         </div>
                     </div>
-                    <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: `1px solid rgba(255,255,255,0.05)`, padding: '14px 24px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 16, backdropFilter: 'blur(10px)' }}>
-                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: COLORS.success, boxShadow: `0 0 15px ${COLORS.success}`, animation: 'pulse 2s infinite' }} />
-                        <div>
-                            <div style={{ fontSize: 10, fontWeight: 900, color: COLORS.slate, textTransform: 'uppercase', letterSpacing: '0.12em' }}>System Status</div>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: '#F1F5F9' }}>GEMINI-2.5-FLASH ACTIVE</div>
+                    <div className="mt-3">
+                        <div className="text-3xl font-black text-slate-900 tracking-tight">
+                            {stats.total_questions || savedQuestions.length}
+                        </div>
+                        <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                            <span>MCQs: <strong className="text-blue-600">{stats.objective_count}</strong></span>
+                            <span>•</span>
+                            <span>Descriptive: <strong className="text-purple-600">{stats.subjective_count}</strong></span>
                         </div>
                     </div>
-                </header>
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(400px, 1fr) 2fr', gap: 40 }}>
-                    {/* LEFT PANEL: ACTIVITY & METRICS */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                        {/* TOKEN USAGE */}
-                        <div className="glow-card" style={{ padding: 40, borderRadius: 32, background: 'linear-gradient(165deg, #0F172A, #020617)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-                                <h3 style={{ margin: 0, fontSize: 13, fontWeight: 900, color: '#38BDF8', textTransform: 'uppercase', letterSpacing: '0.2em', display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <Activity size={18} /> Total Tokens Used
-                                </h3>
-                                <Zap size={22} color="#FCD34D" fill="#FCD34D" style={{ opacity: 0.9 }} />
-                            </div>
-                            <div style={{ marginBottom: 40 }}>
-                                <div style={{ fontSize: 14, color: COLORS.slate, fontWeight: 600, marginBottom: 8 }}>Current Cycle Usage</div>
-                                <div style={{ fontSize: 56, fontWeight: 1000, color: '#F1F5F9', display: 'flex', alignItems: 'baseline', gap: 12, letterSpacing: '-0.03em' }}>
-                                    {settings.tokens_used.toLocaleString()} <span style={{ fontSize: 18, color: '#38BDF8', fontWeight: 900 }}>Tokens</span>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 50 }}>
-                                {[40, 65, 45, 95, 60, 35, 85, 55, 100, 75, 45, 90].map((h, i) => (
-                                    <div key={i} style={{ flex: 1, height: `${h}%`, background: h > 85 ? COLORS.danger : '#38BDF8', borderRadius: 4, opacity: 0.4 + (h/150) }} />
-                                ))}
-                            </div>
-                        </div>
-                        {/* RECENT NODE EXPORTS */}
-                        <div className="glow-card" style={{ padding: 40, borderRadius: 32 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 28 }}>
-                                <h3 style={{ margin: 0, fontSize: 13, fontWeight: 900, color: COLORS.slate, textTransform: 'uppercase', letterSpacing: '0.2em' }}>AI Activity Log</h3>
-                                <Workflow size={18} color={COLORS.slate} />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                                {[
-                                    { text: 'Assessment Compiled [GEMINI]', time: '41s ago', ok: true },
-                                    { text: 'Syllabus Synced', time: '14m ago', ok: true },
-                                    { text: 'Adaptive Weight Calibration', time: '1h ago', ok: true }
-                                ].map((log, i) => (
-                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: log.ok ? COLORS.success : COLORS.danger }} />
-                                            <span style={{ fontSize: 15, fontWeight: 700, color: '#E2E8F0' }}>{log.text}</span>
-                                        </div>
-                                        <span style={{ fontSize: 12, color: COLORS.slate, fontWeight: 700 }}>{log.time}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        {/* ACTION PANEL */}
-                        <div style={{ background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(0, 75, 147, 0.1))', border: `1px solid rgba(56, 189, 248, 0.2)`, borderRadius: 32, padding: 40 }}>
-                            <h3 style={{ margin: '0 0 10px', fontSize: 18, fontWeight: 900 }}>Curriculum AI Sync</h3>
-                            <p style={{ margin: '0 0 32px', fontSize: 15, color: COLORS.slate, fontWeight: 500, lineHeight: 1.6 }}>Connect your syllabus and study materials to the AI assistant for better questions and insights.</p>
-                            <button onClick={handleOnboardAgent} style={{ width: '100%', padding: '20px', background: 'linear-gradient(135deg, #004B93, #38BDF8)', color: '#FFF', border: 'none', borderRadius: 20, fontSize: 15, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, boxShadow: '0 10px 30px rgba(56, 189, 248, 0.2)', transition: 'all 0.3s' }}>
-                                <Cpu size={20} /> SYNC CURRICULUM
-                            </button>
+                </div>
+
+                {/* 2. Subjects Covered */}
+                <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:border-emerald-300 transition-all">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Active Subjects</span>
+                        <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                            <Layers className="w-5 h-5" />
                         </div>
                     </div>
-                    {/* RIGHT PANEL: CONFIGURATION */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                        <div className="glow-card" style={{ padding: 48, borderRadius: 32, background: 'rgba(255,255,255,0.01)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 40 }}>
-                                <div style={{ width: 52, height: 52, borderRadius: 16, background: 'rgba(56, 189, 248, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                                    <Settings2 size={28} color="#38BDF8" />
-                                </div>
-                                <div>
-                                    <h3 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: '#F1F5F9', letterSpacing: '-0.02em' }}>AI Feature Settings</h3>
-                                    <p style={{ margin: '4px 0 0', fontSize: 14, color: COLORS.slate, fontWeight: 600 }}>Enable or disable specific AI capabilities for your institution.</p>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <ControlToggle
-                                    label="Adaptive Learning Logic"
-                                    premium
-                                    desc="Adjusts difficulty vectors in real-time based on individual student scoring variance."
-                                    checked={settings.adaptive_learning}
-                                    onChange={(v: boolean) => updateSettings({ adaptive_learning: v })}
-                                />
-                                <ControlToggle
-                                    label="AI Subjective Grading"
-                                    desc="Uses AI to help assist in grading essays and subjective answers."
-                                    checked={settings.auto_grading}
-                                    onChange={(v: boolean) => updateSettings({ auto_grading: v })}
-                                />
-                                <ControlToggle
-                                    label="Auto-Generate Assessments"
-                                    premium
-                                    desc="Allows the AI to automatically create new exam papers from your syllabus."
-                                    checked={settings.ai_question_generation}
-                                    onChange={(v: boolean) => updateSettings({ ai_question_generation: v })}
-                                />
-                                <ControlToggle
-                                    label="Strict Syllabus Compliance"
-                                    desc="Ensures questions and insights are strictly generated from your syllabus material."
-                                    checked={settings.strict_syllabus_mapping}
-                                    onChange={(v: boolean) => updateSettings({ strict_syllabus_mapping: v })}
-                                />
-                                {/* MODEL SELECTION SECTION */}
-                                <div style={{ marginTop: 20, padding: 32, background: 'rgba(255,255,255,0.02)', borderRadius: 28, border: `1px solid rgba(255,255,255,0.05)` }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                            <Globe size={14} color={COLORS.slate} />
-                                            <label style={{ fontSize: 13, fontWeight: 900, color: COLORS.slate, textTransform: 'uppercase', letterSpacing: '0.1em' }}>AI Engine</label>
-                                        </div>
-                                        <div style={{ fontSize: 11, fontWeight: 900, color: '#38BDF8', background: 'rgba(56, 189, 248, 0.1)', padding: '6px 14px', borderRadius: 100 }}>SECURE</div>
-                                    </div>
-                                    <div style={{ position: 'relative' }}>
-                                        <select
-                                            value={settings.llm_model}
-                                            onChange={e => updateSettings({ llm_model: e.target.value })}
-                                            style={{ width: '100%', padding: '18px 24px', background: '#0F172A', border: '1px solid #1E293B', borderRadius: 16, fontSize: 15, fontWeight: 800, color: '#F8FAFC', outline: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
-                                        >
-                                            <option value="gemini-2.5-flash">Gemini 2.5 Flash â€” High Speed (Recommended)</option>
-                                            <option value="gpt-4o">GPT-4o (Omni) â€” Advanced Reasoning</option>
-                                            <option value="gpt-4-turbo">GPT-4 Turbo â€” Legacy Model</option>
-                                        </select>
-                                        <div style={{ position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: COLORS.slate }}><Activity size={16} /></div>
-                                    </div>
-                                    <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: COLORS.success, fontWeight: 600 }}>
-                                        <ShieldCheck size={14} /> End-to-end institutional encryption active for this cluster.
-                                    </div>
-                                </div>
-                            </div>
+                    <div className="mt-3">
+                        <div className="text-3xl font-black text-slate-900 tracking-tight">
+                            {subjects.length}
+                        </div>
+                        <div className="mt-1 text-xs text-slate-500 font-medium">
+                            Curriculum verticals mapped to question creator
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. AI Generated Questions */}
+                <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:border-purple-300 transition-all">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">AI Created Questions</span>
+                        <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+                            <Sparkles className="w-5 h-5" />
+                        </div>
+                    </div>
+                    <div className="mt-3">
+                        <div className="text-3xl font-black text-slate-900 tracking-tight">
+                            {stats.ai_generated_count}
+                        </div>
+                        <div className="mt-1 text-xs text-slate-500 font-medium">
+                            Syllabus-aligned questions created this term
+                        </div>
+                    </div>
+                </div>
+
+                {/* 4. Institutional Compliance */}
+                <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:border-amber-300 transition-all">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Syllabus Compliance</span>
+                        <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                            <ShieldCheck className="w-5 h-5" />
+                        </div>
+                    </div>
+                    <div className="mt-3">
+                        <div className="text-xl font-black text-emerald-700 tracking-tight">
+                            {settings.strict_syllabus_mapping ? 'Strictly Enforced' : 'Open Curriculum'}
+                        </div>
+                        <div className="mt-1 text-xs text-slate-500 font-medium">
+                            Locked to school prescribed textbook topics
                         </div>
                     </div>
                 </div>
             </div>
-            {/* TERMINAL MODAL */}
-            {showTerminal && (
-                <TerminalModal
-                    title="System Sync Log"
-                    generating={generating}
-                    content={mockContent}
-                    onClose={() => setShowTerminal(false)}
-                />
+
+            {/* ── TAB NAVIGATION ────────────────────────────────────────── */}
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-3 mb-8 overflow-x-auto">
+                <button
+                    onClick={() => setActiveTab('generate')}
+                    className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                        activeTab === 'generate'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                    }`}
+                >
+                    <Sparkles className="w-4 h-4" />
+                    Create Exam Questions
+                </button>
+                <button
+                    onClick={() => setActiveTab('bank')}
+                    className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                        activeTab === 'bank'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                    }`}
+                >
+                    <BookOpen className="w-4 h-4" />
+                    School Question Bank ({savedQuestions.length})
+                </button>
+                <button
+                    onClick={() => setActiveTab('settings')}
+                    className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                        activeTab === 'settings'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                    }`}
+                >
+                    <Sliders className="w-4 h-4" />
+                    School AI Controls
+                </button>
+            </div>
+
+            {/* ── TAB 1: CREATE EXAM QUESTIONS ─────────────────────────── */}
+            {activeTab === 'generate' && (
+                <div className="space-y-8 animate-fadeIn">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                        {/* Left 1 Col: Question Generator Form */}
+                        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+                            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+                                <div>
+                                    <h3 className="text-base font-bold text-slate-900">Question Parameters</h3>
+                                    <p className="text-xs text-slate-500 font-medium mt-0.5">Define subject, topic, and difficulty</p>
+                                </div>
+                                <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-md bg-blue-50 text-blue-700">
+                                    CBSE / NCERT Style
+                                </span>
+                            </div>
+
+                            <form onSubmit={handleGenerate} className="space-y-4">
+                                {/* Class Selector */}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                        Target Class / Grade
+                                    </label>
+                                    <select
+                                        value={genClass}
+                                        onChange={e => setGenClass(e.target.value)}
+                                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    >
+                                        {classes.map(c => (
+                                            <option key={c.id} value={c.name}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Subject Selector */}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                        Subject
+                                    </label>
+                                    <select
+                                        value={genSubject}
+                                        onChange={e => setGenSubject(e.target.value)}
+                                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    >
+                                        {subjects.map(s => (
+                                            <option key={s.id} value={s.name}>{s.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Chapter / Topic */}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                        Chapter or Topic Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={genTopic}
+                                        onChange={e => setGenTopic(e.target.value)}
+                                        placeholder="e.g. Quadratic Equations, Newton's Laws"
+                                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    />
+                                </div>
+
+                                {/* Question Type Selection */}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                        Question Format
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setGenType('objective')}
+                                            className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
+                                                genType === 'objective'
+                                                    ? 'bg-blue-50 border-blue-300 text-blue-700'
+                                                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                            }`}
+                                        >
+                                            Multiple Choice (MCQ)
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setGenType('subjective')}
+                                            className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
+                                                genType === 'subjective'
+                                                    ? 'bg-blue-50 border-blue-300 text-blue-700'
+                                                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                            }`}
+                                        >
+                                            Short / Essay Answer
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Difficulty Level */}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                        Difficulty Level
+                                    </label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {(['easy', 'medium', 'hard'] as const).map(d => (
+                                            <button
+                                                key={d}
+                                                type="button"
+                                                onClick={() => setGenDifficulty(d)}
+                                                className={`py-2 px-2.5 rounded-xl text-xs font-bold border capitalize transition-all ${
+                                                    genDifficulty === d
+                                                        ? d === 'easy'
+                                                            ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                                                            : d === 'medium'
+                                                                ? 'bg-blue-50 border-blue-300 text-blue-800'
+                                                                : 'bg-rose-50 border-rose-300 text-rose-800'
+                                                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                                }`}
+                                            >
+                                                {d === 'hard' ? 'Challenging' : d}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Number of Questions */}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                        Quantity ({genCount} Questions)
+                                    </label>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {[5, 10, 15, 20].map(cnt => (
+                                            <button
+                                                key={cnt}
+                                                type="button"
+                                                onClick={() => setGenCount(cnt)}
+                                                className={`py-2 rounded-xl text-xs font-bold border transition-all ${
+                                                    genCount === cnt
+                                                        ? 'bg-blue-600 text-white border-blue-600'
+                                                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                                }`}
+                                            >
+                                                {cnt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Include Solutions Toggle */}
+                                <div className="pt-2">
+                                    <label className="flex items-center gap-2.5 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={includeAnswers}
+                                            onChange={e => setIncludeAnswers(e.target.checked)}
+                                            className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
+                                        />
+                                        <span className="text-xs font-semibold text-slate-700">
+                                            Include step-by-step model solution & marking scheme
+                                        </span>
+                                    </label>
+                                </div>
+
+                                {/* Submit Button */}
+                                <button
+                                    type="submit"
+                                    disabled={isGenerating}
+                                    className="w-full mt-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-60"
+                                >
+                                    {isGenerating ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Authoring Questions...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Sparkles className="w-4 h-4" />
+                                            Generate Test Questions
+                                        </>
+                                    )}
+                                </button>
+                            </form>
+                        </div>
+
+                        {/* Right 2 Cols: Generated Questions Output & Batch Actions */}
+                        <div className="lg:col-span-2 space-y-4">
+                            {generatedPool.length === 0 ? (
+                                <div className="bg-white rounded-2xl p-12 border border-slate-200/80 shadow-sm text-center">
+                                    <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4">
+                                        <Sparkles className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-slate-900">Ready to Author Examination Questions</h3>
+                                    <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
+                                        Select your subject, chapter, and question format in the left panel. Questions generated will be mapped to the school syllabus and can be reviewed, edited, or saved into the question bank.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {/* Action Bar */}
+                                    <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-slate-900">
+                                                Generated {generatedPool.length} Questions for {genSubject}
+                                            </h3>
+                                            <p className="text-xs text-slate-500">
+                                                Review before saving to the school bank or printing.
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => window.print()}
+                                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all"
+                                            >
+                                                <Printer className="w-3.5 h-3.5" /> Print Paper
+                                            </button>
+                                            <button
+                                                onClick={handleSaveGeneratedToBank}
+                                                disabled={isSavingPool}
+                                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow transition-all disabled:opacity-60"
+                                            >
+                                                {isSavingPool ? (
+                                                    <>
+                                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                        Saving...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Check className="w-3.5 h-3.5" />
+                                                        Save All to Bank
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Questions Review Cards */}
+                                    <div className="space-y-3">
+                                        {generatedPool.map((q, idx) => (
+                                            <div
+                                                key={q.id || idx}
+                                                className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm space-y-3"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-xs font-black text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md">
+                                                        Question {idx + 1} • {q.marks} Mark{q.marks > 1 ? 's' : ''}
+                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                                            q.difficulty === 'easy'
+                                                                ? 'bg-emerald-50 text-emerald-700'
+                                                                : q.difficulty === 'medium'
+                                                                    ? 'bg-blue-50 text-blue-700'
+                                                                    : 'bg-rose-50 text-rose-700'
+                                                        }`}>
+                                                            {q.difficulty}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => setGeneratedPool(prev => prev.filter((_, i) => i !== idx))}
+                                                            className="text-slate-400 hover:text-rose-600 p-1"
+                                                            title="Remove question"
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div className="text-sm font-semibold text-slate-900 leading-relaxed">
+                                                    {q.text || q.question_text}
+                                                </div>
+
+                                                {/* Options if Objective */}
+                                                {Array.isArray(q.options) && q.options.length > 0 && (
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                                                        {q.options.map((opt: string, optIdx: number) => {
+                                                            const isCorrect = q.correct_answer?.includes(opt) || q.correct_answer === opt
+                                                            return (
+                                                                <div
+                                                                    key={optIdx}
+                                                                    className={`p-2.5 rounded-xl border text-xs font-medium flex items-center gap-2 ${
+                                                                        isCorrect
+                                                                            ? 'bg-emerald-50/80 border-emerald-300 text-emerald-900 font-semibold'
+                                                                            : 'bg-slate-50 border-slate-100 text-slate-700'
+                                                                    }`}
+                                                                >
+                                                                    <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-black flex items-center justify-center flex-shrink-0">
+                                                                        {String.fromCharCode(65 + optIdx)}
+                                                                    </span>
+                                                                    <span>{opt}</span>
+                                                                    {isCorrect && (
+                                                                        <span className="ml-auto text-[10px] font-bold text-emerald-600 uppercase">Correct</span>
+                                                                    )}
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                )}
+
+                                                {/* Model Answer & Explanation */}
+                                                {(q.correct_answer || q.explanation) && (
+                                                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1">
+                                                        {q.correct_answer && (
+                                                            <div>
+                                                                <strong className="text-slate-700">Model Answer: </strong>
+                                                                <span className="text-emerald-700 font-bold">{q.correct_answer}</span>
+                                                            </div>
+                                                        )}
+                                                        {q.explanation && (
+                                                            <div>
+                                                                <strong className="text-slate-700">Marking Rubric: </strong>
+                                                                <span className="text-slate-600">{q.explanation}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── TAB 2: SCHOOL QUESTION BANK LEDGER ────────────────────── */}
+            {activeTab === 'bank' && (
+                <div className="space-y-6 animate-fadeIn">
+                    {/* Filter & Search Bar */}
+                    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                        <div className="flex flex-wrap items-center gap-3">
+                            {/* Subject filter */}
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm">
+                                <BookOpen className="w-4 h-4 text-slate-400" />
+                                <select
+                                    value={bankSubjectFilter}
+                                    onChange={e => setBankSubjectFilter(e.target.value)}
+                                    className="bg-transparent font-semibold text-slate-700 focus:outline-none cursor-pointer"
+                                >
+                                    <option value="all">All Subjects</option>
+                                    {subjects.map(s => (
+                                        <option key={s.id} value={s.name}>{s.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Difficulty filter */}
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm">
+                                <Filter className="w-4 h-4 text-slate-400" />
+                                <select
+                                    value={bankDifficultyFilter}
+                                    onChange={e => setBankDifficultyFilter(e.target.value)}
+                                    className="bg-transparent font-semibold text-slate-700 focus:outline-none cursor-pointer"
+                                >
+                                    <option value="all">All Difficulties</option>
+                                    <option value="easy">Easy (Foundational)</option>
+                                    <option value="medium">Medium (Standard)</option>
+                                    <option value="hard">Challenging (Advanced)</option>
+                                </select>
+                            </div>
+
+                            {/* Format filter */}
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm">
+                                <FileText className="w-4 h-4 text-slate-400" />
+                                <select
+                                    value={bankTypeFilter}
+                                    onChange={e => setBankTypeFilter(e.target.value)}
+                                    className="bg-transparent font-semibold text-slate-700 focus:outline-none cursor-pointer"
+                                >
+                                    <option value="all">All Question Types</option>
+                                    <option value="objective">Multiple Choice (MCQ)</option>
+                                    <option value="subjective">Subjective (Descriptive)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className="relative w-full md:w-80">
+                            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                            <input
+                                type="text"
+                                value={bankSearch}
+                                onChange={e => setBankSearch(e.target.value)}
+                                placeholder="Search questions in bank..."
+                                className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Question Bank Table */}
+                    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                                    <tr>
+                                        <th className="py-3.5 px-5">Question Description</th>
+                                        <th className="py-3.5 px-5">Subject</th>
+                                        <th className="py-3.5 px-5">Format</th>
+                                        <th className="py-3.5 px-5">Difficulty</th>
+                                        <th className="py-3.5 px-5">Marks</th>
+                                        <th className="py-3.5 px-5 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {filteredBankQuestions.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
+                                                No questions found matching your filter criteria.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        filteredBankQuestions.map((q) => (
+                                            <tr
+                                                key={q.id}
+                                                onClick={() => setSelectedQuestionForModal(q)}
+                                                className="hover:bg-blue-50/40 transition-colors cursor-pointer group"
+                                            >
+                                                <td className="py-4 px-5 max-w-md">
+                                                    <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+                                                        {q.question_text || q.text}
+                                                    </div>
+                                                    <div className="text-xs text-slate-400 font-medium mt-0.5">
+                                                        Source: <span className="capitalize">{q.source || 'Manual'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-5 text-xs font-semibold text-slate-700">
+                                                    {q.subject_name}
+                                                </td>
+                                                <td className="py-4 px-5 text-xs font-semibold text-slate-700 capitalize">
+                                                    {q.type === 'objective' ? 'Multiple Choice' : 'Subjective'}
+                                                </td>
+                                                <td className="py-4 px-5">
+                                                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold capitalize ${
+                                                        q.difficulty === 'easy'
+                                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                            : q.difficulty === 'medium'
+                                                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                                                : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                                    }`}>
+                                                        {q.difficulty}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-5 font-bold text-slate-900">
+                                                    {q.marks} Mark{q.marks > 1 ? 's' : ''}
+                                                </td>
+                                                <td className="py-4 px-5 text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setSelectedQuestionForModal(q)
+                                                            }}
+                                                            className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                                            title="View Details"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                handleDeleteQuestion(q.id)
+                                                            }}
+                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                            title="Delete Question"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── TAB 3: INSTITUTIONAL AI FEATURE CONTROLS ───────────────── */}
+            {activeTab === 'settings' && (
+                <div className="max-w-4xl space-y-6 animate-fadeIn">
+                    <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+                        <div className="flex items-center gap-3 pb-4 border-b border-slate-100 mb-6">
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                                <Sliders className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900">Institutional AI Capabilities</h3>
+                                <p className="text-xs text-slate-500 font-medium">
+                                    Configure curriculum compliance and teacher grading assistance for Silver Bells School.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            {/* Toggle 1: Strict Syllabus Compliance */}
+                            <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 flex items-center justify-between">
+                                <div className="space-y-0.5 pr-4">
+                                    <div className="text-sm font-bold text-slate-900">Strict Syllabus Compliance</div>
+                                    <div className="text-xs text-slate-500">
+                                        Locks questions strictly to topics, chapters, and competencies from the school prescribed textbooks.
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleUpdateSettings({ strict_syllabus_mapping: !settings.strict_syllabus_mapping })}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                        settings.strict_syllabus_mapping ? 'bg-blue-600' : 'bg-slate-300'
+                                    }`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        settings.strict_syllabus_mapping ? 'translate-x-6' : 'translate-x-1'
+                                    }`} />
+                                </button>
+                            </div>
+
+                            {/* Toggle 2: Teacher Grading Assistance */}
+                            <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 flex items-center justify-between">
+                                <div className="space-y-0.5 pr-4">
+                                    <div className="text-sm font-bold text-slate-900">Teacher Grading Assistance</div>
+                                    <div className="text-xs text-slate-500">
+                                        Provides automated scoring hints and step-by-step model answer comparisons during answer sheet evaluation.
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleUpdateSettings({ auto_grading: !settings.auto_grading })}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                        settings.auto_grading ? 'bg-blue-600' : 'bg-slate-300'
+                                    }`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        settings.auto_grading ? 'translate-x-6' : 'translate-x-1'
+                                    }`} />
+                                </button>
+                            </div>
+
+                            {/* Toggle 3: Include Step-by-Step Marking Rubric */}
+                            <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 flex items-center justify-between">
+                                <div className="space-y-0.5 pr-4">
+                                    <div className="text-sm font-bold text-slate-900">Generate Step-by-Step Solutions</div>
+                                    <div className="text-xs text-slate-500">
+                                        Automatically includes complete working proofs, diagrams, and marking schemes for every question.
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleUpdateSettings({ include_marking_scheme: !settings.include_marking_scheme })}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                        settings.include_marking_scheme ? 'bg-blue-600' : 'bg-slate-300'
+                                    }`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        settings.include_marking_scheme ? 'translate-x-6' : 'translate-x-1'
+                                    }`} />
+                                </button>
+                            </div>
+
+                            {/* Toggle 4: Adaptive Learning Logic */}
+                            <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 flex items-center justify-between">
+                                <div className="space-y-0.5 pr-4">
+                                    <div className="text-sm font-bold text-slate-900">Adaptive Difficulty Balance</div>
+                                    <div className="text-xs text-slate-500">
+                                        Balances foundational recall questions with higher-order thinking skills (HOTS) based on standard board patterns.
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleUpdateSettings({ adaptive_learning: !settings.adaptive_learning })}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                        settings.adaptive_learning ? 'bg-blue-600' : 'bg-slate-300'
+                                    }`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        settings.adaptive_learning ? 'translate-x-6' : 'translate-x-1'
+                                    }`} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Model Engine Selection */}
+                        <div className="mt-8 pt-6 border-t border-slate-100">
+                            <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
+                                School AI Engine
+                            </label>
+                            <select
+                                value={settings.llm_model}
+                                onChange={e => handleUpdateSettings({ llm_model: e.target.value })}
+                                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            >
+                                <option value="gemini-2.5-flash">Gemini 2.5 Flash — Fast & Reliable (Recommended)</option>
+                                <option value="gemini-1.5-pro">Gemini 1.5 Pro — Deep Academic Reasoning</option>
+                            </select>
+                            <p className="text-xs text-slate-400 font-medium mt-2">
+                                Encrypted and dedicated to Silver Bells School. Your academic syllabus and questions remain confidential.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── MODAL: QUESTION DETAIL & MODEL SOLUTION ───────────────── */}
+            {selectedQuestionForModal && (
+                <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl max-w-lg w-full p-6 border border-slate-200 shadow-xl animate-scaleUp">
+                        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                            <div className="flex items-center gap-2">
+                                <BookOpen className="w-5 h-5 text-blue-600" />
+                                <h3 className="text-base font-bold text-slate-900">Question Details</h3>
+                            </div>
+                            <button
+                                onClick={() => setSelectedQuestionForModal(null)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <div className="mt-5 space-y-4">
+                            {/* Metadata Pills */}
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-blue-50 text-blue-700">
+                                    {selectedQuestionForModal.subject_name || 'General'}
+                                </span>
+                                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 capitalize">
+                                    {selectedQuestionForModal.type}
+                                </span>
+                                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 capitalize">
+                                    {selectedQuestionForModal.difficulty}
+                                </span>
+                                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-purple-50 text-purple-700">
+                                    {selectedQuestionForModal.marks} Mark{selectedQuestionForModal.marks > 1 ? 's' : ''}
+                                </span>
+                            </div>
+
+                            {/* Question text */}
+                            <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-sm font-semibold text-slate-900 leading-relaxed">
+                                {selectedQuestionForModal.question_text || selectedQuestionForModal.text}
+                            </div>
+
+                            {/* Options if objective */}
+                            {Array.isArray(selectedQuestionForModal.options) && selectedQuestionForModal.options.length > 0 && (
+                                <div className="space-y-2">
+                                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Answer Choices:</div>
+                                    <div className="space-y-1.5">
+                                        {selectedQuestionForModal.options.map((opt: string, i: number) => {
+                                            const isCorrect = selectedQuestionForModal.correct_answer?.includes(opt) || selectedQuestionForModal.correct_answer === opt
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className={`p-2.5 rounded-xl border text-xs font-medium flex items-center gap-2 ${
+                                                        isCorrect
+                                                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold'
+                                                            : 'bg-slate-50 border-slate-200 text-slate-700'
+                                                    }`}
+                                                >
+                                                    <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-black flex items-center justify-center flex-shrink-0">
+                                                        {String.fromCharCode(65 + i)}
+                                                    </span>
+                                                    <span>{opt}</span>
+                                                    {isCorrect && (
+                                                        <span className="ml-auto text-[10px] font-bold text-emerald-600 uppercase">Correct</span>
+                                                    )}
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Model Answer & Rubric */}
+                            {(selectedQuestionForModal.correct_answer || selectedQuestionForModal.explanation) && (
+                                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1.5">
+                                    {selectedQuestionForModal.correct_answer && (
+                                        <div>
+                                            <strong className="text-slate-700">Model Answer: </strong>
+                                            <span className="text-emerald-700 font-bold">{selectedQuestionForModal.correct_answer}</span>
+                                        </div>
+                                    )}
+                                    {selectedQuestionForModal.explanation && (
+                                        <div>
+                                            <strong className="text-slate-700">Evaluation Rubric: </strong>
+                                            <span className="text-slate-600">{selectedQuestionForModal.explanation}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                            <button
+                                onClick={() => window.print()}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all"
+                            >
+                                <Printer className="w-3.5 h-3.5" /> Print Question
+                            </button>
+                            <button
+                                onClick={() => setSelectedQuestionForModal(null)}
+                                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all"
+                            >
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     )
