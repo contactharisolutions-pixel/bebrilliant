@@ -1,49 +1,163 @@
 'use client'
+
 import React, { useState, useEffect, useMemo, useRef } from 'react'
-import { 
-    Calendar, TrendingUp, Users, ShieldCheck, 
-    ArrowRight, CheckCircle2, AlertCircle, Save, 
+import Image from 'next/image'
+import {
+    Calendar, TrendingUp, Users, ShieldCheck,
+    ArrowRight, CheckCircle2, AlertCircle, Save,
     Plus, Settings2, History, Rocket, BookOpen,
     GraduationCap, RefreshCcw, Filter, Edit, X, Search,
-    ChevronRight, Info
+    ChevronRight, Info, Trash2, Clock, Sparkles, AlertTriangle,
+    Layers, Check, Award
 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+
+interface AcademicYear {
+    id: string
+    name: string
+    start_date: string
+    end_date: string
+    is_active: boolean
+    classes_count?: number
+    created_at?: string
+    updated_at?: string
+}
+
+interface PromotionRule {
+    id?: string
+    from_class: string
+    to_class: string
+    to_division?: string
+    auto_promote?: boolean
+}
+
+interface CandidatePreview {
+    id: string
+    name: string
+    email?: string
+    old_class: string
+    old_division: string
+    new_class: string
+    new_division: string
+    can_promote: boolean
+    is_graduating: boolean
+    already_migrated: boolean
+    audit_status: 'AUDIT_PASSED' | 'RULE_MISSING' | 'GRADUATING' | 'ALREADY_MIGRATED'
+}
+
+interface MigrationLog {
+    id: string
+    academic_year_id: string
+    promoted_count: number
+    graduated_count: number
+    failed_count: number
+    created_at: string
+}
+
+interface Toast {
+    id: string
+    type: 'success' | 'error' | 'info'
+    message: string
+}
+
 export default function AcademicYearPortal() {
     const [loading, setLoading] = useState(true)
-    const [years, setYears] = useState([])
-    const [rules, setRules] = useState<any[]>([])
-    const [preview, setPreview] = useState<any[]>([])
-    const [activeTab, setActiveTab] = useState<'years' | 'rules' | 'promote'>('years')
+    const [years, setYears] = useState<AcademicYear[]>([])
+    const [activeYear, setActiveYear] = useState<AcademicYear | null>(null)
+    const [classes, setClasses] = useState<any[]>([])
+    const [rules, setRules] = useState<PromotionRule[]>([])
+    const [preview, setPreview] = useState<CandidatePreview[]>([])
+    const [previewSummary, setPreviewSummary] = useState<any>(null)
+    const [migrationLogs, setMigrationLogs] = useState<MigrationLog[]>([])
+    const [stats, setStats] = useState<any>(null)
+
+    // Navigation & Filtering
+    const [activeTab, setActiveTab] = useState<'years' | 'rules' | 'promote' | 'logs'>('years')
+    const [candidateFilter, setCandidateFilter] = useState<'ALL' | 'ELIGIBLE' | 'MISSING' | 'GRADUATING'>('ALL')
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set())
-    // Form States
+
+    // Forms & Action Modals
     const [newYear, setNewYear] = useState({ name: '', start_date: '', end_date: '', make_active: false })
-    const [editingYear, setEditingYear] = useState<any>(null)
+    const [editingYear, setEditingYear] = useState<AcademicYear | null>(null)
     const [targetYearId, setTargetYearId] = useState('')
+    const [confirmMigrationOpen, setConfirmMigrationOpen] = useState(false)
+    const [yearToDelete, setYearToDelete] = useState<AcademicYear | null>(null)
+
+    // Async states
     const [executing, setExecuting] = useState(false)
     const [savingRules, setSavingRules] = useState(false)
+    const [submittingYear, setSubmittingYear] = useState(false)
+    const [generatingRules, setGeneratingRules] = useState(false)
+
+    // Toasts
+    const [toasts, setToasts] = useState<Toast[]>([])
+
+    const addToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+        const id = Math.random().toString(36).substring(2, 9)
+        setToasts(prev => [...prev, { id, message, type }])
+        setTimeout(() => {
+            setToasts(prev => prev.filter(t => t.id !== id))
+        }, 4000)
+    }
+
     useEffect(() => {
-        fetchData()
+        fetchInitialData()
     }, [])
-    const fetchData = async () => {
+
+    const fetchInitialData = async () => {
         try {
+            setLoading(true)
             const [yRes, rRes] = await Promise.all([
                 fetch('/api/dashboard/tenant/academic-year'),
                 fetch('/api/dashboard/tenant/promotion/rules')
             ])
+
             const yData = await yRes.json()
             const rData = await rRes.json()
-            setYears(yData.years || [])
-            setRules(rData.rules || [])
-        } catch (err) {
-            console.error('Fetch error', err)
+
+            if (yRes.ok) {
+                setYears(yData.years || [])
+                setActiveYear(yData.active_year || null)
+                setClasses(yData.classes || [])
+                setMigrationLogs(yData.promotion_logs || [])
+                setStats(yData.stats || null)
+            } else {
+                addToast(yData.error || 'Failed to load academic sessions', 'error')
+            }
+
+            if (rRes.ok) {
+                setRules(rData.rules || [])
+            }
+        } catch (err: any) {
+            console.error('Fetch error:', err)
+            addToast('Network communication error while synchronizing data', 'error')
         } finally {
             setLoading(false)
         }
     }
+
+    // ── QUICK PRESET BUILDER ─────────────────────────────────────────
+    const applyYearPreset = (yearStart: number) => {
+        const yearEnd = yearStart + 1
+        setNewYear({
+            name: `Academic Session ${yearStart}-${yearEnd.toString().slice(-2)}`,
+            start_date: `${yearStart}-04-01`,
+            end_date: `${yearEnd}-03-31`,
+            make_active: false
+        })
+    }
+
+    // ── YEAR MANAGEMENT ACTIONS ──────────────────────────────────────
     const handleCreateYear = async (e: React.FormEvent) => {
         e.preventDefault()
-        setLoading(true)
+        if (!newYear.name.trim()) return addToast('Please enter a valid cycle designation', 'error')
+        if (!newYear.start_date || !newYear.end_date) return addToast('Please select operational dates', 'error')
+        if (new Date(newYear.end_date) <= new Date(newYear.start_date)) {
+            return addToast('Termination date must be after Activation date', 'error')
+        }
+
+        setSubmittingYear(true)
         try {
             const res = await fetch('/api/dashboard/tenant/academic-year', {
                 method: 'POST',
@@ -51,32 +165,93 @@ export default function AcademicYearPortal() {
                 body: JSON.stringify(newYear)
             })
             const data = await res.json()
-            if (res.ok) {
-                alert('Academic session committed successfully.')
+            if (res.ok && data.success) {
+                addToast('Academic cycle initialized successfully', 'success')
                 setNewYear({ name: '', start_date: '', end_date: '', make_active: false })
-                await fetchData()
+                await fetchInitialData()
             } else {
-                alert(`Commit failed: ${data.error || 'Unknown error'}`)
+                addToast(data.error || 'Failed to initialize session', 'error')
             }
-        } catch (err) { alert('System sync failed: Communication error') }
-        finally { setLoading(false) }
+        } catch (err) {
+            addToast('Failed to communicate with session service', 'error')
+        } finally {
+            setSubmittingYear(false)
+        }
     }
+
     const handleUpdateYear = async (e: React.FormEvent) => {
         e.preventDefault()
-        setLoading(true)
+        if (!editingYear) return
+
+        setSubmittingYear(true)
         try {
             const res = await fetch('/api/dashboard/tenant/academic-year', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(editingYear)
             })
-            if (res.ok) {
+            const data = await res.json()
+            if (res.ok && data.success) {
+                addToast('Academic cycle updated successfully', 'success')
                 setEditingYear(null)
-                await fetchData()
+                await fetchInitialData()
+            } else {
+                addToast(data.error || 'Failed to update session', 'error')
             }
-        } catch (err) { alert('Update propagation failed') }
-        finally { setLoading(false) }
+        } catch (err) {
+            addToast('Error propagating cycle changes', 'error')
+        } finally {
+            setSubmittingYear(false)
+        }
     }
+
+    const handleSetActiveYear = async (year: AcademicYear) => {
+        try {
+            const res = await fetch('/api/dashboard/tenant/academic-year', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'SET_ACTIVE_YEAR',
+                    payload: { id: year.id }
+                })
+            })
+            const data = await res.json()
+            if (res.ok && data.success) {
+                addToast(`${year.name} is now the primary operational session`, 'success')
+                await fetchInitialData()
+            } else {
+                addToast(data.error || 'Failed to activate session', 'error')
+            }
+        } catch (err) {
+            addToast('Error setting operational session', 'error')
+        }
+    }
+
+    const handleDeleteYear = async () => {
+        if (!yearToDelete) return
+        try {
+            const res = await fetch('/api/dashboard/tenant/academic-year', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'DELETE_YEAR',
+                    payload: { id: yearToDelete.id }
+                })
+            })
+            const data = await res.json()
+            if (res.ok && data.success) {
+                addToast('Academic cycle deleted cleanly', 'success')
+                setYearToDelete(null)
+                await fetchInitialData()
+            } else {
+                addToast(data.error || 'Failed to delete cycle', 'error')
+            }
+        } catch (err) {
+            addToast('Error removing academic cycle', 'error')
+        }
+    }
+
+    // ── PROMOTION RULES ACTIONS ──────────────────────────────────────
     const handleSaveRules = async () => {
         setSavingRules(true)
         try {
@@ -85,28 +260,75 @@ export default function AcademicYearPortal() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rules })
             })
-            if (res.ok) alert('Promotion rules saved.')
-        } catch (err) { alert('Failed to save rules') }
-        finally { setSavingRules(false) }
+            const data = await res.json()
+            if (res.ok && data.success) {
+                addToast('Promotion vector rules saved successfully', 'success')
+                await fetchInitialData()
+            } else {
+                addToast(data.error || 'Failed to save rules', 'error')
+            }
+        } catch (err) {
+            addToast('Failed to save promotion rules', 'error')
+        } finally {
+            setSavingRules(false)
+        }
     }
+
+    const handleAutoGenerateRules = async () => {
+        setGeneratingRules(true)
+        try {
+            const res = await fetch('/api/dashboard/tenant/promotion/rules', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'AUTO_GENERATE' })
+            })
+            const data = await res.json()
+            if (res.ok && data.success) {
+                addToast(`Constructed ${data.count} sequential promotion vector rules from classes`, 'success')
+                await fetchInitialData()
+            } else {
+                addToast(data.error || 'Failed to auto-generate rules', 'error')
+            }
+        } catch (err) {
+            addToast('Auto-generation pipeline error', 'error')
+        } finally {
+            setGeneratingRules(false)
+        }
+    }
+
+    // ── MASS MIGRATION AUDIT & PREVIEW ──────────────────────────────
     const fetchPreview = async (yearId: string) => {
         setTargetYearId(yearId)
+        if (!yearId) {
+            setPreview([])
+            setPreviewSummary(null)
+            setSelectedStudents(new Set())
+            return
+        }
+
         setLoading(true)
         try {
             const res = await fetch(`/api/dashboard/tenant/promotion/preview?target_id=${yearId}`)
             const data = await res.json()
-            const candiates = data.preview || []
-            setPreview(candiates)
-            // default select all promotable
-            setSelectedStudents(new Set(candiates.filter((p: any) => p.can_promote).map((p: any) => p.id)))
+            const candidates: CandidatePreview[] = data.preview || []
+            setPreview(candidates)
+            setPreviewSummary(data.summary || null)
+
+            // Auto-select all eligible candidates
+            const eligible = candidates.filter(p => p.can_promote).map(p => p.id)
+            setSelectedStudents(new Set(eligible))
             setActiveTab('promote')
-        } catch (err) { alert('Audit synchronization failed') }
-        finally { setLoading(false) }
+        } catch (err) {
+            addToast('Audit synchronization failed', 'error')
+        } finally {
+            setLoading(false)
+        }
     }
+
     const executePromotion = async () => {
-        if (!targetYearId) return alert('Select target academic node')
-        if (selectedStudents.size === 0) return alert('No students selected for migration')
-        if (!confirm(`CONFIRMATION: You are about to migrate ${selectedStudents.size} students to a new academic cycle. This is irreversible. Proceed?`)) return
+        if (!targetYearId) return addToast('Please select a destination academic session', 'error')
+        if (selectedStudents.size === 0) return addToast('No student candidates selected for migration', 'error')
+
         setExecuting(true)
         try {
             const payload = {
@@ -117,454 +339,1083 @@ export default function AcademicYearPortal() {
                         id: p.id,
                         new_class: p.new_class,
                         new_division: p.new_division,
-                        status: 'promoted'
+                        status: p.is_graduating ? 'graduated' : 'promoted'
                     }))
             }
+
             const res = await fetch('/api/dashboard/tenant/promotion/execute', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             })
             const data = await res.json()
-            if (data.success) {
-                alert(`MIGRATION COMPLETE! Promoted: ${data.summary.promoted}, Graduated: ${data.summary.graduated}`)
+            if (res.ok && data.success) {
+                addToast(`Migration Complete! Promoted: ${data.summary.promoted}, Graduated: ${data.summary.graduated}`, 'success')
+                setConfirmMigrationOpen(false)
                 setPreview([])
                 setSelectedStudents(new Set())
-                await fetchData()
-                setActiveTab('years')
+                await fetchInitialData()
+                setActiveTab('logs')
+            } else {
+                addToast(data.error || 'Execution pipeline failed', 'error')
             }
-        } catch (err) { alert('Execution pipeline failed') }
-        finally { setExecuting(false) }
+        } catch (err) {
+            addToast('Execution communication error', 'error')
+        } finally {
+            setExecuting(false)
+        }
     }
+
+    // ── CANDIDATE FILTERING ──────────────────────────────────────────
     const filteredPreview = useMemo(() => {
-        return preview.filter(p => 
-            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.old_class.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-    }, [preview, searchQuery])
+        return preview.filter(p => {
+            const matchesQuery = 
+                p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                p.old_class.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                p.new_class.toLowerCase().includes(searchQuery.toLowerCase())
+
+            if (!matchesQuery) return false
+
+            if (candidateFilter === 'ELIGIBLE') return p.can_promote && !p.is_graduating
+            if (candidateFilter === 'GRADUATING') return p.is_graduating
+            if (candidateFilter === 'MISSING') return !p.can_promote && !p.already_migrated
+            return true
+        })
+    }, [preview, searchQuery, candidateFilter])
+
     const toggleStudent = (id: string) => {
         const next = new Set(selectedStudents)
         if (next.has(id)) next.delete(id)
         else next.add(id)
         setSelectedStudents(next)
     }
-    // Custom Date Input for DD/MM/YYYY format
-    const InstitutionalDateInput = ({ value, onChange, label }: { value: string, onChange: (val: string) => void, label: string }) => {
-        const pickerRef = useRef<HTMLInputElement>(null)
-        // Convert YYYY-MM-DD to DD/MM/YYYY for display
-        const displayValue = useMemo(() => {
-            if (!value) return ''
-            const [y, m, d] = value.split('-')
-            return `${d}/${m}/${y}`
-        }, [value])
-        const onTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-            let val = e.target.value.replace(/[^0-9/]/g, '')
-            if (val.length === 2 && !val.includes('/')) val += '/'
-            if (val.length === 5 && val.split('/').length === 2) val += '/'
-            if (val.length > 10) val = val.substring(0, 10)
-            if (val.length === 10) {
-                const [d, m, y] = val.split('/')
-                if (parseInt(m) <= 12 && parseInt(d) <= 31) {
-                    onChange(`${y}-${m}-${d}`)
-                }
-            }
+
+    const toggleSelectAllEligible = () => {
+        const eligibleInFilter = filteredPreview.filter(p => p.can_promote).map(p => p.id)
+        const allSelected = eligibleInFilter.every(id => selectedStudents.has(id))
+        const next = new Set(selectedStudents)
+
+        if (allSelected) {
+            eligibleInFilter.forEach(id => next.delete(id))
+        } else {
+            eligibleInFilter.forEach(id => next.add(id))
         }
-        const triggerPicker = () => {
-            const picker = pickerRef.current as any;
-            if (picker) {
-                try {
-                    if ('showPicker' in picker) {
-                        picker.showPicker();
-                    } else {
-                        picker.click();
-                    }
-                } catch (e) {
-                    picker.click();
-                }
-            }
-        }
-        return (
-            <div style={{ position: 'relative' }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase' }}>{label}</label>
-                <div 
-                    onClick={triggerPicker}
-                    style={{ position: 'relative', cursor: 'pointer' }}
-                >
-                    <input 
-                        type="text" placeholder="DD/MM/YYYY" 
-                        value={displayValue}
-                        onChange={onTextChange}
-                        readOnly // Prevent keyboard on mobile for this field, use picker
-                        style={{ 
-                            width: '100%', padding: '14px 48px 14px 18px', borderRadius: 14, border: '1px solid #E2E8F0', 
-                            fontSize: 14, fontWeight: 700, color: '#0F172A', outline: 'none', cursor: 'pointer'
-                        }}
-                    />
-                    <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                        <Calendar size={18} color="#94A3B8" />
-                    </div>
-                    {/* Hidden Native Picker */}
-                    <input 
-                        ref={pickerRef}
-                        type="date" 
-                        value={value} 
-                        onChange={(e) => onChange(e.target.value)}
-                        style={{ 
-                            position: 'absolute', right: 0, top: 0, width: 0, height: 0, 
-                            opacity: 0, border: 'none', padding: 0
-                        }}
-                    />
-                </div>
-            </div>
-        )
+        setSelectedStudents(next)
     }
-    if (loading && !years.length) return (
-        <div style={{ padding: 100, textAlign: 'center' }}>
-            <div style={{ width: 48, height: 48, border: '4px solid var(--color-primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 32px' }} />
-            <p style={{ fontSize: 18, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.02em' }}>Synchronizing Academic Core...</p>
-        </div>
-    )
+
     return (
-        <div style={{ padding: '40px 60px', background: '#F8FAFC', minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
-            {/* ── HEADER ── */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 48 }}>
-                <div>
-                    <h1 style={{ fontSize: 36, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.04em', margin: 0, display: 'flex', alignItems: 'center', gap: 16 }}>
-                        <Rocket size={32} color="var(--color-primary)" /> Academic Lifecycle Portal
-                    </h1>
-                    <p style={{ color: '#64748B', fontSize: 16, fontWeight: 600, marginTop: 12, maxWidth: 600 }}>Manage institutional cycles, define promotion vectors, and execute mass student migrations across academic years.</p>
+        <div className="min-h-screen bg-[#F8FAFC] pb-20 font-sans antialiased">
+            {/* ── TOAST NOTIFICATIONS ── */}
+            <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+                {toasts.map(toast => (
+                    <div
+                        key={toast.id}
+                        className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-semibold transition-all duration-300 backdrop-blur-md ${
+                            toast.type === 'success'
+                                ? 'bg-emerald-950/90 text-emerald-100 border-emerald-500/30'
+                                : toast.type === 'error'
+                                ? 'bg-rose-950/90 text-rose-100 border-rose-500/30'
+                                : 'bg-slate-900/90 text-slate-100 border-slate-700/50'
+                        }`}
+                    >
+                        {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />}
+                        {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />}
+                        {toast.type === 'info' && <Info className="w-5 h-5 text-sky-400 shrink-0" />}
+                        <span>{toast.message}</span>
+                    </div>
+                ))}
+            </div>
+
+            {/* ── HERO BANNER ── */}
+            <div className="relative mx-6 sm:mx-10 mt-6 rounded-[28px] overflow-hidden border border-slate-200/80 shadow-sm bg-slate-900">
+                <div className="relative h-64 sm:h-72 w-full">
+                    <Image
+                        src="/assets/images/dashboard/academic_lifecycle_banner.jpg"
+                        alt="Academic Lifecycle Chronometer"
+                        fill
+                        priority
+                        className="object-cover object-center opacity-85"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/70 to-slate-900/40" />
                 </div>
-                <div style={{ background: '#FFF', padding: '10px', borderRadius: 20, border: '1px solid #E2E8F0', display: 'flex', gap: 6, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-                    {(['years', 'rules', 'promote'] as const).map(tab => (
-                        <button 
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            style={{ 
-                                padding: '12px 24px', borderRadius: 14, border: 'none', background: activeTab === tab ? 'var(--color-primary-bg)' : 'transparent',
-                                color: activeTab === tab ? 'var(--color-primary)' : '#64748B', fontSize: 14, fontWeight: 800, cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                display: 'flex', alignItems: 'center', gap: 10
-                            }}
-                        >
-                            {tab === 'years' && <Calendar size={18} />}
-                            {tab === 'rules' && <Settings2 size={18} />}
-                            {tab === 'promote' && <TrendingUp size={18} />}
-                            {tab.toUpperCase()}
-                        </button>
-                    ))}
+
+                <div className="absolute inset-0 p-8 sm:p-10 flex flex-col justify-between">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-500/20 text-sky-200 border border-sky-400/30 backdrop-blur-md">
+                            <Clock className="w-3.5 h-3.5" /> Institutional Chronometer
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 backdrop-blur-md">
+                            <ShieldCheck className="w-3.5 h-3.5" /> Audit Verified
+                        </span>
+                        {activeYear && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 backdrop-blur-md">
+                                <Sparkles className="w-3.5 h-3.5" /> {activeYear.name}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="max-w-2xl">
+                        <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+                            Academic Lifecycle & Promotion Engine
+                        </h1>
+                        <p className="mt-2 text-sm sm:text-base text-slate-300 font-medium leading-relaxed">
+                            Orchestrate annual academic sessions, calibrate class progression vectors, and execute audit-backed mass student migrations across institutional cycles.
+                        </p>
+                    </div>
                 </div>
             </div>
-            {/* ── CONTENT ── */}
-            <div style={{ position: 'relative' }}>
-                {activeTab === 'years' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: 48 }}>
-                        {/* FORM */}
-                        <div style={{ background: '#FFF', padding: 40, borderRadius: 32, border: '1px solid #E2E8F0', height: 'fit-content', position: 'sticky', top: 40, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.05)' }}>
-                            <div style={{ width: 48, height: 48, background: 'var(--color-primary-bg)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
-                                {editingYear ? <Edit size={24} color="var(--color-primary)" /> : <Plus size={24} color="var(--color-primary)" />}
+
+            {/* ── EXECUTIVE KPI TELEMETRY CARDS ── */}
+            <div className="mx-6 sm:mx-10 mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {/* KPI 1 */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-start justify-between">
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Active Operational Cycle</p>
+                        <h3 className="text-xl font-black text-slate-900 mt-2 truncate">
+                            {activeYear ? activeYear.name : 'Not Configured'}
+                        </h3>
+                        <p className="text-xs font-semibold text-slate-500 mt-1 flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+                            {activeYear ? `${formatDate(activeYear.start_date)} → ${formatDate(activeYear.end_date)}` : 'Initialize a session'}
+                        </p>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center shrink-0">
+                        <Calendar className="w-6 h-6 text-emerald-600" />
+                    </div>
+                </div>
+
+                {/* KPI 2 */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-start justify-between">
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Session Archives</p>
+                        <h3 className="text-2xl font-black text-slate-900 mt-2">
+                            {years.length} <span className="text-sm font-semibold text-slate-400">Recorded</span>
+                        </h3>
+                        <p className="text-xs font-semibold text-slate-500 mt-1">
+                            {years.filter(y => !y.is_active).length} Archived Historical Sessions
+                        </p>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-sky-50 border border-sky-200/60 flex items-center justify-center shrink-0">
+                        <History className="w-6 h-6 text-sky-600" />
+                    </div>
+                </div>
+
+                {/* KPI 3 */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-start justify-between">
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Promotion Vectors</p>
+                        <h3 className="text-2xl font-black text-slate-900 mt-2">
+                            {rules.length} <span className="text-sm font-semibold text-slate-400">Rules</span>
+                        </h3>
+                        <p className="text-xs font-semibold text-slate-500 mt-1">
+                            {classes.length > 0 ? `${Math.min(100, Math.round((rules.length / classes.length) * 100))}% Class Path Coverage` : 'No classes set'}
+                        </p>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-200/60 flex items-center justify-center shrink-0">
+                        <Settings2 className="w-6 h-6 text-indigo-600" />
+                    </div>
+                </div>
+
+                {/* KPI 4 */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-start justify-between">
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Migration Candidates</p>
+                        <h3 className="text-2xl font-black text-slate-900 mt-2">
+                            {stats?.total_candidates ?? 0} <span className="text-sm font-semibold text-slate-400">Students</span>
+                        </h3>
+                        <p className="text-xs font-semibold text-emerald-600 mt-1 flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            {stats?.migration_readiness_pct ?? 100}% Vector Compliance
+                        </p>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200/60 flex items-center justify-center shrink-0">
+                        <Users className="w-6 h-6 text-amber-600" />
+                    </div>
+                </div>
+            </div>
+
+            {/* ── TAB NAVIGATION ── */}
+            <div className="mx-6 sm:mx-10 mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+                <div className="flex flex-wrap items-center gap-2 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60 w-fit">
+                    <button
+                        onClick={() => setActiveTab('years')}
+                        className={`px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 ${
+                            activeTab === 'years'
+                                ? 'bg-white text-slate-900 shadow-sm border border-slate-200/60'
+                                : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                    >
+                        <Calendar className="w-4 h-4 text-emerald-600" /> Academic Sessions
+                        <span className="px-2 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-700 font-extrabold">
+                            {years.length}
+                        </span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('rules')}
+                        className={`px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 ${
+                            activeTab === 'rules'
+                                ? 'bg-white text-slate-900 shadow-sm border border-slate-200/60'
+                                : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                    >
+                        <Settings2 className="w-4 h-4 text-indigo-600" /> Promotion Vectors
+                        <span className="px-2 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-700 font-extrabold">
+                            {rules.length}
+                        </span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('promote')}
+                        className={`px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 ${
+                            activeTab === 'promote'
+                                ? 'bg-white text-slate-900 shadow-sm border border-slate-200/60'
+                                : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                    >
+                        <TrendingUp className="w-4 h-4 text-sky-600" /> Mass Migration Audit
+                        {preview.length > 0 && (
+                            <span className="px-2 py-0.5 text-[10px] rounded-full bg-sky-100 text-sky-800 font-extrabold">
+                                {preview.length}
+                            </span>
+                        )}
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('logs')}
+                        className={`px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 ${
+                            activeTab === 'logs'
+                                ? 'bg-white text-slate-900 shadow-sm border border-slate-200/60'
+                                : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                    >
+                        <History className="w-4 h-4 text-amber-600" /> Audit Logs
+                        <span className="px-2 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-700 font-extrabold">
+                            {migrationLogs.length}
+                        </span>
+                    </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={fetchInitialData}
+                        className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition flex items-center gap-2 shadow-sm"
+                    >
+                        <RefreshCcw className={`w-3.5 h-3.5 text-slate-500 ${loading ? 'animate-spin' : ''}`} /> Sync Core
+                    </button>
+                </div>
+            </div>
+
+            {/* ── TAB 1: ACADEMIC SESSIONS (YEARS) ── */}
+            {activeTab === 'years' && (
+                <div className="mx-6 sm:mx-10 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    {/* LEFT: Initialize Session Form */}
+                    <div className="lg:col-span-5 bg-white p-7 rounded-3xl border border-slate-200/80 shadow-sm sticky top-6">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center mb-5">
+                            <Plus className="w-6 h-6 text-emerald-600" />
+                        </div>
+                        <h3 className="text-xl font-black text-slate-900">Initialize Academic Cycle</h3>
+                        <p className="text-xs text-slate-500 font-medium mt-1 mb-6">
+                            Configure standard calendar bounds for your institution&apos;s operational session.
+                        </p>
+
+                        {/* Quick Presets */}
+                        <div className="mb-6">
+                            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                                Quick Year Presets
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {[2026, 2027, 2028, 2029].map(yr => (
+                                    <button
+                                        key={yr}
+                                        type="button"
+                                        onClick={() => applyYearPreset(yr)}
+                                        className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700 transition"
+                                    >
+                                        {yr}-{String(yr + 1).slice(-2)}
+                                    </button>
+                                ))}
                             </div>
-                            <h3 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', marginBottom: 8 }}>{editingYear ? 'Recalibrate Cycle' : 'Initialize Session'}</h3>
-                            <p style={{ color: '#64748B', fontSize: 14, fontWeight: 600, marginBottom: 32 }}>Configure the operational dates for your institution's academic timeline.</p>
-                            <form onSubmit={editingYear ? handleUpdateYear : handleCreateYear}>
-                                <div style={{ marginBottom: 24 }}>
-                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cycle Designation</label>
-                                    <input 
-                                        type="text" required placeholder="e.g. 2024-2025"
-                                        value={editingYear ? editingYear.name : newYear.name} 
-                                        onChange={e => editingYear ? setEditingYear({...editingYear, name: e.target.value}) : setNewYear({...newYear, name: e.target.value})}
-                                        style={{ width: '100%', padding: '14px 18px', borderRadius: 14, border: '1px solid #E2E8F0', fontSize: 15, fontWeight: 700, color: '#0F172A', outline: 'none', transition: 'border 0.2s' }}
-                                    />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
-                                    <InstitutionalDateInput 
-                                        label="Activation"
-                                        value={editingYear ? editingYear.start_date : newYear.start_date}
-                                        onChange={val => editingYear ? setEditingYear({...editingYear, start_date: val}) : setNewYear({...newYear, start_date: val})}
-                                    />
-                                    <InstitutionalDateInput 
-                                        label="Termination"
-                                        value={editingYear ? editingYear.end_date : newYear.end_date}
-                                        onChange={val => editingYear ? setEditingYear({...editingYear, end_date: val}) : setNewYear({...newYear, end_date: val})}
-                                    />
-                                </div>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px', borderRadius: 16, background: '#F8FAFC', cursor: 'pointer', marginBottom: 32 }}>
-                                    <input 
-                                        type="checkbox" 
-                                        checked={editingYear ? editingYear.is_active : newYear.make_active} 
-                                        onChange={e => editingYear ? setEditingYear({...editingYear, is_active: e.target.checked}) : setNewYear({...newYear, make_active: e.target.checked})}
-                                        style={{ width: 20, height: 20, accentColor: '#014B93' }}
-                                    />
-                                    <span style={{ fontSize: 14, fontWeight: 700, color: '#475569' }}>Primary Active Session</span>
+                        </div>
+
+                        <form onSubmit={handleCreateYear} className="space-y-5">
+                            <div>
+                                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                                    Cycle Designation <span className="text-rose-500">*</span>
                                 </label>
-                                <div style={{ display: 'flex', gap: 12 }}>
-                                    {editingYear && (
-                                        <button type="button" onClick={() => setEditingYear(null)} style={{ flex: 1, height: 50, borderRadius: 14, border: '1px solid #E2E8F0', background: '#FFF', color: '#64748B', fontWeight: 800, cursor: 'pointer' }}>CANCEL</button>
-                                    )}
-                                    <button disabled={loading} style={{ flex: 2, height: 50, borderRadius: 14, border: 'none', background: 'var(--color-primary-gradient)', color: '#FFF', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, opacity: loading ? 0.7 : 1 }}>
-                                        {loading ? <RefreshCcw size={20} className="animate-spin" /> : <Save size={20} />} 
-                                        {editingYear ? 'PATCH SOURCE' : 'COMMIT SESSION'}
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="e.g. Academic Session 2027-28"
+                                    value={newYear.name}
+                                    onChange={e => setNewYear({ ...newYear, name: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                                        Activation Date <span className="text-rose-500">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={newYear.start_date}
+                                        onChange={e => setNewYear({ ...newYear, start_date: e.target.value })}
+                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                                        Termination Date <span className="text-rose-500">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={newYear.end_date}
+                                        onChange={e => setNewYear({ ...newYear, end_date: e.target.value })}
+                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                    />
+                                </div>
+                            </div>
+
+                            <label className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={newYear.make_active}
+                                    onChange={e => setNewYear({ ...newYear, make_active: e.target.checked })}
+                                    className="w-4 h-4 mt-0.5 rounded text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <div>
+                                    <p className="text-xs font-bold text-slate-800">Set as Primary Operational Session</p>
+                                    <p className="text-[11px] text-slate-500 mt-0.5">
+                                        Automatically switches the current active session flag. Previous operational sessions remain accessible as archives.
+                                    </p>
+                                </div>
+                            </label>
+
+                            <button
+                                type="submit"
+                                disabled={submittingYear}
+                                className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {submittingYear ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                Commit Academic Session
+                            </button>
+                        </form>
+                    </div>
+
+                    {/* RIGHT: List of Sessions */}
+                    <div className="lg:col-span-7 space-y-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                                Institutional Cycle Inventory ({years.length})
+                            </h4>
+                        </div>
+
+                        {years.length === 0 && (
+                            <div className="bg-white p-12 rounded-3xl border border-dashed border-slate-300 text-center">
+                                <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                                <h4 className="text-base font-bold text-slate-700">No Academic Sessions Registered</h4>
+                                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                                    Use the initialization panel on the left to designate your institution&apos;s active operational timeline.
+                                </p>
+                            </div>
+                        )}
+
+                        {years.map(yr => (
+                            <div
+                                key={yr.id}
+                                className={`bg-white p-6 rounded-3xl border transition-all duration-200 ${
+                                    yr.is_active
+                                        ? 'border-emerald-500 shadow-md shadow-emerald-500/5 ring-1 ring-emerald-500'
+                                        : 'border-slate-200/80 shadow-sm hover:border-slate-300'
+                                }`}
+                            >
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div className="flex items-start gap-4">
+                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
+                                            yr.is_active ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'
+                                        }`}>
+                                            <Calendar className="w-7 h-7" />
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2.5 flex-wrap">
+                                                <h4 className="text-lg font-black text-slate-900">{yr.name}</h4>
+                                                {yr.is_active ? (
+                                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                        Active Session
+                                                    </span>
+                                                ) : (
+                                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                                                        Archived Cycle
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-xs font-semibold text-slate-500 mt-1 flex items-center gap-3">
+                                                <span>Starts: <strong>{formatDate(yr.start_date)}</strong></span>
+                                                <span>•</span>
+                                                <span>Ends: <strong>{formatDate(yr.end_date)}</strong></span>
+                                            </p>
+                                            <div className="mt-2.5 flex items-center gap-2 text-xs font-bold text-slate-600">
+                                                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px]">
+                                                    {yr.classes_count ?? 0} Classes Bound
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 self-end sm:self-center">
+                                        {!yr.is_active && (
+                                            <button
+                                                onClick={() => handleSetActiveYear(yr)}
+                                                className="px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition"
+                                                title="Make this the current active session"
+                                            >
+                                                Set Active
+                                            </button>
+                                        )}
+
+                                        <button
+                                            onClick={() => setEditingYear(yr)}
+                                            className="w-9 h-9 rounded-xl border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-900 flex items-center justify-center transition"
+                                            title="Edit session details"
+                                        >
+                                            <Edit className="w-4 h-4" />
+                                        </button>
+
+                                        <button
+                                            onClick={() => fetchPreview(yr.id)}
+                                            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition flex items-center gap-1.5"
+                                        >
+                                            Audit <ChevronRight className="w-3.5 h-3.5" />
+                                        </button>
+
+                                        {!yr.is_active && (
+                                            <button
+                                                onClick={() => setYearToDelete(yr)}
+                                                className="w-9 h-9 rounded-xl border border-rose-200 hover:bg-rose-50 text-rose-600 flex items-center justify-center transition"
+                                                title="Delete this session"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ── TAB 2: PROMOTION VECTORS (RULES) ── */}
+            {activeTab === 'rules' && (
+                <div className="mx-6 sm:mx-10 mt-8 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-8 border-b border-slate-100">
+                        <div>
+                            <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                                <Settings2 className="w-7 h-7 text-indigo-600" /> Promotion Mapping Vectors
+                            </h3>
+                            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                                Establish deterministic pathways that govern how cohorts transition from one grade level to the next.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <button
+                                onClick={handleAutoGenerateRules}
+                                disabled={generatingRules || classes.length === 0}
+                                className="px-4 py-2.5 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 font-bold text-xs uppercase tracking-wider transition flex items-center gap-2 disabled:opacity-50"
+                                title="Inspects class sort order and automatically builds standard sequence"
+                            >
+                                <Sparkles className={`w-4 h-4 ${generatingRules ? 'animate-spin' : ''}`} />
+                                Auto-Generate Sequential Ladder
+                            </button>
+
+                            <button
+                                onClick={handleSaveRules}
+                                disabled={savingRules}
+                                className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider transition flex items-center gap-2 shadow-sm disabled:opacity-50"
+                            >
+                                {savingRules ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                Save Vector Schema
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Classes Warning if empty */}
+                    {classes.length === 0 && (
+                        <div className="mt-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 flex items-center gap-3 text-xs font-semibold">
+                            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+                            <span>No classes found in your institutional hierarchy. Add your classes in Academy Setup before building promotion vectors.</span>
+                        </div>
+                    )}
+
+                    {/* Rules Grid */}
+                    <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-5">
+                        {rules.length === 0 && (
+                            <div className="col-span-full py-16 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+                                <Settings2 className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                                <h4 className="text-base font-bold text-slate-700">No Vector Rules Defined</h4>
+                                <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                                    Click &quot;Auto-Generate Sequential Ladder&quot; to build standard Grade 9 → Grade 10 → Graduated rules, or click &quot;Initialize Mapping Vector&quot; below.
+                                </p>
+                            </div>
+                        )}
+
+                        {rules.map((rule, idx) => (
+                            <div
+                                key={idx}
+                                className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-slate-300 transition-all duration-200"
+                            >
+                                <div className="grid grid-cols-1 sm:grid-cols-11 gap-3 items-center">
+                                    {/* Source Stage */}
+                                    <div className="sm:col-span-5">
+                                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                                            Originating Stage
+                                        </label>
+                                        <select
+                                            value={rule.from_class}
+                                            onChange={e => {
+                                                const next = [...rules]
+                                                next[idx].from_class = e.target.value
+                                                setRules(next)
+                                            }}
+                                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                        >
+                                            <option value="">Select Origin Class</option>
+                                            {classes.map(c => (
+                                                <option key={c.id} value={c.name}>{c.name}</option>
+                                            ))}
+                                            {/* Retain arbitrary value if set outside classes */}
+                                            {rule.from_class && !classes.some(c => c.name === rule.from_class) && (
+                                                <option value={rule.from_class}>{rule.from_class} (Custom)</option>
+                                            )}
+                                        </select>
+                                    </div>
+
+                                    {/* Vector Arrow */}
+                                    <div className="sm:col-span-1 flex justify-center py-2 sm:py-0">
+                                        <div className="w-8 h-8 rounded-full bg-slate-200/80 flex items-center justify-center text-slate-500">
+                                            <ArrowRight className="w-4 h-4" />
+                                        </div>
+                                    </div>
+
+                                    {/* Destination Stage */}
+                                    <div className="sm:col-span-5">
+                                        <label className="block text-[10px] font-black uppercase tracking-wider text-indigo-500 mb-1">
+                                            Destination Stage
+                                        </label>
+                                        <select
+                                            value={rule.to_class}
+                                            onChange={e => {
+                                                const next = [...rules]
+                                                next[idx].to_class = e.target.value
+                                                setRules(next)
+                                            }}
+                                            className="w-full px-3.5 py-2.5 rounded-xl border border-indigo-200 bg-white text-xs font-extrabold text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                        >
+                                            <option value="">Select Target Class</option>
+                                            <option value="Graduated">🎓 Graduated / Institutional Alumni</option>
+                                            {classes.map(c => (
+                                                <option key={c.id} value={c.name}>{c.name}</option>
+                                            ))}
+                                            {rule.to_class && rule.to_class !== 'Graduated' && !classes.some(c => c.name === rule.to_class) && (
+                                                <option value={rule.to_class}>{rule.to_class} (Custom)</option>
+                                            )}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 pt-4 border-t border-slate-200/70 flex items-center justify-between">
+                                    <label className="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={rule.auto_promote ?? true}
+                                            onChange={e => {
+                                                const next = [...rules]
+                                                next[idx].auto_promote = e.target.checked
+                                                setRules(next)
+                                            }}
+                                            className="w-3.5 h-3.5 rounded text-indigo-600"
+                                        />
+                                        <span>Automated Resolution</span>
+                                    </label>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setRules(rules.filter((_, i) => i !== idx))}
+                                        className="text-[11px] font-black text-rose-600 hover:text-rose-800 uppercase tracking-wider flex items-center gap-1 transition"
+                                    >
+                                        <X className="w-3.5 h-3.5" /> Scrap Vector
                                     </button>
                                 </div>
-                            </form>
-                        </div>
-                        {/* LIST */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                            {years.length === 0 && (
-                                <div style={{ padding: 60, textAlign: 'center', background: '#FFF', borderRadius: 32, border: '2px dashed #E2E8F0' }}>
-                                    <Calendar size={48} color="#CBD5E1" style={{ marginBottom: 20 }} />
-                                    <h4 style={{ fontSize: 18, fontWeight: 900, color: '#64748B' }}>No Academic Cycles Initialized</h4>
-                                    <p style={{ color: '#94A3B8', fontSize: 14 }}>Begin by designating your institution's primary operational session.</p>
-                                </div>
-                            )}
-                            {years.map((y: any) => (
-                                <div key={y.id} style={{ 
-                                    background: '#FFF', padding: 32, borderRadius: 32, 
-                                    border: y.is_active ? '2px solid var(--color-primary)' : '1px solid #E2E8F0', 
-                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                    boxShadow: y.is_active ? '0 10px 15px -3px rgba(1,75,147,0.1)' : 'none'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-                                        <div style={{ width: 64, height: 64, background: y.is_active ? 'var(--color-primary)' : '#F1F5F9', borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <Calendar size={32} color={y.is_active ? '#FFF' : '#94A3B8'} />
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                {y.name}
-                                                {y.is_active && <span style={{ fontSize: 11, background: '#1FAC63', color: '#FFF', padding: '4px 12px', borderRadius: 8 }}>ACTIVE SESSION</span>}
-                                            </div>
-                                            <div style={{ fontSize: 14, fontWeight: 700, color: '#64748B', display: 'flex', gap: 16, marginTop: 4 }}>
-                                                <span>Starts: {formatDate(y.start_date)}</span>
-                                                <span>Ends: {formatDate(y.end_date)}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: 12 }}>
-                                        <button onClick={() => setEditingYear(y)} style={{ height: 48, width: 48, borderRadius: 14, border: '1px solid #E2E8F0', background: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}>
-                                            <Edit size={20} color="#64748B" />
-                                        </button>
-                                        <button 
-                                            onClick={() => fetchPreview(y.id)} 
-                                            style={{ 
-                                                height: 48, padding: '0 24px', borderRadius: 14, border: 'none', 
-                                                background: '#0F172A', color: '#FFF', fontSize: 14, fontWeight: 900, 
-                                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10
-                                            }}
-                                        >
-                                            RECORDS AUDIT <ChevronRight size={18} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-                {activeTab === 'rules' && (
-                    <div style={{ background: '#FFF', padding: 60, borderRadius: 40, border: '1px solid #E2E8F0', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.05)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 48 }}>
-                            <div>
-                                <h3 style={{ fontSize: 28, fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 16, margin: 0 }}>
-                                    <Settings2 size={32} color="var(--color-primary)" /> Promotion Mapping Rules
-                                </h3>
-                                <p style={{ color: '#64748B', fontSize: 16, fontWeight: 500, marginTop: 8 }}>Establish the logical paths students follow as they transition between academic nodes.</p>
                             </div>
-                            <button 
-                                onClick={handleSaveRules} 
-                                disabled={savingRules}
-                                style={{ 
-                                    background: '#0F172A', color: '#FFF', padding: '16px 36px', borderRadius: 16, border: 'none', 
-                                    fontWeight: 900, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12,
-                                    opacity: savingRules ? 0.7 : 1
-                                }}
-                            >
-                                {savingRules ? <RefreshCcw size={20} className="animate-spin" /> : <Save size={20} />} SAVE RULES
-                            </button>
+                        ))}
+
+                        {/* Add Vector Button */}
+                        <button
+                            type="button"
+                            onClick={() => setRules([...rules, { from_class: '', to_class: '', to_division: '', auto_promote: true }])}
+                            className="p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:border-indigo-400 bg-transparent hover:bg-indigo-50/30 transition text-slate-500 hover:text-indigo-600 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 min-h-[140px]"
+                        >
+                            <Plus className="w-5 h-5" /> Initialize Mapping Vector
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ── TAB 3: MASS MIGRATION ENGINE (PROMOTE) ── */}
+            {activeTab === 'promote' && (
+                <div className="mx-6 sm:mx-10 mt-8 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-sm">
+                    {/* Header Controls */}
+                    <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-8 border-b border-slate-100">
+                        <div className="max-w-xl">
+                            <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                                <TrendingUp className="w-7 h-7 text-sky-600" /> Mass Cohort Migration Audit
+                            </h3>
+                            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                                Evaluate student readiness against established vectors and execute atomic progression into the target session.
+                            </p>
+
+                            {/* Destination Session Selector */}
+                            <div className="mt-5 flex items-center gap-3">
+                                <label className="text-xs font-black uppercase tracking-wider text-slate-400 shrink-0">
+                                    Target Session:
+                                </label>
+                                <select
+                                    value={targetYearId}
+                                    onChange={e => fetchPreview(e.target.value)}
+                                    className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                                >
+                                    <option value="">Select Destination Academic Session</option>
+                                    {years.map(y => (
+                                        <option key={y.id} value={y.id}>
+                                            {y.name} {y.is_active ? '(Active)' : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
-                            {rules.length === 0 && (
-                                <div style={{ gridColumn: 'span 2', padding: 80, textAlign: 'center', background: '#F8FAFC', borderRadius: 32, border: '2px dashed #E2E8F0' }}>
-                                    <Settings2 size={48} color="#CBD5E1" style={{ marginBottom: 20 }} />
-                                    <h4 style={{ fontSize: 18, fontWeight: 900, color: '#64748B' }}>No Rules Added</h4>
-                                    <p style={{ color: '#94A3B8', fontSize: 14 }}>Initialize your first logical vector to begin defining promotion paths.</p>
+
+                        {/* Summary Pill & Action Button */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                            {previewSummary && (
+                                <div className="px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 flex items-center gap-4">
+                                    <span>Eligible: <strong className="text-emerald-700">{previewSummary.eligible_count}</strong></span>
+                                    <span>Graduating: <strong className="text-indigo-700">{previewSummary.graduating_count}</strong></span>
+                                    <span>Missing Rules: <strong className="text-rose-700">{previewSummary.missing_rules_count}</strong></span>
                                 </div>
                             )}
-                            {rules.map((rule, idx) => (
-                                <div key={idx} style={{ padding: 32, background: '#F8FAFC', borderRadius: 32, border: '1px solid #F1F5F9', transition: 'all 0.2s' }}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 40px 2.2fr', alignItems: 'center', gap: 20 }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#94A3B8', marginBottom: 12, textTransform: 'uppercase' }}>Current Stage</label>
-                                            <input 
-                                                type="text" placeholder="e.g. 5th" value={rule.from_class} 
-                                                onChange={e => {
-                                                    const newRules = [...rules]
-                                                    newRules[idx].from_class = e.target.value
-                                                    setRules(newRules)
-                                                }}
-                                                style={{ width: '100%', padding: '14px', borderRadius: 14, border: '1px solid #E2E8F0', fontSize: 15, fontWeight: 800, color: '#0F172A' }}
-                                            />
-                                        </div>
-                                        <div style={{ paddingTop: 30 }}><ArrowRight size={24} color="#CBD5E1" /></div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 12 }}>
-                                            <div>
-                                                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#94A3B8', marginBottom: 12, textTransform: 'uppercase' }}>Target Class</label>
-                                                <input 
-                                                    type="text" placeholder="e.g. 6th" value={rule.to_class} 
-                                                    onChange={e => {
-                                                        const newRules = [...rules]
-                                                        newRules[idx].to_class = e.target.value
-                                                        setRules(newRules)
-                                                    }}
-                                                    style={{ width: '100%', padding: '14px', borderRadius: 14, border: '1px solid #E2E8F0', fontSize: 15, fontWeight: 900, color: '#014B93' }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#94A3B8', marginBottom: 12, textTransform: 'uppercase' }}>Target Div</label>
-                                                <input 
-                                                    type="text" placeholder="Same" value={rule.to_division || ''}
-                                                    onChange={e => {
-                                                        const newRules = [...rules]
-                                                        newRules[idx].to_division = e.target.value
-                                                        setRules(newRules)
-                                                    }}
-                                                    style={{ width: '100%', padding: '14px', borderRadius: 14, border: '1px solid #E2E8F0', fontSize: 15, fontWeight: 900, color: '#1FAC63' }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24 }}>
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: '#64748B', cursor: 'pointer' }}>
-                                            <input type="checkbox" checked={rule.auto_promote} onChange={e => {
-                                                const newRules = [...rules]
-                                                newRules[idx].auto_promote = e.target.checked
-                                                setRules(newRules)
-                                            }} style={{ accentColor: '#014B93' }} /> Auto-Resolution
-                                        </label>
-                                        <button onClick={() => setRules(rules.filter((_, i) => i !== idx))} style={{ background: 'transparent', border: 'none', color: '#EF4444', fontSize: 12, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            <X size={14} /> SCRAP VECTOR
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                            <button 
-                                onClick={() => setRules([...rules, { from_class: '', to_class: '', to_division: '', auto_promote: true }])}
-                                style={{ padding: 40, borderRadius: 32, border: '2px dashed #E2E8F0', background: 'transparent', color: '#94A3B8', fontSize: 16, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, transition: 'all 0.2s' }}
+
+                            <button
+                                onClick={() => setConfirmMigrationOpen(true)}
+                                disabled={selectedStudents.size === 0 || !targetYearId}
+                                className="px-6 py-3 rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-sky-600/20 transition flex items-center justify-center gap-2 disabled:opacity-40"
                             >
-                                <Plus size={24} /> INITIALIZE MAPPING VECTOR
+                                <Rocket className="w-4 h-4" /> Authorize Migration ({selectedStudents.size})
                             </button>
                         </div>
                     </div>
-                )}
-                {activeTab === 'promote' && (
-                    <div style={{ background: '#FFF', padding: 60, borderRadius: 40, border: '1px solid #E2E8F0', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.05)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48, gap: 40 }}>
-                            <div style={{ flex: 1 }}>
-                                <h3 style={{ fontSize: 28, fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 16, margin: 0 }}>
-                                    <TrendingUp size={32} color="var(--color-primary)" /> Mass Migration Audit
-                                </h3>
-                                <p style={{ color: '#64748B', fontSize: 16, fontWeight: 500, marginTop: 12 }}>Currently processing <span style={{ color: '#0F172A', fontWeight: 900 }}>{selectedStudents.size} candidates</span> for institutional migration.</p>
-                                <div style={{ position: 'relative', marginTop: 24, maxWidth: 400 }}>
-                                    <Search size={18} color="#94A3B8" style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }} />
-                                    <input 
-                                        type="text" placeholder="Filter by candidate or stage..." 
-                                        value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                                        style={{ width: '100%', padding: '14px 14px 14px 48px', borderRadius: 16, border: '1px solid #E2E8F0', background: '#F8FAFC', fontSize: 14, fontWeight: 700, outline: 'none' }}
+
+                    {/* Candidate Filters & Search */}
+                    <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
+                            {[
+                                { key: 'ALL', label: 'All Candidates' },
+                                { key: 'ELIGIBLE', label: 'Audit Passed' },
+                                { key: 'GRADUATING', label: 'Graduating' },
+                                { key: 'MISSING', label: 'Rule Missing' }
+                            ].map(tab => (
+                                <button
+                                    key={tab.key}
+                                    onClick={() => setCandidateFilter(tab.key as any)}
+                                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
+                                        candidateFilter === tab.key
+                                            ? 'bg-slate-900 text-white'
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="relative w-full sm:w-72">
+                            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Search candidate or class..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Candidate Table */}
+                    <div className="mt-5 border border-slate-200/80 rounded-2xl overflow-hidden">
+                        <table className="w-full border-collapse text-left text-xs">
+                            <thead>
+                                <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-black uppercase tracking-wider text-slate-400">
+                                    <th className="py-3.5 px-4 w-12 text-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={filteredPreview.length > 0 && filteredPreview.filter(p => p.can_promote).every(p => selectedStudents.has(p.id))}
+                                            onChange={toggleSelectAllEligible}
+                                            className="w-4 h-4 rounded text-sky-600"
+                                        />
+                                    </th>
+                                    <th className="py-3.5 px-4">Student Candidate</th>
+                                    <th className="py-3.5 px-4">Current Stage</th>
+                                    <th className="py-3.5 px-4">Calculated Target Stage</th>
+                                    <th className="py-3.5 px-4 text-right">Audit Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 font-semibold">
+                                {filteredPreview.length === 0 && (
+                                    <tr>
+                                        <td colSpan={5} className="py-16 text-center text-slate-400">
+                                            {targetYearId ? (
+                                                <div className="max-w-xs mx-auto">
+                                                    <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                                                    <p className="font-bold text-slate-700">No student candidates found</p>
+                                                    <p className="text-[11px] text-slate-400 mt-0.5">Adjust filter criteria or verify enrolled students in your directory.</p>
+                                                </div>
+                                            ) : (
+                                                <p className="font-bold text-slate-500">Please select a destination academic session above to begin audit.</p>
+                                            )}
+                                        </td>
+                                    </tr>
+                                )}
+
+                                {filteredPreview.map(p => (
+                                    <tr
+                                        key={p.id}
+                                        className={`hover:bg-slate-50/80 transition ${
+                                            selectedStudents.has(p.id) ? 'bg-sky-50/40' : ''
+                                        }`}
+                                    >
+                                        <td className="py-3 px-4 text-center">
+                                            <input
+                                                type="checkbox"
+                                                disabled={!p.can_promote}
+                                                checked={selectedStudents.has(p.id)}
+                                                onChange={() => toggleStudent(p.id)}
+                                                className="w-4 h-4 rounded text-sky-600 disabled:opacity-30"
+                                            />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <p className="font-bold text-slate-900">{p.name}</p>
+                                            {p.email && <p className="text-[11px] text-slate-400">{p.email}</p>}
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-[11px] font-bold">
+                                                {p.old_class} {p.old_division && `• Div ${p.old_division}`}
+                                            </span>
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            {p.is_graduating ? (
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-extrabold">
+                                                    <GraduationCap className="w-3.5 h-3.5 text-emerald-600" /> Alumni / Graduated
+                                                </span>
+                                            ) : p.can_promote ? (
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-800 border border-indigo-200 text-[11px] font-extrabold">
+                                                    <ArrowRight className="w-3 h-3 text-indigo-500" /> {p.new_class} {p.new_division && `(${p.new_division})`}
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold">
+                                                    {p.new_class}
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-4 text-right">
+                                            {p.audit_status === 'AUDIT_PASSED' && (
+                                                <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> PASSED
+                                                </span>
+                                            )}
+                                            {p.audit_status === 'GRADUATING' && (
+                                                <span className="inline-flex items-center gap-1 text-[11px] font-black text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200">
+                                                    <Award className="w-3.5 h-3.5 text-indigo-500" /> GRADUATING
+                                                </span>
+                                            )}
+                                            {p.audit_status === 'RULE_MISSING' && (
+                                                <span className="inline-flex items-center gap-1 text-[11px] font-black text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200">
+                                                    <AlertCircle className="w-3.5 h-3.5 text-rose-500" /> RULE MISSING
+                                                </span>
+                                            )}
+                                            {p.audit_status === 'ALREADY_MIGRATED' && (
+                                                <span className="inline-flex items-center gap-1 text-[11px] font-black text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
+                                                    ALREADY IN TARGET
+                                                </span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* ── TAB 4: AUDIT LOGS (HISTORY) ── */}
+            {activeTab === 'logs' && (
+                <div className="mx-6 sm:mx-10 mt-8 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-sm">
+                    <div className="pb-6 border-b border-slate-100">
+                        <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                            <History className="w-7 h-7 text-amber-600" /> Lifecycle Audit Trail
+                        </h3>
+                        <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                            Immutable telemetry log of previous cohort promotions and graduation authorizations.
+                        </p>
+                    </div>
+
+                    <div className="mt-6 border border-slate-200/80 rounded-2xl overflow-hidden">
+                        <table className="w-full border-collapse text-left text-xs">
+                            <thead>
+                                <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-black uppercase tracking-wider text-slate-400">
+                                    <th className="py-3.5 px-4">Event Timestamp</th>
+                                    <th className="py-3.5 px-4">Target Academic Cycle</th>
+                                    <th className="py-3.5 px-4 text-center">Promoted</th>
+                                    <th className="py-3.5 px-4 text-center">Graduated</th>
+                                    <th className="py-3.5 px-4 text-center">Failed</th>
+                                    <th className="py-3.5 px-4 text-right">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 font-semibold">
+                                {migrationLogs.length === 0 && (
+                                    <tr>
+                                        <td colSpan={6} className="py-16 text-center text-slate-400">
+                                            <History className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                                            <p className="font-bold text-slate-700">No migration events recorded</p>
+                                            <p className="text-[11px] text-slate-400 mt-0.5">Historical logs will appear automatically once a cohort migration is executed.</p>
+                                        </td>
+                                    </tr>
+                                )}
+
+                                {migrationLogs.map(log => {
+                                    const matchedYear = years.find(y => y.id === log.academic_year_id)
+                                    return (
+                                        <tr key={log.id} className="hover:bg-slate-50 transition">
+                                            <td className="py-3.5 px-4 font-bold text-slate-900">
+                                                {new Date(log.created_at).toLocaleString()}
+                                            </td>
+                                            <td className="py-3.5 px-4 font-bold text-indigo-700">
+                                                {matchedYear ? matchedYear.name : log.academic_year_id}
+                                            </td>
+                                            <td className="py-3.5 px-4 text-center font-bold text-emerald-600">
+                                                {log.promoted_count}
+                                            </td>
+                                            <td className="py-3.5 px-4 text-center font-bold text-sky-600">
+                                                {log.graduated_count}
+                                            </td>
+                                            <td className="py-3.5 px-4 text-center font-bold text-rose-500">
+                                                {log.failed_count}
+                                            </td>
+                                            <td className="py-3.5 px-4 text-right">
+                                                <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> COMMITTED
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* ── MODAL: EDIT ACADEMIC SESSION ── */}
+            {editingYear && (
+                <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-lg rounded-3xl p-7 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                    <Edit className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900">Recalibrate Session</h3>
+                                    <p className="text-xs text-slate-500 font-medium">Update academic cycle parameters</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setEditingYear(null)}
+                                className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleUpdateYear} className="mt-5 space-y-4">
+                            <div>
+                                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                                    Cycle Designation
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={editingYear.name}
+                                    onChange={e => setEditingYear({ ...editingYear, name: e.target.value })}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                                        Activation Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={editingYear.start_date}
+                                        onChange={e => setEditingYear({ ...editingYear, start_date: e.target.value })}
+                                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                                        Termination Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={editingYear.end_date}
+                                        onChange={e => setEditingYear({ ...editingYear, end_date: e.target.value })}
+                                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                                     />
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 320 }}>
-                                <label style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>Destination Academic Node</label>
-                                <select 
-                                    value={targetYearId} onChange={e => fetchPreview(e.target.value)}
-                                    style={{ width: '100%', padding: '16px 20px', borderRadius: 16, border: '1px solid #E2E8F0', background: '#F8FAFC', fontSize: 15, fontWeight: 900, color: '#0F172A', outline: 'none' }}
+
+                            <label className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={editingYear.is_active}
+                                    onChange={e => setEditingYear({ ...editingYear, is_active: e.target.checked })}
+                                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <span className="text-xs font-bold text-slate-700">Primary Active Operational Session</span>
+                            </label>
+
+                            <div className="flex gap-3 pt-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setEditingYear(null)}
+                                    className="flex-1 py-2.5 rounded-xl border border-slate-200 font-bold text-xs text-slate-600 hover:bg-slate-50"
                                 >
-                                    <option value="">Select Target Cycle</option>
-                                    {years.map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
-                                </select>
-                                <button 
-                                    onClick={executePromotion}
-                                    disabled={executing || selectedStudents.size === 0}
-                                    style={{ 
-                                        width: '100%', height: 56, borderRadius: 18, border: 'none', 
-                                        background: (executing || selectedStudents.size === 0) ? '#F1F5F9' : 'var(--color-primary-gradient)', 
-                                        color: (executing || selectedStudents.size === 0) ? '#94A3B8' : '#FFF', 
-                                        fontWeight: 900, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-                                        boxShadow: (executing || selectedStudents.size === 0) ? 'none' : '0 15px 30px -5px rgba(1,75,147,0.3)'
-                                    }}
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={submittingYear}
+                                    className="flex-1 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider shadow-sm flex items-center justify-center gap-2"
                                 >
-                                    {executing ? <RefreshCcw size={22} className="animate-spin" /> : <Rocket size={22} />} AUTHORIZE MIGRATION
+                                    {submittingYear ? <RefreshCcw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                    Save Changes
                                 </button>
                             </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ── MODAL: CONFIRM MASS MIGRATION ── */}
+            {confirmMigrationOpen && (
+                <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-md rounded-3xl p-7 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 border border-sky-200/60 flex items-center justify-center mb-4">
+                            <Rocket className="w-6 h-6" />
                         </div>
-                        <div style={{ border: '1px solid #E2E8F0', borderRadius: 28, overflow: 'hidden' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <thead>
-                                    <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                                        <th style={{ padding: '20px 32px', textAlign: 'left', width: 60 }}>
-                                            <input 
-                                                type="checkbox" 
-                                                checked={selectedStudents.size === filteredPreview.filter(p => p.can_promote).length && filteredPreview.length > 0} 
-                                                onChange={e => {
-                                                    if (e.target.checked) setSelectedStudents(new Set(preview.filter(p => p.can_promote).map(p => p.id)))
-                                                    else setSelectedStudents(new Set())
-                                                }}
-                                                style={{ width: 18, height: 18, accentColor: '#014B93' }}
-                                            />
-                                        </th>
-                                        <th style={{ textAlign: 'left', padding: '20px', fontSize: 12, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Candidate Identity</th>
-                                        <th style={{ textAlign: 'left', padding: '20px', fontSize: 12, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>Source Node</th>
-                                        <th style={{ textAlign: 'left', padding: '20px', fontSize: 12, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>Target Node</th>
-                                        <th style={{ textAlign: 'right', padding: '20px 32px', fontSize: 12, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>Audit Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredPreview.length === 0 && (
-                                        <tr>
-                                            <td colSpan={5} style={{ padding: 100, textAlign: 'center' }}>
-                                                <Users size={40} color="#CBD5E1" style={{ marginBottom: 16 }} />
-                                                <p style={{ color: '#94A3B8', fontWeight: 700 }}>No candidates matched the current filter or target node.</p>
-                                            </td>
-                                        </tr>
-                                    )}
-                                    {filteredPreview.map((p: any) => (
-                                        <tr key={p.id} style={{ borderBottom: '1px solid #F1F5F9', background: selectedStudents.has(p.id) ? '#F8FAFF' : 'transparent', transition: 'background 0.2s' }}>
-                                            <td style={{ padding: '20px 32px' }}>
-                                                <input 
-                                                    type="checkbox" 
-                                                    disabled={!p.can_promote}
-                                                    checked={selectedStudents.has(p.id)} 
-                                                    onChange={() => toggleStudent(p.id)}
-                                                    style={{ width: 18, height: 18, accentColor: '#014B93' }}
-                                                />
-                                            </td>
-                                            <td style={{ padding: '20px', fontSize: 15, fontWeight: 800, color: '#014B93' }}>{p.name}</td>
-                                            <td style={{ padding: '20px' }}>
-                                                <div style={{ fontSize: 14, fontWeight: 700, color: '#64748B', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                    {p.old_class} <span style={{ padding: '2px 8px', background: '#F1F5F9', borderRadius: 6, fontSize: 11, fontWeight: 900 }}>{p.old_division}</span>
-                                                </div>
-                                            </td>
-                                             <td style={{ padding: '20px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: p.new_class === 'Graduated' ? '#10B981' : 'var(--color-primary)', fontSize: 15, fontWeight: 900 }}>
-                                                    {p.new_class} {p.new_division && <span style={{ background: '#ECFDF5', color: '#10B981', padding: '3px 10px', borderRadius: 8, fontSize: 11 }}>DIV: {p.new_division}</span>}
-                                                    {p.new_class === 'Graduated' ? <GraduationCap size={18} /> : <ArrowRight size={16} />}
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '20px 32px', textAlign: 'right' }}>
-                                                {p.can_promote ? (
-                                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#ECFDF5', color: '#10B981', padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 800 }}>
-                                                        <CheckCircle2 size={14} /> AUDIT PASSED
-                                                    </div>
-                                                ) : (
-                                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#FEF2F2', color: '#EF4444', padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 800 }}>
-                                                        <AlertCircle size={14} /> RULE MISSING
-                                                    </div>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <h3 className="text-xl font-black text-slate-900">Authorize Mass Migration</h3>
+                        <p className="text-xs text-slate-500 font-medium mt-1">
+                            You are about to execute an irreversible cohort migration into{' '}
+                            <strong className="text-slate-800 font-bold">
+                                {years.find(y => y.id === targetYearId)?.name}
+                            </strong>.
+                        </p>
+
+                        <div className="my-5 p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+                            <div className="flex justify-between font-semibold">
+                                <span className="text-slate-500">Total Selected Candidates:</span>
+                                <span className="font-bold text-slate-900">{selectedStudents.size}</span>
+                            </div>
+                            <div className="flex justify-between font-semibold">
+                                <span className="text-slate-500">Destination Cycle:</span>
+                                <span className="font-bold text-indigo-700">{years.find(y => y.id === targetYearId)?.name}</span>
+                            </div>
+                            <div className="flex justify-between font-semibold">
+                                <span className="text-slate-500">Historical Records:</span>
+                                <span className="text-emerald-700 font-bold">Auto-Archived with Snapshot</span>
+                            </div>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-semibold flex items-start gap-2.5">
+                            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                            <span>
+                                Once committed, students will be bound to the new academic session. Previous state will be stored permanently in their historical records ledger.
+                            </span>
+                        </div>
+
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                type="button"
+                                onClick={() => setConfirmMigrationOpen(false)}
+                                className="flex-1 py-3 rounded-xl border border-slate-200 font-bold text-xs text-slate-600 hover:bg-slate-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                disabled={executing}
+                                onClick={executePromotion}
+                                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 text-white font-bold text-xs uppercase tracking-wider shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {executing ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                Confirm & Execute
+                            </button>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
+
+            {/* ── MODAL: DELETE SESSION CONFIRMATION ── */}
+            {yearToDelete && (
+                <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-md rounded-3xl p-7 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200/60 flex items-center justify-center mb-4">
+                            <Trash2 className="w-6 h-6" />
+                        </div>
+                        <h3 className="text-xl font-black text-slate-900">Delete Academic Cycle?</h3>
+                        <p className="text-xs text-slate-500 font-medium mt-1">
+                            Are you sure you want to permanently remove <strong className="text-slate-800">{yearToDelete.name}</strong>?
+                        </p>
+
+                        <p className="text-xs text-slate-500 mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                            Sessions with active classes or archived student records cannot be deleted.
+                        </p>
+
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                type="button"
+                                onClick={() => setYearToDelete(null)}
+                                className="flex-1 py-2.5 rounded-xl border border-slate-200 font-bold text-xs text-slate-600 hover:bg-slate-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleDeleteYear}
+                                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-rose-600/20"
+                            >
+                                Delete Cycle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
