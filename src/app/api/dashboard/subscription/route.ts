@@ -47,27 +47,42 @@ export async function GET(request: NextRequest) {
             .eq('is_active', true)
             .order('price', { ascending: true })
 
-        const available_plans = (dbPlans || []).map((p: any) => ({
-            id: p.id,
-            name: sanitizePlanName(p.name),
-            raw_name: p.name,
-            price: Number(p.price),
-            annual_price: Math.round(Number(p.price) * 12 * 0.8), // 20% discount on annual
-            max_students: p.max_students || 100,
-            max_teachers: p.max_teachers || 10,
-            max_storage_gb: p.max_storage_gb || 50,
-            max_ai_tokens: p.max_ai_tokens || 1000000,
-            features: [
-                `${p.max_students?.toLocaleString()} Student Nodes Capacity`,
-                `${p.max_teachers?.toLocaleString()} Faculty Slots`,
-                `${p.max_storage_gb || 50} GB Cloud Storage`,
-                `${((p.max_ai_tokens || 1000000) / 1000).toLocaleString()}k Monthly AI Generation Tokens`,
-                ...(p.features?.ai_mentor ? ['Dynamic AI Mentor & Question Gen'] : []),
-                ...(p.features?.white_label ? ['White-label Custom Domain & Branding'] : ['Standard Institutional Portal']),
-                '256-Bit SSL Encrypted Database',
-                'Priority SLA Email & Phone Support'
-            ]
-        }))
+        const available_plans = (dbPlans || []).map((p: any) => {
+            const planType = p.type || 'school'
+            const isSolo = planType === 'personal_teacher' || planType === 'independent_teacher'
+            const category = isSolo ? 'solo' : planType
+
+            return {
+                id: p.id,
+                name: sanitizePlanName(p.name),
+                raw_name: p.name,
+                type: planType,
+                category,
+                is_solo: isSolo,
+                allow_multiple_teachers: !isSolo,
+                price: Number(p.price),
+                annual_price: Math.round(Number(p.price) * 12 * 0.8), // 20% discount on annual
+                max_students: p.max_students || 100,
+                max_teachers: isSolo ? 1 : (p.max_teachers || 10),
+                max_storage_gb: p.max_storage_gb || 50,
+                max_ai_tokens: p.max_ai_tokens || 1000000,
+                teachers_label: isSolo
+                    ? '1 Teacher Allowed (Multiple Teachers Not Allowed)'
+                    : `Multiple Teachers Allowed (Up to ${(p.max_teachers || 10).toLocaleString()} Teachers)`,
+                features: [
+                    `${(p.max_students || 100).toLocaleString()} Student Capacity`,
+                    isSolo
+                        ? 'Single Teacher Account (Multiple Teachers Not Allowed)'
+                        : `Multiple Teachers Allowed (Up to ${(p.max_teachers || 10).toLocaleString()} Teachers)`,
+                    `${p.max_storage_gb || 50} GB Document Storage`,
+                    `${((p.max_ai_tokens || 1000000) / 1000).toLocaleString()}k Monthly AI Generation Credits`,
+                    ...(p.features?.ai_mentor ? ['AI Learning & Question Generator'] : []),
+                    ...(p.features?.white_label ? ['Custom Domain & Institutional Branding'] : ['Standard Educational Portal']),
+                    '256-Bit SSL Encrypted Database',
+                    'Priority Phone & Email Support'
+                ]
+            }
+        })
 
         // 2. Special Case: Owner operating at platform level
         if (is_owner && tenant_id === 'platform') {
@@ -75,23 +90,38 @@ export async function GET(request: NextRequest) {
                 id: 'platform-master',
                 name: 'Global Master Hub',
                 raw_name: 'Global Master Hub',
+                type: 'platform',
+                category: 'platform',
+                is_solo: false,
+                allow_multiple_teachers: true,
                 price: 0,
                 annual_price: 0,
                 max_students: 1000000,
                 max_teachers: 100000,
                 max_storage_gb: 100000,
                 max_ai_tokens: 1000000000,
+                teachers_label: 'Unlimited Faculty & Staff Accounts',
                 features: ['Full Multi-Tenant Access', 'Super Admin Control', 'Global Analytics', 'Sub-Instance Provisioning']
             }
             return NextResponse.json({
+                tenant_type: 'platform',
+                raw_tenant_type: 'platform',
+                tenant_type_display: 'Platform Super Admin',
+                allow_multiple_teachers: true,
                 current: {
                     plan_id: 'platform-master',
+                    plan_type: 'platform',
                     status: 'active',
                     renewal: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
                     auto_renew: true,
                     billing_cycle: 'annual'
                 },
                 plans: [masterPlan, ...available_plans],
+                categorized_plans: {
+                    school: available_plans.filter((p: any) => p.category === 'school'),
+                    institute: available_plans.filter((p: any) => p.category === 'institute'),
+                    solo: available_plans.filter((p: any) => p.category === 'solo')
+                },
                 usage: {
                    students: 4500, max_students: 10000,
                    teachers: 240, max_teachers: 500,
@@ -124,7 +154,7 @@ export async function GET(request: NextRequest) {
 
         // 3. Fetch Tenant & Subscription Data
         const [tenantRes, subRes] = await Promise.all([
-            supabaseAdmin.from('tenants').select('id, name, email, settings, max_students, max_teachers, max_storage_gb, max_ai_tokens, current_plan_id, subscription_plan').eq('id', tenant_id).single(),
+            supabaseAdmin.from('tenants').select('id, name, email, settings, max_students, max_teachers, max_storage_gb, max_ai_tokens, current_plan_id, subscription_plan, tenant_type').eq('id', tenant_id).single(),
             supabaseAdmin.from('tenant_subscriptions').select('*').eq('tenant_id', tenant_id).order('created_at', { ascending: false }).limit(1).maybeSingle()
         ])
 
@@ -240,10 +270,33 @@ export async function GET(request: NextRequest) {
 
         const currentMonthlyPrice = Number(subscription?.amount || planDetails.price || 0)
 
+        // Determine tenant type
+        const rawTenantType = tenantData?.tenant_type || subscription?.plan_type || 'school'
+        const isSoloTenant = rawTenantType === 'personal_teacher' || rawTenantType === 'independent_teacher'
+        const normalizedTenantType = isSoloTenant ? 'solo' : (rawTenantType === 'institute' ? 'institute' : 'school')
+        const tenantTypeDisplay = normalizedTenantType === 'school' ? 'School Tenant' : (normalizedTenantType === 'institute' ? 'Institute Tenant' : 'Solo Teacher')
+
+        const schoolPlans = available_plans.filter((p: any) => p.category === 'school')
+        const institutePlans = available_plans.filter((p: any) => p.category === 'institute')
+        const soloPlans = available_plans.filter((p: any) => p.category === 'solo')
+
+        // Default plans for this tenant type
+        const matchingTypePlans = normalizedTenantType === 'school'
+            ? schoolPlans
+            : (normalizedTenantType === 'institute' ? institutePlans : soloPlans)
+
         return NextResponse.json({
+            tenant_type: normalizedTenantType,
+            raw_tenant_type: rawTenantType,
+            tenant_type_display: tenantTypeDisplay,
+            allow_multiple_teachers: !isSoloTenant,
             current: {
                 plan_id: currentPlanId,
                 plan_name: sanitizePlanName(subscription?.plan_name || planDetails.name),
+                plan_type: subscription?.plan_type || planDetails.type || normalizedTenantType,
+                tenant_type: normalizedTenantType,
+                is_solo: isSoloTenant,
+                allow_multiple_teachers: !isSoloTenant,
                 status: subscription?.status || 'active',
                 renewal: subscription?.end_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                 start_date: subscription?.start_date || new Date().toISOString(),
@@ -252,11 +305,17 @@ export async function GET(request: NextRequest) {
                 amount: currentMonthlyPrice
             },
             plans: available_plans.length > 0 ? available_plans : [planDetails],
+            matching_plans: matchingTypePlans.length > 0 ? matchingTypePlans : available_plans,
+            categorized_plans: {
+                school: schoolPlans,
+                institute: institutePlans,
+                solo: soloPlans
+            },
             usage: {
                 students: studentCount,
                 max_students: maxStudents,
                 teachers: teacherCount,
-                max_teachers: maxTeachers,
+                max_teachers: isSoloTenant ? 1 : maxTeachers,
                 storage: 15,
                 max_storage: maxStorage,
                 ai_tokens: 34500,

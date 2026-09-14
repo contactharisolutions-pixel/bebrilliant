@@ -15,6 +15,10 @@ import { formatDate } from '@/lib/utils';
 interface SubscriptionState {
     plan_id: string;
     plan_name?: string;
+    plan_type?: string;
+    tenant_type?: string;
+    is_solo?: boolean;
+    allow_multiple_teachers?: boolean;
     status: string;
     renewal: string;
     start_date?: string;
@@ -27,6 +31,11 @@ interface Plan {
     id: string;
     name: string;
     raw_name?: string;
+    type?: string;
+    category?: string;
+    is_solo?: boolean;
+    allow_multiple_teachers?: boolean;
+    teachers_label?: string;
     price: number;
     annual_price: number;
     max_students: number;
@@ -668,6 +677,9 @@ export default function SubscriptionPage() {
     const [plans, setPlans] = useState<Plan[]>([]);
     const [usage, setUsage] = useState<Usage | null>(null);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
+    const [tenantType, setTenantType] = useState<'school' | 'institute' | 'solo'>('school');
+    const [tenantTypeDisplay, setTenantTypeDisplay] = useState<string>('School Tenant');
+    const [planCategoryFilter, setPlanCategoryFilter] = useState<'all' | 'school' | 'institute' | 'solo'>('school');
     const [billingSettings, setBillingSettings] = useState<BillingSettings>({
         legal_name: '',
         gstin: '',
@@ -705,6 +717,12 @@ export default function SubscriptionPage() {
         setTimeout(() => setToast(null), 3500);
     };
 
+    const filteredPlans = useMemo(() => {
+        if (planCategoryFilter === 'all') return plans;
+        const matched = plans.filter((p: any) => p.category === planCategoryFilter);
+        return matched.length > 0 ? matched : plans;
+    }, [plans, planCategoryFilter]);
+
     const fetchData = useCallback(async () => {
         setError(null);
         setLoading(true);
@@ -719,6 +737,13 @@ export default function SubscriptionPage() {
             setPlans(data.plans || []);
             setUsage(data.usage || null);
             setInvoices(data.invoices || []);
+            if (data.tenant_type) {
+                setTenantType(data.tenant_type);
+                setPlanCategoryFilter(data.tenant_type);
+            }
+            if (data.tenant_type_display) {
+                setTenantTypeDisplay(data.tenant_type_display);
+            }
             if (data.billing_settings) {
                 setBillingSettings(data.billing_settings);
             }
@@ -889,7 +914,7 @@ export default function SubscriptionPage() {
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent z-10" />
 
-                <div className="relative z-20 max-w-7xl mx-auto px-6 py-10 sm:px-8 sm:py-12">
+                <div className="relative z-20 w-full px-6 py-10 sm:px-8 lg:px-10 sm:py-12">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                         <div className="space-y-3">
                             <div className="flex items-center gap-3">
@@ -928,7 +953,7 @@ export default function SubscriptionPage() {
             </div>
 
             {/* MAIN CONTENT WRAPPER */}
-            <div className="max-w-7xl mx-auto px-6 sm:px-8 mt-8 space-y-8">
+            <div className="w-full px-6 sm:px-8 lg:px-10 mt-8 space-y-8 pb-16">
                 {/* 4 EXECUTIVE KPI METRIC CARDS */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     {/* Card 1: Active Tier */}
@@ -1216,13 +1241,84 @@ export default function SubscriptionPage() {
                     {/* TAB 2: PLANS & UPGRADES */}
                     {activeTab === 'plans' && (
                         <div className="space-y-6">
-                            {/* Billing Cycle Switcher */}
-                            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-                                <div>
-                                    <h3 className="text-base font-bold text-slate-900">Institutional Plan Marketplace</h3>
-                                    <p className="text-xs text-slate-500 font-medium">Select a tier aligned with your student enrollment and faculty sizing</p>
+                            {/* Category Selector & Billing Cycle Header */}
+                            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                                <div className="space-y-2.5">
+                                    <div className="flex items-center gap-2.5 flex-wrap">
+                                        <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">Subscription Plans & Quota Tiers</h3>
+                                        <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-[#004B93] border border-blue-200 flex items-center gap-1.5">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                            Your Account: <strong>{tenantTypeDisplay}</strong>
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-500 font-medium">
+                                        Displaying subscription packages calibrated for {tenantTypeDisplay.toLowerCase()}s with automated teacher allocation quotas.
+                                    </p>
+
+                                    {/* Category Filter Tabs */}
+                                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                                        <button
+                                            onClick={() => setPlanCategoryFilter('school')}
+                                            className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 ${
+                                                planCategoryFilter === 'school'
+                                                    ? 'bg-[#004B93] text-white shadow-md shadow-blue-900/15'
+                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
+                                            }`}
+                                        >
+                                            🏫 School Plans
+                                            <span className="text-[10px] opacity-80">(Multiple Teachers)</span>
+                                            {tenantType === 'school' && (
+                                                <span className="px-1.5 py-0.2 bg-emerald-400 text-slate-950 text-[9px] font-black rounded-full">
+                                                    Current
+                                                </span>
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={() => setPlanCategoryFilter('institute')}
+                                            className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 ${
+                                                planCategoryFilter === 'institute'
+                                                    ? 'bg-[#004B93] text-white shadow-md shadow-blue-900/15'
+                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
+                                            }`}
+                                        >
+                                            🏢 Institute Plans
+                                            <span className="text-[10px] opacity-80">(Multiple Teachers)</span>
+                                            {tenantType === 'institute' && (
+                                                <span className="px-1.5 py-0.2 bg-emerald-400 text-slate-950 text-[9px] font-black rounded-full">
+                                                    Current
+                                                </span>
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={() => setPlanCategoryFilter('solo')}
+                                            className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 ${
+                                                planCategoryFilter === 'solo'
+                                                    ? 'bg-[#004B93] text-white shadow-md shadow-blue-900/15'
+                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
+                                            }`}
+                                        >
+                                            🎓 Solo Teacher Plans
+                                            <span className="text-[10px] opacity-80">(Single Teacher Only)</span>
+                                            {tenantType === 'solo' && (
+                                                <span className="px-1.5 py-0.2 bg-emerald-400 text-slate-950 text-[9px] font-black rounded-full">
+                                                    Current
+                                                </span>
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={() => setPlanCategoryFilter('all')}
+                                            className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition ${
+                                                planCategoryFilter === 'all'
+                                                    ? 'bg-slate-800 text-white'
+                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                                            }`}
+                                        >
+                                            View All Tiers
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-2xl border border-slate-200">
+
+                                <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-2xl border border-slate-200 shrink-0">
                                     <button
                                         onClick={() => setCatalogBillingCycle('monthly')}
                                         className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
@@ -1251,9 +1347,10 @@ export default function SubscriptionPage() {
 
                             {/* Plan Cards Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {plans.map((p) => {
+                                {filteredPlans.map((p) => {
                                     const isCurrent = current.plan_id === p.id;
                                     const displayPrice = catalogBillingCycle === 'annual' ? p.annual_price : p.price;
+                                    const isSoloPlan = p.is_solo || p.type === 'personal_teacher' || p.type === 'independent_teacher' || p.category === 'solo';
 
                                     return (
                                         <div
@@ -1271,9 +1368,26 @@ export default function SubscriptionPage() {
                                             )}
 
                                             <div className="space-y-4">
-                                                <div>
+                                                <div className="space-y-2">
+                                                    {/* Plan Tier Type Badge */}
+                                                    <div>
+                                                        {isSoloPlan ? (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-900 border border-amber-200">
+                                                                🎓 Solo Teacher • Single Teacher Only
+                                                            </span>
+                                                        ) : p.category === 'institute' ? (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">
+                                                                🏢 Institute Tier • Multiple Teachers Allowed
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-[#004B93] border border-blue-200">
+                                                                🏫 School Tier • Multiple Teachers Allowed
+                                                            </span>
+                                                        )}
+                                                    </div>
+
                                                     <h4 className="text-lg font-black text-slate-900">{p.name}</h4>
-                                                    <div className="flex items-baseline gap-1 mt-2">
+                                                    <div className="flex items-baseline gap-1 mt-1">
                                                         <span className="text-3xl font-black text-slate-900 tracking-tight">₹{displayPrice.toLocaleString()}</span>
                                                         <span className="text-xs text-slate-400 font-bold">{catalogBillingCycle === 'annual' ? '/ year' : '/ mo'}</span>
                                                     </div>
@@ -1281,23 +1395,48 @@ export default function SubscriptionPage() {
                                                 </div>
 
                                                 <div className="pt-2 border-t border-slate-100 space-y-2.5">
-                                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Included Quotas</div>
-                                                    <div className="space-y-2 text-xs font-semibold text-slate-700">
+                                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Included Capacity & Limits</div>
+                                                    <div className="space-y-2.5 text-xs font-semibold text-slate-700">
                                                         <div className="flex items-center gap-2">
                                                             <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
-                                                            <span>{p.max_students.toLocaleString()} Student Nodes</span>
+                                                            <span>{(p.max_students || 100).toLocaleString()} Student Capacity</span>
+                                                        </div>
+
+                                                        {/* Teacher Quota Distinction */}
+                                                        <div className="flex items-start gap-2">
+                                                            {isSoloPlan ? (
+                                                                <div className="p-0.5 bg-amber-100 text-amber-800 rounded-full mt-0.5 shrink-0">
+                                                                    <AlertTriangle size={13} />
+                                                                </div>
+                                                            ) : (
+                                                                <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+                                                            )}
+                                                            <div className="flex-1">
+                                                                {isSoloPlan ? (
+                                                                    <div>
+                                                                        <span className="text-amber-900 font-bold">1 Teacher Allowed</span>
+                                                                        <p className="text-[10px] text-amber-700 font-normal mt-0.5">
+                                                                            Multiple teachers are NOT allowed on Solo plans
+                                                                        </p>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div>
+                                                                        <span>Up to {p.max_teachers} Teachers Allowed</span>
+                                                                        <p className="text-[10px] text-slate-500 font-normal mt-0.5">
+                                                                            Multiple faculty collaboration enabled
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-2">
+                                                            <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+                                                            <span>{p.max_storage_gb} GB Document Storage</span>
                                                         </div>
                                                         <div className="flex items-center gap-2">
                                                             <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
-                                                            <span>{p.max_teachers} Faculty Slots</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
-                                                            <span>{p.max_storage_gb} GB Cloud Storage</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
-                                                            <span>{((p.max_ai_tokens || 1000000)/1000).toLocaleString()}k Monthly AI Tokens</span>
+                                                            <span>{((p.max_ai_tokens || 1000000)/1000).toLocaleString()}k Monthly AI Generation Credits</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1306,7 +1445,7 @@ export default function SubscriptionPage() {
                                             <div className="pt-6 mt-6 border-t border-slate-100">
                                                 {isCurrent ? (
                                                     <div className="w-full py-3 bg-slate-100 text-slate-400 font-bold text-xs rounded-2xl flex items-center justify-center gap-2 cursor-default">
-                                                        <Lock size={14} /> Plan Online
+                                                        <Lock size={14} /> Current Active Plan
                                                     </div>
                                                 ) : (
                                                     <button

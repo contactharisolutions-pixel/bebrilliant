@@ -40,6 +40,12 @@ type TeacherStats = {
     total_teachers: number
     active_teachers: number
     pending_teachers: number
+    max_teachers?: number
+    allow_multiple_teachers?: boolean
+    is_solo?: boolean
+    can_add_more?: boolean
+    tenant_type?: string
+    tenant_type_display?: string
     total_subjects_assigned: number
     total_classes_covered: number
     total_tenant_subjects: number
@@ -259,6 +265,8 @@ export default function FacultyManagement() {
 
     // Modals
     const [showAddModal, setShowAddModal] = useState(false)
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+    const [upgradeModalMessage, setUpgradeModalMessage] = useState<{ title: string; desc: string }>({ title: '', desc: '' })
     const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null)
     const [scopingTeacher, setScopingTeacher] = useState<Teacher | null>(null)
     const [deletingTeacher, setDeletingTeacher] = useState<Teacher | null>(null)
@@ -350,6 +358,26 @@ export default function FacultyManagement() {
     }
 
     // ── ACTION HANDLERS ──────────────────────────────────────────
+    const handleOpenAddModal = () => {
+        if (stats.is_solo && teachers.length >= 1) {
+            setUpgradeModalMessage({
+                title: 'Single Teacher Account Limit Reached',
+                desc: 'Solo / Independent Teacher accounts allow strictly 1 teacher only. Multiple teachers are not allowed on this plan. To add multiple teachers and enable team teaching, please upgrade your subscription plan to an Institute or School package.'
+            })
+            setShowUpgradeModal(true)
+            return
+        }
+        if (!stats.is_solo && stats.max_teachers && teachers.length >= stats.max_teachers) {
+            setUpgradeModalMessage({
+                title: `Faculty Limit Reached (${teachers.length}/${stats.max_teachers} Teachers)`,
+                desc: `Your institution has allocated all ${stats.max_teachers} faculty slots included in your current subscription plan. Please upgrade your plan to add more faculty members.`
+            })
+            setShowUpgradeModal(true)
+            return
+        }
+        setShowAddModal(true)
+    }
+
     const handleCreateTeacher = async () => {
         if (!teacherForm.first_name.trim()) {
             setToast({ msg: 'Please provide teacher first name', ok: false })
@@ -577,11 +605,28 @@ export default function FacultyManagement() {
 
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
                     <div>
-                        <h1 style={{ fontSize: 28, fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.025em' }}>
-                            Faculty Management
-                        </h1>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.025em' }}>
+                                Faculty Management
+                            </h1>
+                            {stats.is_solo ? (
+                                <span style={{ padding: '4px 12px', background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A', borderRadius: 9999, fontSize: 11, fontWeight: 700 }}>
+                                    🎓 Solo Teacher • Single Teacher Only (1/1 Max)
+                                </span>
+                            ) : stats.tenant_type === 'institute' ? (
+                                <span style={{ padding: '4px 12px', background: '#F3E8FF', color: '#6B21A8', border: '1px solid #E9D5FF', borderRadius: 9999, fontSize: 11, fontWeight: 700 }}>
+                                    🏢 Institute Tenant • Multiple Teachers Allowed ({teachers.length}/{stats.max_teachers || 50} Slots)
+                                </span>
+                            ) : (
+                                <span style={{ padding: '4px 12px', background: '#EFF6FF', color: '#1E40AF', border: '1px solid #DBEAFE', borderRadius: 9999, fontSize: 11, fontWeight: 700 }}>
+                                    🏫 School Tenant • Multiple Teachers Allowed ({teachers.length}/{stats.max_teachers || 60} Slots)
+                                </span>
+                            )}
+                        </div>
                         <p style={{ fontSize: 14, color: '#64748B', margin: '6px 0 0', lineHeight: 1.5 }}>
-                            Organize teaching staff, assign subject curriculums, and manage classroom authorizations.
+                            {stats.is_solo
+                                ? 'Independent educator workstation. Single teacher account authorized for curriculum delivery.'
+                                : 'Organize teaching staff, assign subject curriculums, and manage classroom authorizations.'}
                         </p>
                     </div>
 
@@ -613,7 +658,7 @@ export default function FacultyManagement() {
                         </button>
 
                         <button
-                            onClick={() => setShowAddModal(true)}
+                            onClick={handleOpenAddModal}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -963,7 +1008,7 @@ export default function FacultyManagement() {
                                     : 'Build your academic department by onboarding your teachers, assigning course subjects, and granting classroom access.'}
                             </p>
                             <button
-                                onClick={() => setShowAddModal(true)}
+                                onClick={handleOpenAddModal}
                                 style={{
                                     display: 'inline-flex',
                                     alignItems: 'center',
@@ -1908,6 +1953,71 @@ export default function FacultyManagement() {
                         <p style={{ fontSize: 13, color: '#475569', margin: 0 }}>
                             To temporarily pause access instead without deleting records, you can click <strong>Cancel</strong> and toggle their status to <em>Pending / Suspended</em>.
                         </p>
+                    </div>
+                </Modal>
+            )}
+
+            {/* ── MODAL: UPGRADE NOTICE / TEACHER QUOTA LIMIT ──────── */}
+            {showUpgradeModal && (
+                <Modal
+                    title={upgradeModalMessage.title || 'Plan Quota Reached'}
+                    subtitle="Faculty Allocation Limit Policy"
+                    onClose={() => setShowUpgradeModal(false)}
+                    maxWidth={520}
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <div style={{
+                            background: '#FFFBEB',
+                            border: '1px solid #FDE68A',
+                            borderRadius: 14,
+                            padding: '16px 20px',
+                            display: 'flex',
+                            gap: 14,
+                            alignItems: 'flex-start'
+                        }}>
+                            <AlertCircle size={24} color="#D97706" style={{ marginTop: 2, flexShrink: 0 }} />
+                            <div>
+                                <p style={{ margin: 0, fontSize: 13, color: '#92400E', lineHeight: 1.5, fontWeight: 500 }}>
+                                    {upgradeModalMessage.desc}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+                            <button
+                                onClick={() => setShowUpgradeModal(false)}
+                                style={{
+                                    padding: '10px 18px',
+                                    borderRadius: 10,
+                                    border: '1px solid #E2E8F0',
+                                    background: '#FFFFFF',
+                                    color: '#475569',
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Dismiss
+                            </button>
+                            <button
+                                onClick={() => {
+                                    window.location.href = '/dashboard/subscription'
+                                }}
+                                style={{
+                                    padding: '10px 20px',
+                                    borderRadius: 10,
+                                    border: 'none',
+                                    background: '#004B93',
+                                    color: '#FFFFFF',
+                                    fontSize: 13,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    boxShadow: '0 4px 12px rgba(0,75,147,0.25)'
+                                }}
+                            >
+                                View Subscription Plans & Upgrade
+                            </button>
+                        </div>
                     </div>
                 </Modal>
             )}

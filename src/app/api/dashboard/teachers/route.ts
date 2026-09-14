@@ -16,7 +16,7 @@ async function verifyTenantAdmin() {
     if (!profile) return null
 
     // Check tenant type
-    let tenant_type = 'institute'
+    let tenant_type = 'school'
     if (profile.tenant_id) {
         const { data: tenant } = await supabaseAdmin
             .from('tenants')
@@ -28,18 +28,15 @@ async function verifyTenantAdmin() {
         }
     }
 
-    // Independent teachers cannot manage other teachers
-    if (tenant_type === 'independent_teacher') return null
-
     // Platform owner fallback
     if (profile.role === 'owner' && !profile.tenant_id) {
         const { data: tenants } = await supabaseAdmin.from('tenants').select('id').limit(1)
-        if (tenants?.[0]) return { user, tenant_id: tenants[0].id }
+        if (tenants?.[0]) return { user, tenant_id: tenants[0].id, tenant_type: 'school' }
         return null
     }
 
-    if (profile.tenant_id && ['tenant_admin', 'owner'].includes(profile.role)) {
-        return { user, tenant_id: profile.tenant_id }
+    if (profile.tenant_id && ['tenant_admin', 'owner', 'admin', 'teacher'].includes(profile.role)) {
+        return { user, tenant_id: profile.tenant_id, tenant_type }
     }
 
     return null
@@ -49,7 +46,8 @@ export async function GET(request: NextRequest) {
     const session = await verifyTenantAdmin()
     if (!session) return NextResponse.json({ error: 'Unauthorized Administrator' }, { status: 403 })
 
-    const { tenant_id } = session
+    const { tenant_id, tenant_type } = session
+    const isSolo = tenant_type === 'personal_teacher' || tenant_type === 'independent_teacher'
 
     try {
         // 1. Fetch Teachers
@@ -149,10 +147,45 @@ export async function GET(request: NextRequest) {
             })
         }
 
+        // Fetch max teachers allowed for this tenant
+        let maxAllowedTeachers = 1
+        if (!isSolo) {
+            try {
+                const [tenantDataRes, subDataRes] = await Promise.all([
+                    supabaseAdmin.from('tenants').select('max_teachers, current_plan_id').eq('id', tenant_id).single(),
+                    supabaseAdmin.from('tenant_subscriptions').select('limit_overrides, plan_id').eq('tenant_id', tenant_id).eq('status', 'active').maybeSingle()
+                ])
+                const overrides = subDataRes.data?.limit_overrides || {}
+                if (overrides.max_teachers) {
+                    maxAllowedTeachers = overrides.max_teachers
+                } else if (tenantDataRes.data?.max_teachers) {
+                    maxAllowedTeachers = tenantDataRes.data.max_teachers
+                } else {
+                    const planId = subDataRes.data?.plan_id || tenantDataRes.data?.current_plan_id
+                    if (planId) {
+                        const { data: pRec } = await supabaseAdmin.from('plans').select('max_teachers').eq('id', planId).single()
+                        if (pRec?.max_teachers) maxAllowedTeachers = pRec.max_teachers
+                    } else {
+                        maxAllowedTeachers = 60
+                    }
+                }
+            } catch {
+                maxAllowedTeachers = 60
+            }
+        }
+
+        const canAddMore = isSolo ? total_teachers < 1 : total_teachers < maxAllowedTeachers
+
         const stats = {
             total_teachers,
             active_teachers,
             pending_teachers,
+            max_teachers: maxAllowedTeachers,
+            allow_multiple_teachers: !isSolo,
+            is_solo: isSolo,
+            can_add_more: canAddMore,
+            tenant_type: isSolo ? 'solo' : (tenant_type === 'institute' ? 'institute' : 'school'),
+            tenant_type_display: isSolo ? 'Solo / Independent Teacher' : (tenant_type === 'institute' ? 'Institute Tenant' : 'School Tenant'),
             total_subjects_assigned: assignedSubjectSet.size,
             total_classes_covered: assignedClassSet.size,
             total_tenant_subjects: (subjects || []).length,
@@ -164,6 +197,10 @@ export async function GET(request: NextRequest) {
             classes: classesWithDivisions,
             subjects: subjects || [],
             teacher_subjects: teacherSubjects,
+            tenant_type: isSolo ? 'solo' : (tenant_type === 'institute' ? 'institute' : 'school'),
+            allow_multiple_teachers: !isSolo,
+            max_teachers: maxAllowedTeachers,
+            can_add_more: canAddMore,
             stats
         })
     } catch (error: any) {
@@ -176,7 +213,8 @@ export async function POST(request: NextRequest) {
     const session = await verifyTenantAdmin()
     if (!session) return NextResponse.json({ error: 'Unauthorized Action' }, { status: 403 })
 
-    const { tenant_id } = session
+    const { tenant_id, tenant_type } = session
+    const isSolo = tenant_type === 'personal_teacher' || tenant_type === 'independent_teacher'
     const body = await request.json()
     const { action, payload } = body
 
@@ -214,6 +252,52 @@ export async function POST(request: NextRequest) {
 
             if (!email || !first_name) {
                 return NextResponse.json({ error: 'First name and email are required.' }, { status: 400 })
+            }
+
+            // ── QUOTA & TENANT TYPE RESTRICTIONS ─────────────────────
+            const { count: teacherCount } = await supabaseAdmin
+                .from('user_profiles')
+                .select('id', { count: 'exact', head: true })
+                .eq('tenant_id', tenant_id)
+                .eq('role', 'teacher')
+
+            const currentTeachers = teacherCount || 0
+
+            if (isSolo) {
+                if (currentTeachers >= 1) {
+                    return NextResponse.json({
+                        error: 'Solo / Independent Teacher accounts are limited to 1 teacher only. Multiple teachers are not allowed on this account type. Please upgrade to an Institute or School subscription plan to add additional faculty.'
+                    }, { status: 400 })
+                }
+            } else {
+                // School or Institute: check max_teachers from subscription or tenant settings
+                let maxAllowed = 50
+                try {
+                    const [tenantDataRes, subDataRes] = await Promise.all([
+                        supabaseAdmin.from('tenants').select('max_teachers, current_plan_id').eq('id', tenant_id).single(),
+                        supabaseAdmin.from('tenant_subscriptions').select('limit_overrides, plan_id').eq('tenant_id', tenant_id).eq('status', 'active').maybeSingle()
+                    ])
+                    const overrides = subDataRes.data?.limit_overrides || {}
+                    if (overrides.max_teachers) {
+                        maxAllowed = overrides.max_teachers
+                    } else if (tenantDataRes.data?.max_teachers) {
+                        maxAllowed = tenantDataRes.data.max_teachers
+                    } else {
+                        const planId = subDataRes.data?.plan_id || tenantDataRes.data?.current_plan_id
+                        if (planId) {
+                            const { data: pRec } = await supabaseAdmin.from('plans').select('max_teachers').eq('id', planId).single()
+                            if (pRec?.max_teachers) maxAllowed = pRec.max_teachers
+                        }
+                    }
+                } catch {
+                    maxAllowed = 50
+                }
+
+                if (currentTeachers >= maxAllowed) {
+                    return NextResponse.json({
+                        error: `Faculty limit reached (${currentTeachers}/${maxAllowed} teachers). Please upgrade your subscription plan to add more faculty members.`
+                    }, { status: 400 })
+                }
             }
 
             const cleanEmail = email.trim().toLowerCase()
