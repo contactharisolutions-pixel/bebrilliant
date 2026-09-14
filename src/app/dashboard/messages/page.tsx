@@ -1,426 +1,1185 @@
 'use client'
-import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import Image from 'next/image'
 import {
-    MessageSquare, Send, Search, Users, Settings, Plus,
-    MoreVertical, CheckCheck, Paperclip, Smile, Zap, Bell, Loader2,
-    Shield, Globe, Radio, User, FileText, Image as ImageIcon,
-    BarChart3, Activity, Clock, ShieldAlert, Cpu, Share2,
-    ChevronRight, ArrowLeft, Trash2
+    Bell,
+    BellRing,
+    Pin,
+    AlertCircle,
+    Calendar,
+    Clock,
+    Download,
+    Search,
+    Filter,
+    Plus,
+    Trash2,
+    CheckCircle2,
+    FileText,
+    Users,
+    Paperclip,
+    Send,
+    Eye,
+    X,
+    Sparkles,
+    RefreshCw,
+    Archive,
+    ShieldAlert,
+    ExternalLink,
+    GraduationCap,
+    School,
+    Building2,
+    MessageSquare,
+    UserCircle,
+    Printer,
+    Megaphone
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-// ── TYPES ────────────────────────────────────────────────
-type Contact = { 
-    id: string; 
-    name: string; 
-    sub: string; 
-    unread: number; 
-    online: boolean; 
-    type: 'group' | 'individual'; 
-    meta?: any; 
+
+// ── TYPES ────────────────────────────────────────────────────────
+interface SchoolNotice {
+    id: string
+    tenant_id: string
+    title: string
+    category: string
+    priority: 'Normal' | 'Important' | 'Urgent'
+    target_audience: string
+    content: string
+    attachment_url?: string | null
+    attachment_name?: string | null
+    attachment_size?: string | null
+    publish_date: string
+    expiry_date?: string | null
+    is_pinned: boolean
+    status: 'Published' | 'Archived' | 'Draft'
+    views_count: number
+    created_at: string
+    author_name?: string | null
+    author_role?: string | null
 }
-type Message = { 
-    id: string; 
-    content: string; 
-    created_at: string; 
-    sender_id: string; 
-    sent?: boolean; 
-    status: 'sent' | 'delivered' | 'read'; 
-    msg_type: string; 
-    is_bulk?: boolean;
+
+interface NoticeStats {
+    total_notices: number
+    active_notices: number
+    urgent_alerts: number
+    pinned_notices: number
+    audiences_covered: number
 }
-const COLORS = {
-    primary: '#004B93',
-    primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
-    success: '#1FAC63',
-    warning: '#F0A026',
-    danger: '#EF4444',
-    slate: '#64748B',
-    border: '#E2E8F0',
-    background: '#F8FAFC',
-    glass: 'rgba(255, 255, 255, 0.8)'
+
+interface ClassItem {
+    id: string
+    name: string
 }
-export default function Messages() {
-    const [selectedId, setSelectedId] = useState<string | null>(null)
-    const [msg, setMsg] = useState('')
-    const [sending, setSending] = useState(false)
-    const [loading, setLoading] = useState(true)
-    const [messages, setMessages] = useState<Message[]>([])
-    const [contacts, setContacts] = useState<Contact[]>([])
-    const [currentUser, setCurrentUser] = useState<any>(null)
-    const [isBulk, setIsBulk] = useState(false)
-    const [showSearchModal, setShowSearchModal] = useState(false)
-    const [showHeaderMenu, setShowHeaderMenu] = useState(false)
+
+interface FacultyProfile {
+    id: string
+    first_name: string
+    last_name: string
+    email: string
+    role: string
+    metadata?: any
+}
+
+interface ChatMessage {
+    id: string
+    sender_id: string
+    recipient_id?: string
+    group_id?: string
+    content: string
+    created_at: string
+    sender_name?: string
+}
+
+export default function NoticeBoardDashboard() {
+    // ── STATE ────────────────────────────────────────────────────
+    const [activeTab, setActiveTab] = useState<'board' | 'publish' | 'broadcast' | 'archive'>('board')
     const [searchQuery, setSearchQuery] = useState('')
-    const [searchResults, setSearchResults] = useState<any[]>([])
-    const chatEndRef = useRef<HTMLDivElement>(null)
-    const router = useRouter()
-    const supabase = createClient()
-    const fetchInitial = async () => {
+    const [selectedCategory, setSelectedCategory] = useState('all')
+    const [selectedPriority, setSelectedPriority] = useState('all')
+    const [selectedAudience, setSelectedAudience] = useState('all')
+
+    const [notices, setNotices] = useState<SchoolNotice[]>([])
+    const [classes, setClasses] = useState<ClassItem[]>([])
+    const [faculty, setFaculty] = useState<FacultyProfile[]>([])
+    const [stats, setStats] = useState<NoticeStats>({
+        total_notices: 0,
+        active_notices: 0,
+        urgent_alerts: 0,
+        pinned_notices: 0,
+        audiences_covered: 0
+    })
+
+    const [loading, setLoading] = useState(true)
+    const [actionLoading, setActionLoading] = useState(false)
+    const [toast, setToast] = useState<{ msg: string; isError?: boolean } | null>(null)
+
+    // Modals
+    const [selectedNotice, setSelectedNotice] = useState<SchoolNotice | null>(null)
+
+    // Publish Form State
+    const [formData, setFormData] = useState({
+        title: '',
+        category: 'Academic & Exams',
+        priority: 'Normal' as 'Normal' | 'Important' | 'Urgent',
+        target_audience: 'All School',
+        content: '',
+        attachment_name: '',
+        attachment_size: '1.5 MB',
+        expiry_date: '',
+        is_pinned: false
+    })
+
+    // Staff Broadcast Tab State
+    const [selectedContact, setSelectedContact] = useState<FacultyProfile | null>(null)
+    const [broadcastMsg, setBroadcastMsg] = useState('')
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+    const [chatLoading, setChatLoading] = useState(false)
+
+    const showToast = (msg: string, isError = false) => {
+        setToast({ msg, isError })
+        setTimeout(() => setToast(null), 4000)
+    }
+
+    // ── DATA FETCHING ────────────────────────────────────────────
+    const fetchNotices = useCallback(async () => {
         setLoading(true)
         try {
-            const { data: { user } } = await supabase.auth.getUser()
-            setCurrentUser(user)
-            const res = await fetch('/api/dashboard/messages')
-            const data = await res.json()
-            if (res.ok) {
-                const { profiles } = data
-                const teacherProfile = profiles.find((p: any) => p.id === user?.id) || {}
-                const assigned = teacherProfile.metadata?.assigned_classes || ['Std 12-A', 'Std 11-B']
-                const groupContacts: Contact[] = assigned.map((g: string) => ({
-                    id: `group_${g}`,
-                    name: `Omni-Channel: Physics ${g}`,
-                    sub: 'Bulk Message Broadcast',
-                    unread: 0,
-                    online: true,
-                    type: 'group',
-                    meta: { group_id: g }
-                }))
-                const individualContacts: Contact[] = profiles.filter((p: any) => p.id !== user?.id && p.role !== 'student').map((p: any) => ({
-                    id: p.id,
-                    name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Internal Node',
-                    sub: p.role.toUpperCase() + ' • Direct Link',
-                    unread: 0,
-                    online: Math.random() > 0.5,
-                    type: 'individual'
-                }))
-                const all = [...groupContacts, ...individualContacts]
-                setContacts(all)
-                if (all.length > 0) setSelectedId(all[0].id)
+            const params = new URLSearchParams()
+            if (activeTab === 'archive') {
+                params.append('status', 'Archived')
+            } else {
+                params.append('status', 'Published')
             }
+            if (selectedCategory !== 'all') params.append('category', selectedCategory)
+            if (selectedPriority !== 'all') params.append('priority', selectedPriority)
+            if (selectedAudience !== 'all') params.append('audience', selectedAudience)
+            if (searchQuery.trim()) params.append('search', searchQuery.trim())
+
+            const res = await fetch(`/api/dashboard/messages?${params.toString()}`)
+            const json = await res.json()
+
+            if (json.success && json.data) {
+                setNotices(json.data.notices || [])
+                setStats(json.data.stats || {
+                    total_notices: 0,
+                    active_notices: 0,
+                    urgent_alerts: 0,
+                    pinned_notices: 0,
+                    audiences_covered: 0
+                })
+                setClasses(json.data.classes || [])
+                setFaculty(json.data.profiles || [])
+                if (!selectedContact && json.data.profiles?.length > 0) {
+                    setSelectedContact(json.data.profiles[0])
+                }
+            } else {
+                throw new Error(json.error || 'Failed to load school notices')
+            }
+        } catch (err: any) {
+            console.error('Fetch notices error:', err)
+            showToast(err.message || 'Error connecting to school notice database', true)
+        } finally {
+            setLoading(false)
+        }
+    }, [activeTab, selectedCategory, selectedPriority, selectedAudience, searchQuery])
+
+    useEffect(() => {
+        fetchNotices()
+    }, [fetchNotices])
+
+    // Fetch conversation when a staff contact is selected
+    const fetchConversation = useCallback(async () => {
+        if (!selectedContact) return
+        setChatLoading(true)
+        try {
+            const res = await fetch(`/api/dashboard/messages?contactId=${selectedContact.id}`)
+            const data = await res.json()
+            if (Array.isArray(data)) setChatMessages(data)
         } catch (e) {
-            console.error('Initialization Error:', e)
-        } finally { setLoading(false) }
-    }
-    const fetchMessages = useCallback(async () => {
-        if (!selectedId) return
+            console.error('Conversation fetch error:', e)
+        } finally {
+            setChatLoading(false)
+        }
+    }, [selectedContact])
+
+    useEffect(() => {
+        if (activeTab === 'broadcast' && selectedContact) {
+            fetchConversation()
+        }
+    }, [activeTab, selectedContact, fetchConversation])
+
+    // ── PUBLISH NOTICE HANDLER ───────────────────────────────────
+    const handlePublishNotice = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!formData.title.trim() || !formData.content.trim()) {
+            return showToast('Please enter both a title and circular announcement content.', true)
+        }
+
+        setActionLoading(true)
         try {
-            const sel = contacts.find(c => c.id === selectedId)
-            const params = sel?.type === 'group' ? `groupId=${sel.meta.group_id}` : `contactId=${selectedId}`
-            const res = await fetch(`/api/dashboard/messages?${params}`)
-            const data = await res.json()
-            if (res.ok) {
-                setMessages(data.map((m: any) => ({
-                    ...m,
-                    sent: m.sender_id === currentUser?.id
-                })))
-            }
-        } catch (e) { console.error('Signal Interruption:', e) }
-    }, [selectedId, contacts, currentUser])
-    useEffect(() => {
-        fetchInitial()
-    }, [])
-    useEffect(() => {
-        fetchMessages()
-        const inv = setInterval(fetchMessages, 10000)
-        return () => clearInterval(inv)
-    }, [fetchMessages])
-    useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages])
-    const handleSend = async () => {
-        if (!msg.trim() || !selectedId) return
-        setSending(true)
-        try {
-            const sel = contacts.find(c => c.id === selectedId)
             const payload = {
-                content: msg,
-                msg_type: isBulk ? 'notification' : 'text',
-                is_bulk: isBulk,
-                group_id: sel?.type === 'group' ? sel.meta.group_id : null,
-                recipient_id: sel?.type === 'individual' ? sel.id : null
+                title: formData.title.trim(),
+                category: formData.category,
+                priority: formData.priority,
+                target_audience: formData.target_audience,
+                content: formData.content.trim(),
+                attachment_name: formData.attachment_name.trim() || null,
+                attachment_size: formData.attachment_name ? formData.attachment_size : null,
+                expiry_date: formData.expiry_date || null,
+                is_pinned: formData.is_pinned
             }
+
             const res = await fetch('/api/dashboard/messages', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'SEND_MESSAGE', payload })
+                body: JSON.stringify({ action: 'PUBLISH_NOTICE', payload })
             })
-            if (res.ok) {
-                setMsg('')
-                fetchMessages()
+            const json = await res.json()
+
+            if (json.success) {
+                showToast(json.message || 'Circular published successfully!')
+                setFormData({
+                    title: '',
+                    category: 'Academic & Exams',
+                    priority: 'Normal',
+                    target_audience: 'All School',
+                    content: '',
+                    attachment_name: '',
+                    attachment_size: '1.5 MB',
+                    expiry_date: '',
+                    is_pinned: false
+                })
+                setActiveTab('board')
+                fetchNotices()
+            } else {
+                throw new Error(json.error || 'Failed to publish circular')
             }
-        } finally { setSending(false) }
-    }
-    const handleHeaderAction = async (label: string) => {
-        setShowHeaderMenu(false)
-        if (label === 'Delete Chat') {
-            if (!selectedId) return
-            if (!confirm('Are you sure you want to delete this conversation? This will purge message history.')) return
-            try {
-                const sel = contacts.find(c => c.id === selectedId)
-                if (!sel) return
-                const params = sel.type === 'group' ? `groupId=${sel.meta.group_id}` : `contactId=${selectedId}`
-                const res = await fetch(`/api/dashboard/messages?${params}`, { method: 'DELETE' })
-                if (res.ok) {
-                    setMessages([])
-                    fetchInitial()
-                } else {
-                    setMessages([])
-                }
-            } catch {
-                setMessages([])
-            }
-        } else {
-            alert(`${label} protocol triggered. telemetry status updated.`)
+        } catch (err: any) {
+            showToast(err.message || 'Error publishing circular', true)
+        } finally {
+            setActionLoading(false)
         }
     }
-    const sel = contacts.find(c => c.id === selectedId)
+
+    // ── PIN/UNPIN NOTICE ─────────────────────────────────────────
+    const handleTogglePin = async (id: string, currentPinned: boolean) => {
+        setActionLoading(true)
+        try {
+            const res = await fetch('/api/dashboard/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'TOGGLE_PIN', payload: { id, is_pinned: !currentPinned } })
+            })
+            const json = await res.json()
+            if (json.success) {
+                showToast(json.message)
+                fetchNotices()
+            }
+        } catch (e) {
+            showToast('Failed to update pin status', true)
+        } finally {
+            setActionLoading(false)
+        }
+    }
+
+    // ── ARCHIVE NOTICE ───────────────────────────────────────────
+    const handleArchiveNotice = async (id: string, title: string) => {
+        if (!window.confirm(`Archive "${title}"? It will be moved to past circular records.`)) return
+
+        setActionLoading(true)
+        try {
+            const res = await fetch('/api/dashboard/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'ARCHIVE_NOTICE', payload: { id } })
+            })
+            const json = await res.json()
+            if (json.success) {
+                showToast('Notice moved to school archive.')
+                if (selectedNotice?.id === id) setSelectedNotice(null)
+                fetchNotices()
+            }
+        } catch (e) {
+            showToast('Error archiving notice', true)
+        } finally {
+            setActionLoading(false)
+        }
+    }
+
+    // ── DELETE NOTICE ────────────────────────────────────────────
+    const handleDeleteNotice = async (id: string, title: string) => {
+        if (!window.confirm(`Permanently delete "${title}"? This action cannot be undone.`)) return
+
+        setActionLoading(true)
+        try {
+            const res = await fetch('/api/dashboard/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'DELETE_NOTICE', payload: { id } })
+            })
+            const json = await res.json()
+            if (json.success) {
+                showToast('Notice permanently deleted.')
+                if (selectedNotice?.id === id) setSelectedNotice(null)
+                fetchNotices()
+            }
+        } catch (e) {
+            showToast('Error deleting notice', true)
+        } finally {
+            setActionLoading(false)
+        }
+    }
+
+    // ── SEND STAFF BROADCAST MESSAGE ─────────────────────────────
+    const handleSendBroadcast = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!broadcastMsg.trim() || !selectedContact) return
+
+        try {
+            const res = await fetch('/api/dashboard/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'SEND_MESSAGE',
+                    payload: {
+                        content: broadcastMsg.trim(),
+                        recipient_id: selectedContact.id,
+                        msg_type: 'text'
+                    }
+                })
+            })
+            if (res.ok) {
+                setBroadcastMsg('')
+                fetchConversation()
+            }
+        } catch (e) {
+            showToast('Failed to send broadcast message', true)
+        }
+    }
+
     return (
-        <div style={{ height: 'calc(100vh - 10px)', display: 'flex', background: COLORS.background, fontFamily: 'Inter, system-ui, sans-serif', padding: 12 }}>
-            <style>{`
-                @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(31, 172, 99, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(31, 172, 99, 0); } 100% { box-shadow: 0 0 0 0 rgba(31, 172, 99, 0); } }
-                @keyframes float { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes alertPulse { 0% { border-color: #EF4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { border-color: #EF4444; box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { border-color: #EF4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-                .chat-bubble-sent { background: ${COLORS.primaryGradient}; color: #FFF; border-radius: 20px 20px 4px 20px; box-shadow: 0 4px 15px rgba(0, 75, 147, 0.1); }
-                .chat-bubble-received { background: #FFF; color: #1E293B; border-radius: 20px 20px 20px 4px; border: 1px solid #E2E8F0; }
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
-            `}</style>
-            {/* 1. COMMUNICATIONS DIRECTORY (LEFT) */}
-            <div style={{ width: 380, background: '#FFF', borderRadius: 24, border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', marginRight: 12 }}>
-                <div style={{ padding: '32px 24px', borderBottom: '1px solid #F1F5F9' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
-                        <div>
-                            <h2 style={{ margin: 0, fontSize: 24, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.03em' }}>Contacts</h2>
-                            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748B', fontWeight: 600 }}>Communication Center</p>
-                        </div>
-                        <button onClick={() => setShowSearchModal(true)} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: 12, cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = COLORS.primary}>
-                            <Plus size={20} color={COLORS.primary} />
-                        </button>
-                    </div>
-                    <div style={{ background: '#F8FAFC', borderRadius: 16, border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 12 }}>
-                        <Search size={18} color="#94A3B8" />
-                        <input type="text" placeholder="Search contacts..." style={{ flex: 1, border: 'none', background: 'transparent', padding: '14px 0', fontSize: 14, fontWeight: 600, outline: 'none' }} />
-                    </div>
+        <div className="w-full min-h-screen bg-slate-50/50 pb-24 text-slate-900">
+            {/* ── FLOATING TOAST NOTIFICATION ── */}
+            {toast && (
+                <div
+                    className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg border backdrop-blur-md transition-all animate-in fade-in slide-in-from-top-4 duration-300 ${
+                        toast.isError
+                            ? 'bg-rose-900/90 text-white border-rose-700'
+                            : 'bg-emerald-900/90 text-white border-emerald-700'
+                    }`}
+                >
+                    {toast.isError ? <AlertCircle className="w-5 h-5 text-rose-300" /> : <CheckCircle2 className="w-5 h-5 text-emerald-300" />}
+                    <span className="text-sm font-semibold">{toast.msg}</span>
                 </div>
-                <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
-                    {loading ? (
-                        <div style={{ padding: 60, textAlign: 'center' }}><Loader2 size={32} className="spin" color={COLORS.primary} /></div>
-                    ) : contacts.map(c => (
-                        <div 
-                            key={c.id} 
-                            onClick={() => setSelectedId(c.id)}
-                            style={{ 
-                                padding: '20px 16px', borderRadius: 20, cursor: 'pointer', marginBottom: 6,
-                                background: selectedId === c.id ? `${COLORS.primary}08` : 'transparent',
-                                border: `1px solid ${selectedId === c.id ? `${COLORS.primary}20` : 'transparent'}`,
-                                display: 'flex', gap: 16, transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-                            }}
-                        >
-                            <div style={{ position: 'relative' }}>
-                                <div style={{ width: 52, height: 52, borderRadius: 18, background: c.type === 'group' ? '#F5F3FF' : '#F1F5F9', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    {c.type === 'group' ? <Radio size={24} color="#6366F1" /> : <User size={24} color="#64748B" />}
-                                </div>
-                                {c.online && <div style={{ position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, background: COLORS.success, border: '3px solid #FFF', borderRadius: '50%', animation: 'pulse 2s infinite' }} />}
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                    <div style={{ fontSize: 15, fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
-                                    <Clock size={12} color="#CBD5E1" />
-                                </div>
-                                <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: c.type === 'group' ? '#6366F1' : '#94A3B8' }} /> {c.sub}
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-            {/* 2. BRIDGE INTERFACE (CENTER) */}
-            <div style={{ flex: 1, background: '#FFF', borderRadius: 24, border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-                {/* MSG HEADER */}
-                <div style={{ padding: '24px 32px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                        <div style={{ width: 48, height: 48, borderRadius: 16, background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                             {sel?.type === 'group' ? <Globe size={22} color={COLORS.primary} /> : <Shield size={22} color={COLORS.primary} />}
-                        </div>
-                        <div>
-                            <div style={{ fontSize: 18, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.02em' }}>{sel?.name}</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: COLORS.success }}>
-                                <div style={{ width: 8, height: 8, background: COLORS.success, borderRadius: '50%', animation: 'pulse 2s infinite' }} /> Online
-                            </div>
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 12 }}>
-                         {sel?.type === 'group' && (
-                            <button onClick={() => setIsBulk(!isBulk)} style={{ padding: '10px 20px', borderRadius: 14, background: isBulk ? `${COLORS.danger}08` : '#F8FAFC', border: `1px solid ${isBulk ? COLORS.danger : '#E2E8F0'}`, color: isBulk ? COLORS.danger : '#475569', fontSize: 12, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, animation: isBulk ? 'alertPulse 1.5s infinite' : 'none' }}>
-                                <Bell size={16} /> {isBulk ? 'BROADCAST ACTIVE' : 'BROADCAST MODE'}
-                            </button>
-                        )}
-                        <div style={{ position: 'relative' }}>
-                            <button onClick={() => setShowHeaderMenu(!showHeaderMenu)} style={{ padding: 12, borderRadius: 14, background: showHeaderMenu ? `${COLORS.primary}08` : '#F8FAFC', border: `1px solid ${showHeaderMenu ? COLORS.primary : '#E2E8F0'}`, cursor: 'pointer', transition: '0.2s' }}>
-                                <MoreVertical size={20} color={showHeaderMenu ? COLORS.primary : '#64748B'} />
-                            </button>
-                            {showHeaderMenu && (
-                                <div style={{ position: 'absolute', top: '120%', right: 0, width: 220, background: '#FFF', borderRadius: 18, border: `1px solid ${COLORS.border}`, boxShadow: '0 20px 40px rgba(0,0,0,0.12)', zIndex: 100, padding: 8, animation: 'float 0.2s ease-out' }}>
-                                    {[
-                                        { icon: Shield, label: 'Security Audit' },
-                                        { icon: BarChart3, label: 'Analytics' },
-                                        { icon: Clock, label: 'Message History' },
-                                        { icon: Trash2, label: 'Delete Chat', color: COLORS.danger }
-                                    ].map((item, i) => (
-                                        <button key={i} onClick={() => handleHeaderAction(item.label)} style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                                            <item.icon size={16} color={item.color || COLORS.slate} />
-                                            <span style={{ fontSize: 13, fontWeight: 800, color: item.color || '#1E293B' }}>{item.label}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-                {/* SIGNAL FEED */}
-                <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '32px 40px', background: '#FBFDFF', display: 'flex', flexDirection: 'column', gap: 20 }}>
-                     {messages.length === 0 ? (
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.6 }}>
-                            <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, border: '1px solid #E2E8F0' }}>
-                                <Cpu size={48} color="#94A3B8" />
-                            </div>
-                            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 1000, color: '#0F172A' }}>No Chat Selected</h3>
-                            <p style={{ margin: '8px 0 0', fontSize: 14, color: '#64748B', fontWeight: 600 }}>Select a contact to start messaging.</p>
-                        </div>
-                    ) : messages.map((m, i) => (
-                        <div key={m.id} style={{ alignSelf: m.sent ? 'flex-end' : 'flex-start', maxWidth: '75%', animation: 'float 0.4s ease-out' }}>
-                            {m.is_bulk && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 900, color: COLORS.danger, textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.1em' }}>
-                                    <ShieldAlert size={12} /> Priority Broadcast
-                                </div>
-                            )}
-                            <div className={m.sent ? 'chat-bubble-sent' : 'chat-bubble-received'} style={{ padding: '16px 20px', fontSize: 15, fontWeight: m.sent ? 700 : 600, lineHeight: 1.6 }}>
-                                {m.content}
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: m.sent ? 'flex-end' : 'flex-start', gap: 8, marginTop: 8, fontSize: 10, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>
-                                {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                {m.sent && <CheckCheck size={14} color={m.status === 'read' ? COLORS.primary : '#CBD5E1'} />}
-                            </div>
-                        </div>
-                    ))}
-                    <div ref={chatEndRef} />
-                </div>
-                {/* SIGNAL TRANSMITTER */}
-                <div style={{ padding: '24px 32px', background: '#FFF', borderTop: '1px solid #F1F5F9' }}>
-                    <div style={{ background: '#F8FAFC', border: `2px solid ${isBulk ? COLORS.danger + '40' : '#E2E8F0'}`, borderRadius: 20, padding: 8, display: 'flex', gap: 12, alignItems: 'center', transition: '0.3s' }}>
-                        <button onClick={() => alert('Attachment upload protocol active. Select a file to attach.')} style={{ padding: 12, borderRadius: 14, background: '#FFF', border: '1px solid #E2E8F0', cursor: 'pointer' }} title="Attach File"><Paperclip size={20} color="#64748B" /></button>
-                        <input 
-                            type="text" 
-                            value={msg} 
-                            onChange={e => setMsg(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleSend()}
-                            placeholder={isBulk ? "Draft broadcast message..." : "Type a message..."} 
-                            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 15, fontWeight: 600, color: '#0F172A' }} 
+            )}
+
+            {/* ── FULL WIDTH WORKSPACE CONTAINER ── */}
+            <div className="w-full px-4 sm:px-8 lg:px-10 py-6 space-y-8">
+                {/* ── 16:9 PHOTOGRAPHIC HERO BANNER ── */}
+                <div className="relative w-full rounded-3xl overflow-hidden border border-slate-200 bg-white shadow-sm">
+                    <div className="relative h-64 sm:h-80 w-full">
+                        <Image
+                            src="/assets/images/dashboard/notice_board_banner.jpg"
+                            alt="School administrators and faculty reviewing official campus circulars on the institutional notice board"
+                            fill
+                            className="object-cover object-center"
+                            priority
                         />
-                         <button onClick={() => alert('Emoji keyboard integration active.')} style={{ padding: 12, border: 'none', background: 'transparent', cursor: 'pointer' }} title="Insert Emoji"><Smile size={20} color="#64748B" /></button>
-                         <button 
-                            onClick={handleSend}
-                            disabled={!msg.trim() || sending}
-                            style={{ 
-                                padding: '12px 28px', borderRadius: 16, border: 'none',
-                                background: !msg.trim() ? '#E2E8F0' : (isBulk ? COLORS.danger : COLORS.primaryGradient),
-                                color: '#FFF', fontSize: 14, fontWeight: 900, cursor: !msg.trim() ? 'default' : 'pointer',
-                                display: 'flex', alignItems: 'center', gap: 10, boxShadow: !msg.trim() ? 'none' : '0 10px 20px rgba(0,0,0,0.1)'
-                            }}
-                        >
-                            {sending ? <Loader2 size={18} className="spin" /> : <Send size={18} />} Send
-                        </button>
-                    </div>
-                </div>
-            </div>
-            {/* 3. SIGNAL ANALYTICS (RIGHT) */}
-            <div style={{ width: 340, background: '#FFF', borderRadius: 24, border: '1px solid #E2E8F0', marginLeft: 12, padding: 32, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ textAlign: 'center', marginBottom: 32 }}>
-                    <div style={{ width: 100, height: 100, borderRadius: 32, background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', position: 'relative' }}>
-                         {sel?.type === 'group' ? <Globe size={48} color={COLORS.primary} /> : <User size={48} color={COLORS.primary} />}
-                         <div style={{ position: 'absolute', bottom: -4, right: -4, width: 24, height: 24, background: COLORS.success, border: '4px solid #FFF', borderRadius: '50%' }} />
-                    </div>
-                    <h3 style={{ margin: 0, fontSize: 20, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.02em' }}>{sel?.name}</h3>
-                    <div style={{ fontSize: 13, color: '#64748B', fontWeight: 600, marginTop: 6 }} >{sel?.sub}</div>
-                </div>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                     <div style={{ padding: 20, background: '#F1F5F960', border: '1px solid #F1F5F9', borderRadius: 20 }}>
-                        <div style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>Chat Info</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {[
-                                { icon: Activity, label: 'Response Rate', val: '98%' },
-                                { icon: Users, label: 'Participants', val: '142' },
-                                { icon: BarChart3, label: 'Activity Level', val: 'Low' }
-                            ].map((stat, i) => (
-                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, fontWeight: 700, color: '#475569' }}>
-                                        <stat.icon size={16} color={COLORS.primary} /> {stat.label}
-                                    </div>
-                                    <div style={{ fontSize: 13, fontWeight: 900, color: '#1E293B' }}>{stat.val}</div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/50 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-transparent to-transparent" />
+
+                        <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                            <div className="max-w-2xl text-white">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 backdrop-blur-md border border-blue-400/30 text-blue-200 text-xs font-semibold uppercase tracking-wider mb-3">
+                                    <BellRing className="w-3.5 h-3.5" />
+                                    Campus Communications & Circulars
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                         <button onClick={() => router.push('/dashboard/material')} style={{ padding: 16, borderRadius: 18, background: '#FFF', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = COLORS.primary}>
-                            <FileText size={20} color={COLORS.slate} />
-                            <span style={{ fontSize: 11, fontWeight: 800 }}>Repository</span>
-                        </button>
-                        <button onClick={() => router.push('/dashboard/material?type=video')} style={{ padding: 16, borderRadius: 18, background: '#FFF', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = COLORS.primary}>
-                            <ImageIcon size={20} color={COLORS.slate} />
-                            <span style={{ fontSize: 11, fontWeight: 800 }}>Media Hub</span>
-                        </button>
-                    </div>
-                </div>
-                <div style={{ background: isBulk ? `${COLORS.danger}08` : `${COLORS.warning}08`, border: `1px solid ${isBulk ? COLORS.danger : COLORS.warning}20`, borderRadius: 24, padding: 24, marginTop: 'auto' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                        <ShieldAlert size={18} color={isBulk ? COLORS.danger : COLORS.warning} />
-                        <span style={{ fontSize: 12, fontWeight: 1000, color: isBulk ? COLORS.danger : COLORS.warning, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Security Check</span>
-                    </div>
-                    <p style={{ margin: 0, fontSize: 12, color: '#475569', fontWeight: 600, lineHeight: 1.6 }}>
-                        {isBulk 
-                            ? "CRITICAL: Broadcasts go to all participants. Use only for important announcements."
-                            : "Direct messages are secured and monitored for compliance."}
-                    </p>
-                </div>
-            </div>
-            {/* SEARCH & NEW CHAT MODAL */}
-            {showSearchModal && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11000 }}>
-                    <div style={{ background: '#FFF', padding: 32, borderRadius: 28, width: 480, boxShadow: '0 40px 80px rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.8)', animation: 'float 0.3s ease-out' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 1000, color: '#0F172A' }}>New Message</h2>
-                            <button onClick={() => setShowSearchModal(false)} style={{ background: '#F1F5F9', border: 'none', width: 32, height: 32, borderRadius: '50%', cursor: 'pointer' }}><ChevronRight size={18} /></button>
-                        </div>
-                        <div style={{ background: '#F8FAFC', borderRadius: 16, border: `1px solid ${COLORS.border}`, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 12, marginBottom: 20 }}>
-                            <Search size={18} color="#94A3B8" />
-                            <input 
-                                type="text" 
-                                placeholder="Search staff..." 
-                                value={searchQuery}
-                                onChange={e => {
-                                    setSearchQuery(e.target.value)
-                                    // Local filter on existing non-student contacts for now
-                                    const filtered = contacts.filter(c => c.name.toLowerCase().includes(e.target.value.toLowerCase()))
-                                    setSearchResults(filtered)
-                                }}
-                                style={{ flex: 1, border: 'none', background: 'transparent', padding: '16px 0', fontSize: 14, fontWeight: 600, outline: 'none' }} 
-                            />
-                        </div>
-                        <div className="custom-scrollbar" style={{ maxHeight: 300, overflowY: 'auto' }}>
-                            {(searchQuery ? searchResults : contacts).map(c => (
-                                <div 
-                                    key={c.id} 
-                                    onClick={() => {
-                                        setSelectedId(c.id)
-                                        setShowSearchModal(false)
-                                    }}
-                                    style={{ padding: '14px 16px', borderRadius: 14, cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center', transition: '0.2s', marginBottom: 4 }}
-                                    onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'}
-                                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-white mb-2">
+                                    School Notice Board & Official Circulars
+                                </h1>
+                                <p className="text-sm sm:text-base text-slate-200 leading-relaxed">
+                                    Broadcast official circulars, post examination timetables, announce academic events, and publish institutional alerts across your school community.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-3">
+                                <button
+                                    onClick={() => setActiveTab('publish')}
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
                                 >
-                                    <div style={{ width: 40, height: 40, borderRadius: 12, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #E2E8F0' }}>
-                                        {c.type === 'group' ? <Radio size={18} color={COLORS.primary} /> : <User size={18} color={COLORS.primary} />}
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>{c.name}</div>
-                                        <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>{c.sub}</div>
-                                    </div>
-                                    <ChevronRight size={16} color="#CBD5E1" />
+                                    <Plus className="w-4 h-4" />
+                                    Publish New Circular
+                                </button>
+                                <button
+                                    onClick={fetchNotices}
+                                    disabled={loading}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md font-medium text-sm transition-all"
+                                >
+                                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                                    Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── TOP 4 DYNAMIC KPI CARDS ── */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                    {/* Active Circulars */}
+                    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:border-slate-300 transition-all">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Active Circulars</span>
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                                <FileText className="w-5 h-5" />
+                            </div>
+                        </div>
+                        <div className="mt-4 flex items-baseline gap-2">
+                            <span className="text-3xl font-bold text-slate-900">{stats.active_notices}</span>
+                            <span className="text-xs text-blue-600 font-medium">live notices</span>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">Official campus announcements</p>
+                    </div>
+
+                    {/* Urgent Alerts */}
+                    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:border-slate-300 transition-all">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Urgent & High Priority</span>
+                            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                                <ShieldAlert className="w-5 h-5" />
+                            </div>
+                        </div>
+                        <div className="mt-4 flex items-baseline gap-2">
+                            <span className="text-3xl font-bold text-slate-900">{stats.urgent_alerts}</span>
+                            <span className="text-xs text-rose-600 font-medium">critical notices</span>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">Exams & immediate advisories</p>
+                    </div>
+
+                    {/* Pinned Circulars */}
+                    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:border-slate-300 transition-all">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Pinned to Top</span>
+                            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                                <Pin className="w-5 h-5" />
+                            </div>
+                        </div>
+                        <div className="mt-4 flex items-baseline gap-2">
+                            <span className="text-3xl font-bold text-slate-900">{stats.pinned_notices}</span>
+                            <span className="text-xs text-amber-600 font-medium">highlighted</span>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">Featured campus circulars</p>
+                    </div>
+
+                    {/* Audience Segments */}
+                    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:border-slate-300 transition-all">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Audience Scope</span>
+                            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                <Users className="w-5 h-5" />
+                            </div>
+                        </div>
+                        <div className="mt-4 flex items-baseline gap-2">
+                            <span className="text-3xl font-bold text-slate-900">{stats.audiences_covered || 'All'}</span>
+                            <span className="text-xs text-emerald-600 font-medium">segments</span>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">Students, parents, and faculty</p>
+                    </div>
+                </div>
+
+                {/* ── TAB NAVIGATION BAR ── */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-4">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        {/* Tab buttons */}
+                        <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/80 gap-1 overflow-x-auto max-w-full">
+                            <button
+                                onClick={() => setActiveTab('board')}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 ${
+                                    activeTab === 'board'
+                                        ? 'bg-white text-slate-900 shadow-sm'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                            >
+                                <Megaphone className="w-4 h-4 text-blue-600" />
+                                Active Notice Board ({stats.active_notices})
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('publish')}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 ${
+                                    activeTab === 'publish'
+                                        ? 'bg-white text-blue-700 shadow-sm'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                            >
+                                <Plus className="w-4 h-4 text-blue-600" />
+                                Publish Circular
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('broadcast')}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 ${
+                                    activeTab === 'broadcast'
+                                        ? 'bg-white text-purple-700 shadow-sm'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                            >
+                                <MessageSquare className="w-4 h-4 text-purple-600" />
+                                Staff & Department Broadcast
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('archive')}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 ${
+                                    activeTab === 'archive'
+                                        ? 'bg-white text-slate-900 shadow-sm'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                            >
+                                <Archive className="w-4 h-4 text-slate-500" />
+                                Past Records Archive
+                            </button>
+                        </div>
+
+                        {/* Search Input */}
+                        {activeTab !== 'publish' && activeTab !== 'broadcast' && (
+                            <div className="relative flex-1 max-w-lg lg:max-w-xl">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search circulars by title, circular number, category, or content..."
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Secondary Filters: Category, Priority, Audience */}
+                    {activeTab !== 'publish' && activeTab !== 'broadcast' && (
+                        <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-100">
+                            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <Filter className="w-3.5 h-3.5" />
+                                Filters:
+                            </div>
+
+                            {/* Category Selector */}
+                            <select
+                                value={selectedCategory}
+                                onChange={e => setSelectedCategory(e.target.value)}
+                                className="px-3 py-1.5 text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            >
+                                <option value="all">All Categories</option>
+                                <option value="Academic & Exams">Academic & Exams</option>
+                                <option value="Holiday Announcement">Holiday Announcement</option>
+                                <option value="Administrative">Administrative</option>
+                                <option value="Events & Sports">Events & Sports</option>
+                                <option value="Emergency Alert">Emergency Alert</option>
+                            </select>
+
+                            {/* Priority Selector */}
+                            <select
+                                value={selectedPriority}
+                                onChange={e => setSelectedPriority(e.target.value)}
+                                className="px-3 py-1.5 text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            >
+                                <option value="all">All Priorities</option>
+                                <option value="Urgent">Urgent Priority</option>
+                                <option value="Important">Important</option>
+                                <option value="Normal">Normal</option>
+                            </select>
+
+                            {/* Audience Selector */}
+                            <select
+                                value={selectedAudience}
+                                onChange={e => setSelectedAudience(e.target.value)}
+                                className="px-3 py-1.5 text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            >
+                                <option value="all">All Audiences</option>
+                                <option value="All School">All School (Campus-Wide)</option>
+                                <option value="All Students & Parents">All Students & Parents</option>
+                                <option value="Teachers & Staff Only">Teachers & Staff Only</option>
+                                {classes.map(c => (
+                                    <option key={c.id} value={c.name}>
+                                        {c.name}
+                                    </option>
+                                ))}
+                            </select>
+
+                            {(selectedCategory !== 'all' || selectedPriority !== 'all' || selectedAudience !== 'all' || searchQuery) && (
+                                <button
+                                    onClick={() => {
+                                        setSelectedCategory('all')
+                                        setSelectedPriority('all')
+                                        setSelectedAudience('all')
+                                        setSearchQuery('')
+                                    }}
+                                    className="text-xs font-medium text-blue-600 hover:text-blue-800 underline ml-auto"
+                                >
+                                    Clear all filters
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* ── TAB 1 & 4: ACTIVE NOTICE BOARD & ARCHIVE ── */}
+                {(activeTab === 'board' || activeTab === 'archive') && (
+                    <div>
+                        {loading ? (
+                            <div className="w-full bg-white rounded-3xl border border-slate-200 p-16 text-center space-y-4 shadow-sm">
+                                <div className="w-12 h-12 rounded-full border-4 border-blue-600/30 border-t-blue-600 animate-spin mx-auto" />
+                                <h3 className="text-base font-semibold text-slate-800">Loading School Circulars...</h3>
+                                <p className="text-xs text-slate-500">Connecting to PostgreSQL and fetching official announcements</p>
+                            </div>
+                        ) : notices.length === 0 ? (
+                            <div className="w-full bg-white rounded-3xl border border-dashed border-slate-300 p-16 text-center space-y-4 shadow-sm">
+                                <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-200 text-slate-400 flex items-center justify-center mx-auto">
+                                    <Bell className="w-8 h-8" />
                                 </div>
-                            ))}
+                                <h3 className="text-lg font-bold text-slate-900">
+                                    {activeTab === 'archive' ? 'No Archived Notices' : 'No Circulars Found'}
+                                </h3>
+                                <p className="text-sm text-slate-500 max-w-md mx-auto">
+                                    {activeTab === 'archive'
+                                        ? 'No historical notices have been archived yet.'
+                                        : 'No active circulars match your current search or filter criteria. Publish a new circular to get started.'}
+                                </p>
+                                {activeTab === 'board' && (
+                                    <button
+                                        onClick={() => setActiveTab('publish')}
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm shadow-sm transition-all"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Publish New Circular
+                                    </button>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {notices.map(notice => {
+                                    const isUrgent = notice.priority === 'Urgent'
+                                    const isImportant = notice.priority === 'Important'
+
+                                    return (
+                                        <div
+                                            key={notice.id}
+                                            className={`bg-white rounded-2xl border p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group ${
+                                                notice.is_pinned
+                                                    ? 'border-blue-300 ring-1 ring-blue-200/50 bg-gradient-to-b from-blue-50/20 to-white'
+                                                    : 'border-slate-200 hover:border-slate-300'
+                                            }`}
+                                        >
+                                            <div>
+                                                {/* Top Row: Category + Priority + Pin */}
+                                                <div className="flex items-start justify-between gap-2 mb-3">
+                                                    <div className="flex flex-wrap items-center gap-1.5">
+                                                        {/* Category Badge */}
+                                                        <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">
+                                                            {notice.category}
+                                                        </span>
+
+                                                        {/* Priority Badge */}
+                                                        {isUrgent ? (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                                                <ShieldAlert className="w-3 h-3" />
+                                                                Urgent
+                                                            </span>
+                                                        ) : isImportant ? (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                                                <AlertCircle className="w-3 h-3" />
+                                                                Important
+                                                            </span>
+                                                        ) : (
+                                                            <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-700">
+                                                                Normal
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex items-center gap-1">
+                                                        <button
+                                                            onClick={() => handleTogglePin(notice.id, notice.is_pinned)}
+                                                            className={`p-1.5 rounded-lg transition-all ${
+                                                                notice.is_pinned
+                                                                    ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                                                                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100 opacity-0 group-hover:opacity-100'
+                                                            }`}
+                                                            title={notice.is_pinned ? 'Unpin notice' : 'Pin notice to top'}
+                                                        >
+                                                            <Pin className={`w-4 h-4 ${notice.is_pinned ? 'fill-current' : ''}`} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteNotice(notice.id, notice.title)}
+                                                            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-all"
+                                                            title="Delete notice"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Title */}
+                                                <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 mb-2 leading-snug">
+                                                    {notice.title}
+                                                </h3>
+
+                                                {/* Audience Pill */}
+                                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 mb-3">
+                                                    <Users className="w-3 h-3 text-slate-500" />
+                                                    {notice.target_audience}
+                                                </div>
+
+                                                {/* Content Preview */}
+                                                <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed mb-4">
+                                                    {notice.content}
+                                                </p>
+
+                                                {/* Attachment Pill if present */}
+                                                {notice.attachment_name && (
+                                                    <div className="mb-4 p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                                                        <div className="flex items-center gap-2 text-slate-700 font-medium truncate max-w-[200px]">
+                                                            <Paperclip className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                                                            <span className="truncate">{notice.attachment_name}</span>
+                                                        </div>
+                                                        <span className="text-[11px] text-slate-400 font-semibold flex-shrink-0">
+                                                            {notice.attachment_size || 'PDF'}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Bottom Row: Date & Actions */}
+                                            <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                                                <div className="space-y-0.5">
+                                                    <div className="flex items-center gap-1.5 font-medium">
+                                                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                                        {new Date(notice.publish_date).toLocaleDateString('en-US', {
+                                                            month: 'short',
+                                                            day: 'numeric'
+                                                        })}
+                                                    </div>
+                                                    {notice.views_count > 0 && (
+                                                        <div className="text-[11px] text-slate-400">
+                                                            {notice.views_count} views
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex items-center gap-2">
+                                                    {activeTab === 'board' && (
+                                                        <button
+                                                            onClick={() => handleArchiveNotice(notice.id, notice.title)}
+                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all opacity-0 group-hover:opacity-100"
+                                                            title="Archive notice"
+                                                        >
+                                                            <Archive className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => setSelectedNotice(notice)}
+                                                        className="px-3.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-xs transition-all flex items-center gap-1"
+                                                    >
+                                                        <Eye className="w-3.5 h-3.5" />
+                                                        Read
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ── TAB 2: PUBLISH SCHOOL CIRCULAR FORM ── */}
+                {activeTab === 'publish' && (
+                    <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-10 shadow-sm space-y-8 max-w-4xl mx-auto">
+                        <div className="border-b border-slate-100 pb-5">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 mb-2">
+                                <Sparkles className="w-3.5 h-3.5" />
+                                Institutional Announcement Composer
+                            </span>
+                            <h2 className="text-2xl font-bold text-slate-900">Publish Official School Circular</h2>
+                            <p className="text-sm text-slate-500 mt-1">
+                                Author a new administrative or academic announcement to be broadcast across campus and posted to the student and parent portal.
+                            </p>
+                        </div>
+
+                        <form onSubmit={handlePublishNotice} className="space-y-6">
+                            {/* Circular Title */}
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                                    Circular Title <span className="text-rose-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="e.g. Mid-Term Examination Schedule & Admit Card Distribution"
+                                    value={formData.title}
+                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                    className="w-full px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900"
+                                />
+                            </div>
+
+                            {/* Category, Priority, Target Audience */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                                        Circular Category <span className="text-rose-500">*</span>
+                                    </label>
+                                    <select
+                                        value={formData.category}
+                                        onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                        className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                                    >
+                                        <option value="Academic & Exams">Academic & Exams</option>
+                                        <option value="Holiday Announcement">Holiday Announcement</option>
+                                        <option value="Administrative">Administrative</option>
+                                        <option value="Events & Sports">Events & Sports</option>
+                                        <option value="Emergency Alert">Emergency Alert</option>
+                                        <option value="General">General Announcement</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                                        Priority Level <span className="text-rose-500">*</span>
+                                    </label>
+                                    <select
+                                        value={formData.priority}
+                                        onChange={e => setFormData({ ...formData, priority: e.target.value as any })}
+                                        className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                                    >
+                                        <option value="Normal">Normal Priority</option>
+                                        <option value="Important">Important Announcement</option>
+                                        <option value="Urgent">Urgent / Critical Action</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                                        Target Audience <span className="text-rose-500">*</span>
+                                    </label>
+                                    <select
+                                        value={formData.target_audience}
+                                        onChange={e => setFormData({ ...formData, target_audience: e.target.value })}
+                                        className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                                    >
+                                        <option value="All School">All School (Students, Parents & Staff)</option>
+                                        <option value="All Students & Parents">All Students & Parents</option>
+                                        <option value="Teachers & Staff Only">Teachers & Staff Only</option>
+                                        {classes.map(c => (
+                                            <option key={c.id} value={c.name}>
+                                                {c.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Circular Body */}
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                                    Official Circular Content <span className="text-rose-500">*</span>
+                                </label>
+                                <textarea
+                                    required
+                                    rows={6}
+                                    placeholder="Write the full announcement text, instructions, and regulations for the notice board..."
+                                    value={formData.content}
+                                    onChange={e => setFormData({ ...formData, content: e.target.value })}
+                                    className="w-full px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all leading-relaxed"
+                                />
+                            </div>
+
+                            {/* Expiry Date & Attachment */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                                        Notice Expiry / Event Date (Optional)
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={formData.expiry_date}
+                                        onChange={e => setFormData({ ...formData, expiry_date: e.target.value })}
+                                        className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                                        Attachment Name (PDF / Timetable Sheet)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Official Examination Schedule Term 1.pdf"
+                                        value={formData.attachment_name}
+                                        onChange={e => setFormData({ ...formData, attachment_name: e.target.value })}
+                                        className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Pin to Top Checkbox */}
+                            <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100 flex items-center gap-3">
+                                <input
+                                    type="checkbox"
+                                    id="pin-checkbox"
+                                    checked={formData.is_pinned}
+                                    onChange={e => setFormData({ ...formData, is_pinned: e.target.checked })}
+                                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                />
+                                <label htmlFor="pin-checkbox" className="text-sm font-semibold text-slate-800 cursor-pointer">
+                                    Pin this announcement to the top of the School Notice Board
+                                </label>
+                            </div>
+
+                            {/* Submit and Cancel Buttons */}
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('board')}
+                                    className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium text-sm transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={actionLoading}
+                                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm shadow-sm transition-all flex items-center gap-2"
+                                >
+                                    {actionLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                                    Publish Circular to Campus
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
+
+                {/* ── TAB 3: STAFF & DEPARTMENT BROADCASTS ── */}
+                {activeTab === 'broadcast' && (
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col lg:flex-row min-h-[600px]">
+                        {/* Contacts Sidebar */}
+                        <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-slate-200 p-4 space-y-4 bg-slate-50/50">
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900">Faculty & Department Staff</h3>
+                                <p className="text-xs text-slate-500">Select a faculty member to send internal memos</p>
+                            </div>
+
+                            <div className="space-y-1.5 overflow-y-auto max-h-[500px]">
+                                {faculty.map(f => {
+                                    const isSelected = selectedContact?.id === f.id
+                                    return (
+                                        <button
+                                            key={f.id}
+                                            onClick={() => setSelectedContact(f)}
+                                            className={`w-full p-3 rounded-xl text-left transition-all flex items-center gap-3 ${
+                                                isSelected
+                                                    ? 'bg-blue-600 text-white shadow-sm'
+                                                    : 'bg-white hover:bg-slate-100 text-slate-800 border border-slate-200/80'
+                                            }`}
+                                        >
+                                            <div
+                                                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
+                                                    isSelected ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-700'
+                                                }`}
+                                            >
+                                                {f.first_name?.[0] || 'F'}
+                                            </div>
+                                            <div className="truncate">
+                                                <div className="text-sm font-bold truncate">
+                                                    {f.first_name} {f.last_name}
+                                                </div>
+                                                <div
+                                                    className={`text-xs capitalize truncate ${
+                                                        isSelected ? 'text-blue-100' : 'text-slate-400'
+                                                    }`}
+                                                >
+                                                    {f.role.replace('_', ' ')}
+                                                </div>
+                                            </div>
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Broadcast Chat Pane */}
+                        <div className="flex-1 flex flex-col justify-between p-6 bg-white">
+                            {/* Pane Header */}
+                            <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
+                                {selectedContact ? (
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
+                                            {selectedContact.first_name?.[0] || 'U'}
+                                        </div>
+                                        <div>
+                                            <h4 className="text-base font-bold text-slate-900">
+                                                {selectedContact.first_name} {selectedContact.last_name}
+                                            </h4>
+                                            <span className="text-xs text-slate-500 capitalize">
+                                                {selectedContact.role.replace('_', ' ')} • Active Staff Member
+                                            </span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <span className="text-sm text-slate-400">Select a staff contact to start messaging</span>
+                                )}
+                            </div>
+
+                            {/* Message Feed */}
+                            <div className="flex-1 py-6 space-y-4 overflow-y-auto max-h-[400px]">
+                                {chatLoading ? (
+                                    <div className="text-center py-10 text-slate-400 text-sm">
+                                        Loading conversation...
+                                    </div>
+                                ) : chatMessages.length === 0 ? (
+                                    <div className="text-center py-16 text-slate-400 text-sm space-y-2">
+                                        <MessageSquare className="w-8 h-8 mx-auto text-slate-300" />
+                                        <p>No broadcast history with this faculty member.</p>
+                                        <p className="text-xs text-slate-400">Type a message below to send an administrative update.</p>
+                                    </div>
+                                ) : (
+                                    chatMessages.map(msg => (
+                                        <div key={msg.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 max-w-lg space-y-1">
+                                            <div className="flex items-center justify-between text-[11px] text-slate-400">
+                                                <span className="font-semibold text-slate-600">{msg.sender_name || 'Staff Member'}</span>
+                                                <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            </div>
+                                            <p className="text-sm text-slate-800 leading-relaxed">{msg.content}</p>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            {/* Message Composer */}
+                            <form onSubmit={handleSendBroadcast} className="pt-4 border-t border-slate-100 flex items-center gap-3">
+                                <input
+                                    type="text"
+                                    placeholder="Type an administrative memo or faculty message..."
+                                    value={broadcastMsg}
+                                    onChange={e => setBroadcastMsg(e.target.value)}
+                                    className="flex-1 px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!broadcastMsg.trim()}
+                                    className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-semibold text-sm flex items-center gap-1.5 transition-all"
+                                >
+                                    <Send className="w-4 h-4" />
+                                    Send
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* ── MODAL: OFFICIAL SCHOOL LETTERHEAD CIRCULAR PREVIEW ── */}
+            {selectedNotice && (
+                <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 sm:p-10 space-y-6 my-8 animate-in fade-in zoom-in-95 duration-200">
+                        {/* Letterhead Header */}
+                        <div className="border-b-2 border-slate-900 pb-6 text-center relative">
+                            <button
+                                onClick={() => setSelectedNotice(null)}
+                                className="absolute top-0 right-0 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+
+                            <div className="flex items-center justify-center gap-2 text-blue-900 font-bold text-xs uppercase tracking-widest mb-1">
+                                <School className="w-4 h-4" />
+                                Silver Bells School • Academic Directorate
+                            </div>
+                            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 uppercase">
+                                Official Campus Circular
+                            </h2>
+                            <div className="flex items-center justify-center gap-4 text-xs text-slate-500 mt-2 font-medium">
+                                <span>Ref: CIR-{selectedNotice.id.substring(0, 8).toUpperCase()}</span>
+                                <span>•</span>
+                                <span>
+                                    Date:{' '}
+                                    {new Date(selectedNotice.publish_date).toLocaleDateString('en-US', {
+                                        month: 'long',
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                    })}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Badges */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2">
+                                <span className="px-3 py-1 rounded-full font-semibold bg-slate-100 text-slate-800">
+                                    {selectedNotice.category}
+                                </span>
+                                {selectedNotice.priority === 'Urgent' ? (
+                                    <span className="px-3 py-1 rounded-full font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                        Urgent Priority
+                                    </span>
+                                ) : selectedNotice.priority === 'Important' ? (
+                                    <span className="px-3 py-1 rounded-full font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                        Important
+                                    </span>
+                                ) : (
+                                    <span className="px-3 py-1 rounded-full font-medium bg-blue-50 text-blue-700">
+                                        Normal
+                                    </span>
+                                )}
+                            </div>
+
+                            <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 font-semibold">
+                                Target: {selectedNotice.target_audience}
+                            </span>
+                        </div>
+
+                        {/* Title & Body */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg sm:text-xl font-bold text-slate-900 leading-snug">
+                                {selectedNotice.title}
+                            </h3>
+                            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-800 leading-relaxed whitespace-pre-line font-normal">
+                                {selectedNotice.content}
+                            </div>
+                        </div>
+
+                        {/* Attachment Download */}
+                        {selectedNotice.attachment_name && (
+                            <div className="p-4 rounded-2xl border border-slate-200 bg-blue-50/40 flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center">
+                                        <FileText className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-slate-900">{selectedNotice.attachment_name}</div>
+                                        <div className="text-slate-500">{selectedNotice.attachment_size || 'Official Document'}</div>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => showToast(`Downloading ${selectedNotice.attachment_name}...`)}
+                                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm"
+                                >
+                                    <Download className="w-3.5 h-3.5" />
+                                    Download
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Sign-off */}
+                        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                            <div>
+                                <span className="block font-bold text-slate-800">
+                                    {selectedNotice.author_name || 'Office of the Principal'}
+                                </span>
+                                <span>{selectedNotice.author_role ? selectedNotice.author_role.toUpperCase() : 'ADMINISTRATION'}</span>
+                            </div>
+                            <button
+                                onClick={() => window.print()}
+                                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold text-xs flex items-center gap-1.5"
+                            >
+                                <Printer className="w-3.5 h-3.5" />
+                                Print Circular
+                            </button>
                         </div>
                     </div>
                 </div>
