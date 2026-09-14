@@ -1,317 +1,1148 @@
 'use client'
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
 import {
     Users, Search, PlusCircle, UploadCloud, UserCheck, UserX,
-    MoreVertical, Activity, Lock, CheckCircle, XCircle, Loader2, 
-    Download, Filter, Layout, ArrowRight, ShieldCheck, Database,
-    FileSpreadsheet, SlidersHorizontal, RefreshCcw, UserPlus,
-    BarChart3, Calendar, ChevronDown, Trash2, Info, ArrowUpNarrowWide,
-    CheckCircle2, Sparkles, Binary, Cpu, Fingerprint, Layers,
-    Maximize2, MoreHorizontal
+    Activity, Lock, Unlock, CheckCircle2, XCircle, Loader2,
+    Download, Filter, ArrowRight, ShieldCheck, FileSpreadsheet,
+    RefreshCcw, UserPlus, BarChart3, Trash2, Eye, School,
+    GraduationCap, Phone, Mail, ChevronRight, X, Printer,
+    FileText, Check, AlertCircle, Sparkles
 } from 'lucide-react'
-import Link from 'next/link'
-const COLORS = {
-    primary: '#004B93',
-    primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
-    success: '#1FAC63',
-    warning: '#F0A026',
-    danger: '#EF4444',
-    slate: '#64748B',
-    background: '#F8FAFC',
-    border: '#E2E8F0',
-    glass: 'rgba(255, 255, 255, 0.7)'
+
+interface Student {
+    id: string
+    first_name: string
+    last_name: string
+    email: string
+    phone: string
+    is_active: boolean
+    created_at: string
+    role: string
+    metadata?: {
+        school_class?: string
+        class?: string
+        division?: string
+        section?: string
+        roll_no?: string
+        roll_number?: string
+        parent_name?: string
+        parent_phone?: string
+        marks_percentage?: number
+    }
+    avg_marks?: number | string
+    top_score?: number | string
+    total_exams?: number
+    standing_grade?: string
 }
-// ── TYPES ────────────────────────────────────────────────
-type Student = { 
-    id: string; first_name: string; last_name: string; email: string; 
-    phone: string; is_active: boolean; created_at: string; role: string; 
-    metadata?: { school_class?: string; division?: string; marks_percentage?: number; } 
+
+interface StatsSummary {
+    total_students: number
+    active_students: number
+    cohort_average_marks: number
+    top_class: string
 }
-// ── UI COMPONENTS ──────────────────────────────────
-function AppToast({ msg, ok, onClose }: { msg: string; ok: boolean; onClose: () => void }) {
-    useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
-    return (
-        <div style={{ position: 'fixed', top: 32, right: 32, background: ok ? '#ECFDF5' : '#FEF2F2', border: `1px solid ${ok ? COLORS.success : COLORS.danger}40`, borderRadius: 20, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', zIndex: 30000, animation: 'float 0.3s ease-out' }}>
-            {ok ? <CheckCircle2 size={20} color={COLORS.success} /> : <XCircle size={20} color={COLORS.danger} />}
-            <span style={{ fontSize: 14, fontWeight: 900, color: ok ? '#065F46' : '#991B1B' }}>{msg}</span>
-        </div>
-    )
-}
-function AppModal({ title, onClose, children, onSubmit, saving, saveText = 'Save', maxWidth = 640 }: any) {
-    return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: 20 }}>
-            <div style={{ background: '#FFF', borderRadius: 28, width: '100%', maxWidth, overflow: 'hidden', boxShadow: '0 40px 80px rgba(0,0,0,0.15)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', animation: 'float 0.3s ease-out', border: '1px solid rgba(255,255,255,0.8)' }}>
-                <div style={{ padding: '24px 32px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-                    <h3 style={{ margin: 0, fontSize: 20, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.02em' }}>{title}</h3>
-                    <button onClick={onClose} style={{ background: '#F1F5F9', border: 'none', width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><XCircle size={20} color="#64748B" /></button>
-                </div>
-                <div style={{ padding: 40, overflowY: 'auto' }}>{children}</div>
-                {onSubmit && (
-                    <div style={{ padding: '24px 32px', background: '#F8FAFC', borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'flex-end', gap: 16, flexShrink: 0 }}>
-                        <button onClick={onClose} style={{ padding: '12px 24px', borderRadius: 14, background: 'transparent', border: '1px solid #E2E8F0', color: '#475569', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
-                        <button onClick={onSubmit} disabled={saving} style={{ padding: '12px 28px', borderRadius: 14, background: COLORS.primaryGradient, border: 'none', color: '#fff', fontSize: 14, fontWeight: 1000, cursor: saving ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 10px 20px rgba(0,75,147,0.15)' }}>
-                            {saving && <Loader2 size={16} className="spin" />} {saveText}
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
-    )
-}
-// ── MAIN APPLICATION ─────────────────────────────
+
 export default function StudentDirectoryPage() {
-    const [students, setStudents] = useState<Student[]>([])
     const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
-    const [search, setSearch] = useState('')
-    const [showFilters, setShowFilters] = useState(true)
-    const [activeRow, setActiveRow] = useState<string | null>(null)
-    const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-    const [showAddModal, setShowAddModal] = useState(false)
-    const [showBulkModal, setShowBulkModal] = useState(false)
-    // Filter Logic
-    const [filters, setFilters] = useState({ standard: '', division: '', status: 'all' })
-    const [studentForm, setStudentForm] = useState<any>({ first_name: '', last_name: '', email: '', phone: '', school_class: '', division: '' })
-    const showToast = (msg: string, ok: boolean) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 3500) }
-    const fetchStudents = useCallback(async () => {
-        setLoading(true)
+    const [refreshing, setRefreshing] = useState(false)
+    const [activeTab, setActiveTab] = useState<'directory' | 'add' | 'bulk'>('directory')
+
+    // Data states
+    const [students, setStudents] = useState<Student[]>([])
+    const [stats, setStats] = useState<StatsSummary>({
+        total_students: 0,
+        active_students: 0,
+        cohort_average_marks: 0,
+        top_class: 'Grade 10'
+    })
+    const [classes, setClasses] = useState<{ id: string; name: string }[]>([])
+    const [divisions, setDivisions] = useState<{ id: string; name: string; class_id: string }[]>([])
+
+    // Search & Filter states
+    const [searchQuery, setSearchQuery] = useState('')
+    const [selectedClass, setSelectedClass] = useState('all')
+    const [selectedDivision, setSelectedDivision] = useState('all')
+    const [selectedStatus, setSelectedStatus] = useState('all')
+
+    // Form state for adding individual student
+    const [studentForm, setStudentForm] = useState({
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone: '',
+        roll_no: '',
+        school_class: '',
+        division: '',
+        parent_name: '',
+        parent_phone: ''
+    })
+    const [isSavingStudent, setIsSavingStudent] = useState(false)
+
+    // Bulk upload states
+    const [bulkRawData, setBulkRawData] = useState('')
+    const [parsedBulkStudents, setParsedBulkStudents] = useState<any[]>([])
+    const [isImportingBulk, setIsImportingBulk] = useState(false)
+
+    // Modal & Toast states
+    const [selectedStudentForModal, setSelectedStudentForModal] = useState<Student | null>(null)
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+
+    const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+        setToast({ message, type })
+        setTimeout(() => setToast(null), 4000)
+    }
+
+    // ── FETCH STUDENTS & STATS ──────────────────────────────────
+    const fetchStudentsData = useCallback(async (isSilent = false) => {
+        if (!isSilent) setLoading(true)
+        else setRefreshing(true)
+
         try {
-            const url = new URL('/api/dashboard/students', window.location.origin)
-            if (search) url.searchParams.set('search', search)
-            if (filters.standard) url.searchParams.set('school_class', filters.standard)
-            if (filters.division) url.searchParams.set('division', filters.division)
-            if (filters.status !== 'all') url.searchParams.set('status', filters.status)
-            const res = await fetch(url.toString())
+            const params = new URLSearchParams()
+            if (searchQuery.trim()) params.append('search', searchQuery.trim())
+            if (selectedClass !== 'all') params.append('school_class', selectedClass)
+            if (selectedDivision !== 'all') params.append('division', selectedDivision)
+            if (selectedStatus !== 'all') params.append('status', selectedStatus)
+
+            const res = await fetch(`/api/dashboard/students?${params.toString()}`)
             const json = await res.json()
-            if (res.ok) setStudents(json || [])
-        } finally { setLoading(false) }
-    }, [search, filters])
-    useEffect(() => { fetchStudents() }, [fetchStudents])
-    const handleCreateStudent = async () => {
-        if (!studentForm.email) return showToast('Email Address Required', false)
-        setSaving(true)
+
+            if (json.success && json.data) {
+                setStudents(json.data.students || [])
+                setStats(json.data.stats || stats)
+                setClasses(json.data.classes || [])
+                setDivisions(json.data.divisions || [])
+
+                // Set default class if empty
+                if (json.data.classes?.length > 0 && !studentForm.school_class) {
+                    setStudentForm(prev => ({ ...prev, school_class: json.data.classes[0].name }))
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching students data:', error)
+            showToast('Unable to load student roster from server.', 'error')
+        } finally {
+            setLoading(false)
+            setRefreshing(false)
+        }
+    }, [searchQuery, selectedClass, selectedDivision, selectedStatus, studentForm.school_class])
+
+    useEffect(() => {
+        fetchStudentsData()
+    }, [fetchStudentsData])
+
+    // Filter available divisions based on selected class in Add form
+    const availableDivisionsForForm = useMemo(() => {
+        if (!studentForm.school_class) return divisions
+        const matchedClass = classes.find(c => c.name === studentForm.school_class)
+        if (!matchedClass) return divisions
+        return divisions.filter(d => d.class_id === matchedClass.id)
+    }, [classes, divisions, studentForm.school_class])
+
+    // ── SUBMIT INDIVIDUAL STUDENT ADMISSION ────────────────────
+    const handleCreateStudent = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!studentForm.first_name || !studentForm.email) {
+            showToast('First Name and Email are mandatory fields.', 'error')
+            return
+        }
+
+        setIsSavingStudent(true)
         try {
             const res = await fetch('/api/dashboard/students', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'CREATE_STUDENT', payload: studentForm })
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'CREATE_STUDENT',
+                    payload: studentForm
+                })
             })
-            if (res.ok) {
-                showToast('Student Profile Created', true)
-                setShowAddModal(false)
-                fetchStudents()
+            const json = await res.json()
+
+            if (json.success) {
+                showToast(json.message || 'Student enrolled successfully!', 'success')
+                setStudentForm({
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    phone: '',
+                    roll_no: '',
+                    school_class: classes[0]?.name || '',
+                    division: '',
+                    parent_name: '',
+                    parent_phone: ''
+                })
+                fetchStudentsData(true)
+                setActiveTab('directory')
+            } else {
+                showToast(json.error || 'Failed to admit student.', 'error')
             }
-        } finally { setSaving(false) }
+        } catch (err) {
+            console.error(err)
+            showToast('Error admitting student profile.', 'error')
+        } finally {
+            setIsSavingStudent(false)
+        }
     }
-    const handleToggleStatus = async (id: string, current: boolean) => {
-        setSaving(true)
+
+    // ── TOGGLE ACTIVE / SUSPEND STATUS ────────────────────────
+    const handleToggleStatus = async (id: string, currentStatus: boolean) => {
         try {
             const res = await fetch('/api/dashboard/students', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'TOGGLE_STATUS', payload: { id, is_active: !current } })
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'TOGGLE_STATUS',
+                    payload: { id, is_active: !currentStatus }
+                })
             })
-            if (res.ok) {
-                showToast('Student Status Updated', true)
-                fetchStudents()
+            const json = await res.json()
+            if (json.success) {
+                showToast(`Student status updated to ${!currentStatus ? 'Active' : 'Suspended'}.`, 'success')
+                fetchStudentsData(true)
+            } else {
+                showToast(json.error || 'Failed to update student status.', 'error')
             }
-        } finally { setSaving(false) }
+        } catch (err) {
+            console.error(err)
+            showToast('Error updating status.', 'error')
+        }
     }
-    const handleDeleteStudent = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this student profile permanently?')) return
-        setSaving(true)
+
+    // ── DELETE STUDENT ─────────────────────────────────────────
+    const handleDeleteStudent = async (id: string, name: string) => {
+        if (!confirm(`Are you sure you want to permanently delete the profile for ${name}? This action cannot be undone.`)) {
+            return
+        }
+
         try {
             const res = await fetch('/api/dashboard/students', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'DELETE_STUDENT', payload: { id } })
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'DELETE_STUDENT',
+                    payload: { id }
+                })
             })
-            if (res.ok) {
-                showToast('Student Profile Deleted', true)
-                fetchStudents()
+            const json = await res.json()
+            if (json.success) {
+                showToast('Student profile deleted from school roster.', 'success')
+                setStudents(prev => prev.filter(s => s.id !== id))
+                fetchStudentsData(true)
+            } else {
+                showToast(json.error || 'Failed to delete student.', 'error')
             }
-        } finally { setSaving(false) }
+        } catch (err) {
+            console.error(err)
+            showToast('Error deleting student.', 'error')
+        }
     }
+
+    // ── PARSE RAW CSV FOR BULK UPLOAD ─────────────────────────
+    const handleParseBulkData = () => {
+        if (!bulkRawData.trim()) return
+
+        const lines = bulkRawData.trim().split('\n')
+        const parsed: any[] = []
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim()
+            if (!line) continue
+
+            // Skip header row if present
+            if (i === 0 && line.toLowerCase().includes('email')) continue
+
+            const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''))
+            if (parts.length >= 3) {
+                parsed.push({
+                    first_name: parts[0] || 'Student',
+                    last_name: parts[1] || '',
+                    email: parts[2] || '',
+                    phone: parts[3] || '',
+                    roll_no: parts[4] || '',
+                    school_class: parts[5] || classes[0]?.name || 'Grade 10',
+                    division: parts[6] || 'Section Alpha',
+                    parent_name: parts[7] || '',
+                    parent_phone: parts[8] || ''
+                })
+            }
+        }
+
+        setParsedBulkStudents(parsed)
+        if (parsed.length > 0) {
+            showToast(`Parsed ${parsed.length} student records from CSV. Ready to import!`, 'success')
+        } else {
+            showToast('No valid student rows recognized. Check format.', 'error')
+        }
+    }
+
+    // ── COMMIT BULK IMPORT TO DATABASE ────────────────────────
+    const handleCommitBulkImport = async () => {
+        if (!parsedBulkStudents.length) return
+        setIsImportingBulk(true)
+
+        try {
+            const res = await fetch('/api/dashboard/students', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'BULK_CREATE_STUDENTS',
+                    payload: parsedBulkStudents
+                })
+            })
+            const json = await res.json()
+            if (json.success) {
+                showToast(json.message || 'Students imported successfully!', 'success')
+                setBulkRawData('')
+                setParsedBulkStudents([])
+                fetchStudentsData(true)
+                setActiveTab('directory')
+            } else {
+                showToast(json.error || 'Failed to import students.', 'error')
+            }
+        } catch (err) {
+            console.error(err)
+            showToast('Error executing bulk import.', 'error')
+        } finally {
+            setIsImportingBulk(false)
+        }
+    }
+
+    // ── EXPORT ROSTER TO CSV ──────────────────────────────────
+    const exportRosterCSV = () => {
+        if (!students.length) return
+
+        const headers = ['Roll Number', 'First Name', 'Last Name', 'Email', 'Phone', 'Class', 'Section', 'Average Marks', 'Status', 'Admission Date']
+        const csvRows = students.map(s => [
+            `"${s.metadata?.roll_no || s.metadata?.roll_number || 'N/A'}"`,
+            `"${s.first_name.replace(/"/g, '""')}"`,
+            `"${s.last_name.replace(/"/g, '""')}"`,
+            `"${s.email}"`,
+            `"${s.phone || ''}"`,
+            `"${(s.metadata?.school_class || s.metadata?.class || 'General').replace(/"/g, '""')}"`,
+            `"${(s.metadata?.division || s.metadata?.section || 'A').replace(/"/g, '""')}"`,
+            `"${s.avg_marks || 0}%"`,
+            `"${s.is_active ? 'Active' : 'Suspended'}"`,
+            `"${new Date(s.created_at).toLocaleDateString()}"`
+        ])
+
+        const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...csvRows.map(r => r.join(','))].join('\n')
+        const encodedUri = encodeURI(csvContent)
+        const link = document.createElement('a')
+        link.setAttribute('href', encodedUri)
+        link.setAttribute('download', `Student_Roster_${new Date().toISOString().slice(0, 10)}.csv`)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+    }
+
+    // ── DOWNLOAD SAMPLE CSV TEMPLATE ──────────────────────────
+    const downloadSampleTemplate = () => {
+        const sampleContent = 'first_name,last_name,email,phone,roll_no,school_class,division,parent_name,parent_phone\n' +
+            'Aarav,Sharma,aarav.sharma@example.com,9876543210,101,Grade 9 - Foundation Science & Humanities,Section Newton,Rajesh Sharma,9876543200\n' +
+            'Diya,Kapoor,diya.kapoor@example.com,9876543211,102,Grade 9 - Foundation Science & Humanities,Section Newton,Anita Kapoor,9876543201\n' +
+            'Rohan,Gupta,rohan.gupta@example.com,9876543212,201,Grade 10 - Matriculation Board,Section Alpha,Suresh Gupta,9876543202'
+
+        const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + sampleContent)
+        const link = document.createElement('a')
+        link.setAttribute('href', encodedUri)
+        link.setAttribute('download', 'Sample_Student_Roster_Template.csv')
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+    }
+
+    if (loading && !students.length) {
+        return (
+            <div className="w-full min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
+                <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-4 shadow-sm">
+                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Loading Student Directory</h3>
+                <p className="text-sm text-slate-500 font-medium mt-1">Fetching student profiles, classes, and academic records...</p>
+            </div>
+        )
+    }
+
     return (
-        <div style={{ padding: '48px 56px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            {toast && <AppToast msg={toast.msg} ok={toast.ok} onClose={() => setToast(null)} />}
-            {/* STUDENT MANAGEMENT HEADER */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 48 }}>
-                <div>
-                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                        <div style={{ padding: 10, background: COLORS.primaryGradient, borderRadius: 14, boxShadow: '0 8px 16px rgba(0,75,147,0.2)' }}>
-                            <Users size={24} color="#FFF" />
-                        </div>
-                        <h1 style={{ fontSize: 32, fontWeight: 1000, color: '#0F172A', margin: 0, letterSpacing: '-0.03em' }}>Student Directory</h1>
+        <div className="w-full px-4 sm:px-8 py-6 pb-24 bg-slate-50/60 min-h-screen text-slate-800 antialiased">
+            {/* ── TOAST NOTIFICATION ────────────────────────────────── */}
+            {toast && (
+                <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg border text-sm font-semibold transition-all animate-slideDown ${
+                    toast.type === 'success'
+                        ? 'bg-emerald-900 text-white border-emerald-700'
+                        : 'bg-rose-900 text-white border-rose-700'
+                }`}>
+                    {toast.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <AlertCircle className="w-5 h-5 text-rose-400" />}
+                    <span>{toast.message}</span>
+                </div>
+            )}
+
+            {/* ── CINEMATIC ENTERPRISE HERO BANNER ────────────────────── */}
+            <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-900 shadow-sm mb-8">
+                <div className="absolute inset-0 z-0">
+                    <Image
+                        src="/assets/images/dashboard/student_directory_banner.jpg"
+                        alt="School Admissions and Student Records Registry"
+                        fill
+                        priority
+                        className="object-cover object-center opacity-35 filter brightness-95"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/80 to-transparent" />
+                </div>
+
+                <div className="relative z-10 px-6 sm:px-10 py-8 sm:py-10 max-w-4xl text-white">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-600/30 border border-blue-400/30 text-blue-300 text-xs font-semibold uppercase tracking-wider mb-3">
+                        <GraduationCap className="w-3.5 h-3.5" />
+                        Student Directory & Academic Admissions Hub
                     </div>
-                    <p style={{ fontSize: 15, color: '#64748B', margin: 0, fontWeight: 600, maxWidth: 650, lineHeight: 1.6 }}>
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white mb-2">
+                        Student Directory & Admissions
+                    </h1>
+                    <p className="text-sm sm:text-base text-slate-300 font-normal leading-relaxed">
                         Manage student admissions, profiles, and attendance. View report cards and track academic progress across all classes and sections.
                     </p>
-                </div>
-                <div style={{ display: 'flex', gap: 16 }}>
-                    <button onClick={() => setShowBulkModal(true)} style={{ padding: '14px 24px', borderRadius: 16, background: '#FFF', border: '2px solid #F1F5F9', color: COLORS.slate, fontSize: 13, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <UploadCloud size={16} /> Bulk Upload
-                    </button>
-                    <button onClick={() => setShowAddModal(true)} style={{ padding: '14px 28px', borderRadius: 16, background: COLORS.primaryGradient, border: 'none', color: '#FFF', fontSize: 13, fontWeight: 1000, cursor: 'pointer', boxShadow: '0 10px 25px rgba(0,75,147,0.2)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <UserPlus size={20} /> Add Student
-                    </button>
-                </div>
-            </div>
-            {/* STUDENT STATS */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 48 }}>
-                {[
-                    { label: 'Total Students', val: students.length, icon: Users, color: COLORS.primary },
-                    { label: 'Average Marks', val: '84.2%', icon: BarChart3, color: COLORS.success },
-                    { label: 'Active Status', val: students.filter(s => s.is_active).length, icon: ShieldCheck, color: COLORS.warning },
-                    { label: 'Top Class', val: 'Class 10', icon: Layers, color: "#8B5CF6" }
-                ].map((stat, i) => (
-                    <div key={i} style={{ background: '#FFF', padding: 28, borderRadius: 28, border: '1px solid #F1F5F9', boxShadow: '0 4px 15px rgba(0,0,0,0.01)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                            <div style={{ padding: 10, background: `${stat.color}10`, borderRadius: 12 }}>
-                                <stat.icon size={20} color={stat.color} />
-                            </div>
-                            <span style={{ fontSize: 11, fontWeight: 1000, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{stat.label}</span>
-                        </div>
-                        <div style={{ fontSize: 32, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.02em' }}>{stat.val}</div>
-                    </div>
-                ))}
-            </div>
-            {/* FILTER SECTION */}
-            <div style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 36, padding: 32, marginBottom: 40, boxShadow: '0 40px 80px rgba(0,0,0,0.02)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
-                        <div style={{ background: '#F8FAFC', padding: '12px 20px', borderRadius: 18, border: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 12, flex: 1, maxWidth: 500 }}>
-                            <Search size={20} color="#94A3B8" />
-                            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, email, or Roll No..." style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: 14, fontWeight: 700, color: '#1E293B', width: '100%' }} />
-                        </div>
-                        <button onClick={() => setShowFilters(!showFilters)} style={{ padding: '12px 24px', borderRadius: 16, border: `1px solid ${showFilters ? COLORS.primary : '#F1F5F9'}`, background: showFilters ? `${COLORS.primary}08` : '#FFF', color: showFilters ? COLORS.primary : COLORS.slate, fontSize: 13, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <SlidersHorizontal size={18} /> Quick Filters
+
+                    <div className="mt-6 flex flex-wrap items-center gap-3">
+                        <button
+                            onClick={() => setActiveTab('add')}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 text-xs sm:text-sm font-bold shadow transition-all active:scale-95"
+                        >
+                            <UserPlus className="w-4 h-4 text-blue-600" />
+                            Add New Student
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('bulk')}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-200 border border-slate-700/80 text-xs sm:text-sm font-semibold transition-all active:scale-95"
+                        >
+                            <UploadCloud className="w-4 h-4 text-blue-400" />
+                            Bulk Roster Import
+                        </button>
+                        <button
+                            onClick={exportRosterCSV}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-200 border border-slate-700/80 text-xs sm:text-sm font-semibold transition-all active:scale-95"
+                        >
+                            <Download className="w-4 h-4 text-emerald-400" />
+                            Export Roster (CSV)
+                        </button>
+                        <button
+                            onClick={() => fetchStudentsData(true)}
+                            disabled={refreshing}
+                            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-300 border border-slate-700/60 text-xs sm:text-sm font-medium transition-all"
+                        >
+                            <RefreshCcw className={`w-3.5 h-3.5 text-blue-400 ${refreshing ? 'animate-spin' : ''}`} />
+                            {refreshing ? 'Refreshing...' : 'Sync'}
                         </button>
                     </div>
                 </div>
-                {showFilters && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, animation: 'float 0.3s ease-out' }}>
-                        {[
-                            { label: 'Select Class', key: 'standard', opts: ['Std 1', 'Std 2', 'Std 5', 'Std 10', 'Std 12'] },
-                            { label: 'Select Section', key: 'division', opts: ['A', 'B', 'C', 'D'] },
-                            { label: 'Student Status', key: 'status', opts: ['active', 'blocked'] }
-                        ].map((f, i) => (
-                            <div key={i}>
-                                <label style={{ display: 'block', fontSize: 11, fontWeight: 1000, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase' }}>{f.label}</label>
-                                <select value={(filters as any)[f.key]} onChange={e => setFilters({...filters, [f.key]: e.target.value})} style={{ width: '100%', padding: '14px', borderRadius: 16, border: '2px solid #F1F5F9', background: '#F8FAFC', fontSize: 13, fontWeight: 700 }}>
-                                    <option value="">All Students</option>
-                                    {f.opts.map(o => <option key={o} value={o}>{o.toUpperCase()}</option>)}
-                                </select>
-                            </div>
-                        ))}
-                         <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                            <button onClick={fetchStudents} style={{ width: '100%', padding: '14px', borderRadius: 16, background: '#111827', color: '#FFF', border: 'none', fontSize: 13, fontWeight: 1000, cursor: 'pointer' }}>Apply Filters</button>
+            </div>
+
+            {/* ── TOP KPI METRIC CARDS ─────────────────────────────────── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-8">
+                {/* 1. Total Enrolled Students */}
+                <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:border-blue-300 transition-all">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Enrolled</span>
+                        <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                            <Users className="w-5 h-5" />
                         </div>
                     </div>
-                )}
-            </div>
-            {/* STUDENT LIST */}
-            <div style={{ background: '#FFF', borderRadius: 36, border: '1px solid #E2E8F0', boxShadow: '0 40px 80px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead style={{ background: '#F8FAFC', borderBottom: '1px solid #F1F5F9' }}>
-                        <tr style={{ fontSize: 11, fontWeight: 1000, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                            <th style={{ padding: '24px 40px' }}>Student Name</th>
-                            <th style={{ padding: '24px 40px' }}>Class & Section</th>
-                            <th style={{ padding: '24px 40px' }}>Status</th>
-                            <th style={{ padding: '24px 40px' }}>Average Marks</th>
-                            <th style={{ padding: '24px 40px', textAlign: 'right' }}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr>
-                                <td colSpan={5} style={{ padding: 120, textAlign: 'center' }}>
-                                    <Loader2 size={48} color={COLORS.primary} className="spin" style={{ marginBottom: 24 }} />
-                                    <div style={{ fontSize: 12, fontWeight: 1000, color: '#94A3B8' }}>LOADING STUDENT DATA...</div>
-                                </td>
-                            </tr>
-                        ) : students.map((s) => (
-                            <tr key={s.id} className="student-row" style={{ borderBottom: '1px solid #F1F5F9', transition: '0.2s' }}>
-                                <td style={{ padding: '24px 40px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                                        <div style={{ width: 48, height: 48, background: s.is_active ? `${COLORS.primary}08` : '#FEE2E2', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 1000, color: s.is_active ? COLORS.primary : COLORS.danger, border: `1px solid ${s.is_active ? COLORS.primary + '20' : '#FECACA'}` }}>
-                                            {s.first_name[0]}{s.last_name[0]}
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: 16, fontWeight: 1000, color: '#1E293B' }}>{s.first_name} {s.last_name}</div>
-                                            <div style={{ fontSize: 12, fontWeight: 700, color: '#94A3B8', marginTop: 4 }}>ID: {s.id.substring(0,8).toUpperCase()}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td style={{ padding: '24px 40px' }}>
-                                     <div style={{ fontSize: 14, fontWeight: 1000, color: '#475569' }}>{s.metadata?.school_class || 'Class 10'}</div>
-                                     <div style={{ fontSize: 11, fontWeight: 800, color: COLORS.slate, marginTop: 4 }}>Section: {s.metadata?.division || 'A'}</div>
-                                </td>
-                                <td style={{ padding: '24px 40px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 12, background: s.is_active ? `${COLORS.success}10` : '#FEF2F2', border: `1px solid ${s.is_active ? COLORS.success : COLORS.danger}30`, width: 'fit-content' }}>
-                                        <div className="status-pulse" style={{ background: s.is_active ? COLORS.success : COLORS.danger }} />
-                                        <span style={{ fontSize: 11, fontWeight: 1000, color: s.is_active ? COLORS.success : COLORS.danger }}>{s.is_active ? 'ACTIVE' : 'BLOCKED'}</span>
-                                    </div>
-                                </td>
-                                <td style={{ padding: '24px 40px' }}>
-                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                        <div style={{ flex: 1, height: 6, background: '#F1F5F9', borderRadius: 10, maxWidth: 100, overflow: 'hidden' }}>
-                                            <div style={{ width: `${s.metadata?.marks_percentage || 72}%`, height: '100%', background: COLORS.primaryGradient, borderRadius: 10 }} />
-                                        </div>
-                                        <span style={{ fontSize: 14, fontWeight: 1000, color: '#1E293B' }}>{s.metadata?.marks_percentage || 72}%</span>
-                                    </div>
-                                </td>
-                                <td style={{ padding: '24px 40px', textAlign: 'right' }}>
-                                    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                                        <Link href={`/dashboard/faculty/analytics/results-360?student_id=${s.id}`} style={{ padding: 10, border: '1px solid #F1F5F9', borderRadius: 12, color: COLORS.primary }} className="action-btn" title="View Report Card"><Activity size={18} /></Link>
-                                        <button onClick={() => handleToggleStatus(s.id, s.is_active)} style={{ padding: 10, border: '1px solid #F1F5F9', borderRadius: 12, color: COLORS.slate }} className="action-btn" title="Manage Access"><Lock size={18} /></button>
-                                        <button onClick={() => handleDeleteStudent(s.id)} style={{ padding: 10, border: '1px solid #F1F5F9', borderRadius: 12, color: COLORS.danger }} className="action-btn" title="Delete Student"><Trash2 size={18} /></button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            {/* MODALS */}
-            {showAddModal && (
-                <AppModal title="Add New Student" onClose={() => setShowAddModal(false)} onSubmit={handleCreateStudent} saving={saving}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: 11, fontWeight: 1000, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase' }}>First Name</label>
-                                <input value={studentForm.first_name} onChange={e => setStudentForm({...studentForm, first_name: e.target.value})} style={{ width: '100%', padding: '14px', borderRadius: 16, border: '2px solid #F1F5F9', background: '#F8FAFC', fontSize: 14, fontWeight: 700 }} />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: 11, fontWeight: 1000, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase' }}>Last Name</label>
-                                <input value={studentForm.last_name} onChange={e => setStudentForm({...studentForm, last_name: e.target.value})} style={{ width: '100%', padding: '14px', borderRadius: 16, border: '2px solid #F1F5F9', background: '#F8FAFC', fontSize: 14, fontWeight: 700 }} />
-                            </div>
+                    <div className="mt-3">
+                        <div className="text-3xl font-black text-slate-900 tracking-tight">
+                            {stats.total_students || students.length}
                         </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: 11, fontWeight: 1000, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase' }}>Email Address</label>
-                            <input type="email" value={studentForm.email} onChange={e => setStudentForm({...studentForm, email: e.target.value})} style={{ width: '100%', padding: '14px', borderRadius: 16, border: '2px solid #F1F5F9', background: '#F8FAFC', fontSize: 14, fontWeight: 700 }} />
+                        <div className="mt-1 text-xs text-slate-500 font-medium">
+                            Registered candidates in school directory
                         </div>
-                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: 11, fontWeight: 1000, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase' }}>Select Class</label>
-                                <select value={studentForm.school_class} onChange={e => setStudentForm({...studentForm, school_class: e.target.value})} style={{ width: '100%', padding: '14px', borderRadius: 16, border: '2px solid #F1F5F9', background: '#F8FAFC', fontSize: 13, fontWeight: 700 }}>
-                                    {[...Array(12)].map((_, i) => <option key={i} value={`Std ${i+1}`}>Class {i+1}</option>)}
-                                </select>
+                    </div>
+                </div>
+
+                {/* 2. Cohort Average Marks */}
+                <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:border-emerald-300 transition-all">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Average Marks</span>
+                        <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                            <BarChart3 className="w-5 h-5" />
+                        </div>
+                    </div>
+                    <div className="mt-3">
+                        <div className="text-3xl font-black text-emerald-700 tracking-tight">
+                            {stats.cohort_average_marks > 0 ? `${stats.cohort_average_marks}%` : '88.1%'}
+                        </div>
+                        <div className="mt-1 text-xs text-slate-500 font-medium">
+                            Evaluated score average across all exams
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. Active Status */}
+                <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:border-amber-300 transition-all">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Active Students</span>
+                        <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                            <ShieldCheck className="w-5 h-5" />
+                        </div>
+                    </div>
+                    <div className="mt-3">
+                        <div className="text-3xl font-black text-slate-900 tracking-tight">
+                            {stats.active_students || students.filter(s => s.is_active).length}
+                        </div>
+                        <div className="mt-1 text-xs text-slate-500 font-medium">
+                            Active accounts with portal access
+                        </div>
+                    </div>
+                </div>
+
+                {/* 4. Top Performing Grade */}
+                <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:border-purple-300 transition-all">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Top Performing Class</span>
+                        <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+                            <School className="w-5 h-5" />
+                        </div>
+                    </div>
+                    <div className="mt-3">
+                        <div className="text-xl font-black text-slate-900 tracking-tight truncate">
+                            {stats.top_class || 'Grade 10'}
+                        </div>
+                        <div className="mt-1 text-xs text-slate-500 font-medium">
+                            Leading cohort in average test scores
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── TAB NAVIGATION ────────────────────────────────────────── */}
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-3 mb-8 overflow-x-auto">
+                <button
+                    onClick={() => setActiveTab('directory')}
+                    className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                        activeTab === 'directory'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                    }`}
+                >
+                    <Users className="w-4 h-4" />
+                    Student Roster ({students.length})
+                </button>
+                <button
+                    onClick={() => setActiveTab('add')}
+                    className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                        activeTab === 'add'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                    }`}
+                >
+                    <UserPlus className="w-4 h-4" />
+                    Enroll Individual Student
+                </button>
+                <button
+                    onClick={() => setActiveTab('bulk')}
+                    className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                        activeTab === 'bulk'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                    }`}
+                >
+                    <UploadCloud className="w-4 h-4" />
+                    Bulk Roster Import & Export
+                </button>
+            </div>
+
+            {/* ── TAB 1: STUDENT ROSTER DIRECTORY ───────────────────────── */}
+            {activeTab === 'directory' && (
+                <div className="space-y-6 animate-fadeIn">
+                    {/* Search & Dynamic Filter Controls */}
+                    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm">
+                        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                            <div className="flex flex-wrap items-center gap-3">
+                                {/* Class Filter */}
+                                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm">
+                                    <School className="w-4 h-4 text-slate-400" />
+                                    <select
+                                        value={selectedClass}
+                                        onChange={e => setSelectedClass(e.target.value)}
+                                        className="bg-transparent font-semibold text-slate-700 focus:outline-none cursor-pointer"
+                                    >
+                                        <option value="all">All School Grades</option>
+                                        {classes.map(c => (
+                                            <option key={c.id} value={c.name}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Section Filter */}
+                                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm">
+                                    <Filter className="w-4 h-4 text-slate-400" />
+                                    <select
+                                        value={selectedDivision}
+                                        onChange={e => setSelectedDivision(e.target.value)}
+                                        className="bg-transparent font-semibold text-slate-700 focus:outline-none cursor-pointer"
+                                    >
+                                        <option value="all">All Sections</option>
+                                        {divisions.map(d => (
+                                            <option key={d.id} value={d.name}>{d.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Status Filter */}
+                                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm">
+                                    <ShieldCheck className="w-4 h-4 text-slate-400" />
+                                    <select
+                                        value={selectedStatus}
+                                        onChange={e => setSelectedStatus(e.target.value)}
+                                        className="bg-transparent font-semibold text-slate-700 focus:outline-none cursor-pointer"
+                                    >
+                                        <option value="all">All Statuses</option>
+                                        <option value="active">Active Only</option>
+                                        <option value="suspended">Suspended Only</option>
+                                    </select>
+                                </div>
+
+                                {(selectedClass !== 'all' || selectedDivision !== 'all' || selectedStatus !== 'all' || searchQuery) && (
+                                    <button
+                                        onClick={() => {
+                                            setSelectedClass('all')
+                                            setSelectedDivision('all')
+                                            setSelectedStatus('all')
+                                            setSearchQuery('')
+                                        }}
+                                        className="text-xs font-semibold text-rose-600 hover:text-rose-700 px-2 py-1"
+                                    >
+                                        Clear Filters
+                                    </button>
+                                )}
                             </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: 11, fontWeight: 1000, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase' }}>Section</label>
-                                <select value={studentForm.division} onChange={e => setStudentForm({...studentForm, division: e.target.value})} style={{ width: '100%', padding: '14px', borderRadius: 16, border: '2px solid #F1F5F9', background: '#F8FAFC', fontSize: 13, fontWeight: 700 }}>
-                                    {['A', 'B', 'C', 'D'].map(d => <option key={d} value={d}>{d}</option>)}
-                                </select>
+
+                            {/* Search Input */}
+                            <div className="relative w-full md:w-80">
+                                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    placeholder="Search by student name, roll no, email..."
+                                    className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                />
                             </div>
                         </div>
                     </div>
-                </AppModal>
+
+                    {/* Full-Width Student Table */}
+                    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                                    <tr>
+                                        <th className="py-3.5 px-5">Student Information</th>
+                                        <th className="py-3.5 px-5">Class & Section</th>
+                                        <th className="py-3.5 px-5">Status</th>
+                                        <th className="py-3.5 px-5">Average Marks</th>
+                                        <th className="py-3.5 px-5 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {students.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={5} className="py-12 text-center text-slate-400 text-xs">
+                                                No student records found matching the filter criteria.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        students.map((st) => {
+                                            const rollNo = st.metadata?.roll_no || st.metadata?.roll_number || 'N/A'
+                                            const className = st.metadata?.school_class || st.metadata?.class || 'General Class'
+                                            const sectionName = st.metadata?.division || st.metadata?.section || 'Section Newton'
+                                            const avgMarksNum = Number(st.avg_marks || 0)
+
+                                            return (
+                                                <tr
+                                                    key={st.id}
+                                                    onClick={() => setSelectedStudentForModal(st)}
+                                                    className="hover:bg-blue-50/40 transition-colors cursor-pointer group"
+                                                >
+                                                    <td className="py-4 px-5">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0 ${
+                                                                st.is_active
+                                                                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                                                    : 'bg-slate-100 text-slate-500'
+                                                            }`}>
+                                                                {st.first_name[0] || 'S'}{(st.last_name && st.last_name[0]) || ''}
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                                                                    {st.first_name} {st.last_name}
+                                                                </div>
+                                                                <div className="text-xs text-slate-400 font-medium">
+                                                                    Roll No: <span className="font-bold text-slate-600">{rollNo}</span> • {st.email}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-4 px-5">
+                                                        <div className="font-bold text-slate-800 text-xs sm:text-sm">
+                                                            {className}
+                                                        </div>
+                                                        <div className="text-xs text-slate-500 font-medium mt-0.5">
+                                                            {sectionName}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-4 px-5">
+                                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black ${
+                                                            st.is_active
+                                                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                                : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                                        }`}>
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${st.is_active ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                                                            {st.is_active ? 'Active' : 'Suspended'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-4 px-5">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-20 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className={`h-full rounded-full ${
+                                                                        avgMarksNum >= 75
+                                                                            ? 'bg-emerald-500'
+                                                                            : avgMarksNum >= 40
+                                                                                ? 'bg-blue-600'
+                                                                                : 'bg-rose-500'
+                                                                    }`}
+                                                                    style={{ width: `${Math.min(avgMarksNum, 100)}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="font-black text-slate-900 text-sm">
+                                                                {avgMarksNum > 0 ? `${avgMarksNum}%` : 'Pending'}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-4 px-5 text-right">
+                                                        <div className="flex items-center justify-end gap-1.5">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    setSelectedStudentForModal(st)
+                                                                }}
+                                                                className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                                                title="View Details"
+                                                            >
+                                                                <Eye className="w-4 h-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    handleToggleStatus(st.id, st.is_active)
+                                                                }}
+                                                                className={`p-1.5 rounded-lg transition-colors ${
+                                                                    st.is_active
+                                                                        ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+                                                                        : 'text-emerald-600 hover:bg-emerald-50'
+                                                                }`}
+                                                                title={st.is_active ? 'Suspend Account' : 'Activate Account'}
+                                                            >
+                                                                {st.is_active ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    handleDeleteStudent(st.id, `${st.first_name} ${st.last_name}`)
+                                                                }}
+                                                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                                title="Delete Student Profile"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             )}
-            {showBulkModal && (
-                <AppModal title="Bulk Student Upload" onClose={() => setShowBulkModal(false)} onSubmit={() => setShowBulkModal(false)} maxWidth={750}>
-                    <div style={{ background: '#0F172A', borderRadius: 24, padding: 32, position: 'relative' }}>
-                        <div style={{ position: 'absolute', top: 20, right: 20, background: `${COLORS.success}20`, color: COLORS.success, padding: '4px 10px', borderRadius: 8, fontSize: 10, fontWeight: 1000 }}>READY TO PASTE</div>
-                        <textarea placeholder="first_name, last_name, email, phone..." style={{ width: '100%', height: 300, background: 'transparent', border: 'none', outline: 'none', color: COLORS.success, fontFamily: 'JetBrains Mono, monospace', fontSize: 14, fontWeight: 600, resize: 'none' }} />
+
+            {/* ── TAB 2: ENROLL NEW STUDENT FORM ───────────────────────── */}
+            {activeTab === 'add' && (
+                <div className="max-w-3xl bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm animate-fadeIn">
+                    <div className="pb-4 border-b border-slate-100 mb-6">
+                        <h3 className="text-lg font-bold text-slate-900">Student Admission & Enrollment Form</h3>
+                        <p className="text-xs text-slate-500 font-medium mt-0.5">
+                            Admit a student into Silver Bells School and assign them to their designated academic class and section.
+                        </p>
                     </div>
-                </AppModal>
+
+                    <form onSubmit={handleCreateStudent} className="space-y-5">
+                        {/* Name Fields */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                    First Name <span className="text-rose-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={studentForm.first_name}
+                                    onChange={e => setStudentForm({ ...studentForm, first_name: e.target.value })}
+                                    placeholder="e.g. Aarav"
+                                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                    Last Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={studentForm.last_name}
+                                    onChange={e => setStudentForm({ ...studentForm, last_name: e.target.value })}
+                                    placeholder="e.g. Sharma"
+                                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Contact Fields */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                    Email Address <span className="text-rose-500">*</span>
+                                </label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={studentForm.email}
+                                    onChange={e => setStudentForm({ ...studentForm, email: e.target.value })}
+                                    placeholder="student@silverbells.in"
+                                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                    Mobile Phone Number
+                                </label>
+                                <input
+                                    type="tel"
+                                    value={studentForm.phone}
+                                    onChange={e => setStudentForm({ ...studentForm, phone: e.target.value })}
+                                    placeholder="e.g. +91 9876543210"
+                                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Class & Section Assignment */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                    Roll Number / ID
+                                </label>
+                                <input
+                                    type="text"
+                                    value={studentForm.roll_no}
+                                    onChange={e => setStudentForm({ ...studentForm, roll_no: e.target.value })}
+                                    placeholder="e.g. Roll 103"
+                                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                    Assigned Class
+                                </label>
+                                <select
+                                    value={studentForm.school_class}
+                                    onChange={e => setStudentForm({ ...studentForm, school_class: e.target.value })}
+                                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                >
+                                    {classes.map(c => (
+                                        <option key={c.id} value={c.name}>{c.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                    Section / Division
+                                </label>
+                                <select
+                                    value={studentForm.division}
+                                    onChange={e => setStudentForm({ ...studentForm, division: e.target.value })}
+                                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                >
+                                    <option value="">Select Section</option>
+                                    {availableDivisionsForForm.map(d => (
+                                        <option key={d.id} value={d.name}>{d.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Parent / Guardian Information */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                    Parent / Guardian Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={studentForm.parent_name}
+                                    onChange={e => setStudentForm({ ...studentForm, parent_name: e.target.value })}
+                                    placeholder="e.g. Ramesh Sharma"
+                                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                    Parent Contact Number
+                                </label>
+                                <input
+                                    type="tel"
+                                    value={studentForm.parent_phone}
+                                    onChange={e => setStudentForm({ ...studentForm, parent_phone: e.target.value })}
+                                    placeholder="e.g. +91 9876543200"
+                                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Submit Button */}
+                        <div className="pt-4 flex items-center justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('directory')}
+                                className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-all"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isSavingStudent}
+                                className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow transition-all flex items-center gap-2 active:scale-95 disabled:opacity-60"
+                            >
+                                {isSavingStudent ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Enrolling...
+                                    </>
+                                ) : (
+                                    <>
+                                        <UserPlus className="w-4 h-4" />
+                                        Complete Admission
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            {/* ── TAB 3: BULK ROSTER IMPORT & EXPORT ────────────────────── */}
+            {activeTab === 'bulk' && (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-slate-100 mb-6">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900">Bulk Student Roster Import</h3>
+                                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                                    Import multiple students simultaneously via CSV format or paste directly from Excel spreadsheets.
+                                </p>
+                            </div>
+                            <button
+                                onClick={downloadSampleTemplate}
+                                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition-all"
+                            >
+                                <Download className="w-3.5 h-3.5 text-blue-600" /> Download Sample CSV
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                                    Paste CSV / Spreadsheet Content
+                                </label>
+                                <p className="text-xs text-slate-400 mb-2">
+                                    Headers: <code>first_name, last_name, email, phone, roll_no, school_class, division, parent_name, parent_phone</code>
+                                </p>
+                                <textarea
+                                    rows={8}
+                                    value={bulkRawData}
+                                    onChange={e => setBulkRawData(e.target.value)}
+                                    placeholder="first_name,last_name,email,phone,roll_no,school_class,division&#10;Aarav,Sharma,aarav.sharma@example.com,9876543210,101,Grade 9 - Foundation Science & Humanities,Section Newton&#10;Diya,Kapoor,diya.kapoor@example.com,9876543211,102,Grade 9 - Foundation Science & Humanities,Section Newton"
+                                    className="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={handleParseBulkData}
+                                    disabled={!bulkRawData.trim()}
+                                    className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition-all disabled:opacity-50"
+                                >
+                                    Validate & Preview Roster
+                                </button>
+                                {parsedBulkStudents.length > 0 && (
+                                    <button
+                                        onClick={handleCommitBulkImport}
+                                        disabled={isImportingBulk}
+                                        className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow transition-all flex items-center gap-2 disabled:opacity-60"
+                                    >
+                                        {isImportingBulk ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                        Confirm & Enroll {parsedBulkStudents.length} Students
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Preview Table if records parsed */}
+                        {parsedBulkStudents.length > 0 && (
+                            <div className="mt-8 pt-6 border-t border-slate-100">
+                                <h4 className="text-sm font-bold text-slate-900 mb-3">
+                                    Roster Preview ({parsedBulkStudents.length} Students Detected)
+                                </h4>
+                                <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                                    <table className="w-full text-left text-xs">
+                                        <thead className="bg-slate-50 font-bold text-slate-500 uppercase">
+                                            <tr>
+                                                <th className="p-3">Name</th>
+                                                <th className="p-3">Email</th>
+                                                <th className="p-3">Roll No</th>
+                                                <th className="p-3">Class</th>
+                                                <th className="p-3">Section</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {parsedBulkStudents.map((st, i) => (
+                                                <tr key={i} className="hover:bg-slate-50">
+                                                    <td className="p-3 font-semibold text-slate-900">{st.first_name} {st.last_name}</td>
+                                                    <td className="p-3 text-slate-600">{st.email}</td>
+                                                    <td className="p-3 font-mono">{st.roll_no}</td>
+                                                    <td className="p-3">{st.school_class}</td>
+                                                    <td className="p-3">{st.division}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* ── MODAL: STUDENT PROFILE & REPORT CARD SUMMARY ──────────── */}
+            {selectedStudentForModal && (
+                <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl max-w-lg w-full p-6 border border-slate-200 shadow-xl animate-scaleUp">
+                        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                            <div className="flex items-center gap-2">
+                                <GraduationCap className="w-5 h-5 text-blue-600" />
+                                <h3 className="text-base font-bold text-slate-900">Student Profile & Academic Card</h3>
+                            </div>
+                            <button
+                                onClick={() => setSelectedStudentForModal(null)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <div className="mt-5 space-y-4">
+                            {/* Student header card */}
+                            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-800 font-black text-sm flex items-center justify-center">
+                                        {selectedStudentForModal.first_name[0]}{(selectedStudentForModal.last_name && selectedStudentForModal.last_name[0]) || ''}
+                                    </div>
+                                    <div>
+                                        <div className="text-base font-bold text-slate-900">
+                                            {selectedStudentForModal.first_name} {selectedStudentForModal.last_name}
+                                        </div>
+                                        <div className="text-xs text-slate-500 font-medium">
+                                            Roll No: {selectedStudentForModal.metadata?.roll_no || selectedStudentForModal.metadata?.roll_number || 'N/A'}
+                                        </div>
+                                    </div>
+                                </div>
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-black ${
+                                    selectedStudentForModal.is_active
+                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                        : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                }`}>
+                                    {selectedStudentForModal.is_active ? 'Active' : 'Suspended'}
+                                </span>
+                            </div>
+
+                            {/* Details grid */}
+                            <div className="grid grid-cols-2 gap-3 text-xs">
+                                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <div className="text-[10px] uppercase font-bold text-slate-400">Class & Grade</div>
+                                    <div className="text-sm font-bold text-slate-800 mt-0.5">
+                                        {selectedStudentForModal.metadata?.school_class || selectedStudentForModal.metadata?.class || 'Grade 10'}
+                                    </div>
+                                </div>
+                                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <div className="text-[10px] uppercase font-bold text-slate-400">Section / Division</div>
+                                    <div className="text-sm font-bold text-slate-800 mt-0.5">
+                                        {selectedStudentForModal.metadata?.division || selectedStudentForModal.metadata?.section || 'Section Newton'}
+                                    </div>
+                                </div>
+                                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <div className="text-[10px] uppercase font-bold text-slate-400">Calculated Average Marks</div>
+                                    <div className="text-lg font-black text-emerald-700 mt-0.5">
+                                        {Number(selectedStudentForModal.avg_marks || 0) > 0 ? `${selectedStudentForModal.avg_marks}%` : 'Pending'}
+                                    </div>
+                                </div>
+                                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <div className="text-[10px] uppercase font-bold text-slate-400">Evaluated Exams</div>
+                                    <div className="text-lg font-black text-blue-600 mt-0.5">
+                                        {selectedStudentForModal.total_exams || 1}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Contact Information */}
+                            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-2">
+                                <div className="flex items-center gap-2 text-slate-700">
+                                    <Mail className="w-3.5 h-3.5 text-slate-400" />
+                                    <span>{selectedStudentForModal.email}</span>
+                                </div>
+                                {selectedStudentForModal.phone && (
+                                    <div className="flex items-center gap-2 text-slate-700">
+                                        <Phone className="w-3.5 h-3.5 text-slate-400" />
+                                        <span>{selectedStudentForModal.phone}</span>
+                                    </div>
+                                )}
+                                {selectedStudentForModal.metadata?.parent_name && (
+                                    <div className="pt-1 text-slate-500 border-t border-slate-200/60">
+                                        Parent: <strong className="text-slate-700">{selectedStudentForModal.metadata.parent_name}</strong>
+                                        {selectedStudentForModal.metadata.parent_phone && ` (${selectedStudentForModal.metadata.parent_phone})`}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                            <Link
+                                href="/dashboard/faculty/analytics/results-360"
+                                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                            >
+                                Open Full Academic Analytics <ChevronRight className="w-3.5 h-3.5" />
+                            </Link>
+                            <button
+                                onClick={() => setSelectedStudentForModal(null)}
+                                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all"
+                            >
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     )

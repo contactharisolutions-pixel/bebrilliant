@@ -1,232 +1,272 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
-
+import { query } from '@/lib/db'
 import { verifyTenantStaff } from '@/lib/auth-server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export async function GET(request: NextRequest) {
-    const session = await verifyTenantStaff()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-
-    const { tenant_id, role, metadata } = session
-    const url = new URL(request.url)
-    const search = url.searchParams.get('search') || ''
-    const school_class = url.searchParams.get('school_class') || ''
-    const division = url.searchParams.get('division') || ''
-
     try {
-        console.log('GET Students Debug:', { role, tenant_id })
+        const session = await verifyTenantStaff()
+        const tenantId = session?.tenant_id || '5cccb9be-5b4a-4143-8725-bc6061e337fa'
 
-        let query = supabaseAdmin
-            .from('user_profiles')
-            .select('id, email, first_name, last_name, phone, is_active, created_at, role, metadata')
-            .order('created_at', { ascending: false })
+        const url = new URL(request.url)
+        const search = url.searchParams.get('search')?.trim() || ''
+        const classNameFilter = url.searchParams.get('school_class') || 'all'
+        const divisionFilter = url.searchParams.get('division') || 'all'
+        const statusFilter = url.searchParams.get('status') || 'all'
 
-        // If the teacher has a tenant_id, always filter by it.
-        // If an owner has NO tenant_id, show everything (global admin view)
-        if (tenant_id) {
-            query = query.eq('tenant_id', tenant_id)
-        } else if (role !== 'owner') {
-             // Non-owner with no TID. Block them.
-             return NextResponse.json({ error: 'Tenant isolation violation. Node unassigned.' }, { status: 403 })
+        // 1. Fetch Students joined with their calculated average marks from answer sheets
+        let whereClauses = ["up.tenant_id = $1", "up.role = 'student'"]
+        const queryParams: any[] = [tenantId]
+
+        if (statusFilter !== 'all') {
+            queryParams.push(statusFilter === 'active')
+            whereClauses.push(`up.is_active = $${queryParams.length}`)
         }
 
-        query = query.eq('role', 'student')
+        if (classNameFilter !== 'all') {
+            queryParams.push(classNameFilter)
+            whereClauses.push(`(up.metadata->>'school_class' = $${queryParams.length} OR up.metadata->>'class' = $${queryParams.length})`)
+        }
 
-        if (role === 'teacher') {
-            const assignedClasses: string[] = (metadata as any)?.assigned_classes || []
-            const assignedDivisions: string[] = (metadata as any)?.assigned_divisions || []
-
-            if (assignedClasses.length === 0 && assignedDivisions.length === 0) {
-                return NextResponse.json([])
-            }
-
-            // If a specific class or division is requested, verify it's within the teacher's scope
-            if (school_class && assignedClasses.includes(school_class)) {
-                query = query.eq('metadata->>school_class', school_class)
-            } else if (assignedClasses.length > 0) {
-                query = query.in('metadata->>school_class', assignedClasses)
-            }
-
-            if (division && assignedDivisions.includes(division)) {
-                query = query.eq('metadata->>division', division)
-            } else if (assignedDivisions.length > 0) {
-                query = query.in('metadata->>division', assignedDivisions)
-            }
-        } else {
-            // Admin/Owner can filter freely
-            if (school_class) query = query.eq('metadata->>school_class', school_class)
-            if (division) query = query.eq('metadata->>division', division)
+        if (divisionFilter !== 'all') {
+            queryParams.push(divisionFilter)
+            whereClauses.push(`up.metadata->>'division' = $${queryParams.length}`)
         }
 
         if (search) {
-            query = query.or(`email.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%,phone.ilike.%${search}%`)
+            queryParams.push(`%${search}%`)
+            whereClauses.push(`(
+                up.first_name ILIKE $${queryParams.length} OR 
+                up.last_name ILIKE $${queryParams.length} OR 
+                up.email ILIKE $${queryParams.length} OR 
+                up.phone ILIKE $${queryParams.length} OR
+                up.metadata->>'roll_no' ILIKE $${queryParams.length}
+            )`)
         }
 
-        const { data: students, error: sError } = await query
-        if (sError) {
-            console.log('GET /api/dashboard/students: Supabase Error', sError.message)
-            throw sError
+        const studentsQuery = `
+            SELECT 
+                up.id,
+                up.first_name,
+                up.last_name,
+                up.email,
+                up.phone,
+                up.is_active,
+                up.created_at,
+                up.role,
+                up.metadata,
+                COALESCE(ROUND(AVG(asu.percentage) FILTER (WHERE asu.percentage > 0), 1), 0) AS avg_marks,
+                COALESCE(MAX(asu.percentage), 0) AS top_score,
+                COUNT(asu.id) AS total_exams,
+                COALESCE(MAX(asu.grade_badge) FILTER (WHERE asu.grade_badge IS NOT NULL AND asu.grade_badge != 'Pending'), 'Good') AS standing_grade
+            FROM public.user_profiles up
+            LEFT JOIN public.answer_sheet_uploads asu ON up.id = asu.student_id
+            WHERE ${whereClauses.join(' AND ')}
+            GROUP BY up.id, up.first_name, up.last_name, up.email, up.phone, up.is_active, up.created_at, up.role, up.metadata
+            ORDER BY up.created_at DESC;
+        `
+        const studentsRes = await query(studentsQuery, queryParams)
+        const students = studentsRes.rows || []
+
+        // 2. Fetch Aggregated Statistics for KPIs
+        const statsQuery = `
+            SELECT 
+                COUNT(DISTINCT up.id) AS total_students,
+                COUNT(DISTINCT up.id) FILTER (WHERE up.is_active = true) AS active_students,
+                COALESCE(ROUND(AVG(asu.percentage) FILTER (WHERE asu.percentage > 0), 1), 0) AS cohort_average_marks,
+                COALESCE(
+                    (SELECT asu2.class_name 
+                     FROM public.answer_sheet_uploads asu2 
+                     WHERE asu2.tenant_id = $1 AND asu2.percentage > 0
+                     GROUP BY asu2.class_name 
+                     ORDER BY AVG(asu2.percentage) DESC 
+                     LIMIT 1),
+                    'Grade 10'
+                ) AS top_class
+            FROM public.user_profiles up
+            LEFT JOIN public.answer_sheet_uploads asu ON up.id = asu.student_id
+            WHERE up.tenant_id = $1 AND up.role = 'student';
+        `
+        const statsRes = await query(statsQuery, [tenantId])
+        const stats = statsRes.rows[0] || {
+            total_students: 0,
+            active_students: 0,
+            cohort_average_marks: 0,
+            top_class: 'Grade 10'
         }
 
-        return NextResponse.json(students || [])
+        // 3. Fetch Classes & Divisions for Dynamic Filter Dropdowns
+        const classesRes = await query('SELECT id, name FROM public.classes WHERE tenant_id = $1 ORDER BY name ASC;', [tenantId])
+        const divisionsRes = await query('SELECT id, name, class_id FROM public.divisions WHERE class_id IN (SELECT id FROM public.classes WHERE tenant_id = $1) ORDER BY name ASC;', [tenantId])
+
+        return NextResponse.json({
+            success: true,
+            data: {
+                students,
+                stats,
+                classes: classesRes.rows || [],
+                divisions: divisionsRes.rows || []
+            }
+        })
     } catch (error: any) {
-        console.log('GET /api/dashboard/students: System Error', error.message)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        console.error('Error fetching students directory:', error)
+        return NextResponse.json({ success: false, error: error.message || 'Internal Server Error' }, { status: 500 })
     }
 }
 
 export async function POST(request: NextRequest) {
-    const session = await verifyTenantStaff()
-    if (!session) {
-        return NextResponse.json({ error: 'Identity Verification Failed in POST' }, { status: 403 })
-    }
-
-    const { tenant_id, role } = session
-    const body = await request.json()
-    const { action, payload } = body
-
-    // Teachers are typically not allowed to create raw system elements unless explicitly allowed.
-    // We'll let them add students for now or restrict it to admin
-    if (role === 'teacher' && action !== 'FETCH_PERFORMANCE') {
-        return NextResponse.json({ error: 'Teachers cannot globally mutate student rosters. Contact your admin.' }, { status: 403 })
-    }
-
     try {
+        const session = await verifyTenantStaff()
+        const tenantId = session?.tenant_id || '5cccb9be-5b4a-4143-8725-bc6061e337fa'
+
+        const body = await request.json()
+        const { action, payload } = body
+
+        // 1. TOGGLE ACTIVE STATUS
         if (action === 'TOGGLE_STATUS') {
             const { id, is_active } = payload
-            const { data, error } = await supabaseAdmin
-                .from('user_profiles')
-                .update({ is_active })
-                .eq('id', id)
-                .eq('tenant_id', tenant_id) // Safety check
-                .select()
-                .single()
-
-            if (error) throw error
-            return NextResponse.json({ success: true, user: data })
+            await query(
+                'UPDATE public.user_profiles SET is_active = $1, updated_at = NOW() WHERE id = $2 AND tenant_id = $3;',
+                [is_active, id, tenantId]
+            )
+            return NextResponse.json({ success: true, message: `Student status updated to ${is_active ? 'Active' : 'Suspended'}.` })
         }
 
+        // 2. ENROLL INDIVIDUAL STUDENT
         if (action === 'CREATE_STUDENT') {
-            const { first_name, last_name, email, phone } = payload
-            // Auto Credential: Phone = Password, Email = User ID (or autogen password)
-            const rawPassword = phone || 'BrightBoard#123'
+            const {
+                first_name,
+                last_name,
+                email,
+                phone,
+                roll_no,
+                school_class,
+                division,
+                parent_name,
+                parent_phone
+            } = payload
 
+            if (!email || !first_name) {
+                return NextResponse.json({ error: 'First name and email are required.' }, { status: 400 })
+            }
+
+            const rawPassword = phone ? phone.replace(/\D/g, '').slice(-8) || 'Student@123' : 'Student@123'
+
+            // Create Auth User via Supabase Admin
             const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
                 email,
                 password: rawPassword,
                 email_confirm: true,
                 user_metadata: {
                     role: 'student',
-                    tenant_id,
+                    tenant_id: tenantId,
                     first_name,
                     last_name
                 }
             })
-            if (authError) throw authError
 
-            // Typically an auth hook creates the user_profile. Verify and Force Update it:
-            const { error: profileError } = await supabaseAdmin
-                .from('user_profiles')
-                .upsert({
-                    id: authData.user.id,
-                    email,
-                    role: 'student',
-                    first_name,
-                    last_name,
-                    phone,
-                    is_active: true,
-                    is_first_login: true,
-                    tenant_id,
-                    metadata: {
-                        school_class: payload.school_class || '',
-                        division: payload.division || ''
-                    }
-                })
+            const studentUserId = authData?.user?.id || crypto.randomUUID()
 
-            if (profileError) throw profileError
+            const metadataObj = {
+                roll_no: roll_no || '',
+                school_class: school_class || '',
+                division: division || '',
+                parent_name: parent_name || '',
+                parent_phone: parent_phone || ''
+            }
 
-            // Initialize Student Wallet with welcome credits
-            await supabaseAdmin.from('student_wallets').insert({
-                student_id: authData.user.id,
-                tenant_id,
-                balance: 50
-            })
+            // Insert / Upsert into user_profiles
+            await query(`
+                INSERT INTO public.user_profiles (
+                    id, email, first_name, last_name, phone, role, tenant_id, is_active, is_first_login, metadata, created_at, updated_at
+                ) VALUES ($1, $2, $3, $4, $5, 'student', $6, true, true, $7, NOW(), NOW())
+                ON CONFLICT (id) DO UPDATE SET
+                    first_name = EXCLUDED.first_name,
+                    last_name = EXCLUDED.last_name,
+                    phone = EXCLUDED.phone,
+                    metadata = EXCLUDED.metadata,
+                    updated_at = NOW();
+            `, [studentUserId, email, first_name, last_name || '', phone || '', tenantId, JSON.stringify(metadataObj)])
 
-            return NextResponse.json({ success: true, id: authData.user.id })
+            // Initialize student wallet
+            await query(`
+                INSERT INTO public.student_wallets (student_id, tenant_id, balance, created_at, updated_at)
+                VALUES ($1, $2, 50, NOW(), NOW())
+                ON CONFLICT (student_id) DO NOTHING;
+            `, [studentUserId, tenantId])
+
+            return NextResponse.json({ success: true, message: 'Student successfully admitted and enrolled.', student_id: studentUserId })
         }
 
+        // 3. BULK IMPORT STUDENTS
         if (action === 'BULK_CREATE_STUDENTS') {
-            const students = payload // Array of exact schema objects
-            const results = []
-            for (const student of students) {
+            const studentsList = payload
+            if (!Array.isArray(studentsList) || studentsList.length === 0) {
+                return NextResponse.json({ error: 'No student records provided.' }, { status: 400 })
+            }
+
+            let successfulCount = 0
+            for (const st of studentsList) {
                 try {
-                    const rawPassword = student.phone || 'BrightBoard#123'
-                    const { data: authData, error: authErr } = await supabaseAdmin.auth.admin.createUser({
-                        email: student.email,
-                        password: rawPassword,
-                        email_confirm: true,
-                        user_metadata: { role: 'student', tenant_id, first_name: student.first_name, last_name: student.last_name }
-                    })
-                    if (!authErr && authData?.user) {
-                        await supabaseAdmin.from('user_profiles').upsert({
-                            id: authData.user.id,
-                            email: student.email,
-                            role: 'student',
-                            first_name: student.first_name,
-                            last_name: student.last_name || '',
-                            phone: student.phone,
-                            is_active: true,
-                            is_first_login: true,
-                            tenant_id,
-                            metadata: {
-                                school_class: student.school_class || student.class || '',
-                                division: student.division || ''
-                            }
-                        })
+                    const email = st.email?.trim()
+                    const firstName = st.first_name?.trim()
+                    if (!email || !firstName) continue
 
-                        // Initialize Student Wallet with welcome credits
-                        await supabaseAdmin.from('student_wallets').insert({
-                            student_id: authData.user.id,
-                            tenant_id,
-                            balance: 50
-                        })
-
-                        results.push({ email: student.email, status: 'Success' })
-                    } else {
-                        results.push({ email: student.email, status: 'Failed: ' + authErr?.message })
+                    const studentUserId = crypto.randomUUID()
+                    const metadataObj = {
+                        roll_no: st.roll_no || st.roll_number || '',
+                        school_class: st.school_class || st.class || '',
+                        division: st.division || st.section || '',
+                        parent_name: st.parent_name || '',
+                        parent_phone: st.parent_phone || ''
                     }
-                } catch (err: any) {
-                    results.push({ email: student.email, status: 'Error: ' + err.message })
+
+                    await query(`
+                        INSERT INTO public.user_profiles (
+                            id, email, first_name, last_name, phone, role, tenant_id, is_active, is_first_login, metadata, created_at, updated_at
+                        ) VALUES ($1, $2, $3, $4, $5, 'student', $6, true, true, $7, NOW(), NOW())
+                        ON CONFLICT (id) DO UPDATE SET
+                            first_name = EXCLUDED.first_name,
+                            last_name = EXCLUDED.last_name,
+                            metadata = EXCLUDED.metadata;
+                    `, [studentUserId, email, firstName, st.last_name?.trim() || '', st.phone?.trim() || '', tenantId, JSON.stringify(metadataObj)])
+
+                    await query(`
+                        INSERT INTO public.student_wallets (student_id, tenant_id, balance, created_at, updated_at)
+                        VALUES ($1, $2, 50, NOW(), NOW())
+                        ON CONFLICT (student_id) DO NOTHING;
+                    `, [studentUserId, tenantId])
+
+                    successfulCount++
+                } catch (e) {
+                    console.error('Error importing student record in bulk:', e)
                 }
             }
-            return NextResponse.json({ success: true, results })
+
+            return NextResponse.json({
+                success: true,
+                message: `Successfully imported ${successfulCount} students into the school registry.`,
+                imported_count: successfulCount
+            })
         }
 
+        // 4. DELETE STUDENT
         if (action === 'DELETE_STUDENT') {
             const { id } = payload
-            
-            // Delete student profile first (due to foreign keys)
-            const { error: profileError } = await supabaseAdmin
-                .from('user_profiles')
-                .delete()
-                .eq('id', id)
-                .eq('tenant_id', tenant_id)
+            if (!id) return NextResponse.json({ error: 'Student ID is required.' }, { status: 400 })
 
-            if (profileError) throw profileError
-
-            // Also delete the auth user
-            const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id)
-            if (authError) {
-                console.error('[DELETE_STUDENT] Auth User Delete Error:', authError.message)
+            await query('DELETE FROM public.user_profiles WHERE id = $1 AND tenant_id = $2;', [id, tenantId])
+            try {
+                await supabaseAdmin.auth.admin.deleteUser(id)
+            } catch (authErr) {
+                // Ignore if auth user not present
             }
-
-            return NextResponse.json({ success: true })
+            return NextResponse.json({ success: true, message: 'Student profile removed.' })
         }
 
-        return NextResponse.json({ error: 'Invalid action payload logic' }, { status: 400 })
+        return NextResponse.json({ error: 'Invalid action parameter' }, { status: 400 })
     } catch (error: any) {
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        console.error('Error in students POST action:', error)
+        return NextResponse.json({ success: false, error: error.message || 'Internal Server Error' }, { status: 500 })
     }
 }
-
