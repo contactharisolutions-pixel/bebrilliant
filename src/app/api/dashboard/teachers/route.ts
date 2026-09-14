@@ -7,30 +7,32 @@ async function verifyTenantAdmin() {
     const { data: { user }, error } = await supabase.auth.getUser()
     if (error || !user) return null
 
-    const { data: profile } = await supabaseAdmin.from('user_profiles')
+    const { data: profile } = await supabaseAdmin
+        .from('user_profiles')
         .select(`
             role, 
             tenant_id,
             tenants:tenant_id(tenant_type)
         `)
-        .eq('id', user.id).single()
+        .eq('id', user.id)
+        .single()
+
     if (!profile) return null
 
     const rawTenant = (profile as any).tenants
     const tenantData = Array.isArray(rawTenant) ? rawTenant[0] : rawTenant
     const tenant_type = tenantData?.tenant_type || 'institute'
 
-    // RESTRICTION: Independent teachers cannot manage/create other teachers
+    // Independent teachers cannot manage other teachers
     if (tenant_type === 'independent_teacher') return null
 
-    // Fallback for platform owners operating without a strict tenant binding
+    // Platform owner fallback
     if (profile.role === 'owner' && !profile.tenant_id) {
         const { data: tenants } = await supabaseAdmin.from('tenants').select('id').limit(1)
         if (tenants?.[0]) return { user, tenant_id: tenants[0].id }
-        return null // No tenants available to operation within
+        return null
     }
 
-    // Only 'admin' or 'owner' can manage teachers
     if (profile.tenant_id && ['tenant_admin', 'owner'].includes(profile.role)) {
         return { user, tenant_id: profile.tenant_id }
     }
@@ -45,30 +47,99 @@ export async function GET(request: NextRequest) {
     const { tenant_id } = session
 
     try {
-        const { data: teachers, error } = await supabaseAdmin
+        // 1. Fetch Teachers
+        const { data: teachers, error: teacherError } = await supabaseAdmin
             .from('user_profiles')
-            .select('id, email, first_name, last_name, phone, is_active, created_at, metadata')
+            .select('id, email, first_name, last_name, phone, is_active, created_at, updated_at, metadata')
             .eq('tenant_id', tenant_id)
             .eq('role', 'teacher')
             .order('created_at', { ascending: false })
 
-        if (error) throw error
+        if (teacherError) throw teacherError
 
-        // 2. Fetch Subjects: (Global subjects AND nodes specifically owned by this tenant)
-        // We'll fetch all root-level or mapped subjects for now.
-        const { data: subjects } = await supabaseAdmin
-            .from('syllabus_nodes')
-            .select('id, name, type, tenant_id')
-            .eq('type', 'subject')
-            .or(`tenant_id.is.null,tenant_id.eq.${tenant_id}`)
+        // 2. Fetch Tenant Classes with Divisions
+        const { data: rawClasses, error: classError } = await supabaseAdmin
+            .from('classes')
+            .select('id, name, code, sort_order, is_active, divisions(id, name, capacity)')
+            .eq('tenant_id', tenant_id)
+            .order('sort_order', { ascending: true })
+
+        // 3. Fetch Tenant Subjects (from public.subjects)
+        let { data: subjects, error: subjectError } = await supabaseAdmin
+            .from('subjects')
+            .select('id, name, code, is_optional')
+            .eq('tenant_id', tenant_id)
             .order('name', { ascending: true })
 
+        // If subjects is empty, fallback/bridge with syllabus_nodes so empty setups still show default subjects
+        if (!subjects || subjects.length === 0) {
+            const { data: globalNodes } = await supabaseAdmin
+                .from('syllabus_nodes')
+                .select('id, name')
+                .eq('type', 'subject')
+                .or(`tenant_id.is.null,tenant_id.eq.${tenant_id}`)
+                .order('name', { ascending: true })
+
+            if (globalNodes && globalNodes.length > 0) {
+                subjects = globalNodes.map(g => ({
+                    id: g.id,
+                    name: g.name,
+                    code: g.name.substring(0, 4).toUpperCase(),
+                    is_optional: false
+                }))
+            }
+        }
+
+        // 4. Fetch Relational Teacher Subjects
+        const { data: teacherSubjects, error: mappingError } = await supabaseAdmin
+            .from('teacher_subjects')
+            .select('id, teacher_id, class_id, division_id, subject_id, classes(name, code), divisions(name), subjects(name)')
+            .eq('tenant_id', tenant_id)
+
+        // 5. Compute Executive Metrics
+        const teacherList = teachers || []
+        const total_teachers = teacherList.length
+        const active_teachers = teacherList.filter(t => t.is_active).length
+        const pending_teachers = total_teachers - active_teachers
+
+        // Collect all distinct subject assignments
+        const assignedSubjectSet = new Set<string>()
+        const assignedClassSet = new Set<string>()
+
+        teacherList.forEach(t => {
+            const subs = t.metadata?.assigned_subjects || []
+            subs.forEach((s: string) => assignedSubjectSet.add(s))
+            const cls = t.metadata?.assigned_classes || []
+            cls.forEach((c: string) => assignedClassSet.add(c))
+        })
+
+        if (teacherSubjects) {
+            teacherSubjects.forEach(ts => {
+                if (ts.subject_id) assignedSubjectSet.add(ts.subject_id)
+                if (ts.class_id) assignedClassSet.add(ts.class_id)
+            })
+        }
+
+        const stats = {
+            total_teachers,
+            active_teachers,
+            pending_teachers,
+            total_subjects_assigned: assignedSubjectSet.size,
+            total_classes_covered: assignedClassSet.size,
+            total_tenant_subjects: (subjects || []).length,
+            total_tenant_classes: (rawClasses || []).length
+        }
+
         return NextResponse.json({
-            teachers: teachers || [],
-            subjects: subjects || []
+            teachers: teacherList,
+            classes: rawClasses || [],
+            subjects: subjects || [],
+            teacher_subjects: teacherSubjects || [],
+            stats
         })
     } catch (error: any) {
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        console.error('[TEACHERS_API_GET_ERROR]', error)
+        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -81,11 +152,12 @@ export async function POST(request: NextRequest) {
     const { action, payload } = body
 
     try {
+        // ── TOGGLE ACTIVE STATUS ────────────────────────────────────
         if (action === 'TOGGLE_STATUS') {
             const { id, is_active } = payload
             const { data, error } = await supabaseAdmin
                 .from('user_profiles')
-                .update({ is_active })
+                .update({ is_active, updated_at: new Date().toISOString() })
                 .eq('id', id)
                 .eq('tenant_id', tenant_id)
                 .select()
@@ -95,132 +167,285 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, user: data })
         }
 
+        // ── CREATE TEACHER ──────────────────────────────────────────
         if (action === 'CREATE_TEACHER') {
-            const { first_name, last_name, email, phone, subjects } = payload
-            const rawPassword = phone || 'TeacherGate#123'
-
-            const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            const {
+                first_name,
+                last_name,
                 email,
+                phone,
+                designation = 'Teacher',
+                qualification = '',
+                employee_id = '',
+                is_active = true,
+                subjects = [],
+                classes = [],
+                divisions = []
+            } = payload
+
+            if (!email || !first_name) {
+                return NextResponse.json({ error: 'First name and email are required.' }, { status: 400 })
+            }
+
+            const cleanEmail = email.trim().toLowerCase()
+            const rawPassword = payload.password || phone || 'Teacher@' + Math.floor(1000 + Math.random() * 9000)
+
+            // 1. Create or get Auth User
+            let authUserId: string
+            const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+                email: cleanEmail,
                 password: rawPassword,
                 email_confirm: true,
                 user_metadata: { role: 'teacher', tenant_id, first_name, last_name }
             })
+
             if (authError) {
-                return NextResponse.json({ error: 'Auth failed: ' + authError.message }, { status: 500 })
+                // If user already exists in auth, check if already in user_profiles
+                if (authError.message?.toLowerCase().includes('already registered') || authError.message?.toLowerCase().includes('already exists')) {
+                    const { data: existingUser } = await supabaseAdmin
+                        .from('user_profiles')
+                        .select('id, tenant_id')
+                        .eq('email', cleanEmail)
+                        .single()
+
+                    if (existingUser && existingUser.tenant_id === tenant_id) {
+                        return NextResponse.json({ error: 'A faculty member with this email address already exists in your institute.' }, { status: 409 })
+                    } else if (existingUser) {
+                        return NextResponse.json({ error: 'This email is already associated with another institute profile.' }, { status: 409 })
+                    } else {
+                        // User exists in auth but missing profile: fetch auth user
+                        const { data: listUsers } = await supabaseAdmin.auth.admin.listUsers()
+                        const matched = listUsers.users.find(u => u.email?.toLowerCase() === cleanEmail)
+                        if (!matched) throw new Error('Email exists in authentication system.')
+                        authUserId = matched.id
+                    }
+                } else {
+                    return NextResponse.json({ error: 'Authentication setup failed: ' + authError.message }, { status: 500 })
+                }
+            } else {
+                authUserId = authData.user.id
+            }
+
+            // 2. Upsert user_profiles
+            const metadata = {
+                designation,
+                qualification,
+                employee_id: employee_id || `FAC-${Math.floor(1000 + Math.random() * 9000)}`,
+                assigned_subjects: subjects,
+                assigned_classes: classes,
+                assigned_divisions: divisions,
+                joining_date: new Date().toISOString()
             }
 
             const { error: profileError } = await supabaseAdmin
                 .from('user_profiles')
                 .upsert({
-                    id: authData.user.id,
-                    email,
+                    id: authUserId,
+                    email: cleanEmail,
                     role: 'teacher',
-                    first_name,
-                    last_name,
-                    phone,
-                    is_active: false, // Start as pending per spec
+                    first_name: first_name.trim(),
+                    last_name: (last_name || '').trim(),
+                    phone: phone || '',
+                    is_active: !!is_active,
                     tenant_id,
-                    metadata: { assigned_subjects: subjects || [] }
+                    metadata
                 })
 
             if (profileError) {
                 return NextResponse.json({ error: 'Profile creation failed: ' + profileError.message }, { status: 500 })
             }
-            return NextResponse.json({ success: true, id: authData.user.id })
+
+            return NextResponse.json({
+                success: true,
+                id: authUserId,
+                temporary_password: rawPassword
+            })
         }
 
-        if (action === 'ASSIGN_SCOPE') {
-            const { id, subjects, classes, divisions } = payload
+        // ── UPDATE TEACHER PROFILE ──────────────────────────────────
+        if (action === 'UPDATE_TEACHER') {
+            const { id, first_name, last_name, phone, designation, qualification, employee_id } = payload
 
-            // fetch existing metadata
-            const { data: profile } = await supabaseAdmin.from('user_profiles').select('metadata').eq('id', id).single()
-            const meta = profile?.metadata || {}
+            if (!id || !first_name) {
+                return NextResponse.json({ error: 'Teacher ID and first name are required.' }, { status: 400 })
+            }
 
-            const { error } = await supabaseAdmin
+            // Fetch existing metadata to merge
+            const { data: existingProfile } = await supabaseAdmin
                 .from('user_profiles')
-                .update({ 
-                    metadata: { 
-                        ...meta, 
-                        assigned_subjects: subjects,
-                        assigned_classes: classes,
-                        assigned_divisions: divisions 
-                    } 
+                .select('metadata')
+                .eq('id', id)
+                .eq('tenant_id', tenant_id)
+                .single()
+
+            const currentMeta = existingProfile?.metadata || {}
+            const updatedMeta = {
+                ...currentMeta,
+                designation: designation !== undefined ? designation : currentMeta.designation,
+                qualification: qualification !== undefined ? qualification : currentMeta.qualification,
+                employee_id: employee_id !== undefined ? employee_id : currentMeta.employee_id
+            }
+
+            const { error: updateError } = await supabaseAdmin
+                .from('user_profiles')
+                .update({
+                    first_name: first_name.trim(),
+                    last_name: (last_name || '').trim(),
+                    phone: phone || '',
+                    metadata: updatedMeta,
+                    updated_at: new Date().toISOString()
                 })
                 .eq('id', id)
                 .eq('tenant_id', tenant_id)
-
-            if (error) throw error
-            return NextResponse.json({ success: true })
-        }
-
-        if (action === 'CREATE_SUBJECT') {
-            const { name } = payload
-            if (!name || name.length < 2) throw new Error('Subject name too short')
-
-            const { data, error } = await supabaseAdmin
-                .from('syllabus_nodes')
-                .insert([{
-                    name,
-                    type: 'subject',
-                    tenant_id,
-                    is_active: true
-                }])
-                .select()
-                .single()
-
-            if (error) throw error
-
-            // Also map it to tenant access table so it stays in their list even if we change filters
-            await supabaseAdmin.from('tenant_syllabus').insert([{
-                tenant_id,
-                master_syllabus_id: data.id
-            }])
-
-            return NextResponse.json({ success: true, node: data })
-        }
-
-        if (action === 'EDIT_SUBJECT') {
-            const { id, name } = payload
-            if (!name || name.length < 2) throw new Error('Subject name too short')
-            
-            const { error: updateError } = await supabaseAdmin
-                .from('syllabus_nodes')
-                .update({ name })
-                .eq('id', id)
-                .eq('tenant_id', tenant_id) // Security: Can only rename subjects owned by tenant
 
             if (updateError) throw updateError
             return NextResponse.json({ success: true })
         }
 
-        if (action === 'DELETE_SUBJECT') {
-            const { id } = payload
-            // Security: We only allow deleting tenant-owned custom subjects
-            const { data: subjectToCheck } = await supabaseAdmin
-                .from('syllabus_nodes')
-                .select('tenant_id')
+        // ── ASSIGN SCOPE (CLASSES, DIVISIONS & SUBJECTS) ────────────
+        if (action === 'ASSIGN_SCOPE') {
+            const { id, subjects = [], classes = [], divisions = [], mappings = [] } = payload
+
+            if (!id) return NextResponse.json({ error: 'Teacher ID required' }, { status: 400 })
+
+            // 1. Update user_profiles.metadata
+            const { data: profile } = await supabaseAdmin
+                .from('user_profiles')
+                .select('metadata')
                 .eq('id', id)
+                .eq('tenant_id', tenant_id)
                 .single()
 
-            if (!subjectToCheck || subjectToCheck.tenant_id !== tenant_id) {
-                throw new Error('Cannot delete systemic global subject blocks.')
-            }
-
-            const { error: delError } = await supabaseAdmin
-                .from('syllabus_nodes')
-                .delete()
+            const meta = profile?.metadata || {}
+            const { error: metaError } = await supabaseAdmin
+                .from('user_profiles')
+                .update({
+                    metadata: {
+                        ...meta,
+                        assigned_subjects: subjects,
+                        assigned_classes: classes,
+                        assigned_divisions: divisions
+                    },
+                    updated_at: new Date().toISOString()
+                })
                 .eq('id', id)
+                .eq('tenant_id', tenant_id)
 
-            if (delError) throw delError
-            
-            // Clean up mapping
-            await supabaseAdmin.from('tenant_syllabus').delete().eq('master_syllabus_id', id)
+            if (metaError) throw metaError
+
+            // 2. Synchronize teacher_subjects relational table if mappings provided
+            if (Array.isArray(mappings) && mappings.length > 0) {
+                // Remove old assignments for this teacher
+                await supabaseAdmin
+                    .from('teacher_subjects')
+                    .delete()
+                    .eq('teacher_id', id)
+                    .eq('tenant_id', tenant_id)
+
+                // Insert new assignments
+                const rowsToInsert = mappings.map((m: any) => ({
+                    tenant_id,
+                    teacher_id: id,
+                    class_id: m.class_id,
+                    division_id: m.division_id,
+                    subject_id: m.subject_id
+                }))
+
+                await supabaseAdmin
+                    .from('teacher_subjects')
+                    .insert(rowsToInsert)
+            }
 
             return NextResponse.json({ success: true })
         }
 
-        return NextResponse.json({ error: 'Invalid action payload logic' }, { status: 400 })
+        // ── RESET PASSWORD / CREDENTIALS ────────────────────────────
+        if (action === 'RESET_PASSWORD') {
+            const { id, new_password } = payload
+            if (!id) return NextResponse.json({ error: 'Teacher ID is required' }, { status: 400 })
+
+            const generatedPassword = new_password || 'Faculty#' + Math.floor(100000 + Math.random() * 900000)
+
+            const { error: resetError } = await supabaseAdmin.auth.admin.updateUserById(id, {
+                password: generatedPassword
+            })
+
+            if (resetError) throw resetError
+            return NextResponse.json({ success: true, temporary_password: generatedPassword })
+        }
+
+        // ── DELETE TEACHER ──────────────────────────────────────────
+        if (action === 'DELETE_TEACHER') {
+            const { id } = payload
+            if (!id) return NextResponse.json({ error: 'Teacher ID required' }, { status: 400 })
+
+            // Clean up teacher_subjects mappings
+            await supabaseAdmin
+                .from('teacher_subjects')
+                .delete()
+                .eq('teacher_id', id)
+                .eq('tenant_id', tenant_id)
+
+            // Delete user_profile
+            const { error: delProfileError } = await supabaseAdmin
+                .from('user_profiles')
+                .delete()
+                .eq('id', id)
+                .eq('tenant_id', tenant_id)
+
+            if (delProfileError) throw delProfileError
+
+            // Delete Supabase Auth account
+            await supabaseAdmin.auth.admin.deleteUser(id)
+
+            return NextResponse.json({ success: true })
+        }
+
+        // ── BULK STATUS UPDATE ──────────────────────────────────────
+        if (action === 'BULK_STATUS') {
+            const { ids, is_active } = payload
+            if (!Array.isArray(ids) || ids.length === 0) {
+                return NextResponse.json({ error: 'No teachers selected' }, { status: 400 })
+            }
+
+            const { error: bulkError } = await supabaseAdmin
+                .from('user_profiles')
+                .update({ is_active, updated_at: new Date().toISOString() })
+                .in('id', ids)
+                .eq('tenant_id', tenant_id)
+
+            if (bulkError) throw bulkError
+            return NextResponse.json({ success: true, updated_count: ids.length })
+        }
+
+        // ── CREATE NEW SUBJECT ──────────────────────────────────────
+        if (action === 'CREATE_SUBJECT') {
+            const { name, code } = payload
+            if (!name || name.trim().length < 2) {
+                return NextResponse.json({ error: 'Subject name must be at least 2 characters.' }, { status: 400 })
+            }
+
+            const cleanName = name.trim()
+            const cleanCode = (code || cleanName.substring(0, 4)).toUpperCase()
+
+            const { data: newSub, error: subError } = await supabaseAdmin
+                .from('subjects')
+                .insert([{
+                    tenant_id,
+                    name: cleanName,
+                    code: cleanCode,
+                    is_optional: false
+                }])
+                .select()
+                .single()
+
+            if (subError) throw subError
+            return NextResponse.json({ success: true, subject: newSub })
+        }
+
+        return NextResponse.json({ error: 'Unrecognized action payload' }, { status: 400 })
     } catch (error: any) {
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        console.error('[TEACHERS_API_POST_ERROR]', error)
+        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
     }
 }
