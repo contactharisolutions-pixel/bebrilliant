@@ -18,10 +18,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 .eq('exam_id', examId)
                 .order('score', { ascending: false })
 
-            const studentAttempt = attempts?.find(a => a.student_id === studentId)
+            const studentAttempt = attempts?.find((a: any) => a.student_id === studentId)
             if (!studentAttempt) return NextResponse.json({ error: 'No attempt found' })
 
-            const rank = (attempts?.findIndex(a => a.id === studentAttempt.id) || 0) + 1
+            const rank = (attempts?.findIndex((a: any) => a.id === studentAttempt.id) || 0) + 1
             const total = attempts?.length || 0
             const percentile = total > 1 ? ((total - rank) / (total - 1)) * 100 : 100
 
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 .eq('attempt_id', studentAttempt.id)
 
             const topics: Record<string, any> = {}
-            answers?.forEach(a => {
+            answers?.forEach((a: any) => {
                 const topic = a.q?.chapters?.name || 'General'
                 if (!topics[topic]) topics[topic] = { correct: 0, total: 0 }
                 topics[topic].total++
@@ -50,8 +50,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 .select('score, status')
                 .eq('exam_id', examId)
 
-            const scores = allAttempts?.map(a => a.score) || []
-            const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0
+            const scores: number[] = allAttempts?.map((a: any) => Number(a.score || 0)) || []
+            const avgScore = scores.length > 0 ? scores.reduce((a: number, b: number) => a + b, 0) / scores.length : 0
             
             return NextResponse.json({
                 overview: {
