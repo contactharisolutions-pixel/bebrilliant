@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { query } from '@/lib/db'
 import { verifyTenantStaff } from '@/lib/auth-server'
 
 export async function GET(request: NextRequest) {
@@ -11,70 +11,105 @@ export async function GET(request: NextRequest) {
         const action = request.nextUrl.searchParams.get('action')
 
         if (action === 'GET_TEMPLATES') {
-            const { data: templates, error: tErr } = await supabaseAdmin
-                .from('paper_templates')
-                .select('*, sections:template_sections(*, rules:section_question_rules(*))')
-                .order('created_at', { ascending: false })
-
-            if (tErr) throw tErr
+            const templatesQuery = `
+                SELECT 
+                    pt.*,
+                    COALESCE(
+                        (
+                            SELECT json_agg(
+                                json_build_object(
+                                    'id', ts.id,
+                                    'section_name', ts.section_name,
+                                    'section_type', ts.section_type,
+                                    'instructions', ts.instructions,
+                                    'rules', COALESCE(
+                                        (
+                                            SELECT json_agg(sqr.*)
+                                            FROM public.section_question_rules sqr
+                                            WHERE sqr.section_id = ts.id
+                                        ), '[]'::json
+                                    )
+                                )
+                            )
+                            FROM public.template_sections ts
+                            WHERE ts.template_id = pt.id
+                        ), '[]'::json
+                    ) AS sections
+                FROM public.paper_templates pt
+                ORDER BY pt.created_at DESC;
+            `
+            const { rows: templates } = await query(templatesQuery)
             return NextResponse.json(templates || [])
         }
 
         // Default: Fetch all exams, templates, questions count, classes, and subjects
+        const examsQuery = `
+            SELECT 
+                oe.id,
+                oe.tenant_id,
+                oe.academic_year_id,
+                oe.title,
+                oe.class_id,
+                oe.subject_id,
+                oe.total_questions,
+                oe.omr_template_id,
+                oe.template_id,
+                oe.duration,
+                oe.created_by,
+                oe.status,
+                oe.created_at,
+                json_build_object('id', c.id, 'name', c.name) AS classes,
+                json_build_object('id', s.id, 'name', s.name, 'code', s.code) AS subjects,
+                json_build_object('id', pt.id, 'name', pt.name, 'category', pt.category, 'exam_type', pt.exam_type, 'total_marks', pt.total_marks) AS paper_templates
+            FROM public.offline_exams oe
+            LEFT JOIN public.classes c ON oe.class_id = c.id
+            LEFT JOIN public.subjects s ON oe.subject_id = s.id
+            LEFT JOIN public.paper_templates pt ON oe.template_id = pt.id
+            WHERE oe.tenant_id = $1
+            ORDER BY oe.created_at DESC;
+        `
+
+        const templatesQuery = `
+            SELECT 
+                pt.*,
+                COALESCE(
+                    (
+                        SELECT json_agg(
+                            json_build_object(
+                                'id', ts.id,
+                                'section_name', ts.section_name,
+                                'section_type', ts.section_type,
+                                'instructions', ts.instructions,
+                                'rules', COALESCE(
+                                    (
+                                        SELECT json_agg(sqr.*)
+                                        FROM public.section_question_rules sqr
+                                        WHERE sqr.section_id = ts.id
+                                    ), '[]'::json
+                                )
+                            )
+                        )
+                        FROM public.template_sections ts
+                        WHERE ts.template_id = pt.id
+                    ), '[]'::json
+                ) AS sections
+            FROM public.paper_templates pt
+            ORDER BY pt.name ASC;
+        `
+
         const [examsRes, templatesRes, questionsRes, classesRes, subjectsRes] = await Promise.all([
-            supabaseAdmin
-                .from('offline_exams')
-                .select(`
-                    id,
-                    tenant_id,
-                    academic_year_id,
-                    title,
-                    class_id,
-                    subject_id,
-                    total_questions,
-                    omr_template_id,
-                    template_id,
-                    duration,
-                    created_by,
-                    status,
-                    created_at,
-                    classes:class_id(id, name),
-                    subjects:subject_id(id, name, code),
-                    paper_templates:template_id(id, name, category, exam_type, total_marks)
-                `)
-                .eq('tenant_id', tenantId)
-                .order('created_at', { ascending: false }),
-
-            supabaseAdmin
-                .from('paper_templates')
-                .select('*, sections:template_sections(*, rules:section_question_rules(*))')
-                .order('name', { ascending: true }),
-
-            supabaseAdmin
-                .from('questions')
-                .select('id, type, sub_type, difficulty, question_text, marks, source')
-                .eq('tenant_id', tenantId)
-                .order('created_at', { ascending: false })
-                .limit(50),
-
-            supabaseAdmin
-                .from('classes')
-                .select('id, name')
-                .eq('tenant_id', tenantId)
-                .order('name', { ascending: true }),
-
-            supabaseAdmin
-                .from('subjects')
-                .select('id, name, code')
-                .eq('tenant_id', tenantId)
-                .order('name', { ascending: true })
+            query(examsQuery, [tenantId]),
+            query(templatesQuery),
+            query(`SELECT id, type, sub_type, difficulty, question_text, marks, source FROM public.questions WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 50`, [tenantId]),
+            query(`SELECT id, name FROM public.classes WHERE tenant_id = $1 ORDER BY name ASC`, [tenantId]),
+            query(`SELECT id, name, code FROM public.subjects WHERE tenant_id = $1 ORDER BY name ASC`, [tenantId])
         ])
 
-        const exams = examsRes.data || []
-        const templates = templatesRes.data || []
-        const questions = questionsRes.data || []
-        const classes = classesRes.data || []
-        const subjects = subjectsRes.data || []
+        const exams = examsRes.rows || []
+        const templates = templatesRes.rows || []
+        const questions = questionsRes.rows || []
+        const classes = classesRes.rows || []
+        const subjects = subjectsRes.rows || []
 
         const metrics = {
             totalPapers: exams.length || 4,
@@ -108,45 +143,53 @@ export async function POST(request: NextRequest) {
         const { action, payload } = body
 
         if (action === 'CREATE_EXAM') {
-            const { title, class_id, subject_id, template_id, marks, duration, total_questions } = payload
+            const { title, class_id, subject_id, template_id, duration, total_questions } = payload
             if (!title) {
                 return NextResponse.json({ error: 'Paper title is required' }, { status: 400 })
             }
 
-            const { data: exam, error: exErr } = await supabaseAdmin
-                .from('offline_exams')
-                .insert([{
-                    tenant_id: tenantId,
-                    title,
-                    class_id: class_id || '07e6c35c-3376-4ced-befb-72f6d292e7cf',
-                    subject_id: subject_id || 'cd06490d-f472-4c54-904a-f8be41b078a9',
-                    template_id: template_id || null,
-                    total_questions: Number(total_questions) || 25,
-                    duration: Number(duration) || 90,
-                    status: 'published',
-                    created_by: userId
-                }])
-                .select()
-                .single()
+            const fallbackClass = class_id || '07e6c35c-3376-4ced-befb-72f6d292e7cf'
+            const fallbackSubject = subject_id || 'cd06490d-f472-4c54-904a-f8be41b078a9'
 
-            if (exErr) throw exErr
+            const { rows: examRows } = await query(
+                `INSERT INTO public.offline_exams 
+                    (tenant_id, title, class_id, subject_id, template_id, total_questions, duration, status, created_by)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'published', $8)
+                 RETURNING *`,
+                [
+                    tenantId,
+                    title,
+                    fallbackClass,
+                    fallbackSubject,
+                    template_id || null,
+                    Number(total_questions) || 25,
+                    Number(duration) || 90,
+                    userId
+                ]
+            )
+            const exam = examRows[0]
 
             // Fetch sample questions to map into offline_exam_questions
-            const { data: existingQs } = await supabaseAdmin
-                .from('questions')
-                .select('id')
-                .eq('tenant_id', tenantId)
-                .limit(5)
+            const { rows: existingQs } = await query(
+                `SELECT id FROM public.questions WHERE tenant_id = $1 LIMIT 5`,
+                [tenantId]
+            )
 
             if (existingQs && existingQs.length > 0) {
-                const mappings = existingQs.map((q: any, idx: number) => ({
-                    exam_id: exam.id,
-                    question_id: q.id,
-                    question_order: idx + 1,
-                    section: idx < 2 ? 'Section A: Objective Concepts' : 'Section B: Descriptive Problems',
-                    is_optional: false
-                }))
-                await supabaseAdmin.from('offline_exam_questions').insert(mappings)
+                for (let idx = 0; idx < existingQs.length; idx++) {
+                    const q = existingQs[idx]
+                    await query(
+                        `INSERT INTO public.offline_exam_questions 
+                            (exam_id, question_id, question_order, section, is_optional)
+                         VALUES ($1, $2, $3, $4, false)`,
+                        [
+                            exam.id,
+                            q.id,
+                            idx + 1,
+                            idx < 2 ? 'Section A: Objective Concepts' : 'Section B: Descriptive Problems'
+                        ]
+                    )
+                }
             }
 
             return NextResponse.json({ success: true, exam })
@@ -156,60 +199,54 @@ export async function POST(request: NextRequest) {
             const { id } = payload
             if (!id) return NextResponse.json({ error: 'Exam ID is required' }, { status: 400 })
 
-            await supabaseAdmin.from('offline_exam_questions').delete().eq('exam_id', id)
-            const { error: delErr } = await supabaseAdmin
-                .from('offline_exams')
-                .delete()
-                .eq('id', id)
-                .eq('tenant_id', tenantId)
+            await query(`DELETE FROM public.offline_exam_questions WHERE exam_id = $1`, [id])
+            await query(`DELETE FROM public.offline_exams WHERE id = $1 AND tenant_id = $2`, [id, tenantId])
 
-            if (delErr) throw delErr
             return NextResponse.json({ success: true })
         }
 
         if (action === 'DUPLICATE_EXAM') {
             const { id } = payload
-            const { data: orig } = await supabaseAdmin
-                .from('offline_exams')
-                .select('*')
-                .eq('id', id)
-                .single()
-
+            const { rows: origRows } = await query(
+                `SELECT * FROM public.offline_exams WHERE id = $1 AND tenant_id = $2`,
+                [id, tenantId]
+            )
+            const orig = origRows[0]
             if (!orig) return NextResponse.json({ error: 'Original exam not found' }, { status: 404 })
 
-            const { data: dup, error: dupErr } = await supabaseAdmin
-                .from('offline_exams')
-                .insert([{
-                    tenant_id: tenantId,
-                    title: `${orig.title} (Copy Set B)`,
-                    class_id: orig.class_id,
-                    subject_id: orig.subject_id,
-                    template_id: orig.template_id,
-                    total_questions: orig.total_questions,
-                    duration: orig.duration,
-                    status: 'published',
-                    created_by: userId
-                }])
-                .select()
-                .single()
-
-            if (dupErr) throw dupErr
+            const { rows: dupRows } = await query(
+                `INSERT INTO public.offline_exams 
+                    (tenant_id, title, class_id, subject_id, template_id, total_questions, duration, status, created_by)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'published', $8)
+                 RETURNING *`,
+                [
+                    tenantId,
+                    `${orig.title} (Copy Set B)`,
+                    orig.class_id,
+                    orig.subject_id,
+                    orig.template_id,
+                    orig.total_questions,
+                    orig.duration,
+                    userId
+                ]
+            )
+            const dup = dupRows[0]
 
             // Copy mapped questions
-            const { data: qMappings } = await supabaseAdmin
-                .from('offline_exam_questions')
-                .select('*')
-                .eq('exam_id', id)
+            const { rows: qMappings } = await query(
+                `SELECT * FROM public.offline_exam_questions WHERE exam_id = $1`,
+                [id]
+            )
 
             if (qMappings && qMappings.length > 0) {
-                const newMappings = qMappings.map((m: any) => ({
-                    exam_id: dup.id,
-                    question_id: m.question_id,
-                    question_order: m.question_order,
-                    section: m.section,
-                    is_optional: m.is_optional
-                }))
-                await supabaseAdmin.from('offline_exam_questions').insert(newMappings)
+                for (const m of qMappings) {
+                    await query(
+                        `INSERT INTO public.offline_exam_questions 
+                            (exam_id, question_id, question_order, section, is_optional)
+                         VALUES ($1, $2, $3, $4, $5)`,
+                        [dup.id, m.question_id, m.question_order, m.section, m.is_optional]
+                    )
+                }
             }
 
             return NextResponse.json({ success: true, exam: dup })

@@ -1,11 +1,45 @@
 import { cookies, headers } from 'next/headers'
 import jwt from 'jsonwebtoken'
 import { query } from '@/lib/db'
+import { createClient } from '@/lib/supabase/server'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'b77be88af20ed376b75eac250acf1392f31049e1a7f81d712ff214350a867f6e'
 
 export async function verifyTenantStaff() {
     try {
+        // 1. Try Supabase Auth first (primary auth across BeBrilliant Next.js frontend)
+        try {
+            const supabase = await createClient()
+            const { data: { user }, error: authError } = await supabase.auth.getUser()
+            if (!authError && user?.id) {
+                const { rows } = await query(
+                    `SELECT up.role, up.tenant_id, up.metadata, t.tenant_type, up.is_active
+                     FROM public.user_profiles up
+                     LEFT JOIN public.tenants t ON up.tenant_id = t.id
+                     WHERE up.id = $1`,
+                    [user.id]
+                )
+                const profile = rows[0]
+                if (profile && profile.is_active) {
+                    const tenant_type = profile.tenant_type || 'institute'
+                    if (profile.role === 'owner' && !profile.tenant_id) {
+                        const { rows: tenants } = await query('SELECT id FROM public.tenants LIMIT 1')
+                        if (tenants?.[0]) {
+                            return { user: { id: user.id, email: user.email || '' }, tenant_id: tenants[0].id, role: profile.role, metadata: profile.metadata, tenant_type: 'institute' }
+                        }
+                        return { user: { id: user.id, email: user.email || '' }, tenant_id: null, role: profile.role, metadata: profile.metadata, tenant_type: 'institute' }
+                    }
+
+                    if (['owner', 'tenant_admin', 'teacher', 'student', 'parent', 'admin'].includes(profile.role)) {
+                        return { user: { id: user.id, email: user.email || '' }, tenant_id: profile.tenant_id, role: profile.role, metadata: profile.metadata, tenant_type }
+                    }
+                }
+            }
+        } catch (supabaseErr) {
+            // Fallback to legacy JWT token check below
+        }
+
+        // 2. Fallback to legacy bb_token / Authorization header JWT
         const cookieStore = await cookies()
         const headerStore = await headers()
         const token = cookieStore.get('bb_token')?.value || headerStore.get('authorization')?.split(' ')[1]

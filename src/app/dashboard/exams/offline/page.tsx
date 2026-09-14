@@ -86,7 +86,10 @@ export default function OfflinePaperManager() {
         setLoading(true)
         try {
             const res = await fetch('/api/dashboard/exams/offline')
-            if (!res.ok) throw new Error('Failed to load offline examination data')
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}))
+                throw new Error(errData.error || 'Failed to load offline examination data')
+            }
             const data = await res.json()
 
             setPapers(data.exams || [])
@@ -95,14 +98,14 @@ export default function OfflinePaperManager() {
             setClasses(data.classes || [])
             setSubjects(data.subjects || [])
             setMetrics(data.metrics || {
-                totalPapers: 4,
+                totalPapers: (data.exams || []).length || 4,
                 printedAssets: 1240,
                 questionPool: '12,450+',
                 archivedCount: 18
             })
 
-            if (data.classes?.length > 0 && !composerForm.class_id) {
-                setComposerForm(prev => ({
+            if (data.classes?.length > 0) {
+                setComposerForm(prev => prev.class_id ? prev : ({
                     ...prev,
                     class_id: data.classes[0].id,
                     subject_id: data.subjects?.[0]?.id || '',
@@ -115,7 +118,7 @@ export default function OfflinePaperManager() {
         } finally {
             setLoading(false)
         }
-    }, [composerForm.class_id])
+    }, [])
 
     useEffect(() => {
         fetchData()

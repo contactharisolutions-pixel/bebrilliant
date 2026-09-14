@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { query } from '@/lib/db'
 import { verifyTenantStaff } from '@/lib/auth-server'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -10,46 +10,51 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const examId = resolvedParams.id
     const mode = request.nextUrl.searchParams.get('mode') || 'paper' // paper, key, solution, booklet
 
-    const { data: exam } = await supabaseAdmin
-        .from('offline_exams')
-        .select(`
-            *,
-            classes:class_id(id, name),
-            subjects:subject_id(id, name, code)
-        `)
-        .eq('id', examId)
-        .single()
+    const examQuery = `
+        SELECT 
+            oe.*,
+            json_build_object('id', c.id, 'name', c.name) AS classes,
+            json_build_object('id', s.id, 'name', s.name, 'code', s.code) AS subjects
+        FROM public.offline_exams oe
+        LEFT JOIN public.classes c ON oe.class_id = c.id
+        LEFT JOIN public.subjects s ON oe.subject_id = s.id
+        WHERE oe.id = $1
+        LIMIT 1;
+    `
+    const { rows: examRows } = await query(examQuery, [examId])
+    const exam = examRows[0]
 
     if (!exam) return new NextResponse('Exam Not Found', { status: 404 })
 
-    let { data: questions } = await supabaseAdmin
-        .from('offline_exam_questions')
-        .select('*, details:questions(*)')
-        .eq('exam_id', examId)
-        .order('question_order', { ascending: true })
+    const questionsQuery = `
+        SELECT 
+            oeq.*,
+            row_to_json(q.*) AS details
+        FROM public.offline_exam_questions oeq
+        JOIN public.questions q ON oeq.question_id = q.id
+        WHERE oeq.exam_id = $1
+        ORDER BY oeq.question_order ASC;
+    `
+    let { rows: questions } = await query(questionsQuery, [examId])
 
     // Fallback: If no mapped questions exist for this exam, pull general questions from repository
     if (!questions || questions.length === 0) {
-        const { data: fallbackQs } = await supabaseAdmin
-            .from('questions')
-            .select('*')
-            .eq('tenant_id', exam.tenant_id)
-            .limit(6)
-
-        if (fallbackQs && fallbackQs.length > 0) {
-            questions = fallbackQs.map((q: any, idx: number) => ({
-                id: `fallback_${idx}`,
-                exam_id: examId,
-                question_id: q.id,
-                question_order: idx + 1,
-                section: idx < 3 ? 'Section A: Objective Concepts' : 'Section B: Analytical & Descriptive',
-                is_optional: false,
-                marks: q.marks || (idx < 3 ? 1 : 4),
-                details: q
-            }))
-        } else {
-            questions = []
-        }
+        const fallbackQuery = `
+            SELECT 
+                gen_random_uuid() AS id,
+                $1::uuid AS exam_id,
+                q.id AS question_id,
+                ROW_NUMBER() OVER () AS question_order,
+                CASE WHEN ROW_NUMBER() OVER () <= 3 THEN 'Section A: Objective Concepts' ELSE 'Section B: Analytical & Descriptive' END AS section,
+                false AS is_optional,
+                COALESCE(q.marks, 4) AS marks,
+                row_to_json(q.*) AS details
+            FROM public.questions q
+            WHERE q.tenant_id = $2
+            LIMIT 8;
+        `
+        const { rows: fallbackQs } = await query(fallbackQuery, [examId, exam.tenant_id])
+        questions = fallbackQs || []
     }
 
     const sections: Record<string, any[]> = {}
