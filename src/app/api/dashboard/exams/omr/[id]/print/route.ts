@@ -8,11 +8,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const resolvedParams = await params
     const examId = resolvedParams.id
-    const { data: exam } = await supabaseAdmin.from('omr_exams').select('*').eq('id', examId).single()
+    const { data: exam } = await supabaseAdmin
+        .from('offline_exams')
+        .select('*, omr_templates(*)')
+        .eq('id', examId)
+        .single()
+
     if (!exam) return new NextResponse('Exam Not Found', { status: 404 })
 
-    const numQuestions = exam.total_questions || 100
-    const columns = 2 // 2 columns of questions
+    const numQuestions = exam.total_questions || exam.omr_templates?.total_questions || 50
+    const columns = exam.omr_templates?.layout_config?.columns || 2
     const qPerCol = Math.ceil(numQuestions / columns)
 
     const html = `
