@@ -267,6 +267,8 @@ class SupabaseQueryBuilder {
         let sql = ''
         const params: any[] = []
         let paramIdx = 1
+        let leftJoinStr = ''
+        const tableAlias = this.table === 'user_profiles' ? 'up' : this.table
 
         const buildWhere = () => {
             const conds = this.conditions.map(c => {
@@ -274,6 +276,10 @@ class SupabaseQueryBuilder {
                 if (columnName.includes('->>')) {
                     const parts = columnName.split('->>')
                     columnName = `${parts[0]}->>'${parts[1]}'`
+                }
+
+                if (leftJoinStr && !columnName.includes('.')) {
+                    columnName = `${tableAlias}.${columnName}`
                 }
 
                 if (c.val === null) {
@@ -299,11 +305,13 @@ class SupabaseQueryBuilder {
                 const parts = this.orCondition.split(',')
                 const parsedParts = parts.map(p => {
                     if (p.includes('.is.null')) {
-                        const col = p.split('.')[0]
+                        let col = p.split('.')[0]
+                        if (leftJoinStr && !col.includes('.')) col = `${tableAlias}.${col}`
                         return `${col} IS NULL`
                     }
                     if (p.includes('.eq.')) {
-                        const [col, _, val] = p.split('.')
+                        let [col, _, val] = p.split('.')
+                        if (leftJoinStr && !col.includes('.')) col = `${tableAlias}.${col}`
                         if (val === 'null') return `${col} IS NULL`
                         params.push(val)
                         return `${col} = $${paramIdx++}`
@@ -322,7 +330,6 @@ class SupabaseQueryBuilder {
 
         if (this.action === 'select') {
             let selectStr = this.selectCols.trim()
-            let leftJoinStr = ''
             let isOwnerLeadsWithDemos = false
             
             // Check for relationship patterns
@@ -434,15 +441,18 @@ class SupabaseQueryBuilder {
                 }
             }
 
-            // Universal safeguard: strip any leftover alias:col(...) patterns from selectStr so Postgres never throws syntax error at or near ":"
-            selectStr = selectStr.replace(/,\s*[a-zA-Z0-9_]+:[a-zA-Z0-9_]+\s*\([^)]*\)/gi, '').trim()
+            // Universal safeguard: strip any leftover relation patterns from selectStr
+            selectStr = selectStr
+                .replace(/,\s*[a-zA-Z0-9_]+:[a-zA-Z0-9_]+\s*\([^)]*\)/gi, '')
+                .replace(/,\s*[a-zA-Z0-9_!]+(?:\([^)]*\))/gi, '')
+                .trim()
 
-            const tableAlias = this.table === 'user_profiles' ? 'up' : this.table
             sql = `SELECT ${selectStr} FROM ${this.table} ${tableAlias}${leftJoinStr}`
             sql += buildWhere()
 
             if (this.orderByCol) {
-                sql += ` ORDER BY ${this.orderByCol} ${this.orderAsc ? 'ASC' : 'DESC'}`
+                const orderCol = (leftJoinStr && !this.orderByCol.includes('.')) ? `${tableAlias}.${this.orderByCol}` : this.orderByCol
+                sql += ` ORDER BY ${orderCol} ${this.orderAsc ? 'ASC' : 'DESC'}`
             }
 
             // Execute the query to get all matching rows

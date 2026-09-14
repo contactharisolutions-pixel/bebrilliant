@@ -9,20 +9,24 @@ async function verifyTenantAdmin() {
 
     const { data: profile } = await supabaseAdmin
         .from('user_profiles')
-        .select(`
-            id,
-            role, 
-            tenant_id,
-            tenants:tenant_id(tenant_type)
-        `)
+        .select('id, role, tenant_id')
         .eq('id', user.id)
         .single()
 
     if (!profile) return null
 
-    const rawTenant = (profile as any).tenants
-    const tenantData = Array.isArray(rawTenant) ? rawTenant[0] : rawTenant
-    const tenant_type = tenantData?.tenant_type || 'institute'
+    // Check tenant type
+    let tenant_type = 'institute'
+    if (profile.tenant_id) {
+        const { data: tenant } = await supabaseAdmin
+            .from('tenants')
+            .select('tenant_type')
+            .eq('id', profile.tenant_id)
+            .single()
+        if (tenant?.tenant_type) {
+            tenant_type = tenant.tenant_type
+        }
+    }
 
     if (tenant_type === 'independent_teacher') return null
 

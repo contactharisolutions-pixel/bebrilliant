@@ -301,14 +301,14 @@ export default function FacultyManagement() {
         setLoading(true)
         try {
             const res = await fetch('/api/dashboard/teachers')
-            const data = await res.json()
+            const data = await res.json().catch(() => ({}))
             if (res.ok) {
                 setTeachers(data.teachers || [])
                 setClasses(data.classes || [])
                 setSubjects(data.subjects || [])
                 if (data.stats) setStats(data.stats)
             } else {
-                setToast({ msg: data.error || 'Failed to load faculty list', ok: false })
+                setToast({ msg: data.error || `Server returned error status ${res.status}`, ok: false })
             }
         } catch (err: any) {
             setToast({ msg: err.message || 'Network error fetching faculty data', ok: false })
@@ -337,8 +337,8 @@ export default function FacultyManagement() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action, payload })
             })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Operation failed')
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(data.error || `Operation failed (${res.status})`)
             await fetchFacultyData()
             return { success: true, data }
         } catch (err: any) {

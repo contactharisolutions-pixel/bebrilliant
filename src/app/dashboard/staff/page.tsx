@@ -299,13 +299,13 @@ export default function StaffDirectoryPage() {
         setLoading(true)
         try {
             const res = await fetch('/api/dashboard/staff')
-            const data = await res.json()
+            const data = await res.json().catch(() => ({}))
             if (res.ok) {
                 setStaffList(data.staff || [])
                 setDepartments(data.departments || [])
                 if (data.stats) setStats(data.stats)
             } else {
-                setToast({ msg: data.error || 'Failed to load staff roster', ok: false })
+                setToast({ msg: data.error || `Server returned error status ${res.status}`, ok: false })
             }
         } catch (err: any) {
             setToast({ msg: err.message || 'Network error fetching staff data', ok: false })
@@ -334,8 +334,8 @@ export default function StaffDirectoryPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action, payload })
             })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Operation failed')
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(data.error || `Operation failed (${res.status})`)
             await fetchStaffData()
             return { success: true, data }
         } catch (err: any) {

@@ -9,19 +9,24 @@ async function verifyTenantAdmin() {
 
     const { data: profile } = await supabaseAdmin
         .from('user_profiles')
-        .select(`
-            role, 
-            tenant_id,
-            tenants:tenant_id(tenant_type)
-        `)
+        .select('id, role, tenant_id')
         .eq('id', user.id)
         .single()
 
     if (!profile) return null
 
-    const rawTenant = (profile as any).tenants
-    const tenantData = Array.isArray(rawTenant) ? rawTenant[0] : rawTenant
-    const tenant_type = tenantData?.tenant_type || 'institute'
+    // Check tenant type
+    let tenant_type = 'institute'
+    if (profile.tenant_id) {
+        const { data: tenant } = await supabaseAdmin
+            .from('tenants')
+            .select('tenant_type')
+            .eq('id', profile.tenant_id)
+            .single()
+        if (tenant?.tenant_type) {
+            tenant_type = tenant.tenant_type
+        }
+    }
 
     // Independent teachers cannot manage other teachers
     if (tenant_type === 'independent_teacher') return null
@@ -57,14 +62,26 @@ export async function GET(request: NextRequest) {
 
         if (teacherError) throw teacherError
 
-        // 2. Fetch Tenant Classes with Divisions
+        // 2. Fetch Tenant Classes
         const { data: rawClasses, error: classError } = await supabaseAdmin
             .from('classes')
-            .select('id, name, code, sort_order, is_active, divisions(id, name, capacity)')
+            .select('id, name, code, sort_order, is_active')
             .eq('tenant_id', tenant_id)
             .order('sort_order', { ascending: true })
 
-        // 3. Fetch Tenant Subjects (from public.subjects)
+        // 3. Fetch Tenant Divisions
+        const { data: rawDivisions } = await supabaseAdmin
+            .from('divisions')
+            .select('id, class_id, name, capacity')
+            .eq('tenant_id', tenant_id)
+
+        // Combine classes with their divisions
+        const classesWithDivisions = (rawClasses || []).map(cls => ({
+            ...cls,
+            divisions: (rawDivisions || []).filter(d => d.class_id === cls.id)
+        }))
+
+        // 4. Fetch Tenant Subjects (from public.subjects)
         let { data: subjects, error: subjectError } = await supabaseAdmin
             .from('subjects')
             .select('id, name, code, is_optional')
@@ -90,13 +107,25 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        // 4. Fetch Relational Teacher Subjects
-        const { data: teacherSubjects, error: mappingError } = await supabaseAdmin
+        // 5. Fetch Relational Teacher Subjects
+        const { data: rawTeacherSubjects } = await supabaseAdmin
             .from('teacher_subjects')
-            .select('id, teacher_id, class_id, division_id, subject_id, classes(name, code), divisions(name), subjects(name)')
+            .select('id, teacher_id, class_id, division_id, subject_id')
             .eq('tenant_id', tenant_id)
 
-        // 5. Compute Executive Metrics
+        // Enrich teacher subjects with names in memory
+        const classMap = new Map((rawClasses || []).map(c => [c.id, c]))
+        const divisionMap = new Map((rawDivisions || []).map(d => [d.id, d]))
+        const subjectMap = new Map((subjects || []).map(s => [s.id, s]))
+
+        const teacherSubjects = (rawTeacherSubjects || []).map(ts => ({
+            ...ts,
+            classes: classMap.has(ts.class_id) ? { name: classMap.get(ts.class_id)?.name, code: classMap.get(ts.class_id)?.code } : null,
+            divisions: divisionMap.has(ts.division_id) ? { name: divisionMap.get(ts.division_id)?.name } : null,
+            subjects: subjectMap.has(ts.subject_id) ? { name: subjectMap.get(ts.subject_id)?.name } : null
+        }))
+
+        // 6. Compute Executive Metrics
         const teacherList = teachers || []
         const total_teachers = teacherList.length
         const active_teachers = teacherList.filter(t => t.is_active).length
@@ -132,9 +161,9 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             teachers: teacherList,
-            classes: rawClasses || [],
+            classes: classesWithDivisions,
             subjects: subjects || [],
-            teacher_subjects: teacherSubjects || [],
+            teacher_subjects: teacherSubjects,
             stats
         })
     } catch (error: any) {
