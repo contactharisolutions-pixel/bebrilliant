@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
         // 1. Fetch Teachers
         const { data: teachers, error: teacherError } = await supabaseAdmin
             .from('user_profiles')
-            .select('id, email, first_name, last_name, phone, is_active, created_at, updated_at, metadata')
+            .select('id, email, first_name, last_name, phone, is_active, created_at, metadata')
             .eq('tenant_id', tenant_id)
             .eq('role', 'teacher')
             .order('created_at', { ascending: false })
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
             const { id, is_active } = payload
             const { data, error } = await supabaseAdmin
                 .from('user_profiles')
-                .update({ is_active, updated_at: new Date().toISOString() })
+                .update({ is_active })
                 .eq('id', id)
                 .eq('tenant_id', tenant_id)
                 .select()
@@ -321,8 +321,7 @@ export async function POST(request: NextRequest) {
                     first_name: first_name.trim(),
                     last_name: (last_name || '').trim(),
                     phone: phone || '',
-                    metadata: updatedMeta,
-                    updated_at: new Date().toISOString()
+                    metadata: updatedMeta
                 })
                 .eq('id', id)
                 .eq('tenant_id', tenant_id)
@@ -354,8 +353,7 @@ export async function POST(request: NextRequest) {
                         assigned_subjects: subjects,
                         assigned_classes: classes,
                         assigned_divisions: divisions
-                    },
-                    updated_at: new Date().toISOString()
+                    }
                 })
                 .eq('id', id)
                 .eq('tenant_id', tenant_id)
@@ -439,7 +437,7 @@ export async function POST(request: NextRequest) {
 
             const { error: bulkError } = await supabaseAdmin
                 .from('user_profiles')
-                .update({ is_active, updated_at: new Date().toISOString() })
+                .update({ is_active })
                 .in('id', ids)
                 .eq('tenant_id', tenant_id)
 

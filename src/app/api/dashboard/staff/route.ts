@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
         // Fetch staff profiles: role IN ('platform_staff', 'tenant_admin')
         const { data: staffProfiles, error: staffError } = await supabaseAdmin
             .from('user_profiles')
-            .select('id, email, first_name, last_name, phone, role, is_active, created_at, updated_at, metadata')
+            .select('id, email, first_name, last_name, phone, role, is_active, created_at, metadata')
             .eq('tenant_id', tenant_id)
             .in('role', ['platform_staff', 'tenant_admin'])
             .order('created_at', { ascending: false })
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
                 role: s.role || 'platform_staff',
                 is_active: !!s.is_active,
                 created_at: s.created_at,
-                updated_at: s.updated_at,
+                updated_at: meta.updated_at || s.created_at,
                 is_self: s.id === user.id,
                 metadata: {
                     designation: meta.designation || (s.role === 'tenant_admin' ? 'Administrator' : 'Staff Officer'),
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
 
             const { data, error } = await supabaseAdmin
                 .from('user_profiles')
-                .update({ is_active, updated_at: new Date().toISOString() })
+                .update({ is_active })
                 .eq('id', id)
                 .eq('tenant_id', tenant_id)
                 .select()
@@ -272,8 +272,7 @@ export async function POST(request: NextRequest) {
                 first_name: first_name.trim(),
                 last_name: (last_name || '').trim(),
                 phone: phone || '',
-                metadata: updatedMeta,
-                updated_at: new Date().toISOString()
+                metadata: updatedMeta
             }
 
             // Only allow role change if valid
