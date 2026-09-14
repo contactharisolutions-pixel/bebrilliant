@@ -5,8 +5,9 @@ import Image from 'next/image'
 import {
     BookOpen, Layers, PlusCircle, CheckCircle, XCircle, Search, RefreshCw,
     Download, Upload, Eye, EyeOff, Edit3, Trash2, ChevronRight, ChevronDown,
-    GraduationCap, Globe, BookMarked, ShoppingBag, Library, FileSpreadsheet,
-    FileText, Check, Plus, ExternalLink, ArrowRight, Sparkles, AlertCircle
+    GraduationCap, Globe, BookMarked, FileSpreadsheet,
+    FileText, Check, Plus, ArrowRight, AlertCircle, ShieldCheck,
+    HelpCircle, Sparkles, Building2, Zap, Award
 } from 'lucide-react'
 import Papa from 'papaparse'
 
@@ -25,23 +26,16 @@ interface SyllabusNode {
     depth?: number
 }
 
-interface SyllabusBook {
+interface OwnerPublishedSyllabus {
     id: string
-    board_name: string
-    class_name: string
-    subject_name: string
-    title: string
-    author?: string
-    publisher: string
-    edition: string
-    isbn?: string
-    chapters_count: number
-    cover_image_url?: string
-    pdf_url?: string
-    price: number
-    buy_url?: string
-    is_prescribed: boolean
-    is_active: boolean
+    name: string
+    type: string
+    classes_count: number | string
+    subjects_count: number | string
+    chapters_count: number | string
+    topics_count: number | string
+    is_active_for_tenant: boolean
+    created_at?: string
 }
 
 // ── COLOR & BADGE CONFIGURATION ───────────────────────────────────────
@@ -55,29 +49,29 @@ const TYPE_META: Record<NodeType, { label: string; badgeBg: string; badgeText: s
 
 export default function SyllabusHubPage() {
     // ── STATE ─────────────────────────────────────────────────────────
-    const [activeTab, setActiveTab] = useState<'tree' | 'books' | 'store' | 'bulk'>('tree')
+    const [activeTab, setActiveTab] = useState<'structure' | 'owner_published' | 'upload'>('structure')
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
 
     // Data
     const [nodes, setNodes] = useState<SyllabusNode[]>([])
-    const [standardBoards, setStandardBoards] = useState<any[]>([])
-    const [textbooks, setTextbooks] = useState<SyllabusBook[]>([])
+    const [ownerPublished, setOwnerPublished] = useState<OwnerPublishedSyllabus[]>([])
     const [metrics, setMetrics] = useState({
         activeBoard: 'Gujarat Board (English Medium)',
+        activeBoardId: null as string | null,
         totalClasses: 8,
         totalSubjects: 35,
         totalChapters: 432,
         totalTopics: 432,
-        totalBooks: 5,
-        totalItems: 908
+        totalItems: 908,
+        multiBoardEnabled: false,
+        subscriptionPlan: 'Standard School License'
     })
 
     // Filters
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedClassFilter, setSelectedClassFilter] = useState('ALL')
-    const [selectedSubjectFilter, setSelectedSubjectFilter] = useState('ALL')
     const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set())
 
     // Modals
@@ -91,30 +85,14 @@ export default function SyllabusHubPage() {
 
     const [itemForm, setItemForm] = useState({ name: '', order_index: 0 })
 
-    const [bookModal, setBookModal] = useState<{ open: boolean; mode: 'add' | 'edit'; book?: SyllabusBook }>({
-        open: false,
-        mode: 'add'
-    })
+    const [importConfirmModal, setImportConfirmModal] = useState<{
+        open: boolean
+        board: OwnerPublishedSyllabus | null
+    }>({ open: false, board: null })
 
-    const [bookForm, setBookForm] = useState({
-        class_name: 'Class 8',
-        subject_name: 'Mathematics',
-        title: '',
-        author: '',
-        publisher: 'Gujarat State Board of School Textbooks (GSEB)',
-        edition: '2026 Revised Edition',
-        isbn: '',
-        chapters_count: 14,
-        pdf_url: '',
-        price: 120,
-        buy_url: '',
-        is_prescribed: true
-    })
-
-    const [boardModalOpen, setBoardModalOpen] = useState(false)
-    const [deleteModal, setDeleteModal] = useState<{ open: boolean; type: 'node' | 'book'; id: string; name: string }>({
+    const [multiBoardModalOpen, setMultiBoardModalOpen] = useState(false)
+    const [deleteModal, setDeleteModal] = useState<{ open: boolean; id: string; name: string }>({
         open: false,
-        type: 'node',
         id: '',
         name: ''
     })
@@ -122,6 +100,8 @@ export default function SyllabusHubPage() {
     // Bulk Upload State
     const [bulkRows, setBulkRows] = useState<any[]>([])
     const [bulkFileName, setBulkFileName] = useState('')
+    const [bulkMode, setBulkMode] = useState<'APPEND' | 'REPLACE'>('APPEND')
+    const [customBoardName, setCustomBoardName] = useState('School Custom Curriculum')
     const [bulkUploading, setBulkUploading] = useState(false)
 
     // ── TOAST HELPER ──────────────────────────────────────────────────
@@ -143,21 +123,19 @@ export default function SyllabusHubPage() {
 
             const loadedNodes: SyllabusNode[] = data.nodes || []
             setNodes(loadedNodes)
-            setStandardBoards(data.standardBoards || [])
-            setTextbooks(data.textbooks || [])
+            setOwnerPublished(data.ownerPublishedSyllabuses || [])
             if (data.metrics) setMetrics(data.metrics)
 
-            // Auto-expand first 2 levels (Board & Classes) for immediate rich view
-            const defaultExpanded = new Set<string>()
-            loadedNodes.forEach(n => {
+            // Auto-expand first 2 levels (Board & Classes)
+            const initialExpanded = new Set<string>()
+            loadedNodes.forEach((n) => {
                 if (n.type === 'board' || n.type === 'class') {
-                    defaultExpanded.add(n.id)
+                    initialExpanded.add(n.id)
                 }
             })
-            setExpandedNodeIds(defaultExpanded)
-        } catch (e: any) {
-            console.error('[Syllabus fetch error]:', e)
-            showToast(e.message || 'Error loading course syllabus', false)
+            setExpandedNodeIds(initialExpanded)
+        } catch (err: any) {
+            showToast(err.message || 'Failed to connect to syllabus repository', false)
         } finally {
             setLoading(false)
         }
@@ -167,29 +145,19 @@ export default function SyllabusHubPage() {
         fetchData()
     }, [fetchData])
 
-    // ── EXTRACT AVAILABLE CLASSES & SUBJECTS FOR FILTERS ───────────────
-    const availableClasses = useMemo(() => {
-        return nodes.filter(n => n.type === 'class').sort((a, b) => a.order_index - b.order_index)
-    }, [nodes])
-
-    const availableSubjects = useMemo(() => {
-        const subs = nodes.filter(n => n.type === 'subject')
-        const uniqueNames = Array.from(new Set(subs.map(s => s.name)))
-        return uniqueNames
-    }, [nodes])
-
-    // ── TREE EXPANSION TOGGLE ─────────────────────────────────────────
-    const toggleExpand = (nodeId: string) => {
-        setExpandedNodeIds(prev => {
+    // ── EXPAND / COLLAPSE ─────────────────────────────────────────────
+    const toggleExpand = (id: string) => {
+        setExpandedNodeIds((prev) => {
             const next = new Set(prev)
-            if (next.has(nodeId)) next.delete(nodeId)
-            else next.add(nodeId)
+            if (next.has(id)) next.delete(id)
+            else next.add(id)
             return next
         })
     }
 
     const expandAll = () => {
-        const allIds = new Set<string>(nodes.map(n => n.id))
+        const allIds = new Set<string>()
+        nodes.forEach((n) => allIds.add(n.id))
         setExpandedNodeIds(allIds)
     }
 
@@ -197,116 +165,244 @@ export default function SyllabusHubPage() {
         setExpandedNodeIds(new Set())
     }
 
-    // ── ACTION HANDLERS ───────────────────────────────────────────────
-    const handleApiAction = async (action: string, payload: any) => {
+    // ── HIERARCHICAL TREE STRUCTURING ─────────────────────────────────
+    const { rootNodes, childMap } = useMemo(() => {
+        const cMap = new Map<string, SyllabusNode[]>()
+        const roots: SyllabusNode[] = []
+
+        nodes.forEach((n) => {
+            if (!n.parent_id || n.type === 'board') {
+                roots.push(n)
+            } else {
+                const list = cMap.get(n.parent_id) || []
+                list.push(n)
+                cMap.set(n.parent_id, list)
+            }
+        })
+
+        return { rootNodes: roots, childMap: cMap }
+    }, [nodes])
+
+    // Distinct Classes for Filter
+    const availableClasses = useMemo(() => {
+        return nodes.filter((n) => n.type === 'class')
+    }, [nodes])
+
+    // Search filter
+    const matchesSearch = useCallback(
+        (node: SyllabusNode): boolean => {
+            if (!searchQuery.trim()) return true
+            const q = searchQuery.toLowerCase()
+            if (node.name.toLowerCase().includes(q)) return true
+            // Check if any descendant matches
+            const children = childMap.get(node.id) || []
+            return children.some((c) => matchesSearch(c))
+        },
+        [searchQuery, childMap]
+    )
+
+    // ── ITEM CRUD HANDLERS ────────────────────────────────────────────
+    const handleSaveItem = async () => {
+        if (!itemForm.name.trim()) {
+            showToast('Please enter an item title', false)
+            return
+        }
         setSaving(true)
         try {
-            const res = await fetch('/api/dashboard/syllabus', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, payload })
-            })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Action could not be completed')
-
-            showToast(data.message || 'Syllabus updated successfully', true)
-            await fetchData()
-            return data
-        } catch (e: any) {
-            showToast(e.message || 'Request failed', false)
-            return null
+            if (itemModal.mode === 'add') {
+                const res = await fetch('/api/dashboard/syllabus', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'CREATE_NODE',
+                        payload: {
+                            name: itemForm.name.trim(),
+                            type: itemModal.nodeType,
+                            parent_id: itemModal.parent ? itemModal.parent.id : null,
+                            order_index: itemForm.order_index
+                        }
+                    })
+                })
+                const d = await res.json()
+                if (!res.ok) throw new Error(d.error || 'Failed to create item')
+                showToast(`New ${TYPE_META[itemModal.nodeType].label} added successfully`, true)
+            } else {
+                const res = await fetch('/api/dashboard/syllabus', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'UPDATE_NODE',
+                        payload: {
+                            id: itemModal.node?.id,
+                            name: itemForm.name.trim(),
+                            order_index: itemForm.order_index
+                        }
+                    })
+                })
+                const d = await res.json()
+                if (!res.ok) throw new Error(d.error || 'Failed to update item')
+                showToast('Item updated successfully', true)
+            }
+            setItemModal({ open: false, mode: 'add', nodeType: 'class' })
+            fetchData()
+        } catch (err: any) {
+            showToast(err.message || 'Operation failed', false)
         } finally {
             setSaving(false)
         }
     }
 
-    // Save Node (Add or Edit)
-    const handleSaveItem = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!itemForm.name.trim()) {
-            showToast('Please enter an item name', false)
-            return
-        }
-
-        if (itemModal.mode === 'edit' && itemModal.node) {
-            await handleApiAction('UPDATE_NODE', {
-                id: itemModal.node.id,
-                name: itemForm.name,
-                order_index: itemForm.order_index
+    const handleToggleNode = async (node: SyllabusNode) => {
+        try {
+            const nextStatus = !node.is_active
+            const res = await fetch('/api/dashboard/syllabus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'TOGGLE_NODE',
+                    payload: { id: node.id, is_active: nextStatus }
+                })
             })
-        } else {
-            await handleApiAction('CREATE_NODE', {
-                parent_id: itemModal.parent?.id || null,
-                name: itemForm.name,
-                type: itemModal.nodeType,
-                order_index: itemForm.order_index
-            })
+            if (!res.ok) throw new Error('Failed to update status')
+            setNodes((prev) =>
+                prev.map((n) => (n.id === node.id ? { ...n, is_active: nextStatus } : n))
+            )
+            showToast(`Marked as ${nextStatus ? 'Visible in Student App' : 'Hidden'}`, true)
+        } catch (err: any) {
+            showToast(err.message, false)
         }
-        setItemModal({ open: false, mode: 'add', nodeType: 'class' })
     }
 
-    // Toggle Node Visibility
-    const handleToggleVisibility = async (node: SyllabusNode) => {
-        await handleApiAction('TOGGLE_NODE', {
-            id: node.id,
-            is_active: !node.is_active
+    const handleDeleteNode = async () => {
+        if (!deleteModal.id) return
+        setSaving(true)
+        try {
+            const res = await fetch('/api/dashboard/syllabus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'DELETE_NODE',
+                    payload: { id: deleteModal.id }
+                })
+            })
+            if (!res.ok) throw new Error('Failed to delete item')
+            showToast('Item and child contents removed', true)
+            setDeleteModal({ open: false, id: '', name: '' })
+            fetchData()
+        } catch (err: any) {
+            showToast(err.message, false)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    // ── ONE-CLICK IMPORT OWNER SYLLABUS ───────────────────────────────
+    const handleOneClickImport = async (board: OwnerPublishedSyllabus) => {
+        setSaving(true)
+        try {
+            const res = await fetch('/api/dashboard/syllabus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'IMPORT_OWNER_SYLLABUS',
+                    payload: { board_id: board.id }
+                })
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed to import syllabus')
+            showToast(data.message || 'Syllabus imported successfully', true)
+            setImportConfirmModal({ open: false, board: null })
+            fetchData()
+            setActiveTab('structure')
+        } catch (err: any) {
+            showToast(err.message, false)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    // ── DOWNLOAD SPREADSHEET (EXCEL / CSV) ─────────────────────────────
+    const handleDownloadBoardSyllabus = async (board: OwnerPublishedSyllabus) => {
+        showToast(`Preparing official Excel/CSV spreadsheet for ${board.name}...`, true)
+        try {
+            const res = await fetch('/api/dashboard/syllabus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'DOWNLOAD_BOARD_SYLLABUS',
+                    payload: { board_id: board.id }
+                })
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed to prepare download')
+
+            const rows = data.rows || []
+            if (rows.length === 0) {
+                showToast('No curriculum rows found for this board', false)
+                return
+            }
+
+            const csv = Papa.unparse(rows)
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            const cleanName = board.name.replace(/[^a-zA-Z0-9_-]/g, '_')
+            a.download = `${cleanName}_Official_Syllabus.csv`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+
+            showToast(`Downloaded ${rows.length} syllabus topics for ${board.name}`, true)
+        } catch (err: any) {
+            showToast(err.message, false)
+        }
+    }
+
+    // Download Active Board
+    const handleDownloadActiveSyllabus = () => {
+        if (!metrics.activeBoardId) {
+            showToast('No active board found to export', false)
+            return
+        }
+        handleDownloadBoardSyllabus({
+            id: metrics.activeBoardId,
+            name: metrics.activeBoard,
+            type: 'board',
+            classes_count: metrics.totalClasses,
+            subjects_count: metrics.totalSubjects,
+            chapters_count: metrics.totalChapters,
+            topics_count: metrics.totalTopics,
+            is_active_for_tenant: true
         })
     }
 
-    // Confirm Delete
-    const executeDelete = async () => {
-        if (!deleteModal.id) return
-        if (deleteModal.type === 'node') {
-            await handleApiAction('DELETE_NODE', { id: deleteModal.id })
-        } else {
-            await handleApiAction('DELETE_TEXTBOOK', { id: deleteModal.id })
-        }
-        setDeleteModal({ open: false, type: 'node', id: '', name: '' })
-    }
-
-    // Save Textbook (Add or Edit)
-    const handleSaveBook = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!bookForm.title.trim()) {
-            showToast('Please enter a textbook title', false)
-            return
-        }
-
-        if (bookModal.mode === 'edit' && bookModal.book) {
-            await handleApiAction('UPDATE_TEXTBOOK', {
-                id: bookModal.book.id,
-                ...bookForm
-            })
-        } else {
-            await handleApiAction('ADD_TEXTBOOK', {
-                board_name: metrics.activeBoard,
-                ...bookForm
-            })
-        }
-        setBookModal({ open: false, mode: 'add' })
-    }
-
-    // Switch Board
-    const handleSelectBoard = async (boardId: string) => {
-        await handleApiAction('SELECT_BOARD', { board_id: boardId })
-        setBoardModalOpen(false)
-    }
-
-    // Download Sample Template CSV
-    const handleDownloadTemplate = () => {
-        const sampleCsv = `Class,Subject,Chapter,Topic\nClass 9,Mathematics,Chapter 1: Number Systems,1.1 Irrational Numbers\nClass 9,Mathematics,Chapter 1: Number Systems,1.2 Real Numbers & Decimals\nClass 9,Science,Chapter 1: Matter in Our Surroundings,1.1 Physical Nature of Matter\nClass 9,Science,Chapter 1: Matter in Our Surroundings,1.2 States of Matter\nClass 10,Mathematics,Chapter 1: Real Numbers,1.1 Fundamental Theorem of Arithmetic\nClass 10,Science,Chapter 1: Chemical Reactions & Equations,1.1 Chemical Equations`
-        const blob = new Blob([sampleCsv], { type: 'text/csv;charset=utf-8;' })
+    // ── STARTER CSV TEMPLATE GENERATOR ────────────────────────────────
+    const handleDownloadStarterTemplate = () => {
+        const templateData = [
+            { Board: 'Custom Board', Class: 'Class 8', Subject: 'Mathematics', Chapter: 'Rational Numbers', Topic: 'Properties of Rational Numbers', OrderIndex: 1 },
+            { Board: 'Custom Board', Class: 'Class 8', Subject: 'Mathematics', Chapter: 'Rational Numbers', Topic: 'Representation on Number Line', OrderIndex: 2 },
+            { Board: 'Custom Board', Class: 'Class 8', Subject: 'Mathematics', Chapter: 'Linear Equations', Topic: 'Solving Linear Equations in One Variable', OrderIndex: 3 },
+            { Board: 'Custom Board', Class: 'Class 8', Subject: 'Science', Chapter: 'Crop Production', Topic: 'Agricultural Practices & Sowing', OrderIndex: 1 },
+            { Board: 'Custom Board', Class: 'Class 8', Subject: 'Science', Chapter: 'Crop Production', Topic: 'Irrigation & Protection from Weeds', OrderIndex: 2 },
+            { Board: 'Custom Board', Class: 'Class 8', Subject: 'English', Chapter: 'The Best Christmas Present', Topic: 'Comprehension & Vocabulary', OrderIndex: 1 }
+        ]
+        const csv = Papa.unparse(templateData)
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
         const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', 'School_Syllabus_Sample_Template.csv')
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'Syllabus_Bulk_Upload_Template.csv'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+        showToast('Starter spreadsheet template downloaded', true)
     }
 
-    // Handle File Upload Parsing
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // ── FILE DROP / UPLOAD HANDLER ────────────────────────────────────
+    const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
 
@@ -315,714 +411,660 @@ export default function SyllabusHubPage() {
             header: true,
             skipEmptyLines: true,
             complete: (results) => {
-                const rows = (results.data as any[]).filter(r => r.Class || r.class_name)
-                setBulkRows(rows)
-                showToast(`Parsed ${rows.length} rows from ${file.name}. Review below and click Import.`, true)
+                if (results.errors.length > 0) {
+                    showToast('Warning: some spreadsheet rows had formatting warnings', false)
+                }
+                const cleanRows = (results.data as any[]).filter(
+                    (r) => (r.Class || r.class_name) && (r.Subject || r.subject_name)
+                )
+                setBulkRows(cleanRows)
+                showToast(`Parsed ${cleanRows.length} valid syllabus rows from file`, true)
             },
             error: (err) => {
-                showToast(`Failed to parse file: ${err.message}`, false)
+                showToast(`Failed to parse CSV file: ${err.message}`, false)
             }
         })
     }
 
-    // Commit Bulk Import
-    const handleCommitBulkImport = async () => {
-        if (!bulkRows.length) return
+    const handleCommitBulkUpload = async () => {
+        if (bulkRows.length === 0) {
+            showToast('No valid rows available to import', false)
+            return
+        }
+
         setBulkUploading(true)
-        const res = await handleApiAction('BULK_UPLOAD_SYLLABUS', { rows: bulkRows })
-        setBulkUploading(false)
-        if (res && res.success) {
+        try {
+            const res = await fetch('/api/dashboard/syllabus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'BULK_UPLOAD_SYLLABUS',
+                    payload: {
+                        rows: bulkRows,
+                        mode: bulkMode,
+                        board_name: customBoardName
+                    }
+                })
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Bulk upload failed')
+
+            showToast(data.message || `Imported ${data.count} curriculum items`, true)
             setBulkRows([])
             setBulkFileName('')
-            setActiveTab('tree')
+            fetchData()
+            setActiveTab('structure')
+        } catch (err: any) {
+            showToast(err.message, false)
+        } finally {
+            setBulkUploading(false)
         }
     }
 
-    // ── BUILD HIERARCHICAL TREE VIEW ──────────────────────────────────
-    const renderNodeTree = (parentId: string | null, depth: number = 0) => {
-        const childNodes = nodes
-            .filter(n => n.parent_id === parentId)
-            .sort((a, b) => a.order_index - b.order_index)
+    // ── RENDER RECURSIVE NODE ─────────────────────────────────────────
+    const renderNodeItem = (node: SyllabusNode, level: number = 0) => {
+        if (!matchesSearch(node)) return null
 
-        if (childNodes.length === 0) return null
+        // Class Filter check
+        if (selectedClassFilter !== 'ALL') {
+            if (node.type === 'class' && node.id !== selectedClassFilter) return null
+        }
+
+        const isExpanded = expandedNodeIds.has(node.id)
+        const children = childMap.get(node.id) || []
+        const hasChildren = children.length > 0
+        const meta = TYPE_META[node.type] || TYPE_META.topic
+        const IconComponent = meta.icon
+
+        // Next child type determination
+        let nextChildType: NodeType | null = null
+        if (node.type === 'board') nextChildType = 'class'
+        else if (node.type === 'class') nextChildType = 'subject'
+        else if (node.type === 'subject') nextChildType = 'chapter'
+        else if (node.type === 'chapter') nextChildType = 'topic'
 
         return (
-            <div className={`space-y-2.5 ${depth > 0 ? 'ml-4 sm:ml-8 pl-3 border-l-2 border-slate-200/80' : ''}`}>
-                {childNodes.map(node => {
-                    // Check search query matches
-                    const matchesSearch = !searchQuery || 
-                        node.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        nodes.some(child => child.parent_id === node.id && child.name.toLowerCase().includes(searchQuery.toLowerCase()))
+            <div key={node.id} className="w-full flex flex-col mb-1.5 transition-all">
+                {/* Node Row Card */}
+                <div
+                    className={`group w-full flex items-center justify-between py-3 px-3 sm:px-4 rounded-xl border bg-white hover:bg-slate-50/80 transition-all ${
+                        node.is_active ? 'border-slate-200 shadow-sm' : 'border-slate-200/60 bg-slate-50/50 opacity-75'
+                    } ${meta.border} border-l-4`}
+                    style={{ marginLeft: `${Math.min(level * 18, 90)}px`, width: `calc(100% - ${Math.min(level * 18, 90)}px)` }}
+                >
+                    {/* Left: Expand, Icon, Title, and Badges */}
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                        {hasChildren ? (
+                            <button
+                                onClick={() => toggleExpand(node.id)}
+                                className="p-1 rounded-lg hover:bg-slate-200/70 text-slate-500 transition-colors shrink-0"
+                                title={isExpanded ? 'Collapse sub-items' : 'Expand sub-items'}
+                            >
+                                {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-700" /> : <ChevronRight className="w-4 h-4" />}
+                            </button>
+                        ) : (
+                            <div className="w-6 shrink-0" />
+                        )}
 
-                    // Check class filter
-                    if (node.type === 'class' && selectedClassFilter !== 'ALL' && node.id !== selectedClassFilter) {
-                        return null
-                    }
-
-                    if (!matchesSearch) return null
-
-                    const meta = TYPE_META[node.type] || TYPE_META.topic
-                    const isExpanded = expandedNodeIds.has(node.id)
-                    const subChildren = nodes.filter(n => n.parent_id === node.id)
-                    const hasChildren = subChildren.length > 0
-
-                    // Next child type mapping
-                    const nextTypeMap: Record<NodeType, NodeType> = {
-                        board: 'class',
-                        class: 'subject',
-                        subject: 'chapter',
-                        chapter: 'topic',
-                        topic: 'topic'
-                    }
-                    const nextType = nextTypeMap[node.type]
-
-                    return (
-                        <div key={node.id} className="group rounded-2xl transition-all duration-200">
-                            {/* NODE ROW CARD */}
-                            <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl border bg-white shadow-sm hover:shadow-md transition-all ${
-                                !node.is_active ? 'opacity-60 bg-slate-50' : ''
-                            } ${isExpanded ? 'border-slate-300 ring-1 ring-slate-200' : 'border-slate-200'}`}>
-                                
-                                <div className="flex items-center gap-3 min-w-0">
-                                    {/* Expand/Collapse Chevron */}
-                                    <button
-                                        onClick={() => toggleExpand(node.id)}
-                                        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
-                                            hasChildren 
-                                                ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' 
-                                                : 'text-slate-300 cursor-default'
-                                        }`}
-                                        disabled={!hasChildren}
-                                        title={hasChildren ? (isExpanded ? 'Collapse' : 'Expand') : 'No items inside'}
-                                    >
-                                        {hasChildren ? (
-                                            isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
-                                        ) : (
-                                            <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                                        )}
-                                    </button>
-
-                                    {/* Icon Badge */}
-                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 ${meta.badgeBg}`}>
-                                        <meta.icon size={18} />
-                                    </div>
-
-                                    {/* Name & Type Pill */}
-                                    <div className="min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-bold text-slate-900 text-sm sm:text-base truncate">
-                                                {node.name}
-                                            </span>
-                                            {!node.is_active && (
-                                                <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-slate-500 uppercase">
-                                                    Hidden
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
-                                            <span className="font-semibold text-slate-600">{meta.label}</span>
-                                            {hasChildren && (
-                                                <span className="text-slate-400">• {subChildren.length} sub-items</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* ACTION BUTTONS */}
-                                <div className="flex items-center gap-1.5 sm:gap-2 self-end sm:self-center shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                                    {/* Add Child Node */}
-                                    {node.type !== 'topic' && (
-                                        <button
-                                            onClick={() => {
-                                                setItemModal({
-                                                    open: true,
-                                                    mode: 'add',
-                                                    nodeType: nextType,
-                                                    parent: node
-                                                })
-                                                setItemForm({ name: '', order_index: subChildren.length + 1 })
-                                            }}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-[#004B93] text-xs font-bold transition-colors"
-                                            title={`Add ${TYPE_META[nextType].label}`}
-                                        >
-                                            <Plus size={14} />
-                                            <span>Add {TYPE_META[nextType].label.split('/')[0]}</span>
-                                        </button>
-                                    )}
-
-                                    {/* Visibility Toggle */}
-                                    <button
-                                        onClick={() => handleToggleVisibility(node)}
-                                        className={`p-1.5 rounded-lg border transition-colors ${
-                                            node.is_active 
-                                                ? 'border-slate-200 text-slate-600 hover:bg-slate-100' 
-                                                : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                                        }`}
-                                        title={node.is_active ? 'Visible in Student Portal (Click to Hide)' : 'Hidden from Student Portal (Click to Show)'}
-                                    >
-                                        {node.is_active ? <Eye size={15} /> : <EyeOff size={15} />}
-                                    </button>
-
-                                    {/* Edit Node */}
-                                    <button
-                                        onClick={() => {
-                                            setItemModal({
-                                                open: true,
-                                                mode: 'edit',
-                                                nodeType: node.type,
-                                                node
-                                            })
-                                            setItemForm({ name: node.name, order_index: node.order_index })
-                                        }}
-                                        className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
-                                        title="Rename / Edit"
-                                    >
-                                        <Edit3 size={15} />
-                                    </button>
-
-                                    {/* Delete Node */}
-                                    <button
-                                        onClick={() => setDeleteModal({ open: true, type: 'node', id: node.id, name: node.name })}
-                                        className="p-1.5 rounded-lg border border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200 transition-colors"
-                                        title="Remove Item"
-                                    >
-                                        <Trash2 size={15} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* RECURSIVE SUB-TREE */}
-                            {isExpanded && renderNodeTree(node.id, depth + 1)}
-                        </div>
-                    )
-                })}
-            </div>
-        )
-    }
-
-    // ── RENDER ────────────────────────────────────────────────────────
-    if (loading && nodes.length === 0) {
-        return (
-            <div className="w-full min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8">
-                <div className="relative">
-                    <div className="w-16 h-16 border-4 border-sky-200 border-t-[#004B93] rounded-full animate-spin" />
-                    <BookOpen className="absolute inset-0 m-auto text-[#004B93]" size={24} />
-                </div>
-                <h3 className="mt-4 font-bold text-slate-800 text-lg">Loading School Curriculum...</h3>
-                <p className="text-slate-500 text-sm mt-1">Calibrating academic boards, grades, chapters, and textbooks</p>
-            </div>
-        )
-    }
-
-    return (
-        <div className="w-full min-h-screen bg-slate-50/60 font-sans pb-24">
-            {/* TOAST ALERT */}
-            {toast && (
-                <div className={`fixed top-6 right-8 z-[10000] flex items-center gap-3 px-6 py-4 rounded-2xl border shadow-2xl backdrop-blur-md transition-all duration-300 ${
-                    toast.ok 
-                        ? 'bg-emerald-50/95 border-emerald-300 text-emerald-900 shadow-emerald-500/10' 
-                        : 'bg-rose-50/95 border-rose-300 text-rose-900 shadow-rose-500/10'
-                }`}>
-                    {toast.ok ? <CheckCircle className="text-emerald-600" size={20} /> : <XCircle className="text-rose-600" size={20} />}
-                    <span className="text-sm font-bold tracking-tight">{toast.msg}</span>
-                </div>
-            )}
-
-            {/* FULL-WIDTH HERO BANNER (OPENAI ART-DIRECTED) */}
-            <div className="w-full relative overflow-hidden bg-slate-950 text-white">
-                <div className="absolute inset-0 z-0">
-                    <Image
-                        src="/assets/images/dashboard/syllabus_banner.jpg"
-                        alt="Academic Curriculum Design & Textbook Archive Studio"
-                        fill
-                        priority
-                        className="object-cover object-center opacity-40 mix-blend-luminosity scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-transparent" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40" />
-                </div>
-
-                <div className="w-full px-4 sm:px-8 py-10 sm:py-14 relative z-10">
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                        <div className="max-w-3xl space-y-4">
-                            <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/20 backdrop-blur-md">
-                                <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
-                                <span className="text-xs font-black tracking-widest text-sky-400 uppercase">
-                                    ACADEMIC CURRICULUM DESK • SCHOOL SYLLABUS & TEXTBOOKS
-                                </span>
-                            </div>
-                            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-                                Course Syllabus & Curriculum Hub
-                            </h1>
-                            <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-normal">
-                                Manage grade-wise subjects, chapters, learning topics, and prescribed textbooks. Organized for easy school administration, faculty lesson planning, and student examination success.
-                            </p>
-                            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300 pt-1">
-                                <span className="flex items-center gap-1.5"><Globe size={15} className="text-indigo-400" /> Primary Board: <strong className="text-white">{metrics.activeBoard}</strong></span>
-                                <span className="flex items-center gap-1.5"><Layers size={15} className="text-amber-400" /> Multi-Level Hierarchy (Class &gt; Subject &gt; Chapter &gt; Topic)</span>
-                                <span className="flex items-center gap-1.5"><BookMarked size={15} className="text-emerald-400" /> Prescribed Textbooks &amp; PDF Guides</span>
-                            </div>
+                        <div className={`p-1.5 rounded-lg ${meta.badgeBg} shrink-0`}>
+                            <IconComponent className="w-4 h-4" />
                         </div>
 
-                        {/* Top Action Buttons */}
-                        <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-semibold text-slate-900 text-sm sm:text-base tracking-tight truncate">
+                                {node.name}
+                            </span>
+                            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border shrink-0 ${meta.badgeBg}`}>
+                                {meta.label}
+                            </span>
+                        </div>
+
+                        {/* Child count summary badge */}
+                        {hasChildren && (
+                            <span className="hidden md:inline-flex items-center text-xs text-slate-400 font-medium ml-2 bg-slate-100 px-2 py-0.5 rounded-md">
+                                {children.length} {nextChildType ? `${nextChildType}s` : 'items'}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Right: Administrative Actions */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                        {/* Visibility Toggle */}
+                        <button
+                            onClick={() => handleToggleNode(node)}
+                            className={`p-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all ${
+                                node.is_active
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                    : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+                            }`}
+                            title={node.is_active ? 'Visible in Student App & Portal' : 'Hidden from Student App & Portal'}
+                        >
+                            {node.is_active ? (
+                                <>
+                                    <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                                    <span className="hidden xl:inline text-[11px]">Visible</span>
+                                </>
+                            ) : (
+                                <>
+                                    <EyeOff className="w-3.5 h-3.5" />
+                                    <span className="hidden xl:inline text-[11px]">Hidden</span>
+                                </>
+                            )}
+                        </button>
+
+                        {/* Add Child Level Button */}
+                        {nextChildType && (
                             <button
                                 onClick={() => {
                                     setItemModal({
                                         open: true,
                                         mode: 'add',
-                                        nodeType: 'class',
-                                        parent: nodes.find(n => n.type === 'board')
+                                        nodeType: nextChildType!,
+                                        parent: node
                                     })
-                                    setItemForm({ name: '', order_index: availableClasses.length + 1 })
+                                    setItemForm({ name: '', order_index: children.length + 1 })
                                 }}
-                                className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-gradient-to-r from-[#004B93] to-sky-600 hover:from-sky-700 hover:to-sky-500 text-white font-bold text-sm shadow-xl shadow-sky-950/40 border border-sky-300/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-medium flex items-center gap-1 transition-colors"
+                                title={`Add ${TYPE_META[nextChildType].label}`}
                             >
-                                <PlusCircle size={18} />
-                                <span>Add New Grade / Class</span>
+                                <Plus className="w-3.5 h-3.5" />
+                                <span className="hidden lg:inline text-[11px]">Add {nextChildType}</span>
                             </button>
-                            <button
-                                onClick={() => setBoardModalOpen(true)}
-                                className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-sm backdrop-blur-md border border-slate-700 shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                <Globe size={18} className="text-sky-400" />
-                                <span>Switch Board Curriculum</span>
-                            </button>
-                            <button
-                                onClick={fetchData}
-                                className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-all"
-                                title="Refresh data"
-                            >
-                                <RefreshCw size={18} />
-                            </button>
-                        </div>
+                        )}
+
+                        {/* Edit Item Button */}
+                        <button
+                            onClick={() => {
+                                setItemModal({
+                                    open: true,
+                                    mode: 'edit',
+                                    nodeType: node.type,
+                                    node: node
+                                })
+                                setItemForm({ name: node.name, order_index: node.order_index || 0 })
+                            }}
+                            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-colors"
+                            title="Edit Item Details"
+                        >
+                            <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Delete Item Button */}
+                        <button
+                            onClick={() => setDeleteModal({ open: true, id: node.id, name: node.name })}
+                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors"
+                            title="Delete Item & Contents"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                     </div>
                 </div>
+
+                {/* Recursive Children Container */}
+                {isExpanded && hasChildren && (
+                    <div className="w-full flex flex-col mt-1">
+                        {children.map((child) => renderNodeItem(child, level + 1))}
+                    </div>
+                )}
             </div>
+        )
+    }
 
-            {/* MAIN FULL-WIDTH WORKSPACE */}
-            <div className="w-full px-4 sm:px-8 -mt-6 relative z-20 space-y-6">
+    return (
+        <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 via-slate-50/50 to-white text-slate-900 pb-24">
+            {/* ── TOAST NOTIFICATION ───────────────────────────────────── */}
+            {toast && (
+                <div
+                    className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl border text-sm font-medium transition-all transform animate-in fade-in slide-in-from-top-4 duration-300 ${
+                        toast.ok
+                            ? 'bg-emerald-900 text-emerald-50 border-emerald-700/80 shadow-emerald-950/20'
+                            : 'bg-rose-900 text-rose-50 border-rose-700/80 shadow-rose-950/20'
+                    }`}
+                >
+                    {toast.ok ? <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" /> : <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />}
+                    <span>{toast.msg}</span>
+                </div>
+            )}
 
-                {/* 4 EXECUTIVE KPIS */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
-                            <Globe size={24} />
-                        </div>
-                        <div className="min-w-0">
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500 truncate">School Curriculum</div>
-                            <div className="text-lg sm:text-xl font-black text-slate-900 mt-0.5 truncate">{metrics.activeBoard}</div>
-                            <div className="text-[11px] font-semibold text-indigo-700 mt-0.5 flex items-center gap-1">
-                                <CheckCircle size={12} /> Active Academic Board
+            <div className="w-full px-4 sm:px-8 py-6 space-y-6">
+                {/* ── 1. ART-DIRECTED EDITORIAL HEADER BANNER ──────────── */}
+                <div className="relative w-full rounded-2xl overflow-hidden shadow-md border border-slate-200/80 bg-slate-900">
+                    <div className="relative h-56 sm:h-64 w-full">
+                        <Image
+                            src="/assets/images/dashboard/syllabus_banner.jpg"
+                            alt="Course Syllabus & Academic Curriculum Design Studio"
+                            fill
+                            priority
+                            className="object-cover object-center opacity-40 mix-blend-luminosity"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/85 to-indigo-950/70" />
+
+                        {/* Banner Content */}
+                        <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-between z-10">
+                            <div className="flex flex-wrap items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <span className="px-3.5 py-1.5 rounded-lg bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-xs font-semibold tracking-wide flex items-center gap-2 backdrop-blur-sm">
+                                        <Building2 className="w-3.5 h-3.5 text-indigo-400" />
+                                        School Academic Curriculum Desk
+                                    </span>
+
+                                    {/* Board Licensing Badge */}
+                                    <button
+                                        onClick={() => setMultiBoardModalOpen(true)}
+                                        className={`px-3 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all backdrop-blur-sm ${
+                                            metrics.multiBoardEnabled
+                                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40 hover:bg-emerald-500/30'
+                                                : 'bg-amber-500/20 text-amber-200 border-amber-400/40 hover:bg-amber-500/30'
+                                        }`}
+                                    >
+                                        <Award className="w-3.5 h-3.5 text-amber-300" />
+                                        <span>
+                                            {metrics.multiBoardEnabled ? 'Multi-Board Enterprise Plan' : 'Single Board License'}
+                                        </span>
+                                        {!metrics.multiBoardEnabled && (
+                                            <span className="underline ml-1 text-amber-300 font-bold">Upgrade</span>
+                                        )}
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center gap-2.5">
+                                    <button
+                                        onClick={fetchData}
+                                        disabled={loading}
+                                        className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/90 border border-white/15 backdrop-blur-sm transition-colors"
+                                        title="Refresh Curriculum Data"
+                                    >
+                                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                                    </button>
+
+                                    <button
+                                        onClick={handleDownloadActiveSyllabus}
+                                        className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/15 backdrop-blur-sm flex items-center gap-2 transition-colors"
+                                    >
+                                        <Download className="w-4 h-4 text-indigo-300" />
+                                        <span>Download Active Excel</span>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100">
-                            <GraduationCap size={24} />
-                        </div>
-                        <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Classes &amp; Grades</div>
-                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalClasses} Grades</div>
-                            <div className="text-[11px] font-semibold text-purple-700 mt-0.5 flex items-center gap-1">
-                                <CheckCircle size={12} /> Grade 1 through Grade {metrics.totalClasses}
-                            </div>
-                        </div>
-                    </div>
+                            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                                <div className="max-w-2xl">
+                                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
+                                        Academic Syllabus & Curriculum Management
+                                    </h1>
+                                    <p className="mt-2 text-xs sm:text-sm text-slate-300/90 leading-relaxed">
+                                        Structure, organize, and publish standard school curricula across classes, subjects, chapters, and topics.
+                                        Import official owner-published board frameworks or upload your school's custom spreadsheet.
+                                    </p>
+                                </div>
 
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100">
-                            <BookOpen size={24} />
-                        </div>
-                        <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Course Subjects</div>
-                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalSubjects} Subjects</div>
-                            <div className="text-[11px] font-semibold text-emerald-700 mt-0.5 flex items-center gap-1">
-                                <CheckCircle size={12} /> All Key Disciplines
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100">
-                            <Layers size={24} />
-                        </div>
-                        <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Instructional Chapters</div>
-                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalChapters} Chapters</div>
-                            <div className="text-[11px] font-semibold text-amber-700 mt-0.5 flex items-center gap-1">
-                                <CheckCircle size={12} /> {metrics.totalTopics} Study Topics
+                                <div className="flex items-center gap-2.5 shrink-0">
+                                    <button
+                                        onClick={() => {
+                                            setItemModal({
+                                                open: true,
+                                                mode: 'add',
+                                                nodeType: 'class'
+                                            })
+                                            setItemForm({ name: '', order_index: metrics.totalClasses + 1 })
+                                        }}
+                                        className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"
+                                    >
+                                        <PlusCircle className="w-4 h-4" />
+                                        <span>+ Add Grade / Class</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* TAB NAVIGATION */}
-                <div className="flex flex-wrap items-center gap-2 p-1.5 bg-white rounded-2xl border border-slate-200/80 shadow-sm w-fit">
-                    <button
-                        onClick={() => setActiveTab('tree')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                            activeTab === 'tree'
-                                ? 'bg-[#004B93] text-white shadow-md shadow-sky-950/20'
-                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                        }`}
-                    >
-                        <Layers size={16} />
-                        <span>Curriculum Structure</span>
-                        <span className={`ml-1.5 px-2 py-0.5 rounded-full text-xs font-extrabold ${
-                            activeTab === 'tree' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                        }`}>
-                            {metrics.totalItems}
-                        </span>
-                    </button>
+                {/* ── 2. EXECUTIVE LIVE KPIS ───────────────────────────── */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Card 1: Active Board */}
+                    <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+                        <div className="space-y-1">
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                Active Curriculum Board
+                            </span>
+                            <h3 className="text-lg font-bold text-slate-900 truncate max-w-[200px]" title={metrics.activeBoard}>
+                                {metrics.activeBoard}
+                            </h3>
+                            <div className="flex items-center gap-1.5 text-xs text-indigo-600 font-medium">
+                                <CheckCircle className="w-3.5 h-3.5" />
+                                <span>{metrics.multiBoardEnabled ? 'Multi-Board Mode' : 'Single Active Board'}</span>
+                            </div>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+                            <Globe className="w-6 h-6" />
+                        </div>
+                    </div>
 
-                    <button
-                        onClick={() => setActiveTab('books')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                            activeTab === 'books'
-                                ? 'bg-[#004B93] text-white shadow-md shadow-sky-950/20'
-                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                        }`}
-                    >
-                        <BookMarked size={16} />
-                        <span>Prescribed Textbooks</span>
-                        <span className={`ml-1.5 px-2 py-0.5 rounded-full text-xs font-extrabold ${
-                            activeTab === 'books' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                        }`}>
-                            {textbooks.filter(b => b.is_prescribed).length}
-                        </span>
-                    </button>
+                    {/* Card 2: Classes & Grades */}
+                    <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+                        <div className="space-y-1">
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                Classes & Grades
+                            </span>
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                                {metrics.totalClasses} <span className="text-base font-semibold text-slate-500">Grades</span>
+                            </h3>
+                            <p className="text-xs text-slate-500 font-medium">Standard academic standards</p>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-purple-50 text-purple-600 border border-purple-100">
+                            <GraduationCap className="w-6 h-6" />
+                        </div>
+                    </div>
 
-                    <button
-                        onClick={() => setActiveTab('store')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                            activeTab === 'store'
-                                ? 'bg-[#004B93] text-white shadow-md shadow-sky-950/20'
-                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                        }`}
-                    >
-                        <ShoppingBag size={16} />
-                        <span>Recommended Bookstore</span>
-                        <span className={`ml-1.5 px-2 py-0.5 rounded-full text-xs font-extrabold ${
-                            activeTab === 'store' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                        }`}>
-                            {textbooks.filter(b => !b.is_prescribed).length}
-                        </span>
-                    </button>
+                    {/* Card 3: Subjects */}
+                    <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+                        <div className="space-y-1">
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                Course Subjects
+                            </span>
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                                {metrics.totalSubjects} <span className="text-base font-semibold text-slate-500">Subjects</span>
+                            </h3>
+                            <p className="text-xs text-slate-500 font-medium">Languages, STEM & Humanities</p>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+                            <BookOpen className="w-6 h-6" />
+                        </div>
+                    </div>
 
-                    <button
-                        onClick={() => setActiveTab('bulk')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                            activeTab === 'bulk'
-                                ? 'bg-[#004B93] text-white shadow-md shadow-sky-950/20'
-                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                        }`}
-                    >
-                        <FileSpreadsheet size={16} />
-                        <span>Excel / CSV Bulk Import</span>
-                    </button>
+                    {/* Card 4: Chapters & Topics */}
+                    <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+                        <div className="space-y-1">
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                Instructional Units
+                            </span>
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                                {metrics.totalChapters} <span className="text-base font-semibold text-slate-500">Chapters</span>
+                            </h3>
+                            <p className="text-xs text-slate-500 font-medium">Across {metrics.totalTopics} lesson topics</p>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
+                            <Layers className="w-6 h-6" />
+                        </div>
+                    </div>
                 </div>
 
-                {/* ── TAB 1: CURRICULUM STRUCTURE (TREE VIEW) ──────────────── */}
-                {activeTab === 'tree' && (
-                    <div className="space-y-6">
-                        {/* SEARCH & FILTER BAR */}
-                        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="relative flex-1 max-w-xl">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input
-                                    type="text"
-                                    placeholder="Search subjects, chapters, or learning topics..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#004B93] focus:border-transparent"
-                                />
+                {/* ── 3. THREE OPERATIONAL TABS ────────────────────────── */}
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/90 pb-3">
+                    <div className="flex items-center gap-2 bg-slate-100/80 p-1.5 rounded-xl border border-slate-200">
+                        <button
+                            onClick={() => setActiveTab('structure')}
+                            className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all ${
+                                activeTab === 'structure'
+                                    ? 'bg-white text-slate-900 shadow-sm'
+                                    : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                        >
+                            <Layers className="w-4 h-4 text-indigo-600" />
+                            <span>Curriculum Structure</span>
+                            <span className="ml-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">
+                                {metrics.totalItems}
+                            </span>
+                        </button>
+
+                        <button
+                            onClick={() => setActiveTab('owner_published')}
+                            className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all ${
+                                activeTab === 'owner_published'
+                                    ? 'bg-white text-slate-900 shadow-sm'
+                                    : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                        >
+                            <Globe className="w-4 h-4 text-emerald-600" />
+                            <span>Owner Published Syllabuses</span>
+                            <span className="ml-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
+                                {ownerPublished.length}
+                            </span>
+                        </button>
+
+                        <button
+                            onClick={() => setActiveTab('upload')}
+                            className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all ${
+                                activeTab === 'upload'
+                                    ? 'bg-white text-slate-900 shadow-sm'
+                                    : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                        >
+                            <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+                            <span>Excel / CSV Manual Upload</span>
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setMultiBoardModalOpen(true)}
+                            className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1.5 transition-colors"
+                        >
+                            <HelpCircle className="w-4 h-4" />
+                            <span>Multi-Board Licensing Rules</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* ── 4. TAB CONTENT ───────────────────────────────────── */}
+
+                {/* ─── TAB 1: CURRICULUM STRUCTURE ──────────────────────── */}
+                {activeTab === 'structure' && (
+                    <div className="space-y-4">
+                        {/* Filter Bar */}
+                        <div className="w-full flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
+                            <div className="flex flex-wrap items-center gap-3 flex-1">
+                                {/* Search */}
+                                <div className="relative flex-1 min-w-[220px]">
+                                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search grades, subjects, chapters, or topics..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            onClick={() => setSearchQuery('')}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                        >
+                                            <XCircle className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Class Filter */}
+                                <div className="w-48 shrink-0">
+                                    <select
+                                        value={selectedClassFilter}
+                                        onChange={(e) => setSelectedClassFilter(e.target.value)}
+                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                                    >
+                                        <option value="ALL">All Grades / Classes</option>
+                                        {availableClasses.map((c) => (
+                                            <option key={c.id} value={c.id}>
+                                                {c.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-3">
-                                {/* Grade Filter */}
-                                <select
-                                    value={selectedClassFilter}
-                                    onChange={(e) => setSelectedClassFilter(e.target.value)}
-                                    aria-label="Filter by Grade or Class"
-                                    className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
-                                >
-                                    <option value="ALL">All Grades &amp; Classes</option>
-                                    {availableClasses.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
-
-                                {/* Expand / Collapse */}
+                            {/* Expand / Collapse Controls */}
+                            <div className="flex items-center gap-2 shrink-0">
                                 <button
                                     onClick={expandAll}
-                                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
+                                    className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                                 >
                                     Expand All
                                 </button>
                                 <button
                                     onClick={collapseAll}
-                                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
+                                    className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                                 >
                                     Collapse All
                                 </button>
                             </div>
                         </div>
 
-                        {/* HIERARCHICAL TREE CONTAINER */}
-                        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
-                            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                                <div>
-                                    <h3 className="text-lg font-bold text-slate-900">Academic Structure &amp; Learning Hierarchy</h3>
-                                    <p className="text-xs text-slate-500 mt-0.5">Click any row to view its sub-units. Use the right-hand action buttons to add chapters, topics, or edit names.</p>
+                        {/* Hierarchy Tree Card */}
+                        <div className="w-full p-4 sm:p-6 rounded-2xl bg-white border border-slate-200 shadow-sm min-h-[400px]">
+                            {loading ? (
+                                <div className="flex flex-col items-center justify-center py-24 space-y-3">
+                                    <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" />
+                                    <p className="text-sm font-medium text-slate-500">Loading curriculum hierarchy...</p>
                                 </div>
-                                <button
-                                    onClick={() => {
-                                        setItemModal({
-                                            open: true,
-                                            mode: 'add',
-                                            nodeType: 'class',
-                                            parent: nodes.find(n => n.type === 'board')
-                                        })
-                                        setItemForm({ name: '', order_index: availableClasses.length + 1 })
-                                    }}
-                                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-sm transition-all"
-                                >
-                                    <Plus size={15} />
-                                    <span>Add Grade / Class</span>
-                                </button>
-                            </div>
-
-                            {/* Render Root Nodes */}
-                            <div className="pt-2">
-                                {renderNodeTree(null)}
-                            </div>
+                            ) : rootNodes.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                                    <div className="p-4 rounded-full bg-indigo-50 text-indigo-600">
+                                        <Layers className="w-8 h-8" />
+                                    </div>
+                                    <div className="max-w-md">
+                                        <h3 className="text-base font-bold text-slate-900">No Curriculum Loaded Yet</h3>
+                                        <p className="text-xs text-slate-500 mt-1">
+                                            Import an official board from the Owner Published Syllabuses tab or upload your school syllabus spreadsheet.
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => setActiveTab('owner_published')}
+                                            className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition-colors"
+                                        >
+                                            Browse Owner Syllabuses
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('upload')}
+                                            className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 transition-colors"
+                                        >
+                                            Upload Excel Sheet
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="w-full flex flex-col space-y-1">
+                                    {rootNodes.map((root) => renderNodeItem(root, 0))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
 
-                {/* ── TAB 2: PRESCRIBED SCHOOL TEXTBOOKS ─────────────────────── */}
-                {activeTab === 'books' && (
+                {/* ─── TAB 2: OWNER PUBLISHED SYLLABUSES ────────────────── */}
+                {activeTab === 'owner_published' && (
                     <div className="space-y-6">
-                        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-900">Official Prescribed School Textbooks</h3>
-                                <p className="text-xs text-slate-500 mt-0.5">Government &amp; Board mandated curriculum textbooks prescribed for students and teachers.</p>
+                        {/* Explanatory Banner */}
+                        <div className="p-5 rounded-2xl bg-gradient-to-r from-indigo-50 via-blue-50 to-slate-50 border border-indigo-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div className="space-y-1">
+                                <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1.5">
+                                    <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                                    Accredited Master Syllabuses Published by Owner
+                                </span>
+                                <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                                    Standard Education Board Curricula (1-Click Import & Download)
+                                </h3>
+                                <p className="text-xs sm:text-sm text-slate-600 max-w-3xl">
+                                    These syllabuses are maintained and published centrally by the platform owner.
+                                    You can download the full spreadsheet for offline reference or 1-click import directly into your school curriculum.
+                                </p>
                             </div>
-                            <button
-                                onClick={() => {
-                                    setBookModal({ open: true, mode: 'add' })
-                                    setBookForm({
-                                        class_name: 'Class 8',
-                                        subject_name: 'Mathematics',
-                                        title: '',
-                                        author: '',
-                                        publisher: 'Gujarat State Board of School Textbooks (GSEB)',
-                                        edition: '2026 Revised Edition',
-                                        isbn: '',
-                                        chapters_count: 14,
-                                        pdf_url: '',
-                                        price: 120,
-                                        buy_url: '',
-                                        is_prescribed: true
-                                    })
-                                }}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white text-xs font-bold shadow-md shadow-sky-950/20 transition-all"
-                            >
-                                <Plus size={16} />
-                                <span>Prescribe New Textbook</span>
-                            </button>
+
+                            <div className="shrink-0 p-3 rounded-xl bg-white border border-indigo-200/80 shadow-sm text-center">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                    Your Plan
+                                </span>
+                                <span className="text-xs font-extrabold text-indigo-700 block mt-0.5">
+                                    {metrics.multiBoardEnabled ? 'Multi-Board Active' : 'Single Board Active'}
+                                </span>
+                            </div>
                         </div>
 
-                        {/* TEXTBOOK CARDS GRID */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {textbooks.filter(b => b.is_prescribed).map(book => (
-                                <div key={book.id} className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                                                {book.class_name}
-                                            </span>
-                                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                {book.subject_name}
-                                            </span>
-                                        </div>
-
-                                        <div>
-                                            <h4 className="font-bold text-slate-900 text-base leading-snug line-clamp-2">
-                                                {book.title}
-                                            </h4>
-                                            <p className="text-xs text-slate-500 mt-1">Author: {book.author || 'Academic Council'}</p>
-                                        </div>
-
-                                        <div className="p-3 bg-slate-50 rounded-xl space-y-1.5 text-xs text-slate-600 border border-slate-100">
-                                            <div className="flex justify-between">
-                                                <span className="text-slate-400 font-medium">Publisher:</span>
-                                                <span className="font-semibold text-slate-800 text-right truncate max-w-[180px]">{book.publisher}</span>
+                        {/* Syllabuses Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {ownerPublished.map((board) => (
+                                <div
+                                    key={board.id}
+                                    className={`flex flex-col justify-between p-6 rounded-2xl bg-white border shadow-sm transition-all hover:shadow-md ${
+                                        board.is_active_for_tenant
+                                            ? 'border-emerald-300 ring-2 ring-emerald-500/20'
+                                            : 'border-slate-200'
+                                    }`}
+                                >
+                                    <div>
+                                        {/* Card Top */}
+                                        <div className="flex items-start justify-between gap-2 mb-3">
+                                            <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+                                                <Globe className="w-5 h-5" />
                                             </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-slate-400 font-medium">Edition:</span>
-                                                <span className="font-semibold text-slate-800">{book.edition}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-slate-400 font-medium">Chapters:</span>
-                                                <span className="font-semibold text-slate-800">{book.chapters_count} Chapters</span>
-                                            </div>
-                                            {book.isbn && (
-                                                <div className="flex justify-between">
-                                                    <span className="text-slate-400 font-medium">ISBN:</span>
-                                                    <span className="font-mono text-slate-800">{book.isbn}</span>
-                                                </div>
+                                            {board.is_active_for_tenant ? (
+                                                <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center gap-1 border border-emerald-200">
+                                                    <Check className="w-3 h-3 text-emerald-700" />
+                                                    Active at Your School
+                                                </span>
+                                            ) : (
+                                                <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-semibold">
+                                                    Official Master
+                                                </span>
                                             )}
                                         </div>
-                                    </div>
 
-                                    {/* Card Footer Actions */}
-                                    <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-100">
-                                        {book.pdf_url ? (
-                                            <a
-                                                href={book.pdf_url}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#004B93] hover:underline"
-                                            >
-                                                <ExternalLink size={14} />
-                                                <span>View E-Book PDF</span>
-                                            </a>
-                                        ) : (
-                                            <span className="text-xs text-slate-400">Physical Print Only</span>
-                                        )}
+                                        <h4 className="text-base font-bold text-slate-900 leading-snug">
+                                            {board.name}
+                                        </h4>
+                                        <p className="text-xs text-slate-500 mt-1">
+                                            Official board curriculum published and verified by platform owner.
+                                        </p>
 
-                                        <div className="flex items-center gap-1.5">
-                                            <button
-                                                onClick={() => {
-                                                    setBookModal({ open: true, mode: 'edit', book })
-                                                    setBookForm({
-                                                        class_name: book.class_name,
-                                                        subject_name: book.subject_name,
-                                                        title: book.title,
-                                                        author: book.author || '',
-                                                        publisher: book.publisher,
-                                                        edition: book.edition,
-                                                        isbn: book.isbn || '',
-                                                        chapters_count: book.chapters_count,
-                                                        pdf_url: book.pdf_url || '',
-                                                        price: book.price || 0,
-                                                        buy_url: book.buy_url || '',
-                                                        is_prescribed: true
-                                                    })
-                                                }}
-                                                className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100"
-                                                title="Edit Book Details"
-                                            >
-                                                <Edit3 size={14} />
-                                            </button>
-                                            <button
-                                                onClick={() => setDeleteModal({ open: true, type: 'book', id: book.id, name: book.title })}
-                                                className="p-1.5 rounded-lg border border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200"
-                                                title="Remove Book"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* ── TAB 3: RECOMMENDED BOOK STORE & GUIDES ─────────────────── */}
-                {activeTab === 'store' && (
-                    <div className="space-y-6">
-                        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-900">Recommended Reference Books &amp; Study Guides</h3>
-                                <p className="text-xs text-slate-500 mt-0.5">Complementary practice books, question banks (R.D. Sharma, Lakhmir Singh), and competitive exam guides.</p>
-                            </div>
-                            <button
-                                onClick={() => {
-                                    setBookModal({ open: true, mode: 'add' })
-                                    setBookForm({
-                                        class_name: 'Class 8',
-                                        subject_name: 'Mathematics',
-                                        title: '',
-                                        author: '',
-                                        publisher: 'S. Chand / Dhanpat Rai',
-                                        edition: 'Latest Edition',
-                                        isbn: '',
-                                        chapters_count: 18,
-                                        pdf_url: '',
-                                        price: 399,
-                                        buy_url: '',
-                                        is_prescribed: false
-                                    })
-                                }}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold shadow-md shadow-purple-950/20 transition-all"
-                            >
-                                <Plus size={16} />
-                                <span>Add Bookstore Guide</span>
-                            </button>
-                        </div>
-
-                        {/* STORE CARDS GRID */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {textbooks.filter(b => !b.is_prescribed).map(book => (
-                                <div key={book.id} className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                                                Reference Material
-                                            </span>
-                                            <span className="font-black text-slate-900 text-lg">₹{book.price}</span>
-                                        </div>
-
-                                        <div>
-                                            <h4 className="font-bold text-slate-900 text-base leading-snug line-clamp-2">
-                                                {book.title}
-                                            </h4>
-                                            <p className="text-xs text-slate-500 mt-1">Author: {book.author || 'Renowned Faculty'}</p>
-                                        </div>
-
-                                        <div className="p-3 bg-slate-50 rounded-xl space-y-1.5 text-xs text-slate-600 border border-slate-100">
-                                            <div className="flex justify-between">
-                                                <span className="text-slate-400 font-medium">Grade / Class:</span>
-                                                <span className="font-semibold text-slate-800">{book.class_name}</span>
+                                        {/* Metrics Pills */}
+                                        <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-100">
+                                            <div className="p-2 rounded-lg bg-slate-50 text-center">
+                                                <span className="text-[10px] font-semibold text-slate-400 block uppercase">
+                                                    Grades
+                                                </span>
+                                                <span className="text-sm font-bold text-slate-900 mt-0.5 block">
+                                                    {board.classes_count}
+                                                </span>
                                             </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-slate-400 font-medium">Subject:</span>
-                                                <span className="font-semibold text-slate-800">{book.subject_name}</span>
+                                            <div className="p-2 rounded-lg bg-slate-50 text-center">
+                                                <span className="text-[10px] font-semibold text-slate-400 block uppercase">
+                                                    Subjects
+                                                </span>
+                                                <span className="text-sm font-bold text-slate-900 mt-0.5 block">
+                                                    {board.subjects_count}
+                                                </span>
                                             </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-slate-400 font-medium">Publisher:</span>
-                                                <span className="font-semibold text-slate-800 text-right truncate max-w-[180px]">{book.publisher}</span>
+                                            <div className="p-2 rounded-lg bg-slate-50 text-center">
+                                                <span className="text-[10px] font-semibold text-slate-400 block uppercase">
+                                                    Chapters
+                                                </span>
+                                                <span className="text-sm font-bold text-slate-900 mt-0.5 block">
+                                                    {board.chapters_count}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Action Links */}
-                                    <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-100">
-                                        {book.buy_url ? (
-                                            <a
-                                                href={book.buy_url}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors"
-                                            >
-                                                <ShoppingBag size={14} />
-                                                <span>Buy Online</span>
-                                            </a>
-                                        ) : (
-                                            <span className="text-xs text-slate-400 font-medium">Available at School Counter</span>
-                                        )}
+                                    {/* Action Buttons */}
+                                    <div className="flex flex-col gap-2 mt-6 pt-4 border-t border-slate-100">
+                                        <button
+                                            onClick={() => setImportConfirmModal({ open: true, board })}
+                                            disabled={saving}
+                                            className={`w-full py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                                                board.is_active_for_tenant
+                                                    ? 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm'
+                                            }`}
+                                        >
+                                            <CheckCircle className="w-4 h-4" />
+                                            <span>{board.is_active_for_tenant ? 'Re-Apply Syllabus' : 'One-Click Import'}</span>
+                                        </button>
 
                                         <button
-                                            onClick={() => setDeleteModal({ open: true, type: 'book', id: book.id, name: book.title })}
-                                            className="p-1.5 rounded-lg border border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200"
-                                            title="Remove Item"
+                                            onClick={() => handleDownloadBoardSyllabus(board)}
+                                            className="w-full py-2.5 px-4 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
                                         >
-                                            <Trash2 size={14} />
+                                            <Download className="w-4 h-4 text-slate-500" />
+                                            <span>Download Excel Sheet</span>
                                         </button>
                                     </div>
                                 </div>
@@ -1031,389 +1073,482 @@ export default function SyllabusHubPage() {
                     </div>
                 )}
 
-                {/* ── TAB 4: BULK UPLOAD & EXCEL IMPORT ──────────────────────── */}
-                {activeTab === 'bulk' && (
-                    <div className="max-w-4xl bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
-                        <div className="border-b border-slate-100 pb-4">
-                            <h3 className="text-xl font-bold text-slate-900">Bulk Syllabus Import from Excel / CSV</h3>
-                            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                                Quickly upload complete academic structures for all grades at once. The system automatically creates Classes, Subjects, Chapters, and Topics in hierarchical order.
-                            </p>
-                        </div>
-
-                        {/* 3 Step Instruction Card */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                                <div className="w-7 h-7 rounded-lg bg-[#004B93] text-white flex items-center justify-center font-black text-xs">1</div>
-                                <h4 className="font-bold text-slate-900 text-sm">Download Template</h4>
-                                <p className="text-xs text-slate-500 leading-relaxed">Download our pre-formatted CSV template with standard column headers.</p>
-                                <button
-                                    onClick={handleDownloadTemplate}
-                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#004B93] hover:underline pt-1"
-                                >
-                                    <Download size={14} />
-                                    <span>Download .CSV Template</span>
-                                </button>
-                            </div>
-
-                            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                                <div className="w-7 h-7 rounded-lg bg-purple-700 text-white flex items-center justify-center font-black text-xs">2</div>
-                                <h4 className="font-bold text-slate-900 text-sm">Prepare Your Data</h4>
-                                <p className="text-xs text-slate-500 leading-relaxed">Enter your Class names, Subjects, Chapters, and optional Topics for each grade.</p>
-                            </div>
-
-                            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                                <div className="w-7 h-7 rounded-lg bg-emerald-700 text-white flex items-center justify-center font-black text-xs">3</div>
-                                <h4 className="font-bold text-slate-900 text-sm">Upload &amp; Verify</h4>
-                                <p className="text-xs text-slate-500 leading-relaxed">Upload the file, preview the verified rows, and import them with one click.</p>
-                            </div>
-                        </div>
-
-                        {/* Drag and Drop Zone */}
-                        <div className="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:border-sky-500 transition-colors bg-slate-50/50">
-                            <FileSpreadsheet className="mx-auto text-slate-400 mb-3" size={40} />
-                            <h4 className="font-bold text-slate-800 text-sm">Upload your Excel or CSV syllabus file</h4>
-                            <p className="text-xs text-slate-500 mt-1 mb-4">Supports .CSV, .XLSX files containing Class, Subject, Chapter columns</p>
-                            <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs cursor-pointer shadow-md transition-all">
-                                <Upload size={16} />
-                                <span>Choose File</span>
-                                <input
-                                    type="file"
-                                    accept=".csv,.txt"
-                                    onChange={handleFileUpload}
-                                    className="hidden"
-                                />
-                            </label>
-                            {bulkFileName && (
-                                <p className="text-xs font-bold text-emerald-700 mt-3 flex items-center justify-center gap-1.5">
-                                    <CheckCircle size={14} /> Selected: {bulkFileName} ({bulkRows.length} rows parsed)
+                {/* ─── TAB 3: MANUAL EXCEL / CSV UPLOAD ────────────────── */}
+                {activeTab === 'upload' && (
+                    <div className="space-y-6">
+                        {/* Guided 3-Step Container */}
+                        <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-6">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900">
+                                    Manual Excel / CSV Spreadsheet Upload
+                                </h3>
+                                <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                                    Import your school's unique academic syllabus from a Microsoft Excel or CSV spreadsheet.
+                                    No AI generation required — complete deterministic control.
                                 </p>
-                            )}
-                        </div>
+                            </div>
 
-                        {/* Preview Table */}
-                        {bulkRows.length > 0 && (
-                            <div className="space-y-4 pt-2">
-                                <div className="flex items-center justify-between">
-                                    <h4 className="font-bold text-slate-900 text-sm">Pre-Import Data Preview ({bulkRows.length} items)</h4>
+                            {/* 3 Step Indicator */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                                    <div className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center">
+                                        1
+                                    </div>
+                                    <h4 className="text-xs font-bold text-slate-900 uppercase">Download Template</h4>
+                                    <p className="text-xs text-slate-500">
+                                        Get our pre-formatted spreadsheet with standard columns: <code>Board, Class, Subject, Chapter, Topic</code>.
+                                    </p>
                                     <button
-                                        onClick={handleCommitBulkImport}
-                                        disabled={bulkUploading}
-                                        className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-900/20 transition-all"
+                                        onClick={handleDownloadStarterTemplate}
+                                        className="mt-2 px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center gap-1.5"
                                     >
-                                        {bulkUploading ? <RefreshCw className="animate-spin" size={14} /> : <Check size={14} />}
-                                        <span>Import All Items into School Syllabus</span>
+                                        <Download className="w-3.5 h-3.5 text-indigo-600" />
+                                        <span>Download Template (.csv)</span>
                                     </button>
                                 </div>
 
-                                <div className="max-h-72 overflow-y-auto border border-slate-200 rounded-xl">
-                                    <table className="w-full text-left text-xs text-slate-700">
-                                        <thead className="bg-slate-100 text-slate-600 font-bold uppercase sticky top-0">
-                                            <tr>
-                                                <th className="p-3">Class / Grade</th>
-                                                <th className="p-3">Course Subject</th>
-                                                <th className="p-3">Chapter / Unit</th>
-                                                <th className="p-3">Topic (Optional)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                            {bulkRows.slice(0, 30).map((r, i) => (
-                                                <tr key={i} className="hover:bg-slate-50">
-                                                    <td className="p-3 font-semibold text-slate-900">{r.Class || r.class_name}</td>
-                                                    <td className="p-3">{r.Subject || r.subject_name}</td>
-                                                    <td className="p-3 text-slate-600">{r.Chapter || r.chapter_name || '—'}</td>
-                                                    <td className="p-3 text-slate-500">{r.Topic || r.topic_name || '—'}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                                    <div className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center">
+                                        2
+                                    </div>
+                                    <h4 className="text-xs font-bold text-slate-900 uppercase">Select or Drop File</h4>
+                                    <p className="text-xs text-slate-500">
+                                        Save your filled sheet as <code>.csv</code> or <code>.xlsx</code> and select it below.
+                                    </p>
+                                    <div className="mt-2 text-xs font-medium text-slate-600">
+                                        {bulkFileName ? `Selected: ${bulkFileName}` : 'No file selected yet'}
+                                    </div>
                                 </div>
-                                {bulkRows.length > 30 && (
-                                    <p className="text-[11px] text-slate-400 text-center">... and {bulkRows.length - 30} more items ready for import</p>
+
+                                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                                    <div className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center">
+                                        3
+                                    </div>
+                                    <h4 className="text-xs font-bold text-slate-900 uppercase">Preview & Apply</h4>
+                                    <p className="text-xs text-slate-500">
+                                        Review the parsed curriculum rows in the table below and commit with 1 click.
+                                    </p>
+                                    <div className="mt-2 text-xs font-semibold text-indigo-600">
+                                        {bulkRows.length} rows ready
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Dropzone */}
+                            <div className="relative border-2 border-dashed border-slate-300 hover:border-indigo-400 rounded-2xl p-8 sm:p-12 text-center transition-colors bg-slate-50/50">
+                                <input
+                                    type="file"
+                                    accept=".csv,.txt"
+                                    onChange={handleFileSelected}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                />
+                                <div className="flex flex-col items-center justify-center space-y-3">
+                                    <div className="p-4 rounded-full bg-indigo-50 text-indigo-600">
+                                        <Upload className="w-8 h-8" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-900">
+                                            {bulkFileName ? bulkFileName : 'Drag and drop your syllabus CSV spreadsheet here'}
+                                        </p>
+                                        <p className="text-xs text-slate-500 mt-1">
+                                            or click to browse from your computer (.csv format supported)
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Options: Mode Selection */}
+                            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                <div className="space-y-1">
+                                    <span className="text-xs font-bold text-slate-800">Upload Action Mode:</span>
+                                    <div className="flex items-center gap-4 mt-1">
+                                        <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="bulk_mode"
+                                                value="APPEND"
+                                                checked={bulkMode === 'APPEND'}
+                                                onChange={() => setBulkMode('APPEND')}
+                                                className="text-indigo-600"
+                                            />
+                                            <span>Append / Merge to Current Active Board</span>
+                                        </label>
+
+                                        <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="bulk_mode"
+                                                value="REPLACE"
+                                                checked={bulkMode === 'REPLACE'}
+                                                onChange={() => setBulkMode('REPLACE')}
+                                                className="text-indigo-600"
+                                            />
+                                            <span>Create & Replace as New Custom Board</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {bulkMode === 'REPLACE' && (
+                                    <div className="w-full sm:w-64">
+                                        <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                                            New Board Title
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={customBoardName}
+                                            onChange={(e) => setCustomBoardName(e.target.value)}
+                                            className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                            placeholder="e.g. Modern Academy Curriculum"
+                                        />
+                                    </div>
                                 )}
                             </div>
-                        )}
+
+                            {/* Preview Table */}
+                            {bulkRows.length > 0 && (
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                                            Previewing First 10 Rows ({bulkRows.length} total rows)
+                                        </h4>
+                                        <button
+                                            onClick={() => setBulkRows([])}
+                                            className="text-xs text-rose-600 hover:underline font-semibold"
+                                        >
+                                            Clear File
+                                        </button>
+                                    </div>
+
+                                    <div className="w-full overflow-x-auto border border-slate-200 rounded-xl">
+                                        <table className="w-full text-left text-xs">
+                                            <thead className="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
+                                                <tr>
+                                                    <th className="p-3">#</th>
+                                                    <th className="p-3">Class / Grade</th>
+                                                    <th className="p-3">Subject</th>
+                                                    <th className="p-3">Chapter</th>
+                                                    <th className="p-3">Topic</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 font-medium">
+                                                {bulkRows.slice(0, 10).map((r, idx) => (
+                                                    <tr key={idx} className="hover:bg-slate-50">
+                                                        <td className="p-3 text-slate-400">{idx + 1}</td>
+                                                        <td className="p-3 font-semibold text-purple-700">
+                                                            {r.Class || r.class_name || r.Grade}
+                                                        </td>
+                                                        <td className="p-3 font-semibold text-emerald-700">
+                                                            {r.Subject || r.subject_name}
+                                                        </td>
+                                                        <td className="p-3 text-slate-800">
+                                                            {r.Chapter || r.chapter_name || r.Unit}
+                                                        </td>
+                                                        <td className="p-3 text-slate-600">
+                                                            {r.Topic || r.topic_name}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Commit Action */}
+                                    <div className="flex items-center justify-end gap-3 pt-2">
+                                        <button
+                                            onClick={handleCommitBulkUpload}
+                                            disabled={bulkUploading}
+                                            className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-indigo-600/20 flex items-center gap-2 transition-all"
+                                        >
+                                            {bulkUploading ? (
+                                                <>
+                                                    <RefreshCw className="w-4 h-4 animate-spin" />
+                                                    <span>Importing Curriculum Data...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Check className="w-4 h-4" />
+                                                    <span>Upload & Apply {bulkRows.length} Items to Syllabus</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
 
-            {/* ── MODAL 1: ADD / EDIT CURRICULUM ITEM ───────────────────────── */}
+            {/* ── 5. MODALS ────────────────────────────────────────────── */}
+
+            {/* ─── MODAL 1: ADD / EDIT CURRICULUM ITEM ──────────────────── */}
             {itemModal.open && (
-                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[11000] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-                            <h3 className="font-extrabold text-slate-900 text-lg">
-                                {itemModal.mode === 'edit' ? 'Edit Curriculum Item' : `Add New ${TYPE_META[itemModal.nodeType].label.split('/')[0]}`}
-                            </h3>
-                            <button onClick={() => setItemModal({ open: false, mode: 'add', nodeType: 'class' })} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100">
-                                <XCircle size={20} />
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
+                        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                                <div className={`p-2 rounded-lg ${TYPE_META[itemModal.nodeType].badgeBg}`}>
+                                    {React.createElement(TYPE_META[itemModal.nodeType].icon, { className: 'w-4 h-4' })}
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-bold text-slate-900">
+                                        {itemModal.mode === 'add' ? `Add New ${TYPE_META[itemModal.nodeType].label}` : `Edit ${TYPE_META[itemModal.nodeType].label}`}
+                                    </h3>
+                                    {itemModal.parent && (
+                                        <p className="text-xs text-slate-500">
+                                            Parent: <span className="font-semibold text-slate-700">{itemModal.parent.name}</span>
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setItemModal({ open: false, mode: 'add', nodeType: 'class' })}
+                                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                            >
+                                <XCircle className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSaveItem} className="p-6 space-y-4">
-                            {itemModal.parent && (
-                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
-                                    <span className="text-slate-400 font-medium">Adding under: </span>
-                                    <strong className="text-slate-800">{itemModal.parent.name}</strong> ({TYPE_META[itemModal.parent.type].label})
-                                </div>
-                            )}
-
+                        <div className="p-6 space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                                    {TYPE_META[itemModal.nodeType].label} Name *
+                                <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                                    Item Name / Title <span className="text-rose-500">*</span>
                                 </label>
                                 <input
                                     type="text"
-                                    required
-                                    placeholder={`e.g. ${itemModal.nodeType === 'class' ? 'Class 10' : itemModal.nodeType === 'subject' ? 'Mathematics' : itemModal.nodeType === 'chapter' ? 'Chapter 1: Real Numbers' : 'Introduction & Concepts'}`}
                                     value={itemForm.name}
                                     onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })}
-                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                                    placeholder={`e.g. ${itemModal.nodeType === 'class' ? 'Class 9' : itemModal.nodeType === 'subject' ? 'Mathematics' : itemModal.nodeType === 'chapter' ? 'Quadratic Equations' : 'Solving by Factorisation'}`}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                                    Display Sequence Order
+                                <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                                    Display Order Number
                                 </label>
                                 <input
                                     type="number"
                                     value={itemForm.order_index}
-                                    onChange={(e) => setItemForm({ ...itemForm, order_index: Number(e.target.value) })}
-                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                                    onChange={(e) => setItemForm({ ...itemForm, order_index: Number(e.target.value) || 0 })}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                                 />
+                                <p className="text-[11px] text-slate-400 mt-1">Lower order numbers appear first in the curriculum tree.</p>
                             </div>
-
-                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                                <button
-                                    type="button"
-                                    onClick={() => setItemModal({ open: false, mode: 'add', nodeType: 'class' })}
-                                    className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={saving}
-                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white text-xs font-bold shadow-md shadow-sky-950/20"
-                                >
-                                    {saving ? 'Saving...' : 'Save Curriculum Item'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* ── MODAL 2: ADD / EDIT TEXTBOOK ─────────────────────────────── */}
-            {bookModal.open && (
-                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[11000] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
-                        <div className="p-6 border-b border-slate-100 flex items-center justify-between shrink-0">
-                            <h3 className="font-extrabold text-slate-900 text-lg">
-                                {bookModal.mode === 'edit' ? 'Edit Textbook Information' : 'Prescribe / Add New Textbook'}
-                            </h3>
-                            <button onClick={() => setBookModal({ open: false, mode: 'add' })} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100">
-                                <XCircle size={20} />
-                            </button>
                         </div>
 
-                        <form onSubmit={handleSaveBook} className="p-6 overflow-y-auto space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Grade / Class *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder="e.g. Class 8"
-                                        value={bookForm.class_name}
-                                        onChange={(e) => setBookForm({ ...bookForm, class_name: e.target.value })}
-                                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Subject *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder="e.g. Mathematics"
-                                        value={bookForm.subject_name}
-                                        onChange={(e) => setBookForm({ ...bookForm, subject_name: e.target.value })}
-                                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Book Title *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="e.g. Gujarat Board Standard Mathematics Class 8"
-                                    value={bookForm.title}
-                                    onChange={(e) => setBookForm({ ...bookForm, title: e.target.value })}
-                                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Publisher *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder="e.g. GSEB Board / NCERT"
-                                        value={bookForm.publisher}
-                                        onChange={(e) => setBookForm({ ...bookForm, publisher: e.target.value })}
-                                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Author</label>
-                                    <input
-                                        type="text"
-                                        placeholder="e.g. Editorial Board"
-                                        value={bookForm.author}
-                                        onChange={(e) => setBookForm({ ...bookForm, author: e.target.value })}
-                                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-3">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Edition</label>
-                                    <input
-                                        type="text"
-                                        placeholder="2026 Edition"
-                                        value={bookForm.edition}
-                                        onChange={(e) => setBookForm({ ...bookForm, edition: e.target.value })}
-                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Chapters</label>
-                                    <input
-                                        type="number"
-                                        value={bookForm.chapters_count}
-                                        onChange={(e) => setBookForm({ ...bookForm, chapters_count: Number(e.target.value) })}
-                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Price (₹)</label>
-                                    <input
-                                        type="number"
-                                        value={bookForm.price}
-                                        onChange={(e) => setBookForm({ ...bookForm, price: Number(e.target.value) })}
-                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Online PDF Link (Optional)</label>
-                                <input
-                                    type="url"
-                                    placeholder="https://..."
-                                    value={bookForm.pdf_url}
-                                    onChange={(e) => setBookForm({ ...bookForm, pdf_url: e.target.value })}
-                                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                                />
-                            </div>
-
-                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 shrink-0">
-                                <button
-                                    type="button"
-                                    onClick={() => setBookModal({ open: false, mode: 'add' })}
-                                    className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={saving}
-                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white text-xs font-bold shadow-md"
-                                >
-                                    {saving ? 'Saving...' : 'Save Textbook'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* ── MODAL 3: SWITCH BOARD CURRICULUM ─────────────────────────── */}
-            {boardModalOpen && (
-                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[11000] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-                            <div>
-                                <h3 className="font-extrabold text-slate-900 text-lg">Select School Board</h3>
-                                <p className="text-xs text-slate-500 mt-0.5">Switch your school's active primary curriculum.</p>
-                            </div>
-                            <button onClick={() => setBoardModalOpen(false)} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100">
-                                <XCircle size={20} />
-                            </button>
-                        </div>
-
-                        <div className="p-6 space-y-3">
-                            {standardBoards.map(board => (
-                                <button
-                                    key={board.id}
-                                    onClick={() => handleSelectBoard(board.id)}
-                                    className={`w-full p-4 rounded-xl border text-left flex items-center justify-between transition-all ${
-                                        metrics.activeBoard === board.name 
-                                            ? 'border-[#004B93] bg-sky-50/60 ring-2 ring-[#004B93]/20' 
-                                            : 'border-slate-200 hover:border-slate-300 bg-white'
-                                    }`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-                                            <Globe size={18} />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-slate-900 text-sm">{board.name}</h4>
-                                            <p className="text-xs text-slate-500 mt-0.5">Standard Academic Curriculum</p>
-                                        </div>
-                                    </div>
-                                    {metrics.activeBoard === board.name && (
-                                        <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 flex items-center gap-1">
-                                            <Check size={12} /> Active
-                                        </span>
-                                    )}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* ── MODAL 4: DELETE CONFIRMATION ─────────────────────────────── */}
-            {deleteModal.open && (
-                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[11000] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl border border-slate-200 text-center space-y-4 animate-in fade-in zoom-in duration-200">
-                        <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100">
-                            <AlertCircle size={24} />
-                        </div>
-                        <div>
-                            <h3 className="font-extrabold text-slate-900 text-base">Remove {deleteModal.name}?</h3>
-                            <p className="text-xs text-slate-500 mt-1">
-                                Are you sure you want to remove this from your school syllabus? Any sub-items under this will also be removed.
-                            </p>
-                        </div>
-                        <div className="flex items-center justify-center gap-3 pt-2">
+                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
                             <button
-                                onClick={() => setDeleteModal({ open: false, type: 'node', id: '', name: '' })}
-                                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50"
+                                onClick={() => setItemModal({ open: false, mode: 'add', nodeType: 'class' })}
+                                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
-                                onClick={executeDelete}
-                                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-950/20"
+                                onClick={handleSaveItem}
+                                disabled={saving}
+                                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 transition-all"
                             >
-                                Confirm Remove
+                                {saving ? 'Saving...' : 'Save Item'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── MODAL 2: ONE-CLICK IMPORT CONFIRMATION ───────────────── */}
+            {importConfirmModal.open && importConfirmModal.board && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
+                        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                                <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
+                                    <Globe className="w-5 h-5" />
+                                </div>
+                                <h3 className="text-base font-bold text-slate-900">
+                                    Confirm Curriculum Import
+                                </h3>
+                            </div>
+                            <button
+                                onClick={() => setImportConfirmModal({ open: false, board: null })}
+                                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+                            >
+                                <XCircle className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <p className="text-xs sm:text-sm text-slate-600">
+                                You are about to import the official owner-published curriculum:
+                            </p>
+                            <div className="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-100">
+                                <h4 className="text-sm font-bold text-indigo-900">
+                                    {importConfirmModal.board.name}
+                                </h4>
+                                <div className="flex items-center gap-3 text-xs text-indigo-700 mt-1 font-medium">
+                                    <span>{importConfirmModal.board.classes_count} Grades</span>
+                                    <span>•</span>
+                                    <span>{importConfirmModal.board.subjects_count} Subjects</span>
+                                    <span>•</span>
+                                    <span>{importConfirmModal.board.chapters_count} Chapters</span>
+                                </div>
+                            </div>
+
+                            {/* Single Board Plan Notice */}
+                            {!metrics.multiBoardEnabled && (
+                                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 space-y-1">
+                                    <div className="flex items-center gap-1.5 font-bold text-amber-900">
+                                        <AlertCircle className="w-4 h-4 text-amber-600" />
+                                        <span>Single Board Architecture Rule</span>
+                                    </div>
+                                    <p className="text-[11px] leading-relaxed">
+                                        Your school is on the <strong>Single Board Plan</strong>. Importing this board will set it as your active school curriculum and replace previous board assignments.
+                                    </p>
+                                    <p className="text-[11px] leading-relaxed">
+                                        Need to operate multiple boards concurrently (e.g. CBSE and State Board)? Upgrade to the <strong>Multi-Board Plan</strong>.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                            <button
+                                onClick={() => setImportConfirmModal({ open: false, board: null })}
+                                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleOneClickImport(importConfirmModal.board!)}
+                                disabled={saving}
+                                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 transition-all"
+                            >
+                                {saving ? 'Applying...' : 'Confirm & Apply Syllabus'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── MODAL 3: MULTI-BOARD ARCHITECTURE UPGRADE ────────────── */}
+            {multiBoardModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
+                        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white">
+                            <div className="flex items-center gap-2.5">
+                                <div className="p-2 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
+                                    <Award className="w-5 h-5 text-amber-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-bold text-white">
+                                        Multi-Board Architecture Enterprise
+                                    </h3>
+                                    <p className="text-xs text-slate-300">
+                                        Licensing Policy & Multi-Curriculum Operation
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setMultiBoardModalOpen(false)}
+                                className="p-1 rounded-lg text-slate-400 hover:text-white"
+                            >
+                                <XCircle className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-5">
+                            {/* Current Status Box */}
+                            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                                <div>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                        Your Active Plan
+                                    </span>
+                                    <h4 className="text-sm font-bold text-slate-900 mt-0.5">
+                                        {metrics.multiBoardEnabled ? 'Multi-Board Architecture (Active)' : 'Standard Single-Board License'}
+                                    </h4>
+                                </div>
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${metrics.multiBoardEnabled ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                                    {metrics.multiBoardEnabled ? 'Multi-Board Enabled' : '1 Active Board Allowed'}
+                                </span>
+                            </div>
+
+                            {/* Architecture Details */}
+                            <div className="space-y-2.5">
+                                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                                    Why Upgrade to Multi-Board Architecture?
+                                </h4>
+                                <ul className="space-y-2 text-xs text-slate-600">
+                                    <li className="flex items-start gap-2">
+                                        <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                                        <span>
+                                            <strong>Concurrent Board Operation:</strong> Run CBSE, GSEB, ICSE, and Cambridge simultaneously under one school tenant without switching or losing data.
+                                        </span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                                        <span>
+                                            <strong>Separate Student Registries:</strong> Assign students and sections to different boards while keeping all administration in one unified dashboard.
+                                        </span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                                        <span>
+                                            <strong>Board-Specific Examination Engines:</strong> Generate question papers, blueprints, and marksheets tailored to each board's grading pattern.
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            {/* Contact Owner CTA */}
+                            <div className="p-4 rounded-xl bg-indigo-50/70 border border-indigo-100 space-y-2">
+                                <p className="text-xs text-indigo-950 font-medium">
+                                    To activate the Multi-Board Architecture for your school, contact the platform owner directly.
+                                </p>
+                                <div className="text-xs text-indigo-700 font-bold">
+                                    Platform Owner Support: support@bebrilliant.in | +91 94285 24040
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                            <button
+                                onClick={() => setMultiBoardModalOpen(false)}
+                                className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 transition-all"
+                            >
+                                Understood
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── MODAL 4: DELETE CONFIRMATION ─────────────────────────── */}
+            {deleteModal.open && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl border border-slate-200 p-6 space-y-4">
+                        <div className="p-3 rounded-full bg-rose-50 text-rose-600 w-fit">
+                            <Trash2 className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-bold text-slate-900">Delete Item?</h3>
+                            <p className="text-xs text-slate-500 mt-1">
+                                Are you sure you want to delete <strong>"{deleteModal.name}"</strong>?
+                                All nested sub-items (subjects, chapters, or topics) will also be removed.
+                            </p>
+                        </div>
+                        <div className="flex items-center justify-end gap-2.5 pt-2">
+                            <button
+                                onClick={() => setDeleteModal({ open: false, id: '', name: '' })}
+                                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeleteNode}
+                                disabled={saving}
+                                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20"
+                            >
+                                {saving ? 'Deleting...' : 'Confirm Delete'}
                             </button>
                         </div>
                     </div>

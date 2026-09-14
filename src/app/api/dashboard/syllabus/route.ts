@@ -9,7 +9,25 @@ export async function GET(request: NextRequest) {
 
         const tenantId = session.tenant_id || '5cccb9be-5b4a-4143-8725-bc6061e337fa'
 
-        // 1. Recursive query to fetch the entire active syllabus hierarchy for this tenant
+        // 1. Fetch Tenant Subscription & Multi-Board Licensing Details
+        const tenantQuery = `
+            SELECT 
+                id, 
+                name, 
+                subscription_plan, 
+                COALESCE((features->>'multi_board_enabled')::boolean, false) AS multi_board_enabled
+            FROM public.tenants 
+            WHERE id = $1;
+        `
+        const tenantRes = await query(tenantQuery, [tenantId])
+        const tenantInfo = tenantRes.rows?.[0] || {
+            id: tenantId,
+            name: 'School Academy',
+            subscription_plan: 'Standard Academic Plan',
+            multi_board_enabled: false
+        }
+
+        // 2. Recursive query to fetch the entire active syllabus hierarchy for this tenant
         const treeQuery = `
             WITH RECURSIVE syllabus_tree AS (
                 -- Roots: Master boards active for this tenant or tenant-owned root boards
@@ -28,7 +46,7 @@ export async function GET(request: NextRequest) {
                     SELECT master_syllabus_id 
                     FROM public.tenant_syllabus 
                     WHERE tenant_id = $1 AND is_active = true
-                ) OR (sn.tenant_id = $1 AND sn.parent_id IS NULL)
+                ) OR (sn.tenant_id = $1 AND sn.parent_id IS NULL AND sn.type = 'board' AND sn.is_active = true)
 
                 UNION ALL
 
@@ -50,58 +68,89 @@ export async function GET(request: NextRequest) {
             ORDER BY depth ASC, order_index ASC, name ASC;
         `
 
-        // 2. Fetch available standard boards for the curriculum selector
-        const standardBoardsQuery = `
-            SELECT id, name, type, is_active, created_at
-            FROM public.syllabus_nodes
-            WHERE type = 'board' AND (tenant_id IS NULL OR tenant_id = $1)
-            ORDER BY name ASC;
+        // 3. Fetch Owner-Published Master Syllabuses with statistics (Classes, Subjects, Chapters)
+        const ownerPublishedQuery = `
+            SELECT 
+                b.id,
+                b.name,
+                b.type,
+                b.order_index,
+                b.created_at,
+                (SELECT COUNT(*) FROM public.syllabus_nodes c WHERE c.parent_id = b.id AND c.type = 'class') AS classes_count,
+                (
+                    SELECT COUNT(*) FROM public.syllabus_nodes s 
+                    WHERE s.type = 'subject' AND s.parent_id IN (
+                        SELECT c.id FROM public.syllabus_nodes c WHERE c.parent_id = b.id
+                    )
+                ) AS subjects_count,
+                (
+                    SELECT COUNT(*) FROM public.syllabus_nodes ch 
+                    WHERE ch.type = 'chapter' AND ch.parent_id IN (
+                        SELECT s.id FROM public.syllabus_nodes s WHERE s.parent_id IN (
+                            SELECT c.id FROM public.syllabus_nodes c WHERE c.parent_id = b.id
+                        )
+                    )
+                ) AS chapters_count,
+                (
+                    SELECT COUNT(*) FROM public.syllabus_nodes tp 
+                    WHERE tp.type = 'topic' AND tp.parent_id IN (
+                        SELECT ch.id FROM public.syllabus_nodes ch WHERE ch.parent_id IN (
+                            SELECT s.id FROM public.syllabus_nodes s WHERE s.parent_id IN (
+                                SELECT c.id FROM public.syllabus_nodes c WHERE c.parent_id = b.id
+                            )
+                        )
+                    )
+                ) AS topics_count,
+                EXISTS (
+                    SELECT 1 FROM public.tenant_syllabus ts 
+                    WHERE ts.tenant_id = $1 AND ts.master_syllabus_id = b.id AND ts.is_active = true
+                ) AS is_active_for_tenant
+            FROM public.syllabus_nodes b
+            WHERE b.type = 'board' AND b.tenant_id IS NULL
+            ORDER BY b.order_index ASC, b.name ASC;
         `
 
-        // 3. Fetch school textbooks and bookstore materials
-        const booksQuery = `
-            SELECT * 
-            FROM public.syllabus_books 
-            WHERE tenant_id = $1 
-            ORDER BY is_prescribed DESC, class_name ASC, subject_name ASC, created_at DESC;
-        `
-
-        const [treeRes, boardsRes, booksRes] = await Promise.all([
+        const [treeRes, ownerPublishedRes] = await Promise.all([
             query(treeQuery, [tenantId]),
-            query(standardBoardsQuery, [tenantId]),
-            query(booksQuery, [tenantId])
+            query(ownerPublishedQuery, [tenantId])
         ])
 
         const nodes = treeRes.rows || []
-        const standardBoards = boardsRes.rows || []
-        const textbooks = booksRes.rows || []
+        const ownerPublishedSyllabuses = ownerPublishedRes.rows || []
 
-        // Extract active board
+        // Extract active board node
         const activeBoardNode = nodes.find((n: any) => n.depth === 0 || n.type === 'board')
         const activeBoardName = activeBoardNode ? activeBoardNode.name : 'Gujarat Board (English Medium)'
+        const activeBoardId = activeBoardNode ? activeBoardNode.id : null
 
-        // Compute live metrics
+        // Compute live metrics for the active curriculum
         const totalClasses = nodes.filter((n: any) => n.type === 'class').length
         const totalSubjects = nodes.filter((n: any) => n.type === 'subject').length
         const totalChapters = nodes.filter((n: any) => n.type === 'chapter').length
         const totalTopics = nodes.filter((n: any) => n.type === 'topic').length
-        const prescribedBooksCount = textbooks.filter((b: any) => b.is_prescribed).length
 
         const metrics = {
             activeBoard: activeBoardName,
+            activeBoardId,
             totalClasses,
             totalSubjects,
             totalChapters,
             totalTopics,
-            totalBooks: prescribedBooksCount,
-            totalItems: nodes.length
+            totalItems: nodes.length,
+            multiBoardEnabled: Boolean(tenantInfo.multi_board_enabled),
+            subscriptionPlan: tenantInfo.subscription_plan || 'Standard School License'
         }
 
         return NextResponse.json({
             nodes,
-            standardBoards,
-            textbooks,
-            metrics
+            ownerPublishedSyllabuses,
+            metrics,
+            tenant: {
+                id: tenantId,
+                name: tenantInfo.name,
+                multiBoardEnabled: Boolean(tenantInfo.multi_board_enabled),
+                subscriptionPlan: tenantInfo.subscription_plan
+            }
         })
     } catch (e: any) {
         console.error('[Syllabus API GET Error]:', e)
@@ -118,18 +167,42 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
         const { action, payload } = body
 
-        // ── 1. SELECT / SWITCH STANDARD BOARD ─────────────────────────────
-        if (action === 'SELECT_BOARD') {
+        // Check multi-board licensing status
+        const { rows: tRows } = await query(
+            `SELECT COALESCE((features->>'multi_board_enabled')::boolean, false) AS multi_board_enabled FROM public.tenants WHERE id = $1`,
+            [tenantId]
+        )
+        const multiBoardEnabled = Boolean(tRows?.[0]?.multi_board_enabled)
+
+        // ── 1. ONE-CLICK IMPORT OWNER PUBLISHED SYLLABUS ──────────────────
+        if (action === 'IMPORT_OWNER_SYLLABUS') {
             const { board_id } = payload
             if (!board_id) return NextResponse.json({ error: 'Board ID is required' }, { status: 400 })
 
-            // Deactivate existing active boards for this tenant
-            await query(
-                `UPDATE public.tenant_syllabus SET is_active = false, updated_at = NOW() WHERE tenant_id = $1`,
-                [tenantId]
+            // Verify board exists and is an owner published board
+            const { rows: bRows } = await query(
+                `SELECT id, name FROM public.syllabus_nodes WHERE id = $1 AND type = 'board' AND tenant_id IS NULL`,
+                [board_id]
             )
+            if (bRows.length === 0) {
+                return NextResponse.json({ error: 'Selected syllabus board was not found in owner catalog' }, { status: 404 })
+            }
+            const boardName = bRows[0].name
 
-            // Link / Activate selected board
+            // Single Board Architecture enforcement:
+            // If tenant does NOT have multi-board add-on, deactivate all existing active boards
+            if (!multiBoardEnabled) {
+                await query(
+                    `UPDATE public.tenant_syllabus SET is_active = false, updated_at = NOW() WHERE tenant_id = $1`,
+                    [tenantId]
+                )
+                await query(
+                    `UPDATE public.syllabus_nodes SET is_active = false, updated_at = NOW() WHERE tenant_id = $1 AND parent_id IS NULL AND type = 'board'`,
+                    [tenantId]
+                )
+            }
+
+            // Check if record already exists in tenant_syllabus
             const { rows: existingRows } = await query(
                 `SELECT id FROM public.tenant_syllabus WHERE tenant_id = $1 AND master_syllabus_id = $2`,
                 [tenantId, board_id]
@@ -148,226 +221,135 @@ export async function POST(request: NextRequest) {
                 )
             }
 
-            return NextResponse.json({ success: true, message: 'Active school board updated successfully' })
+            const message = multiBoardEnabled
+                ? `"${boardName}" imported into your active multi-board curriculum.`
+                : `"${boardName}" successfully set as your active school curriculum.`
+
+            return NextResponse.json({ success: true, message, boardName })
         }
 
-        // ── 2. CREATE NEW CUSTOM BOARD ──────────────────────────────────
-        if (action === 'CREATE_BOARD') {
-            const { name } = payload
-            if (!name || !name.trim()) return NextResponse.json({ error: 'Board name is required' }, { status: 400 })
+        // ── 2. DOWNLOAD BOARD SYLLABUS AS DATA ROWS (FOR EXCEL/CSV) ───────
+        if (action === 'DOWNLOAD_BOARD_SYLLABUS') {
+            const { board_id } = payload
+            if (!board_id) return NextResponse.json({ error: 'Board ID is required' }, { status: 400 })
 
-            // Create root board node
-            const { rows: boardRows } = await query(
-                `INSERT INTO public.syllabus_nodes (name, type, tenant_id, is_active, order_index)
-                 VALUES ($1, 'board', $2, true, 0)
-                 RETURNING *`,
-                [name.trim(), tenantId]
-            )
-            const newBoard = boardRows[0]
-
-            // Deactivate previous active boards
-            await query(`UPDATE public.tenant_syllabus SET is_active = false WHERE tenant_id = $1`, [tenantId])
-
-            // Link in tenant_syllabus
-            await query(
-                `INSERT INTO public.tenant_syllabus (tenant_id, master_syllabus_id, is_active, version, access_level)
-                 VALUES ($1, $2, true, 1, 'full')`,
-                [tenantId, newBoard.id]
-            )
-
-            return NextResponse.json({ success: true, board: newBoard })
-        }
-
-        // ── 3. CREATE NODE (CLASS, SUBJECT, CHAPTER, TOPIC) ──────────────
-        if (action === 'CREATE_NODE') {
-            const { parent_id, name, type, order_index = 0 } = payload
-            if (!name || !name.trim()) return NextResponse.json({ error: 'Item name is required' }, { status: 400 })
-            if (!type) return NextResponse.json({ error: 'Item type is required' }, { status: 400 })
-
-            const { rows: nodeRows } = await query(
-                `INSERT INTO public.syllabus_nodes (parent_id, name, type, order_index, tenant_id, is_active)
-                 VALUES ($1, $2, $3, $4, $5, true)
-                 RETURNING *`,
-                [parent_id || null, name.trim(), type, Number(order_index) || 0, tenantId]
-            )
-
-            return NextResponse.json({ success: true, node: nodeRows[0] })
-        }
-
-        // ── 4. UPDATE NODE ──────────────────────────────────────────────
-        if (action === 'UPDATE_NODE') {
-            const { id, name, order_index } = payload
-            if (!id) return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
-
-            const { rows: updatedRows } = await query(
-                `UPDATE public.syllabus_nodes 
-                 SET name = COALESCE($1, name),
-                     order_index = COALESCE($2, order_index),
-                     updated_at = NOW()
-                 WHERE id = $3
-                 RETURNING *`,
-                [name ? name.trim() : null, order_index !== undefined ? Number(order_index) : null, id]
-            )
-
-            return NextResponse.json({ success: true, node: updatedRows[0] })
-        }
-
-        // ── 5. TOGGLE NODE VISIBILITY ────────────────────────────────────
-        if (action === 'TOGGLE_NODE') {
-            const { id, is_active } = payload
-            if (!id) return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
-
-            await query(
-                `UPDATE public.syllabus_nodes SET is_active = $1, updated_at = NOW() WHERE id = $2`,
-                [Boolean(is_active), id]
-            )
-
-            return NextResponse.json({ success: true })
-        }
-
-        // ── 6. DELETE NODE (CASCADE RECURSIVE) ──────────────────────────
-        if (action === 'DELETE_NODE') {
-            const { id } = payload
-            if (!id) return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
-
-            // Recursive delete query to clean up node and all descendent children
-            await query(`
-                WITH RECURSIVE descendants AS (
-                    SELECT id FROM public.syllabus_nodes WHERE id = $1
+            // Query full recursive tree for this board
+            const downloadQuery = `
+                WITH RECURSIVE b_tree AS (
+                    SELECT 
+                        id, name, type, parent_id, order_index, 0 as depth,
+                        name as board_name,
+                        NULL::text as class_name,
+                        NULL::text as subject_name,
+                        NULL::text as chapter_name,
+                        NULL::text as topic_name
+                    FROM public.syllabus_nodes
+                    WHERE id = $1
+                    
                     UNION ALL
-                    SELECT child.id FROM public.syllabus_nodes child
-                    JOIN descendants d ON child.parent_id = d.id
+                    
+                    SELECT 
+                        c.id, c.name, c.type, c.parent_id, c.order_index, bt.depth + 1,
+                        bt.board_name,
+                        CASE WHEN c.type = 'class' THEN c.name ELSE bt.class_name END,
+                        CASE WHEN c.type = 'subject' THEN c.name ELSE bt.subject_name END,
+                        CASE WHEN c.type = 'chapter' THEN c.name ELSE bt.chapter_name END,
+                        CASE WHEN c.type = 'topic' THEN c.name ELSE bt.topic_name END
+                    FROM public.syllabus_nodes c
+                    JOIN b_tree bt ON c.parent_id = bt.id
                 )
-                DELETE FROM public.syllabus_nodes WHERE id IN (SELECT id FROM descendants);
-            `, [id])
+                SELECT 
+                    board_name AS "Board",
+                    COALESCE(class_name, '') AS "Class",
+                    COALESCE(subject_name, '') AS "Subject",
+                    COALESCE(chapter_name, '') AS "Chapter",
+                    COALESCE(topic_name, '') AS "Topic",
+                    order_index AS "OrderIndex"
+                FROM b_tree
+                WHERE type = 'topic' OR (type = 'chapter' AND topic_name IS NULL)
+                ORDER BY class_name ASC, subject_name ASC, order_index ASC;
+            `
+            const { rows: exportRows } = await query(downloadQuery, [board_id])
 
-            // Also remove from tenant_syllabus if it was a root
-            await query(`DELETE FROM public.tenant_syllabus WHERE master_syllabus_id = $1 AND tenant_id = $2`, [id, tenantId])
+            // If board had no topics (only classes/subjects/chapters), fallback query
+            if (exportRows.length === 0) {
+                const fallbackQuery = `
+                    WITH RECURSIVE b_tree AS (
+                        SELECT id, name, type, parent_id, order_index, 0 as depth
+                        FROM public.syllabus_nodes WHERE id = $1
+                        UNION ALL
+                        SELECT c.id, c.name, c.type, c.parent_id, c.order_index, bt.depth + 1
+                        FROM public.syllabus_nodes c JOIN b_tree bt ON c.parent_id = bt.id
+                    )
+                    SELECT * FROM b_tree ORDER BY depth ASC, order_index ASC;
+                `
+                const { rows: rawTree } = await query(fallbackQuery, [board_id])
+                return NextResponse.json({ success: true, rows: rawTree })
+            }
 
-            return NextResponse.json({ success: true })
+            return NextResponse.json({ success: true, rows: exportRows })
         }
 
-        // ── 7. ADD PRESCRIBED TEXTBOOK ──────────────────────────────────
-        if (action === 'ADD_TEXTBOOK') {
-            const {
-                board_name = 'Gujarat Board',
-                class_name,
-                subject_name,
-                title,
-                author,
-                publisher,
-                edition = 'Latest Edition',
-                isbn,
-                chapters_count = 14,
-                pdf_url,
-                price = 0,
-                buy_url,
-                is_prescribed = true
-            } = payload
-
-            if (!title || !title.trim()) return NextResponse.json({ error: 'Book title is required' }, { status: 400 })
-            if (!class_name) return NextResponse.json({ error: 'Class/Grade is required' }, { status: 400 })
-            if (!subject_name) return NextResponse.json({ error: 'Subject is required' }, { status: 400 })
-
-            const { rows: bookRows } = await query(
-                `INSERT INTO public.syllabus_books 
-                    (tenant_id, board_name, class_name, subject_name, title, author, publisher, edition, isbn, chapters_count, pdf_url, price, buy_url, is_prescribed, is_active)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true)
-                 RETURNING *`,
-                [
-                    tenantId,
-                    board_name,
-                    class_name,
-                    subject_name,
-                    title.trim(),
-                    author || '',
-                    publisher || 'State Academic Board',
-                    edition,
-                    isbn || '',
-                    Number(chapters_count) || 12,
-                    pdf_url || '',
-                    Number(price) || 0,
-                    buy_url || '',
-                    Boolean(is_prescribed)
-                ]
-            )
-
-            return NextResponse.json({ success: true, textbook: bookRows[0] })
-        }
-
-        // ── 8. UPDATE TEXTBOOK ──────────────────────────────────────────
-        if (action === 'UPDATE_TEXTBOOK') {
-            const { id, title, author, publisher, edition, isbn, chapters_count, pdf_url, price, buy_url, is_prescribed } = payload
-            if (!id) return NextResponse.json({ error: 'Textbook ID is required' }, { status: 400 })
-
-            const { rows: updatedRows } = await query(
-                `UPDATE public.syllabus_books
-                 SET title = COALESCE($1, title),
-                     author = COALESCE($2, author),
-                     publisher = COALESCE($3, publisher),
-                     edition = COALESCE($4, edition),
-                     isbn = COALESCE($5, isbn),
-                     chapters_count = COALESCE($6, chapters_count),
-                     pdf_url = COALESCE($7, pdf_url),
-                     price = COALESCE($8, price),
-                     buy_url = COALESCE($9, buy_url),
-                     is_prescribed = COALESCE($10, is_prescribed),
-                     updated_at = NOW()
-                 WHERE id = $11 AND tenant_id = $12
-                 RETURNING *`,
-                [
-                    title ? title.trim() : null,
-                    author,
-                    publisher,
-                    edition,
-                    isbn,
-                    chapters_count !== undefined ? Number(chapters_count) : null,
-                    pdf_url,
-                    price !== undefined ? Number(price) : null,
-                    buy_url,
-                    is_prescribed !== undefined ? Boolean(is_prescribed) : null,
-                    id,
-                    tenantId
-                ]
-            )
-
-            return NextResponse.json({ success: true, textbook: updatedRows[0] })
-        }
-
-        // ── 9. DELETE TEXTBOOK ──────────────────────────────────────────
-        if (action === 'DELETE_TEXTBOOK') {
-            const { id } = payload
-            if (!id) return NextResponse.json({ error: 'Textbook ID is required' }, { status: 400 })
-
-            await query(`DELETE FROM public.syllabus_books WHERE id = $1 AND tenant_id = $2`, [id, tenantId])
-            return NextResponse.json({ success: true })
-        }
-
-        // ── 10. BULK UPLOAD EXCEL / CSV SYLLABUS ────────────────────────
+        // ── 3. MANUAL BULK UPLOAD EXCEL / CSV SYLLABUS ────────────────────
         if (action === 'BULK_UPLOAD_SYLLABUS') {
-            const { rows } = payload
+            const { rows, mode = 'APPEND', board_name = 'Custom School Board' } = payload
             if (!rows || !Array.isArray(rows) || rows.length === 0) {
                 return NextResponse.json({ error: 'No valid rows found to import' }, { status: 400 })
             }
 
-            // Find current active root board
-            const { rows: activeRoots } = await query(
-                `SELECT master_syllabus_id FROM public.tenant_syllabus WHERE tenant_id = $1 AND is_active = true LIMIT 1`,
-                [tenantId]
-            )
+            let boardId: string | null = null
 
-            let boardId = activeRoots?.[0]?.master_syllabus_id
-            if (!boardId) {
-                // Create a default board if none exists
+            if (mode === 'REPLACE') {
+                // If Single-Board architecture, deactivate prior boards
+                if (!multiBoardEnabled) {
+                    await query(`UPDATE public.tenant_syllabus SET is_active = false WHERE tenant_id = $1`, [tenantId])
+                    await query(`UPDATE public.syllabus_nodes SET is_active = false WHERE tenant_id = $1 AND parent_id IS NULL`, [tenantId])
+                }
+
+                // Create clean custom board for tenant
                 const { rows: newB } = await query(
-                    `INSERT INTO public.syllabus_nodes (name, type, tenant_id, is_active) VALUES ('School Curriculum', 'board', $1, true) RETURNING id`,
-                    [tenantId]
+                    `INSERT INTO public.syllabus_nodes (name, type, tenant_id, is_active, order_index)
+                     VALUES ($1, 'board', $2, true, 0)
+                     RETURNING id`,
+                    [board_name.trim() || 'Custom School Board', tenantId]
                 )
-                boardId = newB[0].id
+                boardId = newB[0].id as string
+
                 await query(
-                    `INSERT INTO public.tenant_syllabus (tenant_id, master_syllabus_id, is_active, version, access_level) VALUES ($1, $2, true, 1, 'full')`,
+                    `INSERT INTO public.tenant_syllabus (tenant_id, master_syllabus_id, is_active, version, access_level)
+                     VALUES ($1, $2, true, 1, 'full')`,
                     [tenantId, boardId]
                 )
+            } else {
+                // APPEND to active board
+                const { rows: activeRoots } = await query(
+                    `SELECT master_syllabus_id FROM public.tenant_syllabus WHERE tenant_id = $1 AND is_active = true LIMIT 1`,
+                    [tenantId]
+                )
+                boardId = activeRoots?.[0]?.master_syllabus_id as string | undefined || null
+
+                if (!boardId) {
+                    const { rows: tenantRoots } = await query(
+                        `SELECT id FROM public.syllabus_nodes WHERE tenant_id = $1 AND parent_id IS NULL AND is_active = true LIMIT 1`,
+                        [tenantId]
+                    )
+                    boardId = tenantRoots?.[0]?.id as string | undefined || null
+                }
+
+                if (!boardId) {
+                    const { rows: newB } = await query(
+                        `INSERT INTO public.syllabus_nodes (name, type, tenant_id, is_active, order_index)
+                         VALUES ($1, 'board', $2, true, 0)
+                         RETURNING id`,
+                        [board_name.trim() || 'Custom School Board', tenantId]
+                    )
+                    boardId = newB[0].id as string
+                    await query(
+                        `INSERT INTO public.tenant_syllabus (tenant_id, master_syllabus_id, is_active, version, access_level)
+                         VALUES ($1, $2, true, 1, 'full')`,
+                        [tenantId, boardId]
+                    )
+                }
             }
 
             let insertedCount = 0
@@ -376,10 +358,10 @@ export async function POST(request: NextRequest) {
             const chapterCache = new Map<string, string>()
 
             for (const r of rows) {
-                const className = (r.class_name || r.Class || r.grade || '').trim()
-                const subjectName = (r.subject_name || r.Subject || '').trim()
-                const chapterName = (r.chapter_name || r.Chapter || r.Unit || '').trim()
-                const topicName = (r.topic_name || r.Topic || '').trim()
+                const className = (r.class_name || r.Class || r.Grade || r.grade || '').toString().trim()
+                const subjectName = (r.subject_name || r.Subject || r.subject || '').toString().trim()
+                const chapterName = (r.chapter_name || r.Chapter || r.Unit || r.chapter || '').toString().trim()
+                const topicName = (r.topic_name || r.Topic || r.topic || '').toString().trim()
 
                 if (!className || !subjectName) continue
 
@@ -394,7 +376,8 @@ export async function POST(request: NextRequest) {
                         classId = existingClasses[0].id as string
                     } else {
                         const { rows: newClass } = await query(
-                            `INSERT INTO public.syllabus_nodes (parent_id, name, type, tenant_id, is_active) VALUES ($1, $2, 'class', $3, true) RETURNING id`,
+                            `INSERT INTO public.syllabus_nodes (parent_id, name, type, tenant_id, is_active)
+                             VALUES ($1, $2, 'class', $3, true) RETURNING id`,
                             [boardId, className, tenantId]
                         )
                         classId = newClass[0].id as string
@@ -416,7 +399,8 @@ export async function POST(request: NextRequest) {
                         subjectId = existingSubjects[0].id as string
                     } else {
                         const { rows: newSub } = await query(
-                            `INSERT INTO public.syllabus_nodes (parent_id, name, type, tenant_id, is_active) VALUES ($1, $2, 'subject', $3, true) RETURNING id`,
+                            `INSERT INTO public.syllabus_nodes (parent_id, name, type, tenant_id, is_active)
+                             VALUES ($1, $2, 'subject', $3, true) RETURNING id`,
                             [classId, subjectName, tenantId]
                         )
                         subjectId = newSub[0].id as string
@@ -439,7 +423,8 @@ export async function POST(request: NextRequest) {
                             chapterId = existingChapters[0].id as string
                         } else {
                             const { rows: newChap } = await query(
-                                `INSERT INTO public.syllabus_nodes (parent_id, name, type, tenant_id, is_active) VALUES ($1, $2, 'chapter', $3, true) RETURNING id`,
+                                `INSERT INTO public.syllabus_nodes (parent_id, name, type, tenant_id, is_active)
+                                 VALUES ($1, $2, 'chapter', $3, true) RETURNING id`,
                                 [subjectId, chapterName, tenantId]
                             )
                             chapterId = newChap[0].id as string
@@ -450,7 +435,8 @@ export async function POST(request: NextRequest) {
                     // 4. Resolve or Insert Topic
                     if (topicName && chapterId) {
                         await query(
-                            `INSERT INTO public.syllabus_nodes (parent_id, name, type, tenant_id, is_active) VALUES ($1, $2, 'topic', $3, true)`,
+                            `INSERT INTO public.syllabus_nodes (parent_id, name, type, tenant_id, is_active)
+                             VALUES ($1, $2, 'topic', $3, true)`,
                             [chapterId, topicName, tenantId]
                         )
                     }
@@ -459,7 +445,101 @@ export async function POST(request: NextRequest) {
                 insertedCount++
             }
 
-            return NextResponse.json({ success: true, count: insertedCount, message: `Successfully processed ${insertedCount} curriculum items.` })
+            return NextResponse.json({
+                success: true,
+                count: insertedCount,
+                message: `Successfully processed ${insertedCount} curriculum items.`
+            })
+        }
+
+        // ── 4. CREATE NODE (CLASS, SUBJECT, CHAPTER, TOPIC) ──────────────
+        if (action === 'CREATE_NODE') {
+            const { parent_id, name, type, order_index = 0 } = payload
+            if (!name || !name.trim()) return NextResponse.json({ error: 'Item name is required' }, { status: 400 })
+            if (!type) return NextResponse.json({ error: 'Item type is required' }, { status: 400 })
+
+            const { rows: nodeRows } = await query(
+                `INSERT INTO public.syllabus_nodes (parent_id, name, type, order_index, tenant_id, is_active)
+                 VALUES ($1, $2, $3, $4, $5, true)
+                 RETURNING *`,
+                [parent_id || null, name.trim(), type, Number(order_index) || 0, tenantId]
+            )
+
+            return NextResponse.json({ success: true, node: nodeRows[0] })
+        }
+
+        // ── 5. UPDATE NODE ──────────────────────────────────────────────
+        if (action === 'UPDATE_NODE') {
+            const { id, name, order_index } = payload
+            if (!id) return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
+
+            const { rows: updatedRows } = await query(
+                `UPDATE public.syllabus_nodes 
+                 SET name = COALESCE($1, name),
+                     order_index = COALESCE($2, order_index),
+                     updated_at = NOW()
+                 WHERE id = $3
+                 RETURNING *`,
+                [name ? name.trim() : null, order_index !== undefined ? Number(order_index) : null, id]
+            )
+
+            return NextResponse.json({ success: true, node: updatedRows[0] })
+        }
+
+        // ── 6. TOGGLE NODE VISIBILITY ────────────────────────────────────
+        if (action === 'TOGGLE_NODE') {
+            const { id, is_active } = payload
+            if (!id) return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
+
+            await query(
+                `UPDATE public.syllabus_nodes SET is_active = $1, updated_at = NOW() WHERE id = $2`,
+                [Boolean(is_active), id]
+            )
+
+            return NextResponse.json({ success: true })
+        }
+
+        // ── 7. DELETE NODE (CASCADE RECURSIVE) ──────────────────────────
+        if (action === 'DELETE_NODE') {
+            const { id } = payload
+            if (!id) return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
+
+            // Recursive delete query to clean up node and all descendent children
+            await query(`
+                WITH RECURSIVE descendants AS (
+                    SELECT id FROM public.syllabus_nodes WHERE id = $1
+                    UNION ALL
+                    SELECT child.id FROM public.syllabus_nodes child
+                    JOIN descendants d ON child.parent_id = d.id
+                )
+                DELETE FROM public.syllabus_nodes WHERE id IN (SELECT id FROM descendants);
+            `, [id])
+
+            await query(`DELETE FROM public.tenant_syllabus WHERE master_syllabus_id = $1 AND tenant_id = $2`, [id, tenantId])
+
+            return NextResponse.json({ success: true })
+        }
+
+        // ── 8. REQUEST MULTI-BOARD ARCHITECTURE UPGRADE ──────────────────
+        if (action === 'REQUEST_MULTI_BOARD') {
+            const { notes = '' } = payload
+            // Record inquiry in tenant settings or metadata
+            await query(
+                `UPDATE public.tenants 
+                 SET settings = jsonb_set(
+                     COALESCE(settings, '{}'::jsonb), 
+                     '{multi_board_upgrade_requested}', 
+                     to_jsonb(NOW())
+                 ),
+                 updated_at = NOW()
+                 WHERE id = $1`,
+                [tenantId]
+            )
+
+            return NextResponse.json({
+                success: true,
+                message: 'Your multi-board architecture upgrade inquiry has been forwarded to the platform owner.'
+            })
         }
 
         return NextResponse.json({ error: 'Invalid action payload' }, { status: 400 })
