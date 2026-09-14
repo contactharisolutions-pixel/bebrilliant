@@ -285,8 +285,8 @@ export default function StudyMaterialsDashboard() {
                 </div>
             )}
 
-            {/* ── WORKSPACE CONTAINER ── */}
-            <div className="w-full px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-8">
+            {/* ── WORKSPACE CONTAINER (100% FULL WIDTH) ── */}
+            <div className="w-full px-4 sm:px-8 lg:px-10 py-6 space-y-8">
                 {/* ── 16:9 PHOTOGRAPHIC HERO BANNER ── */}
                 <div className="relative w-full rounded-3xl overflow-hidden border border-slate-200 bg-white shadow-sm">
                     <div className="relative h-64 sm:h-80 w-full">
@@ -446,7 +446,7 @@ export default function StudyMaterialsDashboard() {
                         </div>
 
                         {/* Search Input */}
-                        <div className="relative flex-1 max-w-md">
+                        <div className="relative flex-1 max-w-lg lg:max-w-xl">
                             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                             <input
                                 type="text"
@@ -533,7 +533,7 @@ export default function StudyMaterialsDashboard() {
                         </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredMaterials.map(m => {
                             const isAssignment = m.type === 'assignment'
                             const isVideo = m.type === 'video'
