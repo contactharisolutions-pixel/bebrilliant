@@ -1,519 +1,1423 @@
 'use client'
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import Image from 'next/image'
 import {
-    BookOpen, Database, ShoppingBag, BarChart2,
-    Plus, Trash2, Edit3, ChevronRight, ChevronDown, PlusCircle,
-    Check, X, Save, Loader2, AlertCircle, RefreshCcw,
-    Globe, Eye, EyeOff, Upload,
-    CheckCircle2, XCircle, Info, Download, FileSpreadsheet, Lock, Unlock, ShoppingCart,
-    Layers, Target, Zap, Shield, Sparkles, LayoutDashboard, Search,
-    Cpu, Activity, GraduationCap, ArrowUpRight, MousePointer2,
-    Binary, CheckCheck
+    BookOpen, Layers, PlusCircle, CheckCircle, XCircle, Search, RefreshCw,
+    Download, Upload, Eye, EyeOff, Edit3, Trash2, ChevronRight, ChevronDown,
+    GraduationCap, Globe, BookMarked, ShoppingBag, Library, FileSpreadsheet,
+    FileText, Check, Plus, ExternalLink, ArrowRight, Sparkles, AlertCircle
 } from 'lucide-react'
 import Papa from 'papaparse'
-import { createClient } from '@/lib/supabase/client'
-import { useIdentity } from '@/contexts/IdentityContext'
-// ── TYPES ────────────────────────────────────────────────
-type NodeType = 'board' | 'class' | 'subject' | 'chapter' | 'topic'
-type SyllabusNode = {
-    id: string; parent_id: string | null; type: NodeType; name: string
-    order_index: number; is_active: boolean; created_at: string
-}
-type SyllabusPlan = {
-    id: string; name: string; syllabus_id: string; pricing_type: string
-    price: number; features: any; is_active: boolean
-    syllabus_nodes?: { name: string; type: string }
-}
-const COLORS = {
-    primary: '#004B93',
-    primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
-    success: '#1FAC63',
-    warning: '#F0A026',
-    danger: '#EF4444',
-    slate: '#64748B',
-    background: '#F8FAFC',
-    border: '#E2E8F0',
-    glass: 'rgba(255, 255, 255, 0.7)'
-}
-const NODE_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
-    board: { label: 'Board', color: '#004B93', bg: '#004B9310', icon: Globe },
-    class: { label: 'Class', color: '#8B5CF6', bg: '#8B5CF610', icon: GraduationCap },
-    subject: { label: 'Subject', color: '#1FAC63', bg: '#1FAC6310', icon: BookOpen },
-    chapter: { label: 'Chapter', color: '#F0A026', bg: '#F0A02610', icon: Layers },
-    topic: { label: 'Topic', color: '#64748B', bg: '#64748B10', icon: Target },
-}
-const BOARD_GROUPS = [
-    { label: 'School Syllabus', items: ['CBSE', 'ICSE', 'IB Board', 'NIOS Board', 'GUJCET', 'Gujarat Board', 'State Board'] },
-    { label: 'Entrance Exams', items: ['JEE Main', 'JEE Advanced', 'NEET', 'CUET', 'CLAT', 'CAT', 'GATE'] },
-    { label: 'Competitive', items: ['UPSC Civil Services', 'SSC CGL', 'NDA', 'CDS', 'RRB'] }
-]
-const SCHOOL_BOARDS = BOARD_GROUPS[0].items;
-// ── COMPONENTS ──────────────────────────────────
-function ToastNotification({ msg, ok, onClose }: { msg: string; ok: boolean; onClose: () => void }) {
-    useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
-    return (
-        <div style={{ position: 'fixed', top: 32, right: 32, background: ok ? '#ECFDF5' : '#FEF2F2', border: `1px solid ${ok ? COLORS.success : COLORS.danger}40`, borderRadius: 20, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', zIndex: 30000, animation: 'float 0.3s ease-out' }}>
-            {ok ? <CheckCircle2 size={20} color={COLORS.success} /> : <XCircle size={20} color={COLORS.danger} />}
-            <span style={{ fontSize: 14, fontWeight: 900, color: ok ? '#065F46' : '#991B1B' }}>{msg}</span>
-        </div>
-    )
-}
-function Modal({ title, onClose, children, onSubmit, saving, saveText = 'Save' }: any) {
-    return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: 20 }}>
-            <div style={{ background: '#FFF', borderRadius: 28, width: '100%', maxWidth: 520, overflow: 'hidden', boxShadow: '0 40px 80px rgba(0,0,0,0.15)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', animation: 'float 0.3s ease-out', border: '1px solid rgba(255,255,255,0.8)' }}>
-                <div style={{ padding: '24px 32px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-                    <h3 style={{ margin: 0, fontSize: 20, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.02em' }}>{title}</h3>
-                    <button onClick={onClose} style={{ background: '#F1F5F9', border: 'none', width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={20} color="#64748B" /></button>
-                </div>
-                <div style={{ padding: 40, overflowY: 'auto' }}>{children}</div>
-                <div style={{ padding: '24px 32px', background: '#F8FAFC', borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'flex-end', gap: 16, flexShrink: 0 }}>
-                    <button onClick={onClose} style={{ padding: '12px 24px', borderRadius: 14, background: 'transparent', border: '1px solid #E2E8F0', color: '#475569', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>Discard</button>
-                    <button onClick={onSubmit} disabled={saving} style={{ padding: '12px 28px', borderRadius: 14, background: COLORS.primaryGradient, border: 'none', color: '#fff', fontSize: 14, fontWeight: 1000, cursor: saving ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 10px 20px rgba(0,75,147,0.15)' }}>
-                        {saving && <Loader2 size={16} className="spin" />} {saveText}
-                    </button>
-                </div>
-            </div>
-        </div>
-    )
-}
-// ── TREE NODE COMPONENT ──────────────────────────
-function TreeNode({ node, nodes, onEdit, onDelete, onAddChild, onToggle, onAIGen, level = 0, readOnly = false }: any) {
-    const [expanded, setExpanded] = useState(false) // Default minimized
-    const [generating, setGenerating] = useState(false)
-    const children = useMemo(() => nodes.filter((n: SyllabusNode) => n.parent_id === node.id), [nodes, node.id])
-    const config = NODE_CONFIG[node.type] || NODE_CONFIG.topic
-    return (
-        <div style={{ marginLeft: level > 0 ? 36 : 0, WebkitUserSelect: 'none' }}>
-            <div className="node-pulse" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 20px', background: '#FFF', border: `1px solid ${expanded ? COLORS.primary + '20' : '#F1F5F9'}`, borderRadius: 20, marginBottom: 8, transition: '0.3s cubic-bezier(0.4, 0, 0.2, 1)', position: 'relative', overflow: 'hidden' }}>
-                {expanded && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: COLORS.primaryGradient }} />}
-                <button onClick={() => children.length > 0 && setExpanded(!expanded)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: COLORS.slate }}>
-                    {children.length > 0 ? (expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />) : <Binary size={14} color="#CBD5E1" />}
-                </button>
-                <div style={{ padding: 10, background: config.bg, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <config.icon size={18} color={config.color} />
-                </div>
-                <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 1000, color: node.is_active ? '#1E293B' : '#94A3B8' }}>{node.name}</div>
-                    <div style={{ fontSize: 11, fontWeight: 900, color: config.color, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 }}>{config.label}</div>
-                </div>
-                {children.length > 0 && (
-                    <div style={{ background: '#F1F5F9', padding: '6px 12px', borderRadius: 10, fontSize: 11, fontWeight: 900, color: '#475569', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Layers size={12} /> {children.length} Sequences
-                    </div>
-                )}
-                {!readOnly && (
-                    <div style={{ display: 'flex', gap: 8, marginLeft: 16 }}>
-                        {!node.is_master && (
-                            <>
-                                <button onClick={async () => { setGenerating(true); await onAIGen(node); setGenerating(false) }} className="control-btn" title="AI Generate Child Sequence" style={{ color: COLORS.warning }}>
-                                    {generating ? <Loader2 size={16} className="spin" /> : <Sparkles size={16} />}
-                                </button>
-                                <button onClick={() => onToggle(node)} className="control-btn" title="Toggle Signal State">{node.is_active ? <Eye size={16} /> : <EyeOff size={16} />}</button>
-                                <button onClick={() => onAddChild(node)} className="control-btn" title="Provision Child Node" style={{ color: COLORS.primary }}><PlusCircle size={16} /></button>
-                                <button onClick={() => onEdit(node)} className="control-btn" title="Edit Node Architecture"><Edit3 size={16} /></button>
-                                <button onClick={() => onDelete(node)} className="control-btn" title="Purge Node" style={{ color: COLORS.danger }}><Trash2 size={16} /></button>
-                            </>
-                        )}
-                        {node.is_master && (
-                            <button onClick={() => onToggle(node)} className="control-btn" title="Toggle Active State">{node.is_active ? <CheckCircle2 size={16} color={COLORS.success} /> : <EyeOff size={16} />}</button>
-                        )}
-                    </div>
-                )}
-            </div>
-            {expanded && children.length > 0 && (
-                <div style={{ borderLeft: `2px solid #F1F5F9`, marginLeft: 8, paddingLeft: 4 }}>
-                    {children.map((child: SyllabusNode) => (
-                        <TreeNode key={child.id} node={child} nodes={nodes} level={level + 1} onEdit={onEdit} onDelete={onDelete} onAddChild={onAddChild} onToggle={onToggle} onAIGen={onAIGen} readOnly={readOnly} />
-                    ))}
-                </div>
-            )}
-        </div>
-    )
-}
-// ── MAIN APPLICATION ─────────────────────────────
-export default function SyllabusManagement() {
-    const { identity } = useIdentity()
-    const role = identity?.role
-    const readOnly = role === 'student' || role === 'parent'
 
-    const [tab, setTab] = useState('tree')
-    const [nodes, setNodes] = useState<SyllabusNode[]>([])
-    const [marketplace, setMarketplace] = useState<SyllabusPlan[]>([])
-    const [activeSubscriptions, setActiveSubscriptions] = useState<any[]>([])
+// ── TYPES ─────────────────────────────────────────────────────────────
+type NodeType = 'board' | 'class' | 'subject' | 'chapter' | 'topic'
+
+interface SyllabusNode {
+    id: string
+    name: string
+    type: NodeType
+    parent_id: string | null
+    tenant_id: string | null
+    is_active: boolean
+    order_index: number
+    created_at?: string
+    depth?: number
+}
+
+interface SyllabusBook {
+    id: string
+    board_name: string
+    class_name: string
+    subject_name: string
+    title: string
+    author?: string
+    publisher: string
+    edition: string
+    isbn?: string
+    chapters_count: number
+    cover_image_url?: string
+    pdf_url?: string
+    price: number
+    buy_url?: string
+    is_prescribed: boolean
+    is_active: boolean
+}
+
+// ── COLOR & BADGE CONFIGURATION ───────────────────────────────────────
+const TYPE_META: Record<NodeType, { label: string; badgeBg: string; badgeText: string; icon: any; border: string }> = {
+    board: { label: 'Board Curriculum', badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200', badgeText: 'text-indigo-700', icon: Globe, border: 'border-l-indigo-600' },
+    class: { label: 'Grade / Class', badgeBg: 'bg-purple-50 text-purple-700 border-purple-200', badgeText: 'text-purple-700', icon: GraduationCap, border: 'border-l-purple-600' },
+    subject: { label: 'Course Subject', badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200', badgeText: 'text-emerald-700', icon: BookOpen, border: 'border-l-emerald-600' },
+    chapter: { label: 'Chapter / Unit', badgeBg: 'bg-amber-50 text-amber-700 border-amber-200', badgeText: 'text-amber-700', icon: Layers, border: 'border-l-amber-500' },
+    topic: { label: 'Lesson Topic', badgeBg: 'bg-sky-50 text-sky-700 border-sky-200', badgeText: 'text-sky-700', icon: BookMarked, border: 'border-l-sky-500' }
+}
+
+export default function SyllabusHubPage() {
+    // ── STATE ─────────────────────────────────────────────────────────
+    const [activeTab, setActiveTab] = useState<'tree' | 'books' | 'store' | 'bulk'>('tree')
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-    const [nodeModal, setNodeModal] = useState<{ open: boolean; editing?: SyllabusNode; parent?: SyllabusNode; success?: boolean }>({ open: false })
-    const [nodeForm, setNodeForm] = useState({ name: '', type: 'chapter' as NodeType })
-    const [bulkBoardName, setBulkBoardName] = useState('')
-    const [csvText, setCsvText] = useState('name,type\nGrade 10,class\nMathematics,subject\nAlgebra,chapter\nQuadratic Equations,topic')
-    const handleBulkUpload = async () => {
-        if (!bulkBoardName.trim()) return showToast('Please enter a Board/Syllabus name', false)
-        Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
-            complete: async (results) => {
-                const rows = results.data as any[]
-                if (!rows.length) return showToast('No rows found in CSV text', false)
-                const mappedNodes = rows.map(r => ({
-                    name: r.name || r.Name || '',
-                    type: (r.type || r.Type || 'chapter').toLowerCase().trim()
-                })).filter(n => n.name)
-                const res = await apiAction('BULK_UPLOAD_SYLLABUS', {
-                    name: bulkBoardName,
-                    nodes: mappedNodes
-                })
-                if (res && res.success) {
-                    showToast('Bulk Syllabus Uploaded and Linked!', true)
-                    setTab('tree')
-                    fetchHierarchy()
-                }
-            },
-            error: (err: Error) => {
-                showToast(`CSV parse error: ${err.message}`, false)
-            }
-        })
+
+    // Data
+    const [nodes, setNodes] = useState<SyllabusNode[]>([])
+    const [standardBoards, setStandardBoards] = useState<any[]>([])
+    const [textbooks, setTextbooks] = useState<SyllabusBook[]>([])
+    const [metrics, setMetrics] = useState({
+        activeBoard: 'Gujarat Board (English Medium)',
+        totalClasses: 8,
+        totalSubjects: 35,
+        totalChapters: 432,
+        totalTopics: 432,
+        totalBooks: 5,
+        totalItems: 908
+    })
+
+    // Filters
+    const [searchQuery, setSearchQuery] = useState('')
+    const [selectedClassFilter, setSelectedClassFilter] = useState('ALL')
+    const [selectedSubjectFilter, setSelectedSubjectFilter] = useState('ALL')
+    const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set())
+
+    // Modals
+    const [itemModal, setItemModal] = useState<{
+        open: boolean
+        mode: 'add' | 'edit'
+        nodeType: NodeType
+        parent?: SyllabusNode
+        node?: SyllabusNode
+    }>({ open: false, mode: 'add', nodeType: 'class' })
+
+    const [itemForm, setItemForm] = useState({ name: '', order_index: 0 })
+
+    const [bookModal, setBookModal] = useState<{ open: boolean; mode: 'add' | 'edit'; book?: SyllabusBook }>({
+        open: false,
+        mode: 'add'
+    })
+
+    const [bookForm, setBookForm] = useState({
+        class_name: 'Class 8',
+        subject_name: 'Mathematics',
+        title: '',
+        author: '',
+        publisher: 'Gujarat State Board of School Textbooks (GSEB)',
+        edition: '2026 Revised Edition',
+        isbn: '',
+        chapters_count: 14,
+        pdf_url: '',
+        price: 120,
+        buy_url: '',
+        is_prescribed: true
+    })
+
+    const [boardModalOpen, setBoardModalOpen] = useState(false)
+    const [deleteModal, setDeleteModal] = useState<{ open: boolean; type: 'node' | 'book'; id: string; name: string }>({
+        open: false,
+        type: 'node',
+        id: '',
+        name: ''
+    })
+
+    // Bulk Upload State
+    const [bulkRows, setBulkRows] = useState<any[]>([])
+    const [bulkFileName, setBulkFileName] = useState('')
+    const [bulkUploading, setBulkUploading] = useState(false)
+
+    // ── TOAST HELPER ──────────────────────────────────────────────────
+    const showToast = (msg: string, ok: boolean) => {
+        setToast({ msg, ok })
+        setTimeout(() => setToast(null), 4000)
     }
-    const fetchHierarchy = useCallback(async () => {
+
+    // ── FETCH DATA ────────────────────────────────────────────────────
+    const fetchData = useCallback(async () => {
         setLoading(true)
         try {
             const res = await fetch('/api/dashboard/syllabus')
-            const json = await res.json()
-            if (res.ok) {
-                setNodes(json.nodes || [])
-                setMarketplace(json.marketplace || [])
-                setActiveSubscriptions(json.active_subscriptions || [])
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}))
+                throw new Error(errData.error || 'Unable to load syllabus records')
             }
-        } finally { setLoading(false) }
+            const data = await res.json()
+
+            const loadedNodes: SyllabusNode[] = data.nodes || []
+            setNodes(loadedNodes)
+            setStandardBoards(data.standardBoards || [])
+            setTextbooks(data.textbooks || [])
+            if (data.metrics) setMetrics(data.metrics)
+
+            // Auto-expand first 2 levels (Board & Classes) for immediate rich view
+            const defaultExpanded = new Set<string>()
+            loadedNodes.forEach(n => {
+                if (n.type === 'board' || n.type === 'class') {
+                    defaultExpanded.add(n.id)
+                }
+            })
+            setExpandedNodeIds(defaultExpanded)
+        } catch (e: any) {
+            console.error('[Syllabus fetch error]:', e)
+            showToast(e.message || 'Error loading course syllabus', false)
+        } finally {
+            setLoading(false)
+        }
     }, [])
-    useEffect(() => { fetchHierarchy() }, [fetchHierarchy])
-    const apiAction = async (action: string, payload: any) => {
+
+    useEffect(() => {
+        fetchData()
+    }, [fetchData])
+
+    // ── EXTRACT AVAILABLE CLASSES & SUBJECTS FOR FILTERS ───────────────
+    const availableClasses = useMemo(() => {
+        return nodes.filter(n => n.type === 'class').sort((a, b) => a.order_index - b.order_index)
+    }, [nodes])
+
+    const availableSubjects = useMemo(() => {
+        const subs = nodes.filter(n => n.type === 'subject')
+        const uniqueNames = Array.from(new Set(subs.map(s => s.name)))
+        return uniqueNames
+    }, [nodes])
+
+    // ── TREE EXPANSION TOGGLE ─────────────────────────────────────────
+    const toggleExpand = (nodeId: string) => {
+        setExpandedNodeIds(prev => {
+            const next = new Set(prev)
+            if (next.has(nodeId)) next.delete(nodeId)
+            else next.add(nodeId)
+            return next
+        })
+    }
+
+    const expandAll = () => {
+        const allIds = new Set<string>(nodes.map(n => n.id))
+        setExpandedNodeIds(allIds)
+    }
+
+    const collapseAll = () => {
+        setExpandedNodeIds(new Set())
+    }
+
+    // ── ACTION HANDLERS ───────────────────────────────────────────────
+    const handleApiAction = async (action: string, payload: any) => {
         setSaving(true)
         try {
             const res = await fetch('/api/dashboard/syllabus', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action, payload })
             })
-            const json = await res.json()
-            if (!res.ok) throw new Error(json.error || 'Signal Refused')
-            await fetchHierarchy()
-            showToast('Syllabus Synchronized', true)
-            return json
-        } catch (e: any) { showToast(e.message, false); return null }
-        finally { setSaving(false) }
-    }
-    const showToast = (msg: string, ok: boolean) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 3500) }
-    const openAddChild = (p: SyllabusNode) => {
-        const nextMap: Record<NodeType, NodeType> = { board: 'class', class: 'subject', subject: 'chapter', chapter: 'topic', topic: 'topic' }
-        setNodeForm({ name: '', type: nextMap[p.type] })
-        setNodeModal({ open: true, parent: p })
-    }
-    const handleSaveNode = async () => {
-        if (!nodeForm.name.trim()) return showToast('Identity Name Required', false)
-        if (nodeModal.editing) {
-            await apiAction('UPDATE_NODE', { id: nodeModal.editing.id, ...nodeForm })
-        } else if (nodeModal.parent) {
-            await apiAction('CREATE_NODE', { ...nodeForm, parent_id: nodeModal.parent.id })
-        } else {
-            await apiAction('CREATE_MANUAL_SYLLABUS', { name: nodeForm.name, type: 'board' })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Action could not be completed')
+
+            showToast(data.message || 'Syllabus updated successfully', true)
+            await fetchData()
+            return data
+        } catch (e: any) {
+            showToast(e.message || 'Request failed', false)
+            return null
+        } finally {
+            setSaving(false)
         }
-        setNodeModal({ ...nodeModal, success: true })
-        setTimeout(() => {
-            setNodeModal({ open: false })
-            fetchHierarchy()
-        }, 5000)
     }
-    const handleAIGenNode = async (node: SyllabusNode) => {
-        const res = await apiAction('GENERATE_SYLLABUS', { node_id: node.id, node_type: node.type, node_name: node.name })
-        if (res) fetchHierarchy()
+
+    // Save Node (Add or Edit)
+    const handleSaveItem = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!itemForm.name.trim()) {
+            showToast('Please enter an item name', false)
+            return
+        }
+
+        if (itemModal.mode === 'edit' && itemModal.node) {
+            await handleApiAction('UPDATE_NODE', {
+                id: itemModal.node.id,
+                name: itemForm.name,
+                order_index: itemForm.order_index
+            })
+        } else {
+            await handleApiAction('CREATE_NODE', {
+                parent_id: itemModal.parent?.id || null,
+                name: itemForm.name,
+                type: itemModal.nodeType,
+                order_index: itemForm.order_index
+            })
+        }
+        setItemModal({ open: false, mode: 'add', nodeType: 'class' })
     }
-    const rootNodes = useMemo(() => nodes.filter(n => !n.parent_id), [nodes])
-    return (
-        <div style={{ padding: '48px 56px', background: COLORS.background, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            {/* TOAST NODES */}
-            {toast && <ToastNotification msg={toast.msg} ok={toast.ok} onClose={() => setToast(null)} />}
-            {/* SYLLABUS HEADER */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 48 }}>
-                <div>
-                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                        <div style={{ padding: 10, background: COLORS.primaryGradient, borderRadius: 14, boxShadow: '0 8px 16px rgba(0,75,147,0.2)' }}>
-                            <Cpu size={24} color="#FFF" />
-                        </div>
-                        <h1 style={{ fontSize: 32, fontWeight: 1000, color: '#0F172A', margin: 0, letterSpacing: '-0.03em' }}>Syllabus Management</h1>
-                    </div>
-                    <p style={{ fontSize: 15, color: '#64748B', margin: 0, fontWeight: 600, maxWidth: 650, lineHeight: 1.6 }}>
-                        Manage your school syllabus, subjects, and topics. Create boards, classes, and assign chapters to maintain an organized course structure.
-                    </p>
-                </div>
-                <div style={{ display: 'flex', gap: 16 }}>
-                    <button onClick={fetchHierarchy} style={{ padding: '14px 24px', borderRadius: 16, background: '#FFF', border: '2px solid #F1F5F9', color: COLORS.slate, fontSize: 13, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <RefreshCcw size={16} className={loading ? 'spin' : ''} /> Refresh List
-                    </button>
-                    {!readOnly && (
-                        <button onClick={() => { setNodeForm({ name: '', type: 'board' }); setNodeModal({ open: true }) }} style={{ padding: '14px 28px', borderRadius: 16, background: COLORS.primaryGradient, border: 'none', color: '#FFF', fontSize: 13, fontWeight: 1000, cursor: 'pointer', boxShadow: '0 10px 25px rgba(0,75,147,0.2)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <PlusCircle size={20} /> Add New Board
-                        </button>
-                    )}
-                </div>
-            </div>
-            {/* SYLLABUS STATS */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 48 }}>
-                {[
-                    { label: 'Total Items', val: nodes.length, icon: Target, color: COLORS.primary },
-                    { label: 'School Boards', val: rootNodes.length, icon: Globe, color: COLORS.warning },
-                    { label: 'Active Topics', val: nodes.filter(n => n.is_active).length, icon: Zap, color: COLORS.success },
-                    { label: 'Total Depth', val: 'Level 5', icon: Binary, color: '#8B5CF6' }
-                ].map((stat, i) => (
-                    <div key={i} style={{ background: '#FFF', padding: 28, borderRadius: 28, border: '1px solid #F1F5F9', boxShadow: '0 4px 15px rgba(0,0,0,0.01)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                            <div style={{ padding: 10, background: `${stat.color}10`, borderRadius: 12 }}>
-                                <stat.icon size={20} color={stat.color} />
-                            </div>
-                            <span style={{ fontSize: 11, fontWeight: 1000, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{stat.label}</span>
-                        </div>
-                        <div style={{ fontSize: 32, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.02em' }}>{stat.val}</div>
-                    </div>
-                ))}
-            </div>
-            {/* VIEW TABS */}
-            <div style={{ display: 'flex', gap: 8, background: '#F1F5F9', padding: 8, borderRadius: 24, width: 'fit-content', marginBottom: 40 }}>
-                {[
-                    { id: 'tree', label: 'My Syllabus', icon: Layers },
-                    { id: 'acquired', label: 'Book Library', icon: Database },
-                    ...(!readOnly ? [
-                        { id: 'market', label: 'Buy Books', icon: ShoppingBag },
-                        { id: 'bulk', label: 'Bulk Upload', icon: Upload }
-                    ] : [])
-                ].map(t => (
-                    <button key={t.id} onClick={() => setTab(t.id)} className={tab === t.id ? 'tab-active' : ''} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 24px', borderRadius: 18, border: 'none', background: 'transparent', color: '#64748B', fontSize: 13, fontWeight: 900, cursor: 'pointer', transition: '0.2s' }}>
-                        <t.icon size={16} /> {t.label}
-                    </button>
-                ))}
-            </div>
-            {/* CONTENT AREA */}
-            {loading ? (
-                <div style={{ padding: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <Loader2 size={48} color={COLORS.primary} className="spin" style={{ marginBottom: 24 }} />
-                    <p style={{ fontSize: 13, fontWeight: 900, color: '#94A3B8', letterSpacing: '0.05em' }}>LOADING SYLLABUS STRUCTURE...</p>
-                </div>
-            ) : (
-                <div style={{ animation: 'float 0.4s ease-out' }}>
-                    {tab === 'tree' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: readOnly ? '1fr' : 'minmax(300px, 1fr) 350px', gap: 40 }}>
-                            {/* MASTER HIERARCHY TREE */}
-                            <div style={{ background: '#FFF', borderRadius: 32, padding: 40, border: '1px solid #E2E8F0', boxShadow: '0 20px 60px rgba(0,0,0,0.02)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
-                                    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 1000, color: '#0F172A', letterSpacing: '-0.02em' }}>Academic Structure</h2>
-                                    <div style={{ padding: '8px 16px', background: `${COLORS.primary}08`, color: COLORS.primary, borderRadius: 12, fontSize: 11, fontWeight: 1000, letterSpacing: '0.05em' }}>DEPTH ENFORCED</div>
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                    {rootNodes.length > 0 ? rootNodes.map(node => (
-                                        <TreeNode 
-                                            key={node.id} 
-                                            node={node} 
-                                            nodes={nodes} 
-                                            onEdit={(n: any) => { setNodeForm({ name: n.name, type: n.type }); setNodeModal({ open: true, editing: n }) }} 
-                                            onDelete={(n: any) => confirm(`Delete Subject Node "${n.name}"?`) && apiAction('DELETE_NODE', { id: n.id })} 
-                                            onAddChild={openAddChild} 
-                                            onToggle={(n: any) => apiAction('TOGGLE_NODE', { id: n.id, is_active: !n.is_active })} 
-                                            onAIGen={handleAIGenNode}
-                                            readOnly={readOnly}
-                                        />
-                                    )) : (
-                                        <div style={{ padding: 80, textAlign: 'center' }}>
-                                            <LayoutDashboard size={48} color="#E2E8F0" style={{ marginBottom: 20 }} />
-                                            <p style={{ fontSize: 15, fontWeight: 700, color: '#94A3B8' }}>No Academic Nodes Provisioned</p>
+
+    // Toggle Node Visibility
+    const handleToggleVisibility = async (node: SyllabusNode) => {
+        await handleApiAction('TOGGLE_NODE', {
+            id: node.id,
+            is_active: !node.is_active
+        })
+    }
+
+    // Confirm Delete
+    const executeDelete = async () => {
+        if (!deleteModal.id) return
+        if (deleteModal.type === 'node') {
+            await handleApiAction('DELETE_NODE', { id: deleteModal.id })
+        } else {
+            await handleApiAction('DELETE_TEXTBOOK', { id: deleteModal.id })
+        }
+        setDeleteModal({ open: false, type: 'node', id: '', name: '' })
+    }
+
+    // Save Textbook (Add or Edit)
+    const handleSaveBook = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!bookForm.title.trim()) {
+            showToast('Please enter a textbook title', false)
+            return
+        }
+
+        if (bookModal.mode === 'edit' && bookModal.book) {
+            await handleApiAction('UPDATE_TEXTBOOK', {
+                id: bookModal.book.id,
+                ...bookForm
+            })
+        } else {
+            await handleApiAction('ADD_TEXTBOOK', {
+                board_name: metrics.activeBoard,
+                ...bookForm
+            })
+        }
+        setBookModal({ open: false, mode: 'add' })
+    }
+
+    // Switch Board
+    const handleSelectBoard = async (boardId: string) => {
+        await handleApiAction('SELECT_BOARD', { board_id: boardId })
+        setBoardModalOpen(false)
+    }
+
+    // Download Sample Template CSV
+    const handleDownloadTemplate = () => {
+        const sampleCsv = `Class,Subject,Chapter,Topic\nClass 9,Mathematics,Chapter 1: Number Systems,1.1 Irrational Numbers\nClass 9,Mathematics,Chapter 1: Number Systems,1.2 Real Numbers & Decimals\nClass 9,Science,Chapter 1: Matter in Our Surroundings,1.1 Physical Nature of Matter\nClass 9,Science,Chapter 1: Matter in Our Surroundings,1.2 States of Matter\nClass 10,Mathematics,Chapter 1: Real Numbers,1.1 Fundamental Theorem of Arithmetic\nClass 10,Science,Chapter 1: Chemical Reactions & Equations,1.1 Chemical Equations`
+        const blob = new Blob([sampleCsv], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'School_Syllabus_Sample_Template.csv')
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+    }
+
+    // Handle File Upload Parsing
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setBulkFileName(file.name)
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                const rows = (results.data as any[]).filter(r => r.Class || r.class_name)
+                setBulkRows(rows)
+                showToast(`Parsed ${rows.length} rows from ${file.name}. Review below and click Import.`, true)
+            },
+            error: (err) => {
+                showToast(`Failed to parse file: ${err.message}`, false)
+            }
+        })
+    }
+
+    // Commit Bulk Import
+    const handleCommitBulkImport = async () => {
+        if (!bulkRows.length) return
+        setBulkUploading(true)
+        const res = await handleApiAction('BULK_UPLOAD_SYLLABUS', { rows: bulkRows })
+        setBulkUploading(false)
+        if (res && res.success) {
+            setBulkRows([])
+            setBulkFileName('')
+            setActiveTab('tree')
+        }
+    }
+
+    // ── BUILD HIERARCHICAL TREE VIEW ──────────────────────────────────
+    const renderNodeTree = (parentId: string | null, depth: number = 0) => {
+        const childNodes = nodes
+            .filter(n => n.parent_id === parentId)
+            .sort((a, b) => a.order_index - b.order_index)
+
+        if (childNodes.length === 0) return null
+
+        return (
+            <div className={`space-y-2.5 ${depth > 0 ? 'ml-4 sm:ml-8 pl-3 border-l-2 border-slate-200/80' : ''}`}>
+                {childNodes.map(node => {
+                    // Check search query matches
+                    const matchesSearch = !searchQuery || 
+                        node.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        nodes.some(child => child.parent_id === node.id && child.name.toLowerCase().includes(searchQuery.toLowerCase()))
+
+                    // Check class filter
+                    if (node.type === 'class' && selectedClassFilter !== 'ALL' && node.id !== selectedClassFilter) {
+                        return null
+                    }
+
+                    if (!matchesSearch) return null
+
+                    const meta = TYPE_META[node.type] || TYPE_META.topic
+                    const isExpanded = expandedNodeIds.has(node.id)
+                    const subChildren = nodes.filter(n => n.parent_id === node.id)
+                    const hasChildren = subChildren.length > 0
+
+                    // Next child type mapping
+                    const nextTypeMap: Record<NodeType, NodeType> = {
+                        board: 'class',
+                        class: 'subject',
+                        subject: 'chapter',
+                        chapter: 'topic',
+                        topic: 'topic'
+                    }
+                    const nextType = nextTypeMap[node.type]
+
+                    return (
+                        <div key={node.id} className="group rounded-2xl transition-all duration-200">
+                            {/* NODE ROW CARD */}
+                            <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl border bg-white shadow-sm hover:shadow-md transition-all ${
+                                !node.is_active ? 'opacity-60 bg-slate-50' : ''
+                            } ${isExpanded ? 'border-slate-300 ring-1 ring-slate-200' : 'border-slate-200'}`}>
+                                
+                                <div className="flex items-center gap-3 min-w-0">
+                                    {/* Expand/Collapse Chevron */}
+                                    <button
+                                        onClick={() => toggleExpand(node.id)}
+                                        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                                            hasChildren 
+                                                ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' 
+                                                : 'text-slate-300 cursor-default'
+                                        }`}
+                                        disabled={!hasChildren}
+                                        title={hasChildren ? (isExpanded ? 'Collapse' : 'Expand') : 'No items inside'}
+                                    >
+                                        {hasChildren ? (
+                                            isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
+                                        ) : (
+                                            <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                                        )}
+                                    </button>
+
+                                    {/* Icon Badge */}
+                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 ${meta.badgeBg}`}>
+                                        <meta.icon size={18} />
+                                    </div>
+
+                                    {/* Name & Type Pill */}
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold text-slate-900 text-sm sm:text-base truncate">
+                                                {node.name}
+                                            </span>
+                                            {!node.is_active && (
+                                                <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-slate-500 uppercase">
+                                                    Hidden
+                                                </span>
+                                            )}
                                         </div>
+                                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
+                                            <span className="font-semibold text-slate-600">{meta.label}</span>
+                                            {hasChildren && (
+                                                <span className="text-slate-400">• {subChildren.length} sub-items</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* ACTION BUTTONS */}
+                                <div className="flex items-center gap-1.5 sm:gap-2 self-end sm:self-center shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                                    {/* Add Child Node */}
+                                    {node.type !== 'topic' && (
+                                        <button
+                                            onClick={() => {
+                                                setItemModal({
+                                                    open: true,
+                                                    mode: 'add',
+                                                    nodeType: nextType,
+                                                    parent: node
+                                                })
+                                                setItemForm({ name: '', order_index: subChildren.length + 1 })
+                                            }}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-[#004B93] text-xs font-bold transition-colors"
+                                            title={`Add ${TYPE_META[nextType].label}`}
+                                        >
+                                            <Plus size={14} />
+                                            <span>Add {TYPE_META[nextType].label.split('/')[0]}</span>
+                                        </button>
                                     )}
+
+                                    {/* Visibility Toggle */}
+                                    <button
+                                        onClick={() => handleToggleVisibility(node)}
+                                        className={`p-1.5 rounded-lg border transition-colors ${
+                                            node.is_active 
+                                                ? 'border-slate-200 text-slate-600 hover:bg-slate-100' 
+                                                : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                        }`}
+                                        title={node.is_active ? 'Visible in Student Portal (Click to Hide)' : 'Hidden from Student Portal (Click to Show)'}
+                                    >
+                                        {node.is_active ? <Eye size={15} /> : <EyeOff size={15} />}
+                                    </button>
+
+                                    {/* Edit Node */}
+                                    <button
+                                        onClick={() => {
+                                            setItemModal({
+                                                open: true,
+                                                mode: 'edit',
+                                                nodeType: node.type,
+                                                node
+                                            })
+                                            setItemForm({ name: node.name, order_index: node.order_index })
+                                        }}
+                                        className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+                                        title="Rename / Edit"
+                                    >
+                                        <Edit3 size={15} />
+                                    </button>
+
+                                    {/* Delete Node */}
+                                    <button
+                                        onClick={() => setDeleteModal({ open: true, type: 'node', id: node.id, name: node.name })}
+                                        className="p-1.5 rounded-lg border border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200 transition-colors"
+                                        title="Remove Item"
+                                    >
+                                        <Trash2 size={15} />
+                                    </button>
                                 </div>
                             </div>
-                             {/* INFORMATION SIDEBAR */}
-                             {!readOnly && (
-                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                                     <div style={{ background: COLORS.primaryGradient, borderRadius: 32, padding: 32, color: '#FFF', boxShadow: '0 20px 40px rgba(0,75,147,0.2)', position: 'relative', overflow: 'hidden' }}>
-                                         <Globe size={120} style={{ position: 'absolute', right: -20, bottom: -20, opacity: 0.1 }} />
-                                         <h3 style={{ margin: 0, fontSize: 18, fontWeight: 1000, marginBottom: 12, position: 'relative' }}>Provisioning Engine</h3>
-                                         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600, lineHeight: 1.6, marginBottom: 24, position: 'relative' }}>
-                                             Instantiate authoritative board structures. Note: The system enforces an <b>Exclusive School Board</b> policy.
-                                         </p>
-                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 20, position: 'relative' }}>
-                                             {BOARD_GROUPS.map(group => (
-                                                 <div key={group.label}>
-                                                     <div style={{ fontSize: 10, fontWeight: 1000, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 10, letterSpacing: '0.05em' }}>{group.label}</div>
-                                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                                         {group.items.map(b => {
-                                                             const exists = nodes.some(n => n.name === b && !n.parent_id);
-                                                             const active = nodes.some(n => n.name === b && !n.parent_id && n.is_active);
-                                                             return (
-                                                                 <button 
-                                                                     key={b} 
-                                                                     disabled={exists || saving} 
-                                                                     onClick={() => {
-                                                                         const isSchool = SCHOOL_BOARDS.includes(b);
-                                                                         if (isSchool && nodes.some(n => !n.parent_id && n.is_active && SCHOOL_BOARDS.includes(n.name))) {
-                                                                             if (!confirm(`Provisioning "${b}" will deactivate your current active school board. Proceed?`)) return;
-                                                                         }
-                                                                         apiAction('CREATE_MANUAL_SYLLABUS', { name: b, type: 'board' })
-                                                                     }} 
-                                                                     style={{ 
-                                                                         padding: '8px 12px', borderRadius: 10, 
-                                                                         border: `1px solid rgba(255,255,255,${active ? 0.4 : 0.15})`, 
-                                                                         background: active ? 'rgba(255,255,255,0.15)' : exists ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.05)', 
-                                                                         color: exists ? 'rgba(255,255,255,0.4)' : '#FFF', 
-                                                                         fontSize: 10, fontWeight: 900, cursor: exists ? 'default' : 'pointer', 
-                                                                         transition: '0.2s', display: 'flex', alignItems: 'center', gap: 6
-                                                                     }}
-                                                                 >
-                                                                     {b} {active && <CheckCheck size={12} />}
-                                                                 </button>
-                                                             )
-                                                         })}
-                                                     </div>
-                                                 </div>
-                                             ))}
-                                         </div>
-                                     </div>
-                                     <div style={{ background: '#FFF', borderRadius: 32, padding: 32, border: '1px solid #E2E8F0', borderTop: `4px solid ${COLORS.warning}` }}>
-                                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                                             <Shield size={18} color={COLORS.warning} />
-                                             <span style={{ fontSize: 12, fontWeight: 1000, color: '#1B1D21', textTransform: 'uppercase' }}>Concurrency Policy</span>
-                                         </div>
-                                         <p style={{ fontSize: 12, color: '#64748B', fontWeight: 600, lineHeight: 1.6 }}>
-                                             Activating a secondary school board will automatically archive current academic evaluators to prevent curriculum conflict.
-                                         </p>
-                                     </div>
-                                 </div>
-                             )}
+
+                            {/* RECURSIVE SUB-TREE */}
+                            {isExpanded && renderNodeTree(node.id, depth + 1)}
                         </div>
-                    )}
-                    {tab === 'acquired' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
-                            {activeSubscriptions.map((s: any) => (
-                                <div key={s.id} style={{ background: '#FFF', padding: 32, borderRadius: 28, border: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 24 }}>
-                                    <div style={{ padding: 16, background: `${COLORS.primary}08`, borderRadius: 20 }}>
-                                        <Database size={28} color={COLORS.primary} />
+                    )
+                })}
+            </div>
+        )
+    }
+
+    // ── RENDER ────────────────────────────────────────────────────────
+    if (loading && nodes.length === 0) {
+        return (
+            <div className="w-full min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8">
+                <div className="relative">
+                    <div className="w-16 h-16 border-4 border-sky-200 border-t-[#004B93] rounded-full animate-spin" />
+                    <BookOpen className="absolute inset-0 m-auto text-[#004B93]" size={24} />
+                </div>
+                <h3 className="mt-4 font-bold text-slate-800 text-lg">Loading School Curriculum...</h3>
+                <p className="text-slate-500 text-sm mt-1">Calibrating academic boards, grades, chapters, and textbooks</p>
+            </div>
+        )
+    }
+
+    return (
+        <div className="w-full min-h-screen bg-slate-50/60 font-sans pb-24">
+            {/* TOAST ALERT */}
+            {toast && (
+                <div className={`fixed top-6 right-8 z-[10000] flex items-center gap-3 px-6 py-4 rounded-2xl border shadow-2xl backdrop-blur-md transition-all duration-300 ${
+                    toast.ok 
+                        ? 'bg-emerald-50/95 border-emerald-300 text-emerald-900 shadow-emerald-500/10' 
+                        : 'bg-rose-50/95 border-rose-300 text-rose-900 shadow-rose-500/10'
+                }`}>
+                    {toast.ok ? <CheckCircle className="text-emerald-600" size={20} /> : <XCircle className="text-rose-600" size={20} />}
+                    <span className="text-sm font-bold tracking-tight">{toast.msg}</span>
+                </div>
+            )}
+
+            {/* FULL-WIDTH HERO BANNER (OPENAI ART-DIRECTED) */}
+            <div className="w-full relative overflow-hidden bg-slate-950 text-white">
+                <div className="absolute inset-0 z-0">
+                    <Image
+                        src="/assets/images/dashboard/syllabus_banner.jpg"
+                        alt="Academic Curriculum Design & Textbook Archive Studio"
+                        fill
+                        priority
+                        className="object-cover object-center opacity-40 mix-blend-luminosity scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40" />
+                </div>
+
+                <div className="w-full px-4 sm:px-8 py-10 sm:py-14 relative z-10">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                        <div className="max-w-3xl space-y-4">
+                            <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/20 backdrop-blur-md">
+                                <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
+                                <span className="text-xs font-black tracking-widest text-sky-400 uppercase">
+                                    ACADEMIC CURRICULUM DESK • SCHOOL SYLLABUS & TEXTBOOKS
+                                </span>
+                            </div>
+                            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
+                                Course Syllabus & Curriculum Hub
+                            </h1>
+                            <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-normal">
+                                Manage grade-wise subjects, chapters, learning topics, and prescribed textbooks. Organized for easy school administration, faculty lesson planning, and student examination success.
+                            </p>
+                            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300 pt-1">
+                                <span className="flex items-center gap-1.5"><Globe size={15} className="text-indigo-400" /> Primary Board: <strong className="text-white">{metrics.activeBoard}</strong></span>
+                                <span className="flex items-center gap-1.5"><Layers size={15} className="text-amber-400" /> Multi-Level Hierarchy (Class &gt; Subject &gt; Chapter &gt; Topic)</span>
+                                <span className="flex items-center gap-1.5"><BookMarked size={15} className="text-emerald-400" /> Prescribed Textbooks &amp; PDF Guides</span>
+                            </div>
+                        </div>
+
+                        {/* Top Action Buttons */}
+                        <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
+                            <button
+                                onClick={() => {
+                                    setItemModal({
+                                        open: true,
+                                        mode: 'add',
+                                        nodeType: 'class',
+                                        parent: nodes.find(n => n.type === 'board')
+                                    })
+                                    setItemForm({ name: '', order_index: availableClasses.length + 1 })
+                                }}
+                                className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-gradient-to-r from-[#004B93] to-sky-600 hover:from-sky-700 hover:to-sky-500 text-white font-bold text-sm shadow-xl shadow-sky-950/40 border border-sky-300/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                                <PlusCircle size={18} />
+                                <span>Add New Grade / Class</span>
+                            </button>
+                            <button
+                                onClick={() => setBoardModalOpen(true)}
+                                className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-sm backdrop-blur-md border border-slate-700 shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                                <Globe size={18} className="text-sky-400" />
+                                <span>Switch Board Curriculum</span>
+                            </button>
+                            <button
+                                onClick={fetchData}
+                                className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-all"
+                                title="Refresh data"
+                            >
+                                <RefreshCw size={18} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* MAIN FULL-WIDTH WORKSPACE */}
+            <div className="w-full px-4 sm:px-8 -mt-6 relative z-20 space-y-6">
+
+                {/* 4 EXECUTIVE KPIS */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
+                            <Globe size={24} />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500 truncate">School Curriculum</div>
+                            <div className="text-lg sm:text-xl font-black text-slate-900 mt-0.5 truncate">{metrics.activeBoard}</div>
+                            <div className="text-[11px] font-semibold text-indigo-700 mt-0.5 flex items-center gap-1">
+                                <CheckCircle size={12} /> Active Academic Board
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100">
+                            <GraduationCap size={24} />
+                        </div>
+                        <div>
+                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Classes &amp; Grades</div>
+                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalClasses} Grades</div>
+                            <div className="text-[11px] font-semibold text-purple-700 mt-0.5 flex items-center gap-1">
+                                <CheckCircle size={12} /> Grade 1 through Grade {metrics.totalClasses}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100">
+                            <BookOpen size={24} />
+                        </div>
+                        <div>
+                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Course Subjects</div>
+                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalSubjects} Subjects</div>
+                            <div className="text-[11px] font-semibold text-emerald-700 mt-0.5 flex items-center gap-1">
+                                <CheckCircle size={12} /> All Key Disciplines
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100">
+                            <Layers size={24} />
+                        </div>
+                        <div>
+                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Instructional Chapters</div>
+                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalChapters} Chapters</div>
+                            <div className="text-[11px] font-semibold text-amber-700 mt-0.5 flex items-center gap-1">
+                                <CheckCircle size={12} /> {metrics.totalTopics} Study Topics
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* TAB NAVIGATION */}
+                <div className="flex flex-wrap items-center gap-2 p-1.5 bg-white rounded-2xl border border-slate-200/80 shadow-sm w-fit">
+                    <button
+                        onClick={() => setActiveTab('tree')}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                            activeTab === 'tree'
+                                ? 'bg-[#004B93] text-white shadow-md shadow-sky-950/20'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
+                    >
+                        <Layers size={16} />
+                        <span>Curriculum Structure</span>
+                        <span className={`ml-1.5 px-2 py-0.5 rounded-full text-xs font-extrabold ${
+                            activeTab === 'tree' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                        }`}>
+                            {metrics.totalItems}
+                        </span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('books')}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                            activeTab === 'books'
+                                ? 'bg-[#004B93] text-white shadow-md shadow-sky-950/20'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
+                    >
+                        <BookMarked size={16} />
+                        <span>Prescribed Textbooks</span>
+                        <span className={`ml-1.5 px-2 py-0.5 rounded-full text-xs font-extrabold ${
+                            activeTab === 'books' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                        }`}>
+                            {textbooks.filter(b => b.is_prescribed).length}
+                        </span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('store')}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                            activeTab === 'store'
+                                ? 'bg-[#004B93] text-white shadow-md shadow-sky-950/20'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
+                    >
+                        <ShoppingBag size={16} />
+                        <span>Recommended Bookstore</span>
+                        <span className={`ml-1.5 px-2 py-0.5 rounded-full text-xs font-extrabold ${
+                            activeTab === 'store' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                        }`}>
+                            {textbooks.filter(b => !b.is_prescribed).length}
+                        </span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('bulk')}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                            activeTab === 'bulk'
+                                ? 'bg-[#004B93] text-white shadow-md shadow-sky-950/20'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
+                    >
+                        <FileSpreadsheet size={16} />
+                        <span>Excel / CSV Bulk Import</span>
+                    </button>
+                </div>
+
+                {/* ── TAB 1: CURRICULUM STRUCTURE (TREE VIEW) ──────────────── */}
+                {activeTab === 'tree' && (
+                    <div className="space-y-6">
+                        {/* SEARCH & FILTER BAR */}
+                        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="relative flex-1 max-w-xl">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <input
+                                    type="text"
+                                    placeholder="Search subjects, chapters, or learning topics..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#004B93] focus:border-transparent"
+                                />
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-3">
+                                {/* Grade Filter */}
+                                <select
+                                    value={selectedClassFilter}
+                                    onChange={(e) => setSelectedClassFilter(e.target.value)}
+                                    aria-label="Filter by Grade or Class"
+                                    className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                                >
+                                    <option value="ALL">All Grades &amp; Classes</option>
+                                    {availableClasses.map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </select>
+
+                                {/* Expand / Collapse */}
+                                <button
+                                    onClick={expandAll}
+                                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
+                                >
+                                    Expand All
+                                </button>
+                                <button
+                                    onClick={collapseAll}
+                                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
+                                >
+                                    Collapse All
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* HIERARCHICAL TREE CONTAINER */}
+                        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
+                            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900">Academic Structure &amp; Learning Hierarchy</h3>
+                                    <p className="text-xs text-slate-500 mt-0.5">Click any row to view its sub-units. Use the right-hand action buttons to add chapters, topics, or edit names.</p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setItemModal({
+                                            open: true,
+                                            mode: 'add',
+                                            nodeType: 'class',
+                                            parent: nodes.find(n => n.type === 'board')
+                                        })
+                                        setItemForm({ name: '', order_index: availableClasses.length + 1 })
+                                    }}
+                                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-sm transition-all"
+                                >
+                                    <Plus size={15} />
+                                    <span>Add Grade / Class</span>
+                                </button>
+                            </div>
+
+                            {/* Render Root Nodes */}
+                            <div className="pt-2">
+                                {renderNodeTree(null)}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── TAB 2: PRESCRIBED SCHOOL TEXTBOOKS ─────────────────────── */}
+                {activeTab === 'books' && (
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900">Official Prescribed School Textbooks</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">Government &amp; Board mandated curriculum textbooks prescribed for students and teachers.</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setBookModal({ open: true, mode: 'add' })
+                                    setBookForm({
+                                        class_name: 'Class 8',
+                                        subject_name: 'Mathematics',
+                                        title: '',
+                                        author: '',
+                                        publisher: 'Gujarat State Board of School Textbooks (GSEB)',
+                                        edition: '2026 Revised Edition',
+                                        isbn: '',
+                                        chapters_count: 14,
+                                        pdf_url: '',
+                                        price: 120,
+                                        buy_url: '',
+                                        is_prescribed: true
+                                    })
+                                }}
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white text-xs font-bold shadow-md shadow-sky-950/20 transition-all"
+                            >
+                                <Plus size={16} />
+                                <span>Prescribe New Textbook</span>
+                            </button>
+                        </div>
+
+                        {/* TEXTBOOK CARDS GRID */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {textbooks.filter(b => b.is_prescribed).map(book => (
+                                <div key={book.id} className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                                {book.class_name}
+                                            </span>
+                                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                {book.subject_name}
+                                            </span>
+                                        </div>
+
+                                        <div>
+                                            <h4 className="font-bold text-slate-900 text-base leading-snug line-clamp-2">
+                                                {book.title}
+                                            </h4>
+                                            <p className="text-xs text-slate-500 mt-1">Author: {book.author || 'Academic Council'}</p>
+                                        </div>
+
+                                        <div className="p-3 bg-slate-50 rounded-xl space-y-1.5 text-xs text-slate-600 border border-slate-100">
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400 font-medium">Publisher:</span>
+                                                <span className="font-semibold text-slate-800 text-right truncate max-w-[180px]">{book.publisher}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400 font-medium">Edition:</span>
+                                                <span className="font-semibold text-slate-800">{book.edition}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400 font-medium">Chapters:</span>
+                                                <span className="font-semibold text-slate-800">{book.chapters_count} Chapters</span>
+                                            </div>
+                                            {book.isbn && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-slate-400 font-medium">ISBN:</span>
+                                                    <span className="font-mono text-slate-800">{book.isbn}</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: 18, fontWeight: 1000, color: '#1E293B' }}>{s.syllabus_nodes?.name}</div>
-                                        <div style={{ fontSize: 12, color: '#94A3B8', fontWeight: 700, marginTop: 4 }}>Syllabus ID: {s.syllabus_id?.substring(0,16)}...</div>
+
+                                    {/* Card Footer Actions */}
+                                    <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-100">
+                                        {book.pdf_url ? (
+                                            <a
+                                                href={book.pdf_url}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#004B93] hover:underline"
+                                            >
+                                                <ExternalLink size={14} />
+                                                <span>View E-Book PDF</span>
+                                            </a>
+                                        ) : (
+                                            <span className="text-xs text-slate-400">Physical Print Only</span>
+                                        )}
+
+                                        <div className="flex items-center gap-1.5">
+                                            <button
+                                                onClick={() => {
+                                                    setBookModal({ open: true, mode: 'edit', book })
+                                                    setBookForm({
+                                                        class_name: book.class_name,
+                                                        subject_name: book.subject_name,
+                                                        title: book.title,
+                                                        author: book.author || '',
+                                                        publisher: book.publisher,
+                                                        edition: book.edition,
+                                                        isbn: book.isbn || '',
+                                                        chapters_count: book.chapters_count,
+                                                        pdf_url: book.pdf_url || '',
+                                                        price: book.price || 0,
+                                                        buy_url: book.buy_url || '',
+                                                        is_prescribed: true
+                                                    })
+                                                }}
+                                                className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100"
+                                                title="Edit Book Details"
+                                            >
+                                                <Edit3 size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => setDeleteModal({ open: true, type: 'book', id: book.id, name: book.title })}
+                                                className="p-1.5 rounded-lg border border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200"
+                                                title="Remove Book"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div style={{ padding: '8px 16px', background: `${COLORS.success}10`, color: COLORS.success, borderRadius: 12, fontSize: 11, fontWeight: 1000 }}>VERIFIED</div>
                                 </div>
                             ))}
                         </div>
-                    )}
-                    {tab === 'market' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
-                             {marketplace.map(p => (
-                                <div key={p.id} style={{ background: '#FFF', borderRadius: 32, padding: 40, border: '2px solid #F1F5F9', position: 'relative' }}>
-                                    <h3 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 1000 }}>{p.name}</h3>
-                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 24 }}>
-                                        <span style={{ fontSize: 28, fontWeight: 1000 }}>₹{p.price}</span>
-                                        <span style={{ fontSize: 14, color: '#94A3B8', fontWeight: 800 }}>ONE-TIME</span>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
-                                        {Array.isArray(p.features) && p.features.map((f: string, i: number) => (
-                                            <div key={i} style={{ display: 'flex', gap: 10, fontSize: 14, color: '#475569', fontWeight: 600 }}>
-                                                <Check size={16} color={COLORS.success} /> {f}
-                                            </div>
-                                        ))}
-                                    </div>
-                                     {(() => {
-                                        const sub = activeSubscriptions.find((s: any) => s.syllabus_id === p.syllabus_id);
-                                        const isActive = sub?.is_active;
-                                        return (
-                                            <button 
-                                                onClick={() => apiAction('PURCHASE_SYLLABUS', { plan_id: p.id, price: p.price })} 
-                                                disabled={saving || isActive}
-                                                style={{ 
-                                                    width: '100%', padding: '16px', borderRadius: 18, 
-                                                    background: isActive ? COLORS.success + '10' : sub ? COLORS.primaryGradient : '#F1F5F9', 
-                                                    border: 'none', 
-                                                    color: isActive ? COLORS.success : sub ? '#FFF' : COLORS.primary, 
-                                                    fontSize: 13, fontWeight: 1000, 
-                                                    cursor: isActive ? 'default' : 'pointer',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
-                                                }}
-                                            >
-                                                {isActive ? <><CheckCheck size={16}/> Active</> : sub ? <><Zap size={16}/> Deploy Blueprint</> : 'Acquire Blueprint'}
-                                            </button>
-                                        )
-                                     })()}
-                                </div>
-                             ))}
-                        </div>
-                    )}
-                     {tab === 'bulk' && (
-                        <div style={{ maxWidth: 800, background: '#FFF', borderRadius: 32, padding: 40, border: '1px solid #E2E8F0', boxShadow: '0 20px 60px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: 28 }}>
+                    </div>
+                )}
+
+                {/* ── TAB 3: RECOMMENDED BOOK STORE & GUIDES ─────────────────── */}
+                {activeTab === 'store' && (
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div>
-                                <h3 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 1000, color: '#0F172A' }}>Bulk Import Syllabus Structure</h3>
-                                <p style={{ margin: 0, fontSize: 13, color: '#64748B', fontWeight: 600 }}>Create an entire school board, its classes, subjects, and topics instantly using standard CSV formatting.</p>
+                                <h3 className="text-lg font-bold text-slate-900">Recommended Reference Books &amp; Study Guides</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">Complementary practice books, question banks (R.D. Sharma, Lakhmir Singh), and competitive exam guides.</p>
                             </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: 12, fontWeight: 900, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>New Board Name</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: '#F8FAFC', borderRadius: 18, border: '2px solid #F1F5F9' }}>
-                                    <Globe size={18} color="#94A3B8" />
-                                    <input value={bulkBoardName} onChange={e => setBulkBoardName(e.target.value)} placeholder="e.g. CBSE 2026 / ICSE Grade 1-10" style={{ flex: 1, background: 'transparent', border: 'none', fontSize: 15, fontWeight: 700, color: '#0F172A', outline: 'none' }} />
-                                </div>
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: 12, fontWeight: 900, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>CSV Input Template (Copy-paste or Edit)</label>
-                                <textarea 
-                                    value={csvText} 
-                                    onChange={e => setCsvText(e.target.value)} 
-                                    style={{ width: '100%', height: 200, padding: 20, borderRadius: 18, border: '2px solid #F1F5F9', background: '#F8FAFC', color: '#0F172A', fontSize: 14, fontFamily: 'monospace', fontWeight: 600, outline: 'none', resize: 'vertical' }}
-                                />
-                            </div>
-                            <div style={{ display: 'flex', gap: 16, background: '#EFF6FF', border: '1px solid #BFDBFE', padding: 20, borderRadius: 20, alignItems: 'flex-start' }}>
-                                <Info size={20} color={COLORS.primary} style={{ marginTop: 2, flexShrink: 0 }} />
-                                <div style={{ fontSize: 13, color: '#1E3A8A', fontWeight: 600, lineHeight: 1.5 }}>
-                                    <strong>CSV Formatting Guidelines:</strong>
-                                    <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
-                                        <li>The first row must declare headers: <code>name,type</code>.</li>
-                                        <li>Valid types include: <code>class</code>, <code>subject</code>, <code>chapter</code>, and <code>topic</code>.</li>
-                                        <li>All nodes will be parsed and linked under the parent Board name automatically.</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <button onClick={handleBulkUpload} disabled={saving} style={{ padding: '16px 32px', borderRadius: 16, background: COLORS.primaryGradient, border: 'none', color: '#FFF', fontSize: 14, fontWeight: 1000, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, boxShadow: '0 10px 25px rgba(0,75,147,0.2)' }}>
-                                {saving ? <Loader2 size={18} className="spin" /> : <Upload size={18} />} Run Bulk Upload Engine
+                            <button
+                                onClick={() => {
+                                    setBookModal({ open: true, mode: 'add' })
+                                    setBookForm({
+                                        class_name: 'Class 8',
+                                        subject_name: 'Mathematics',
+                                        title: '',
+                                        author: '',
+                                        publisher: 'S. Chand / Dhanpat Rai',
+                                        edition: 'Latest Edition',
+                                        isbn: '',
+                                        chapters_count: 18,
+                                        pdf_url: '',
+                                        price: 399,
+                                        buy_url: '',
+                                        is_prescribed: false
+                                    })
+                                }}
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold shadow-md shadow-purple-950/20 transition-all"
+                            >
+                                <Plus size={16} />
+                                <span>Add Bookstore Guide</span>
                             </button>
                         </div>
-                    )}
+
+                        {/* STORE CARDS GRID */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {textbooks.filter(b => !b.is_prescribed).map(book => (
+                                <div key={book.id} className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                                Reference Material
+                                            </span>
+                                            <span className="font-black text-slate-900 text-lg">₹{book.price}</span>
+                                        </div>
+
+                                        <div>
+                                            <h4 className="font-bold text-slate-900 text-base leading-snug line-clamp-2">
+                                                {book.title}
+                                            </h4>
+                                            <p className="text-xs text-slate-500 mt-1">Author: {book.author || 'Renowned Faculty'}</p>
+                                        </div>
+
+                                        <div className="p-3 bg-slate-50 rounded-xl space-y-1.5 text-xs text-slate-600 border border-slate-100">
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400 font-medium">Grade / Class:</span>
+                                                <span className="font-semibold text-slate-800">{book.class_name}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400 font-medium">Subject:</span>
+                                                <span className="font-semibold text-slate-800">{book.subject_name}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400 font-medium">Publisher:</span>
+                                                <span className="font-semibold text-slate-800 text-right truncate max-w-[180px]">{book.publisher}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Links */}
+                                    <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-100">
+                                        {book.buy_url ? (
+                                            <a
+                                                href={book.buy_url}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors"
+                                            >
+                                                <ShoppingBag size={14} />
+                                                <span>Buy Online</span>
+                                            </a>
+                                        ) : (
+                                            <span className="text-xs text-slate-400 font-medium">Available at School Counter</span>
+                                        )}
+
+                                        <button
+                                            onClick={() => setDeleteModal({ open: true, type: 'book', id: book.id, name: book.title })}
+                                            className="p-1.5 rounded-lg border border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200"
+                                            title="Remove Item"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ── TAB 4: BULK UPLOAD & EXCEL IMPORT ──────────────────────── */}
+                {activeTab === 'bulk' && (
+                    <div className="max-w-4xl bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
+                        <div className="border-b border-slate-100 pb-4">
+                            <h3 className="text-xl font-bold text-slate-900">Bulk Syllabus Import from Excel / CSV</h3>
+                            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                                Quickly upload complete academic structures for all grades at once. The system automatically creates Classes, Subjects, Chapters, and Topics in hierarchical order.
+                            </p>
+                        </div>
+
+                        {/* 3 Step Instruction Card */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                                <div className="w-7 h-7 rounded-lg bg-[#004B93] text-white flex items-center justify-center font-black text-xs">1</div>
+                                <h4 className="font-bold text-slate-900 text-sm">Download Template</h4>
+                                <p className="text-xs text-slate-500 leading-relaxed">Download our pre-formatted CSV template with standard column headers.</p>
+                                <button
+                                    onClick={handleDownloadTemplate}
+                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#004B93] hover:underline pt-1"
+                                >
+                                    <Download size={14} />
+                                    <span>Download .CSV Template</span>
+                                </button>
+                            </div>
+
+                            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                                <div className="w-7 h-7 rounded-lg bg-purple-700 text-white flex items-center justify-center font-black text-xs">2</div>
+                                <h4 className="font-bold text-slate-900 text-sm">Prepare Your Data</h4>
+                                <p className="text-xs text-slate-500 leading-relaxed">Enter your Class names, Subjects, Chapters, and optional Topics for each grade.</p>
+                            </div>
+
+                            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                                <div className="w-7 h-7 rounded-lg bg-emerald-700 text-white flex items-center justify-center font-black text-xs">3</div>
+                                <h4 className="font-bold text-slate-900 text-sm">Upload &amp; Verify</h4>
+                                <p className="text-xs text-slate-500 leading-relaxed">Upload the file, preview the verified rows, and import them with one click.</p>
+                            </div>
+                        </div>
+
+                        {/* Drag and Drop Zone */}
+                        <div className="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:border-sky-500 transition-colors bg-slate-50/50">
+                            <FileSpreadsheet className="mx-auto text-slate-400 mb-3" size={40} />
+                            <h4 className="font-bold text-slate-800 text-sm">Upload your Excel or CSV syllabus file</h4>
+                            <p className="text-xs text-slate-500 mt-1 mb-4">Supports .CSV, .XLSX files containing Class, Subject, Chapter columns</p>
+                            <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs cursor-pointer shadow-md transition-all">
+                                <Upload size={16} />
+                                <span>Choose File</span>
+                                <input
+                                    type="file"
+                                    accept=".csv,.txt"
+                                    onChange={handleFileUpload}
+                                    className="hidden"
+                                />
+                            </label>
+                            {bulkFileName && (
+                                <p className="text-xs font-bold text-emerald-700 mt-3 flex items-center justify-center gap-1.5">
+                                    <CheckCircle size={14} /> Selected: {bulkFileName} ({bulkRows.length} rows parsed)
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Preview Table */}
+                        {bulkRows.length > 0 && (
+                            <div className="space-y-4 pt-2">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="font-bold text-slate-900 text-sm">Pre-Import Data Preview ({bulkRows.length} items)</h4>
+                                    <button
+                                        onClick={handleCommitBulkImport}
+                                        disabled={bulkUploading}
+                                        className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-900/20 transition-all"
+                                    >
+                                        {bulkUploading ? <RefreshCw className="animate-spin" size={14} /> : <Check size={14} />}
+                                        <span>Import All Items into School Syllabus</span>
+                                    </button>
+                                </div>
+
+                                <div className="max-h-72 overflow-y-auto border border-slate-200 rounded-xl">
+                                    <table className="w-full text-left text-xs text-slate-700">
+                                        <thead className="bg-slate-100 text-slate-600 font-bold uppercase sticky top-0">
+                                            <tr>
+                                                <th className="p-3">Class / Grade</th>
+                                                <th className="p-3">Course Subject</th>
+                                                <th className="p-3">Chapter / Unit</th>
+                                                <th className="p-3">Topic (Optional)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {bulkRows.slice(0, 30).map((r, i) => (
+                                                <tr key={i} className="hover:bg-slate-50">
+                                                    <td className="p-3 font-semibold text-slate-900">{r.Class || r.class_name}</td>
+                                                    <td className="p-3">{r.Subject || r.subject_name}</td>
+                                                    <td className="p-3 text-slate-600">{r.Chapter || r.chapter_name || '—'}</td>
+                                                    <td className="p-3 text-slate-500">{r.Topic || r.topic_name || '—'}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {bulkRows.length > 30 && (
+                                    <p className="text-[11px] text-slate-400 text-center">... and {bulkRows.length - 30} more items ready for import</p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* ── MODAL 1: ADD / EDIT CURRICULUM ITEM ───────────────────────── */}
+            {itemModal.open && (
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[11000] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                            <h3 className="font-extrabold text-slate-900 text-lg">
+                                {itemModal.mode === 'edit' ? 'Edit Curriculum Item' : `Add New ${TYPE_META[itemModal.nodeType].label.split('/')[0]}`}
+                            </h3>
+                            <button onClick={() => setItemModal({ open: false, mode: 'add', nodeType: 'class' })} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+                                <XCircle size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSaveItem} className="p-6 space-y-4">
+                            {itemModal.parent && (
+                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
+                                    <span className="text-slate-400 font-medium">Adding under: </span>
+                                    <strong className="text-slate-800">{itemModal.parent.name}</strong> ({TYPE_META[itemModal.parent.type].label})
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                                    {TYPE_META[itemModal.nodeType].label} Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder={`e.g. ${itemModal.nodeType === 'class' ? 'Class 10' : itemModal.nodeType === 'subject' ? 'Mathematics' : itemModal.nodeType === 'chapter' ? 'Chapter 1: Real Numbers' : 'Introduction & Concepts'}`}
+                                    value={itemForm.name}
+                                    onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })}
+                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                                    Display Sequence Order
+                                </label>
+                                <input
+                                    type="number"
+                                    value={itemForm.order_index}
+                                    onChange={(e) => setItemForm({ ...itemForm, order_index: Number(e.target.value) })}
+                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    onClick={() => setItemModal({ open: false, mode: 'add', nodeType: 'class' })}
+                                    className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={saving}
+                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white text-xs font-bold shadow-md shadow-sky-950/20"
+                                >
+                                    {saving ? 'Saving...' : 'Save Curriculum Item'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
-            {/* ADD / EDIT MODAL */}
-            {nodeModal.open && (
-                <Modal title={nodeModal.editing ? `Configure: ${nodeModal.editing.name}` : `Add Syllabus Item`} onClose={() => setNodeModal({ open: false })} onSubmit={handleSaveNode} saving={saving} saveText={nodeModal.success ? 'Synced!' : 'Save'}>
-                    {nodeModal.success ? (
-                        <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                            <div style={{ padding: 20, background: '#F0FDF4', borderRadius: '50%', width: 80, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                                <CheckCircle2 size={40} color={COLORS.success} />
-                            </div>
-                            <h4 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#1E293B' }}>Syllabus Saved</h4>
-                            <p style={{ margin: '8px 0 0', fontSize: 13, color: '#64748B', fontWeight: 600 }}>Master Knowledge Tree will refresh in 5 seconds...</p>
+
+            {/* ── MODAL 2: ADD / EDIT TEXTBOOK ─────────────────────────────── */}
+            {bookModal.open && (
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[11000] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+                            <h3 className="font-extrabold text-slate-900 text-lg">
+                                {bookModal.mode === 'edit' ? 'Edit Textbook Information' : 'Prescribe / Add New Textbook'}
+                            </h3>
+                            <button onClick={() => setBookModal({ open: false, mode: 'add' })} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+                                <XCircle size={20} />
+                            </button>
                         </div>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: 12, fontWeight: 900, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Node Identity</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: '#F8FAFC', borderRadius: 18, border: '2px solid #F1F5F9' }}>
-                                    <Edit3 size={18} color="#94A3B8" />
-                                    <input value={nodeForm.name} onChange={e => setNodeForm({...nodeForm, name: e.target.value})} placeholder="e.g. Physics / Std 10" style={{ flex: 1, background: 'transparent', border: 'none', fontSize: 15, fontWeight: 700, color: '#0F172A', outline: 'none' }} />
+
+                        <form onSubmit={handleSaveBook} className="p-6 overflow-y-auto space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Grade / Class *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="e.g. Class 8"
+                                        value={bookForm.class_name}
+                                        onChange={(e) => setBookForm({ ...bookForm, class_name: e.target.value })}
+                                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Subject *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="e.g. Mathematics"
+                                        value={bookForm.subject_name}
+                                        onChange={(e) => setBookForm({ ...bookForm, subject_name: e.target.value })}
+                                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                    />
                                 </div>
                             </div>
+
                             <div>
-                                <label style={{ display: 'block', fontSize: 12, fontWeight: 900, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Organizational Type</label>
-                                <select value={nodeForm.type} onChange={e => setNodeForm({...nodeForm, type: e.target.value as NodeType})} style={{ width: '100%', padding: '16px', borderRadius: 18, border: '2px solid #F1F5F9', background: '#F8FAFC', fontSize: 14, fontWeight: 700, outline: 'none', appearance: 'none' }}>
-                                    {Object.entries(NODE_CONFIG).map(([val, conf]) => (
-                                        <option key={val} value={val}>{conf.label.toUpperCase()}</option>
-                                    ))}
-                                </select>
+                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Book Title *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="e.g. Gujarat Board Standard Mathematics Class 8"
+                                    value={bookForm.title}
+                                    onChange={(e) => setBookForm({ ...bookForm, title: e.target.value })}
+                                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                />
                             </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Publisher *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="e.g. GSEB Board / NCERT"
+                                        value={bookForm.publisher}
+                                        onChange={(e) => setBookForm({ ...bookForm, publisher: e.target.value })}
+                                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Author</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Editorial Board"
+                                        value={bookForm.author}
+                                        onChange={(e) => setBookForm({ ...bookForm, author: e.target.value })}
+                                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Edition</label>
+                                    <input
+                                        type="text"
+                                        placeholder="2026 Edition"
+                                        value={bookForm.edition}
+                                        onChange={(e) => setBookForm({ ...bookForm, edition: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Chapters</label>
+                                    <input
+                                        type="number"
+                                        value={bookForm.chapters_count}
+                                        onChange={(e) => setBookForm({ ...bookForm, chapters_count: Number(e.target.value) })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Price (₹)</label>
+                                    <input
+                                        type="number"
+                                        value={bookForm.price}
+                                        onChange={(e) => setBookForm({ ...bookForm, price: Number(e.target.value) })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Online PDF Link (Optional)</label>
+                                <input
+                                    type="url"
+                                    placeholder="https://..."
+                                    value={bookForm.pdf_url}
+                                    onChange={(e) => setBookForm({ ...bookForm, pdf_url: e.target.value })}
+                                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => setBookModal({ open: false, mode: 'add' })}
+                                    className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={saving}
+                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white text-xs font-bold shadow-md"
+                                >
+                                    {saving ? 'Saving...' : 'Save Textbook'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ── MODAL 3: SWITCH BOARD CURRICULUM ─────────────────────────── */}
+            {boardModalOpen && (
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[11000] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                            <div>
+                                <h3 className="font-extrabold text-slate-900 text-lg">Select School Board</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">Switch your school's active primary curriculum.</p>
+                            </div>
+                            <button onClick={() => setBoardModalOpen(false)} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+                                <XCircle size={20} />
+                            </button>
                         </div>
-                    )}
-                </Modal>
+
+                        <div className="p-6 space-y-3">
+                            {standardBoards.map(board => (
+                                <button
+                                    key={board.id}
+                                    onClick={() => handleSelectBoard(board.id)}
+                                    className={`w-full p-4 rounded-xl border text-left flex items-center justify-between transition-all ${
+                                        metrics.activeBoard === board.name 
+                                            ? 'border-[#004B93] bg-sky-50/60 ring-2 ring-[#004B93]/20' 
+                                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                                            <Globe size={18} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-slate-900 text-sm">{board.name}</h4>
+                                            <p className="text-xs text-slate-500 mt-0.5">Standard Academic Curriculum</p>
+                                        </div>
+                                    </div>
+                                    {metrics.activeBoard === board.name && (
+                                        <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 flex items-center gap-1">
+                                            <Check size={12} /> Active
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── MODAL 4: DELETE CONFIRMATION ─────────────────────────────── */}
+            {deleteModal.open && (
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[11000] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl border border-slate-200 text-center space-y-4 animate-in fade-in zoom-in duration-200">
+                        <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100">
+                            <AlertCircle size={24} />
+                        </div>
+                        <div>
+                            <h3 className="font-extrabold text-slate-900 text-base">Remove {deleteModal.name}?</h3>
+                            <p className="text-xs text-slate-500 mt-1">
+                                Are you sure you want to remove this from your school syllabus? Any sub-items under this will also be removed.
+                            </p>
+                        </div>
+                        <div className="flex items-center justify-center gap-3 pt-2">
+                            <button
+                                onClick={() => setDeleteModal({ open: false, type: 'node', id: '', name: '' })}
+                                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={executeDelete}
+                                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-950/20"
+                            >
+                                Confirm Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     )

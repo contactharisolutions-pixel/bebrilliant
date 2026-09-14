@@ -1,408 +1,470 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
-
-const SCHOOL_BOARDS = ['CBSE', 'ICSE', 'IB Board', 'NIOS Board', 'State Board', 'Olympiad'];
-
-async function verifyTenantAdmin() {
-    const supabase = await createClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error || !user) return null
-
-    const { data: profile } = await supabaseAdmin.from('user_profiles').select('role, tenant_id').eq('id', user.id).single()
-    if (!profile) return null
-
-    // Fallback for platform owners operating without a strict tenant binding
-    if (profile.role === 'owner' && !profile.tenant_id) {
-        const { data: tenants } = await supabaseAdmin.from('tenants').select('id').limit(1)
-        if (tenants?.[0]) return { user, tenant_id: tenants[0].id }
-        return null
-    }
-
-    if (profile.tenant_id && ['tenant_admin', 'admin', 'owner', 'teacher', 'student', 'parent'].includes(profile.role)) {
-        return { user, tenant_id: profile.tenant_id, role: profile.role }
-    }
-    return null
-}
-
-async function enforceOneSchoolBoard(tenant_id: string, boardName: string) {
-    const isSchoolBoard = SCHOOL_BOARDS.some(b => boardName.includes(b));
-    if (!isSchoolBoard) return;
-
-    // 1. Deactivate other tenant-owned boards in syllabus_nodes
-    const { data: boards } = await supabaseAdmin
-        .from('syllabus_nodes')
-        .select('id, name')
-        .eq('tenant_id', tenant_id)
-        .eq('type', 'board');
-
-    if (boards && boards.length > 0) {
-        const otherSchoolBoardIds = boards
-            .filter((b: any) => b.name !== boardName && SCHOOL_BOARDS.some((sb: any) => b.name.includes(sb)))
-            .map((b: any) => b.id);
-
-        if (otherSchoolBoardIds.length > 0) {
-            await supabaseAdmin
-                .from('syllabus_nodes')
-                .update({ is_active: false })
-                .in('id', otherSchoolBoardIds);
-        }
-    }
-
-    // 2. Deactivate other marketplace boards in tenant_syllabus
-    // We need to check if the linked master syllabus corresponds to a school board
-    const { data: subs } = await supabaseAdmin
-        .from('tenant_syllabus')
-        .select('id, master_syllabus_id, syllabus_nodes(name)')
-        .eq('tenant_id', tenant_id)
-        .eq('is_active', true);
-
-    if (subs && subs.length > 0) {
-        const otherSubIds = subs
-            .filter((s: any) => {
-                const name = (s.syllabus_nodes as any)?.name;
-                return name !== boardName && SCHOOL_BOARDS.some((sb: any) => name.includes(sb));
-            })
-            .map((s: any) => s.id);
-
-        if (otherSubIds.length > 0) {
-            await supabaseAdmin
-                .from('tenant_syllabus')
-                .update({ is_active: false })
-                .in('id', otherSubIds);
-        }
-    }
-}
+import { query } from '@/lib/db'
+import { verifyTenantStaff } from '@/lib/auth-server'
 
 export async function GET(request: NextRequest) {
-    const session = await verifyTenantAdmin()
-    if (!session) return NextResponse.json({ error: 'Unauthorized Directory' }, { status: 403 })
-
-    const { tenant_id } = session
-
     try {
-        // 1. Fetch entire Marketplace (syllabus_plans)
-        const { data: marketplace } = await supabaseAdmin
-            .from('syllabus_plans')
-            .select('*, syllabus_nodes(name)')
-            .order('created_at', { ascending: false })
+        const session = await verifyTenantStaff()
+        if (!session) return NextResponse.json({ error: 'Unauthorized Access' }, { status: 403 })
 
-        // 2. Fetch ACTIVE Syllabus Access for this Tenant
-        // This includes BOTH marketplace bought (master) and manually created (tenant-owned) root nodes.
-        const { data: distributions } = await supabaseAdmin
-            .from('tenant_syllabus')
-            .select('id, master_syllabus_id, created_at, is_active, syllabus_nodes(name, tenant_id)')
-            .eq('tenant_id', tenant_id)
-            .order('created_at', { ascending: false })
+        const tenantId = session.tenant_id || '5cccb9be-5b4a-4143-8725-bc6061e337fa'
 
-        // Format subscriptions to match the UI expectations (SyllabusPlan-like structure)
-        const active_subscriptions = distributions?.map((d: any) => ({
-            id: d.id, // tenant_syllabus id
-            syllabus_id: d.master_syllabus_id,
-            syllabus_nodes: d.syllabus_nodes as any,
-            acquired_at: d.created_at,
-            is_active: d.is_active,
-            is_private: !!(d.syllabus_nodes as any)?.tenant_id
-        })) || []
+        // 1. Recursive query to fetch the entire active syllabus hierarchy for this tenant
+        const treeQuery = `
+            WITH RECURSIVE syllabus_tree AS (
+                -- Roots: Master boards active for this tenant or tenant-owned root boards
+                SELECT 
+                    sn.id,
+                    sn.name,
+                    sn.type,
+                    sn.parent_id,
+                    sn.tenant_id,
+                    sn.is_active,
+                    sn.order_index,
+                    sn.created_at,
+                    0 AS depth
+                FROM public.syllabus_nodes sn
+                WHERE sn.id IN (
+                    SELECT master_syllabus_id 
+                    FROM public.tenant_syllabus 
+                    WHERE tenant_id = $1 AND is_active = true
+                ) OR (sn.tenant_id = $1 AND sn.parent_id IS NULL)
 
-        const activeSyllabusIds = distributions?.map(d => d.master_syllabus_id) || []
+                UNION ALL
 
-        // Fetch all nodes owned by tenant
-        const { data: tenantNodes } = await supabaseAdmin
-            .from('syllabus_nodes')
-            .select('*')
-            .eq('tenant_id', tenant_id)
-            .order('order_index')
+                -- Children nodes (Classes, Subjects, Chapters, Topics)
+                SELECT 
+                    child.id,
+                    child.name,
+                    child.type,
+                    child.parent_id,
+                    child.tenant_id,
+                    child.is_active,
+                    child.order_index,
+                    child.created_at,
+                    st.depth + 1 AS depth
+                FROM public.syllabus_nodes child
+                JOIN syllabus_tree st ON child.parent_id = st.id
+            )
+            SELECT * FROM syllabus_tree 
+            ORDER BY depth ASC, order_index ASC, name ASC;
+        `
 
-        // Also fetch the root nodes for active subscriptions to show in the tree
-        const masterRootIds = distributions?.map(d => d.master_syllabus_id) || []
-        const { data: masterNodes } = await supabaseAdmin
-            .from('syllabus_nodes')
-            .select('*')
-            .in('id', masterRootIds)
+        // 2. Fetch available standard boards for the curriculum selector
+        const standardBoardsQuery = `
+            SELECT id, name, type, is_active, created_at
+            FROM public.syllabus_nodes
+            WHERE type = 'board' AND (tenant_id IS NULL OR tenant_id = $1)
+            ORDER BY name ASC;
+        `
 
-        // Merge and mark master nodes as active based on subscription status
-        const mergedNodes = [...(tenantNodes || [])]
-        masterNodes?.forEach((mn: any) => {
-            const sub = distributions?.find((d: any) => d.master_syllabus_id === mn.id)
-            mergedNodes.push({
-                ...mn,
-                is_active: sub?.is_active ?? false,
-                is_master: true // Mark as master so UI knows it can't delete/edit core props
-            })
-        })
+        // 3. Fetch school textbooks and bookstore materials
+        const booksQuery = `
+            SELECT * 
+            FROM public.syllabus_books 
+            WHERE tenant_id = $1 
+            ORDER BY is_prescribed DESC, class_name ASC, subject_name ASC, created_at DESC;
+        `
+
+        const [treeRes, boardsRes, booksRes] = await Promise.all([
+            query(treeQuery, [tenantId]),
+            query(standardBoardsQuery, [tenantId]),
+            query(booksQuery, [tenantId])
+        ])
+
+        const nodes = treeRes.rows || []
+        const standardBoards = boardsRes.rows || []
+        const textbooks = booksRes.rows || []
+
+        // Extract active board
+        const activeBoardNode = nodes.find((n: any) => n.depth === 0 || n.type === 'board')
+        const activeBoardName = activeBoardNode ? activeBoardNode.name : 'Gujarat Board (English Medium)'
+
+        // Compute live metrics
+        const totalClasses = nodes.filter((n: any) => n.type === 'class').length
+        const totalSubjects = nodes.filter((n: any) => n.type === 'subject').length
+        const totalChapters = nodes.filter((n: any) => n.type === 'chapter').length
+        const totalTopics = nodes.filter((n: any) => n.type === 'topic').length
+        const prescribedBooksCount = textbooks.filter((b: any) => b.is_prescribed).length
+
+        const metrics = {
+            activeBoard: activeBoardName,
+            totalClasses,
+            totalSubjects,
+            totalChapters,
+            totalTopics,
+            totalBooks: prescribedBooksCount,
+            totalItems: nodes.length
+        }
 
         return NextResponse.json({
-            marketplace: marketplace || [],
-            activeSyllabusIds,
-            active_subscriptions,
-            nodes: mergedNodes
+            nodes,
+            standardBoards,
+            textbooks,
+            metrics
         })
-    } catch (error: any) {
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    } catch (e: any) {
+        console.error('[Syllabus API GET Error]:', e)
+        return NextResponse.json({ error: e.message || 'Internal Server Error' }, { status: 500 })
     }
 }
 
 export async function POST(request: NextRequest) {
-    const session = await verifyTenantAdmin()
-    if (!session) return NextResponse.json({ error: 'Unauthorized Action' }, { status: 403 })
-
-    const { tenant_id, user, role } = session
-    if (role === 'student' || role === 'parent') {
-        return NextResponse.json({ error: 'Forbidden: Students and parents cannot modify syllabus' }, { status: 403 })
-    }
-    const body = await request.json()
-    const { action, payload } = body
-
     try {
-        if (action === 'PURCHASE_SYLLABUS') {
-            const { plan_id, price } = payload
+        const session = await verifyTenantStaff()
+        if (!session) return NextResponse.json({ error: 'Unauthorized Action' }, { status: 403 })
 
-            // Fetch plan to get the master_syllabus_id
-            const { data: plan } = await supabaseAdmin.from('syllabus_plans').select('syllabus_id').eq('id', plan_id).single()
-            if (!plan) throw new Error('Marketplace Plan not found or expired')
+        const tenantId = session.tenant_id || '5cccb9be-5b4a-4143-8725-bc6061e337fa'
+        const body = await request.json()
+        const { action, payload } = body
 
-            // Check if tenant already has it
-            const { data: existing } = await supabaseAdmin.from('tenant_syllabus').select('id').eq('tenant_id', tenant_id).eq('master_syllabus_id', plan.syllabus_id).single()
-            
-            if (existing) {
-                // Just reactivate it and deactivate others
-                await supabaseAdmin.from('tenant_syllabus').update({ is_active: true }).eq('id', existing.id)
+        // ── 1. SELECT / SWITCH STANDARD BOARD ─────────────────────────────
+        if (action === 'SELECT_BOARD') {
+            const { board_id } = payload
+            if (!board_id) return NextResponse.json({ error: 'Board ID is required' }, { status: 400 })
+
+            // Deactivate existing active boards for this tenant
+            await query(
+                `UPDATE public.tenant_syllabus SET is_active = false, updated_at = NOW() WHERE tenant_id = $1`,
+                [tenantId]
+            )
+
+            // Link / Activate selected board
+            const { rows: existingRows } = await query(
+                `SELECT id FROM public.tenant_syllabus WHERE tenant_id = $1 AND master_syllabus_id = $2`,
+                [tenantId, board_id]
+            )
+
+            if (existingRows.length > 0) {
+                await query(
+                    `UPDATE public.tenant_syllabus SET is_active = true, updated_at = NOW() WHERE id = $1`,
+                    [existingRows[0].id]
+                )
             } else {
-                // Simulate Razorpay capture logic -> Direct insert to Payments
-                const { data: payment, error: payError } = await supabaseAdmin
-                    .from('payments')
-                    .insert([{
-                        user_id: user.id,
-                        tenant_id,
-                        type: 'syllabus',
-                        amount: price,
-                        status: 'success',
-                        razorpay_order_id: plan_id,
-                        razorpay_payment_id: 'mock_tx_' + Math.random().toString(36).substr(2, 9)
-                    }])
-                    .select()
-                    .single()
-
-                if (payError) throw payError
-
-                // Provision syllabus access to the tenant
-                await supabaseAdmin.from('tenant_syllabus').insert([{ tenant_id, master_syllabus_id: plan.syllabus_id, is_active: true }])
+                await query(
+                    `INSERT INTO public.tenant_syllabus (tenant_id, master_syllabus_id, is_active, version, access_level)
+                     VALUES ($1, $2, true, 1, 'full')`,
+                    [tenantId, board_id]
+                )
             }
 
-            // Enforce policy (Deactivate other boards)
-            const { data: mSyllabus } = await supabaseAdmin.from('syllabus_nodes').select('name').eq('id', plan.syllabus_id).single()
-            if (mSyllabus) await enforceOneSchoolBoard(tenant_id, mSyllabus.name)
-
-            return NextResponse.json({ success: true })
+            return NextResponse.json({ success: true, message: 'Active school board updated successfully' })
         }
 
-        if (action === 'CREATE_MANUAL_SYLLABUS') {
-            const { name, type = 'board' } = payload
+        // ── 2. CREATE NEW CUSTOM BOARD ──────────────────────────────────
+        if (action === 'CREATE_BOARD') {
+            const { name } = payload
+            if (!name || !name.trim()) return NextResponse.json({ error: 'Board name is required' }, { status: 400 })
 
-            // Enforce policy if activating a new board
-            await enforceOneSchoolBoard(tenant_id, name)
+            // Create root board node
+            const { rows: boardRows } = await query(
+                `INSERT INTO public.syllabus_nodes (name, type, tenant_id, is_active, order_index)
+                 VALUES ($1, 'board', $2, true, 0)
+                 RETURNING *`,
+                [name.trim(), tenantId]
+            )
+            const newBoard = boardRows[0]
 
-            // 1. Create root node in syllabus_nodes for this tenant
-            const { data: rootNode, error: rootError } = await supabaseAdmin
-                .from('syllabus_nodes')
-                .insert([{
-                    name,
-                    type,
-                    tenant_id,
-                    is_active: true
-                }])
-                .select()
-                .single()
+            // Deactivate previous active boards
+            await query(`UPDATE public.tenant_syllabus SET is_active = false WHERE tenant_id = $1`, [tenantId])
 
-            if (rootError) throw rootError
+            // Link in tenant_syllabus
+            await query(
+                `INSERT INTO public.tenant_syllabus (tenant_id, master_syllabus_id, is_active, version, access_level)
+                 VALUES ($1, $2, true, 1, 'full')`,
+                [tenantId, newBoard.id]
+            )
 
-            // 2. Link in tenant_syllabus
-            const { error: linkError } = await supabaseAdmin
-                .from('tenant_syllabus')
-                .insert([{
-                    tenant_id,
-                    master_syllabus_id: rootNode.id
-                }])
-
-            if (linkError) throw linkError
-
-            return NextResponse.json({ success: true, syllabus_id: rootNode.id })
+            return NextResponse.json({ success: true, board: newBoard })
         }
 
-        if (action === 'BULK_UPLOAD_SYLLABUS') {
-            const { name, nodes } = payload // nodes is a flat array or tree-ready list from CSV
-            
-            // Enforce policy
-            await enforceOneSchoolBoard(tenant_id, name)
-
-            // 1. Create root node
-            const { data: rootNode, error: rootError } = await supabaseAdmin
-                .from('syllabus_nodes')
-                .insert([{ name, type: 'board', tenant_id, is_active: true }])
-                .select()
-                .single()
-
-            if (rootError) throw rootError
-
-            // 2. Create nodes recursively from CSV-like data
-            // Expecting payload to have hierarchy markers or some structure.
-            // For now, let's assume nodes are objects with { name, type, parent_name? } or something similar.
-            // Simplified: nodes = [{name, type, level}, ...]
-            // Or better: nodes = map of parent to children.
-            
-            // TO DO: Build actual hierarchy logic
-            // For the demo / initial implementation, we will just link all provided nodes to the root.
-            if (nodes && Array.isArray(nodes)) {
-                const inserts = nodes.map(n => ({
-                    name: n.name,
-                    type: n.type || 'chapter',
-                    parent_id: rootNode.id,
-                    tenant_id
-                }))
-                await supabaseAdmin.from('syllabus_nodes').insert(inserts)
-            }
-
-            // 3. Link root to tenant_syllabus
-            await supabaseAdmin.from('tenant_syllabus').insert([{ tenant_id, master_syllabus_id: rootNode.id }])
-
-            return NextResponse.json({ success: true, syllabus_id: rootNode.id })
-        }
-
+        // ── 3. CREATE NODE (CLASS, SUBJECT, CHAPTER, TOPIC) ──────────────
         if (action === 'CREATE_NODE') {
             const { parent_id, name, type, order_index = 0 } = payload
-            const { data, error } = await supabaseAdmin
-                .from('syllabus_nodes')
-                .insert([{
-                    parent_id,
-                    name,
-                    type,
-                    order_index,
-                    tenant_id,
-                    is_active: true
-                }])
-                .select()
-                .single()
-            if (error) throw error
-            return NextResponse.json(data)
+            if (!name || !name.trim()) return NextResponse.json({ error: 'Item name is required' }, { status: 400 })
+            if (!type) return NextResponse.json({ error: 'Item type is required' }, { status: 400 })
+
+            const { rows: nodeRows } = await query(
+                `INSERT INTO public.syllabus_nodes (parent_id, name, type, order_index, tenant_id, is_active)
+                 VALUES ($1, $2, $3, $4, $5, true)
+                 RETURNING *`,
+                [parent_id || null, name.trim(), type, Number(order_index) || 0, tenantId]
+            )
+
+            return NextResponse.json({ success: true, node: nodeRows[0] })
         }
 
+        // ── 4. UPDATE NODE ──────────────────────────────────────────────
         if (action === 'UPDATE_NODE') {
-            const { id, name, type, order_index } = payload
-            // Verify ownership
-            const { data: node } = await supabaseAdmin.from('syllabus_nodes').select('tenant_id').eq('id', id).single()
-            if (!node || node.tenant_id !== tenant_id) throw new Error('Unauthorized or Node not found')
+            const { id, name, order_index } = payload
+            if (!id) return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
 
-            const { data, error } = await supabaseAdmin
-                .from('syllabus_nodes')
-                .update({ name, type, order_index, updated_at: new Date().toISOString() })
-                .eq('id', id)
-                .select()
-                .single()
-            if (error) throw error
-            return NextResponse.json(data)
+            const { rows: updatedRows } = await query(
+                `UPDATE public.syllabus_nodes 
+                 SET name = COALESCE($1, name),
+                     order_index = COALESCE($2, order_index),
+                     updated_at = NOW()
+                 WHERE id = $3
+                 RETURNING *`,
+                [name ? name.trim() : null, order_index !== undefined ? Number(order_index) : null, id]
+            )
+
+            return NextResponse.json({ success: true, node: updatedRows[0] })
         }
 
-        if (action === 'DELETE_NODE') {
-            const { id } = payload
-            // Verify ownership
-            const { data: node } = await supabaseAdmin.from('syllabus_nodes').select('tenant_id').eq('id', id).single()
-            if (!node || node.tenant_id !== tenant_id) throw new Error('Unauthorized or Node not found')
-
-            const { error } = await supabaseAdmin.from('syllabus_nodes').delete().eq('id', id)
-            if (error) throw error
-            return NextResponse.json({ success: true })
-        }
-
+        // ── 5. TOGGLE NODE VISIBILITY ────────────────────────────────────
         if (action === 'TOGGLE_NODE') {
             const { id, is_active } = payload
-            // 1. Check if it's a tenant-owned node
-            const { data: node } = await supabaseAdmin.from('syllabus_nodes').select('name, tenant_id, type').eq('id', id).single()
-            if (node) {
-                if (node.tenant_id && node.tenant_id !== tenant_id) throw new Error('Unauthorized')
-                
-                // If it's a board, enforce policy
-                if (is_active && node.type === 'board') {
-                    await enforceOneSchoolBoard(tenant_id, node.name)
-                }
+            if (!id) return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
 
-                if (node.tenant_id) {
-                    // Update tenant-owned node
-                    await supabaseAdmin.from('syllabus_nodes').update({ is_active }).eq('id', id)
-                } else {
-                    // It's a master node, update tenant_syllabus state
-                    await supabaseAdmin.from('tenant_syllabus').update({ is_active }).eq('tenant_id', tenant_id).eq('master_syllabus_id', id)
-                }
-            }
-            
+            await query(
+                `UPDATE public.syllabus_nodes SET is_active = $1, updated_at = NOW() WHERE id = $2`,
+                [Boolean(is_active), id]
+            )
+
             return NextResponse.json({ success: true })
         }
 
-        if (action === 'FETCH_TREE') {
-            const { parent_id } = payload
-            const { data, error } = await supabaseAdmin
-                .from('syllabus_nodes')
-                .select('*')
-                .eq('parent_id', parent_id)
-                .order('order_index')
+        // ── 6. DELETE NODE (CASCADE RECURSIVE) ──────────────────────────
+        if (action === 'DELETE_NODE') {
+            const { id } = payload
+            if (!id) return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
 
-            if (error) throw error
-            return NextResponse.json(data || [])
+            // Recursive delete query to clean up node and all descendent children
+            await query(`
+                WITH RECURSIVE descendants AS (
+                    SELECT id FROM public.syllabus_nodes WHERE id = $1
+                    UNION ALL
+                    SELECT child.id FROM public.syllabus_nodes child
+                    JOIN descendants d ON child.parent_id = d.id
+                )
+                DELETE FROM public.syllabus_nodes WHERE id IN (SELECT id FROM descendants);
+            `, [id])
+
+            // Also remove from tenant_syllabus if it was a root
+            await query(`DELETE FROM public.tenant_syllabus WHERE master_syllabus_id = $1 AND tenant_id = $2`, [id, tenantId])
+
+            return NextResponse.json({ success: true })
         }
 
-        if (action === 'GENERATE_SYLLABUS') {
-            const { node_id, node_type, node_name } = payload
-            const apiKey = process.env.GEMINI_API_KEY
-            if (!apiKey) throw new Error('AI Engine Key Missing')
+        // ── 7. ADD PRESCRIBED TEXTBOOK ──────────────────────────────────
+        if (action === 'ADD_TEXTBOOK') {
+            const {
+                board_name = 'Gujarat Board',
+                class_name,
+                subject_name,
+                title,
+                author,
+                publisher,
+                edition = 'Latest Edition',
+                isbn,
+                chapters_count = 14,
+                pdf_url,
+                price = 0,
+                buy_url,
+                is_prescribed = true
+            } = payload
 
-            const prompt = `
-                You are an academic curriculum expert for Indian boards (CBSE/ICSE/State).
-                Based on the parent node: "${node_name}" (${node_type.toUpperCase()}), 
-                generate the appropriate next-level children nodes.
-                
-                Rules:
-                1. If parent is BOARD: Generate CLASSES (Class 6, Class 7, ..., Class 12).
-                2. If parent is CLASS: Generate primary SUBJECTS (Mathematics, Science, Social Science, English, Hindi, etc.)
-                3. If parent is SUBJECT: Generate CHAPTERS (canonical names like "Force and Pressure", "Algebraic Expressions").
-                4. If parent is CHAPTER: Generate TOPICS (sub-topics).
+            if (!title || !title.trim()) return NextResponse.json({ error: 'Book title is required' }, { status: 400 })
+            if (!class_name) return NextResponse.json({ error: 'Class/Grade is required' }, { status: 400 })
+            if (!subject_name) return NextResponse.json({ error: 'Subject is required' }, { status: 400 })
 
-                Context: Indian School Syllabus 2.0.
-                Return ONLY a JSON array of strings: ["Node 1", "Node 2", ...]
-            `
-            
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            })
-            const aiData = await res.json()
-            const text = aiData?.candidates?.[0]?.content?.parts?.[0]?.text || "[]"
-            const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim()
-            const nodeNames = JSON.parse(cleanJson)
+            const { rows: bookRows } = await query(
+                `INSERT INTO public.syllabus_books 
+                    (tenant_id, board_name, class_name, subject_name, title, author, publisher, edition, isbn, chapters_count, pdf_url, price, buy_url, is_prescribed, is_active)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true)
+                 RETURNING *`,
+                [
+                    tenantId,
+                    board_name,
+                    class_name,
+                    subject_name,
+                    title.trim(),
+                    author || '',
+                    publisher || 'State Academic Board',
+                    edition,
+                    isbn || '',
+                    Number(chapters_count) || 12,
+                    pdf_url || '',
+                    Number(price) || 0,
+                    buy_url || '',
+                    Boolean(is_prescribed)
+                ]
+            )
 
-            const childTypeMap: Record<string, string> = { board: 'class', class: 'subject', subject: 'chapter', chapter: 'topic', topic: 'topic' }
-            const childType = childTypeMap[node_type] || 'topic'
+            return NextResponse.json({ success: true, textbook: bookRows[0] })
+        }
 
-            if (Array.isArray(nodeNames)) {
-                const inserts = nodeNames.map((name, idx) => ({
-                    parent_id: node_id,
-                    name,
-                    type: childType,
-                    tenant_id,
-                    order_index: idx,
-                    is_active: true
-                }))
-                const { error: iErr } = await supabaseAdmin.from('syllabus_nodes').insert(inserts)
-                if (iErr) throw iErr
+        // ── 8. UPDATE TEXTBOOK ──────────────────────────────────────────
+        if (action === 'UPDATE_TEXTBOOK') {
+            const { id, title, author, publisher, edition, isbn, chapters_count, pdf_url, price, buy_url, is_prescribed } = payload
+            if (!id) return NextResponse.json({ error: 'Textbook ID is required' }, { status: 400 })
+
+            const { rows: updatedRows } = await query(
+                `UPDATE public.syllabus_books
+                 SET title = COALESCE($1, title),
+                     author = COALESCE($2, author),
+                     publisher = COALESCE($3, publisher),
+                     edition = COALESCE($4, edition),
+                     isbn = COALESCE($5, isbn),
+                     chapters_count = COALESCE($6, chapters_count),
+                     pdf_url = COALESCE($7, pdf_url),
+                     price = COALESCE($8, price),
+                     buy_url = COALESCE($9, buy_url),
+                     is_prescribed = COALESCE($10, is_prescribed),
+                     updated_at = NOW()
+                 WHERE id = $11 AND tenant_id = $12
+                 RETURNING *`,
+                [
+                    title ? title.trim() : null,
+                    author,
+                    publisher,
+                    edition,
+                    isbn,
+                    chapters_count !== undefined ? Number(chapters_count) : null,
+                    pdf_url,
+                    price !== undefined ? Number(price) : null,
+                    buy_url,
+                    is_prescribed !== undefined ? Boolean(is_prescribed) : null,
+                    id,
+                    tenantId
+                ]
+            )
+
+            return NextResponse.json({ success: true, textbook: updatedRows[0] })
+        }
+
+        // ── 9. DELETE TEXTBOOK ──────────────────────────────────────────
+        if (action === 'DELETE_TEXTBOOK') {
+            const { id } = payload
+            if (!id) return NextResponse.json({ error: 'Textbook ID is required' }, { status: 400 })
+
+            await query(`DELETE FROM public.syllabus_books WHERE id = $1 AND tenant_id = $2`, [id, tenantId])
+            return NextResponse.json({ success: true })
+        }
+
+        // ── 10. BULK UPLOAD EXCEL / CSV SYLLABUS ────────────────────────
+        if (action === 'BULK_UPLOAD_SYLLABUS') {
+            const { rows } = payload
+            if (!rows || !Array.isArray(rows) || rows.length === 0) {
+                return NextResponse.json({ error: 'No valid rows found to import' }, { status: 400 })
             }
 
-            return NextResponse.json({ success: true, count: nodeNames.length })
+            // Find current active root board
+            const { rows: activeRoots } = await query(
+                `SELECT master_syllabus_id FROM public.tenant_syllabus WHERE tenant_id = $1 AND is_active = true LIMIT 1`,
+                [tenantId]
+            )
+
+            let boardId = activeRoots?.[0]?.master_syllabus_id
+            if (!boardId) {
+                // Create a default board if none exists
+                const { rows: newB } = await query(
+                    `INSERT INTO public.syllabus_nodes (name, type, tenant_id, is_active) VALUES ('School Curriculum', 'board', $1, true) RETURNING id`,
+                    [tenantId]
+                )
+                boardId = newB[0].id
+                await query(
+                    `INSERT INTO public.tenant_syllabus (tenant_id, master_syllabus_id, is_active, version, access_level) VALUES ($1, $2, true, 1, 'full')`,
+                    [tenantId, boardId]
+                )
+            }
+
+            let insertedCount = 0
+            const classCache = new Map<string, string>()
+            const subjectCache = new Map<string, string>()
+            const chapterCache = new Map<string, string>()
+
+            for (const r of rows) {
+                const className = (r.class_name || r.Class || r.grade || '').trim()
+                const subjectName = (r.subject_name || r.Subject || '').trim()
+                const chapterName = (r.chapter_name || r.Chapter || r.Unit || '').trim()
+                const topicName = (r.topic_name || r.Topic || '').trim()
+
+                if (!className || !subjectName) continue
+
+                // 1. Resolve or Insert Class
+                let classId: string | undefined = classCache.get(className)
+                if (!classId) {
+                    const { rows: existingClasses } = await query(
+                        `SELECT id FROM public.syllabus_nodes WHERE parent_id = $1 AND name ILIKE $2 LIMIT 1`,
+                        [boardId, className]
+                    )
+                    if (existingClasses.length > 0) {
+                        classId = existingClasses[0].id as string
+                    } else {
+                        const { rows: newClass } = await query(
+                            `INSERT INTO public.syllabus_nodes (parent_id, name, type, tenant_id, is_active) VALUES ($1, $2, 'class', $3, true) RETURNING id`,
+                            [boardId, className, tenantId]
+                        )
+                        classId = newClass[0].id as string
+                    }
+                    if (classId) classCache.set(className, classId)
+                }
+
+                if (!classId) continue
+
+                // 2. Resolve or Insert Subject
+                const subjectKey = `${classId}_${subjectName}`
+                let subjectId: string | undefined = subjectCache.get(subjectKey)
+                if (!subjectId) {
+                    const { rows: existingSubjects } = await query(
+                        `SELECT id FROM public.syllabus_nodes WHERE parent_id = $1 AND name ILIKE $2 LIMIT 1`,
+                        [classId, subjectName]
+                    )
+                    if (existingSubjects.length > 0) {
+                        subjectId = existingSubjects[0].id as string
+                    } else {
+                        const { rows: newSub } = await query(
+                            `INSERT INTO public.syllabus_nodes (parent_id, name, type, tenant_id, is_active) VALUES ($1, $2, 'subject', $3, true) RETURNING id`,
+                            [classId, subjectName, tenantId]
+                        )
+                        subjectId = newSub[0].id as string
+                    }
+                    if (subjectId) subjectCache.set(subjectKey, subjectId)
+                }
+
+                if (!subjectId) continue
+
+                // 3. Resolve or Insert Chapter
+                if (chapterName) {
+                    const chapterKey = `${subjectId}_${chapterName}`
+                    let chapterId: string | undefined = chapterCache.get(chapterKey)
+                    if (!chapterId) {
+                        const { rows: existingChapters } = await query(
+                            `SELECT id FROM public.syllabus_nodes WHERE parent_id = $1 AND name ILIKE $2 LIMIT 1`,
+                            [subjectId, chapterName]
+                        )
+                        if (existingChapters.length > 0) {
+                            chapterId = existingChapters[0].id as string
+                        } else {
+                            const { rows: newChap } = await query(
+                                `INSERT INTO public.syllabus_nodes (parent_id, name, type, tenant_id, is_active) VALUES ($1, $2, 'chapter', $3, true) RETURNING id`,
+                                [subjectId, chapterName, tenantId]
+                            )
+                            chapterId = newChap[0].id as string
+                        }
+                        if (chapterId) chapterCache.set(chapterKey, chapterId)
+                    }
+
+                    // 4. Resolve or Insert Topic
+                    if (topicName && chapterId) {
+                        await query(
+                            `INSERT INTO public.syllabus_nodes (parent_id, name, type, tenant_id, is_active) VALUES ($1, $2, 'topic', $3, true)`,
+                            [chapterId, topicName, tenantId]
+                        )
+                    }
+                }
+
+                insertedCount++
+            }
+
+            return NextResponse.json({ success: true, count: insertedCount, message: `Successfully processed ${insertedCount} curriculum items.` })
         }
 
-        return NextResponse.json({ error: 'Invalid action payload logic' }, { status: 400 })
-    } catch (error: any) {
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        return NextResponse.json({ error: 'Invalid action payload' }, { status: 400 })
+    } catch (e: any) {
+        console.error('[Syllabus API POST Error]:', e)
+        return NextResponse.json({ error: e.message || 'Internal Server Error' }, { status: 500 })
     }
 }
-
-
