@@ -42,6 +42,50 @@ async function verifyTenantAdmin() {
     return null
 }
 
+// Helper to get or ensure active academic year
+async function getOrCreateActiveAcademicYear(tenantId: string): Promise<string> {
+    const { data: existingActive } = await supabaseAdmin
+        .from('academic_years')
+        .select('id')
+        .eq('tenant_id', tenantId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+    if (existingActive?.id) return existingActive.id
+
+    const { data: anyYear } = await supabaseAdmin
+        .from('academic_years')
+        .select('id')
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+    if (anyYear?.id) return anyYear.id
+
+    // Auto-create standard current academic year
+    const currentYear = new Date().getFullYear()
+    const nextYear = currentYear + 1
+    const { data: createdYear, error } = await supabaseAdmin
+        .from('academic_years')
+        .insert({
+            tenant_id: tenantId,
+            name: `Academic Session ${currentYear}-${nextYear.toString().slice(-2)}`,
+            start_date: `${currentYear}-04-01`,
+            end_date: `${nextYear}-03-31`,
+            is_active: true
+        })
+        .select('id')
+        .single()
+
+    if (error || !createdYear?.id) {
+        throw new Error('Failed to resolve or initialize active academic session')
+    }
+    return createdYear.id
+}
+
 export async function GET(request: NextRequest) {
     const session = await verifyTenantAdmin()
     if (!session) return NextResponse.json({ error: 'Unauthorized Administrator' }, { status: 403 })
@@ -49,6 +93,13 @@ export async function GET(request: NextRequest) {
     const { tenant_id } = session
 
     try {
+        // 0. Fetch Academic Years
+        const { data: academicYears } = await supabaseAdmin
+            .from('academic_years')
+            .select('id, name, start_date, end_date, is_active')
+            .eq('tenant_id', tenant_id)
+            .order('start_date', { ascending: false })
+
         // 1. Fetch Classes
         const { data: rawClasses, error: classError } = await supabaseAdmin
             .from('classes')
@@ -205,6 +256,8 @@ export async function GET(request: NextRequest) {
             teachers: teachers || [],
             mappings: enrichedMappings,
             class_subjects: classSubjects || [],
+            academic_years: academicYears || [],
+            active_year: (academicYears || []).find(y => y.is_active) || (academicYears || [])[0] || null,
             stats
         })
     } catch (error: any) {
@@ -224,19 +277,25 @@ export async function POST(request: NextRequest) {
     try {
         // ── 1. CREATE CLASS ─────────────────────────────────────────
         if (action === 'CREATE_CLASS') {
-            const { name, code, initial_sections = ['A'], default_capacity = 40 } = payload
+            const { name, code, academic_year_id, initial_sections = ['A'], default_capacity = 40 } = payload
             if (!name?.trim()) return NextResponse.json({ error: 'Class name is required' }, { status: 400 })
 
             const cleanName = name.trim()
             const cleanCode = (code || 'CLS-' + cleanName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 4)).toUpperCase()
 
+            let targetYearId = academic_year_id
+            if (!targetYearId) {
+                targetYearId = await getOrCreateActiveAcademicYear(tenant_id)
+            }
+
             const { data: newClass, error: classError } = await supabaseAdmin
                 .from('classes')
                 .insert({
                     tenant_id,
+                    academic_year_id: targetYearId,
                     name: cleanName,
                     code: cleanCode,
-                    sort_order: 0,
+                    sort_order: payload.sort_order || 0,
                     is_active: true
                 })
                 .select()
