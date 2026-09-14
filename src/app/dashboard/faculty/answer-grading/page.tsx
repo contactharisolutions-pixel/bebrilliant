@@ -122,7 +122,10 @@ export default function AnswerGradingHub() {
             if (selectedExamFilter !== 'all') params.set('exam_id', selectedExamFilter)
 
             const res = await fetch(`/api/dashboard/faculty/answer-grading?${params.toString()}`)
-            if (!res.ok) throw new Error('Unable to connect to answer sheet grading service')
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}))
+                throw new Error(errData.error || 'Unable to connect to answer sheet grading service')
+            }
             const data = await res.json()
 
             setSubmissions(data.submissions || [])

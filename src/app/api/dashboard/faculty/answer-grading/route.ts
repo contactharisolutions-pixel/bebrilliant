@@ -96,32 +96,45 @@ export async function GET(request: NextRequest) {
             WHERE tenant_id = $1;
         `
 
-        // 3. Dropdown Options (Exams, Classes, Students)
+        // 3. Dropdown Options (Exams, Classes, Subjects, Students) with subquery form
         const filterOptionsQuery = `
             SELECT 
                 json_build_object(
                     'exams', COALESCE((
-                        SELECT json_agg(json_build_object('id', id, 'title', title, 'total_marks', 50))
-                        FROM public.offline_exams WHERE tenant_id = $1 ORDER BY created_at DESC
+                        SELECT json_agg(t) FROM (
+                            SELECT id, title, 50 AS total_marks 
+                            FROM public.offline_exams 
+                            WHERE tenant_id = $1 
+                            ORDER BY created_at DESC
+                        ) t
                     ), '[]'::json),
                     'classes', COALESCE((
-                        SELECT json_agg(json_build_object('id', id, 'name', name))
-                        FROM public.classes WHERE tenant_id = $1 ORDER BY name ASC
+                        SELECT json_agg(t) FROM (
+                            SELECT id, name 
+                            FROM public.classes 
+                            WHERE tenant_id = $1 
+                            ORDER BY name ASC
+                        ) t
                     ), '[]'::json),
                     'subjects', COALESCE((
-                        SELECT json_agg(json_build_object('id', id, 'name', name))
-                        FROM public.subjects WHERE tenant_id = $1 ORDER BY name ASC
+                        SELECT json_agg(t) FROM (
+                            SELECT id, name 
+                            FROM public.subjects 
+                            WHERE tenant_id = $1 
+                            ORDER BY name ASC
+                        ) t
                     ), '[]'::json),
                     'students', COALESCE((
-                        SELECT json_agg(json_build_object(
-                            'id', id, 
-                            'name', CONCAT(first_name, ' ', last_name), 
-                            'roll_number', COALESCE(metadata->>'roll_no', 'N/A'),
-                            'class_name', COALESCE(metadata->>'school_class', '')
-                        ))
-                        FROM public.user_profiles 
-                        WHERE tenant_id = $1 AND role = 'student' 
-                        ORDER BY first_name ASC
+                        SELECT json_agg(t) FROM (
+                            SELECT 
+                                id, 
+                                CONCAT(first_name, ' ', last_name) AS name, 
+                                COALESCE(metadata->>'roll_no', 'N/A') AS roll_number,
+                                COALESCE(metadata->>'school_class', '') AS class_name
+                            FROM public.user_profiles 
+                            WHERE tenant_id = $1 AND role = 'student' 
+                            ORDER BY first_name ASC
+                        ) t
                     ), '[]'::json)
                 ) AS filters;
         `
@@ -307,7 +320,6 @@ export async function POST(request: NextRequest) {
 
         // ── 3. PUBLISH ALL COMPLETED MARKS ────────────────────────────────
         if (action === 'PUBLISH_ALL_RESULTS') {
-            // Mark all completed submissions as processed and announce
             const { rows } = await query(`
                 UPDATE public.answer_sheet_uploads 
                 SET processed = true 
