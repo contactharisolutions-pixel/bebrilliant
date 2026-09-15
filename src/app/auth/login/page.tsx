@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, Suspense } from 'react'
+import { useState, useCallback, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
@@ -8,13 +8,32 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, type LoginSchema } from '@/lib/validations/auth'
 import { AuthLayout } from '@/components/auth/AuthLayout'
 import {
-    ArrowRight, Mail, Lock, Eye, EyeOff, AlertCircle, Building,
-    UserCheck, School, GraduationCap, Users
+    ArrowRight,
+    Mail,
+    Lock,
+    Eye,
+    EyeOff,
+    AlertCircle,
+    Building2,
+    UserCheck,
+    School,
+    GraduationCap,
+    Users,
+    Globe2,
+    ShieldCheck,
+    HelpCircle
 } from 'lucide-react'
 
+interface Tenant {
+    id: string
+    name: string
+    type: string
+    subdomain?: string
+}
+
 const ROLES = [
-    { id: 'school', label: 'School Admin', icon: Building },
-    { id: 'teacher', label: 'Teacher', icon: UserCheck },
+    { id: 'school', label: 'School Admin', icon: Building2 },
+    { id: 'teacher', label: 'Teacher / Faculty', icon: UserCheck },
     { id: 'institute', label: 'Institute', icon: School },
     { id: 'student', label: 'Student', icon: GraduationCap },
     { id: 'parent', label: 'Parent', icon: Users },
@@ -29,6 +48,38 @@ function LoginFormContent() {
     const [showPassword, setShowPassword] = useState(false)
     const [serverError, setServerError] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(false)
+
+    // Subdomain detection
+    const [detectedSubdomain, setDetectedSubdomain] = useState<string | null>(null)
+    const [detectedTenant, setDetectedTenant] = useState<Tenant | null>(null)
+
+    useEffect(() => {
+        let isMounted = true
+        fetch('/api/tenants')
+            .then((r) => r.json())
+            .then((d) => {
+                if (!isMounted) return
+                const list: Tenant[] = d.tenants || []
+
+                if (typeof window !== 'undefined') {
+                    const host = window.location.hostname
+                    const parts = host.split('.')
+                    if (parts.length >= 3 && parts[0] !== 'www' && parts[0] !== 'bebrilliant') {
+                        const sub = parts[0].toLowerCase()
+                        setDetectedSubdomain(sub)
+                        const matched = list.find(t => (t.subdomain || '').toLowerCase() === sub)
+                        if (matched) {
+                            setDetectedTenant(matched)
+                        }
+                    }
+                }
+            })
+            .catch(() => { })
+
+        return () => {
+            isMounted = false
+        }
+    }, [])
 
     const {
         register,
@@ -53,7 +104,7 @@ function LoginFormContent() {
                 const json = await res.json()
 
                 if (!res.ok) {
-                    setServerError(json.error || 'Login failed')
+                    setServerError(json.error || 'Invalid email or password. Please verify your credentials.')
                     return
                 }
 
@@ -68,7 +119,7 @@ function LoginFormContent() {
                     router.push('/dashboard')
                 }
             } catch {
-                setServerError('Something went wrong. Please try again.')
+                setServerError('Connection timeout. Please verify your internet connection and try again.')
             } finally {
                 setIsLoading(false)
             }
@@ -76,51 +127,34 @@ function LoginFormContent() {
         [router, selectedRole]
     )
 
+    const activeRoleMeta = ROLES.find(r => r.id === selectedRole) || ROLES[0]
+
     return (
-        <AuthLayout title="Multi-Role Portal Login" subtitle="Select your role and enter credentials to access your dashboard.">
-            <style>{`
-                .premium-input {
-                    width: 100%;
-                    padding: 14px 16px 14px 48px;
-                    border-radius: 12px;
-                    border: 1.5px solid #E5E7EB;
-                    font-size: 15px;
-                    color: #111827;
-                    outline: none;
-                    transition: all 0.2s ease;
-                    background: #F9FAFB;
-                }
-                .premium-input:focus {
-                    border-color: #004B93;
-                    background: #fff;
-                    box-shadow: 0 0 0 4px rgba(0, 75, 147, 0.12);
-                }
-                .premium-input-pass {
-                    width: 100%;
-                    padding: 14px 48px;
-                    border-radius: 12px;
-                    border: 1.5px solid #E5E7EB;
-                    font-size: 15px;
-                    color: #111827;
-                    outline: none;
-                    transition: all 0.2s ease;
-                    background: #F9FAFB;
-                }
-                .premium-input-pass:focus {
-                    border-color: #004B93;
-                    background: #fff;
-                    box-shadow: 0 0 0 4px rgba(0, 75, 147, 0.12);
-                }
-            `}</style>
-            
-            <div className="fade-in-up fade-in-up-delay-1" style={{ width: '100%' }}>
+        <AuthLayout
+            title={detectedTenant ? `${detectedTenant.name} Portal Login` : 'Multi-Role Portal Login'}
+            subtitle={
+                detectedTenant
+                    ? 'Enter your institutional credentials to access your official school console.'
+                    : 'Select your role and enter your institutional credentials to access your dashboard.'
+            }
+            tenantName={detectedTenant?.name}
+            tenantSubdomain={detectedSubdomain || undefined}
+        >
+            <div className="space-y-4">
+                {/* Detected Subdomain Verification Banner */}
+                {detectedTenant && (
+                    <div className="flex items-center gap-2.5 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-semibold mb-2">
+                        <Globe2 size={15} className="text-emerald-600 shrink-0" />
+                        <span>Sovereign Portal: <strong>{detectedTenant.name}</strong></span>
+                    </div>
+                )}
 
                 {/* Role Selector Tabs */}
-                <div style={{ marginBottom: 24 }}>
-                    <label style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 10 }}>
+                <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                         Select Portal Role
                     </label>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-2xl">
                         {ROLES.map((role) => {
                             const Icon = role.icon
                             const isActive = selectedRole === role.id
@@ -129,117 +163,140 @@ function LoginFormContent() {
                                     key={role.id}
                                     type="button"
                                     onClick={() => setSelectedRole(role.id)}
-                                    style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: 6,
-                                        padding: '8px 12px',
-                                        borderRadius: 10,
-                                        fontSize: 12,
-                                        fontWeight: 700,
-                                        border: isActive ? '1.5px solid #004B93' : '1px solid #E2E8F0',
-                                        background: isActive ? '#EFF6FF' : '#FFFFFF',
-                                        color: isActive ? '#004B93' : '#475569',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.15s ease'
-                                    }}
+                                    className={`flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl text-xs font-bold transition-all ${
+                                        isActive
+                                            ? 'bg-white text-[#004B93] shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/50'
+                                    }`}
                                 >
-                                    <Icon size={14} /> {role.label}
+                                    <Icon size={14} className={isActive ? 'text-[#004B93]' : 'text-slate-400'} />
+                                    <span>{role.label}</span>
                                 </button>
                             )
                         })}
                     </div>
                 </div>
 
+                {/* Server Error Alert */}
                 {serverError && (
-                    <div className="alert alert-error" role="alert" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#B91C1C', padding: '12px 16px', borderRadius: '12px', marginBottom: '20px' }}>
-                        <AlertCircle size={18} />
-                        <span style={{ fontWeight: 600, fontSize: '13px' }}>{serverError}</span>
+                    <div className="flex items-start gap-3 p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 animate-in fade-in">
+                        <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+                        <span className="font-medium">{serverError}</span>
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit(onSubmit)} noValidate>
-                    {/* Email */}
-                    <div style={{ marginBottom: 20 }}>
-                        <label style={{ fontSize: 12, fontWeight: 800, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>Email Address</label>
-                        <div style={{ position: 'relative' }}>
-                            <Mail size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', zIndex: 5 }} />
+                {/* Login Form */}
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5" noValidate>
+                    {/* Email Input */}
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Email Address
+                        </label>
+                        <div className="relative">
+                            <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
                                 id="login-email"
                                 type="email"
                                 placeholder="name@domain.com"
-                                className="premium-input"
+                                autoComplete="email"
+                                className={`w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 focus:border-[#004B93] transition ${
+                                    errors.email ? 'border-red-400 bg-red-50/20' : 'border-slate-200'
+                                }`}
                                 {...register('email')}
                             />
                         </div>
-                        {errors.email && <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, marginTop: 4, display: 'block' }}>{errors.email.message}</span>}
+                        {errors.email && (
+                            <span className="text-[11px] text-red-500 font-semibold mt-1 block">
+                                {errors.email.message}
+                            </span>
+                        )}
                     </div>
 
-                    {/* Password */}
-                    <div style={{ marginBottom: 20 }}>
-                        <label style={{ fontSize: 12, fontWeight: 800, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>Password</label>
-                        <div style={{ position: 'relative' }}>
-                            <Lock size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', zIndex: 5 }} />
+                    {/* Password Input */}
+                    <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                Password
+                            </label>
+                            <Link
+                                href="/auth/forgot-password"
+                                className="text-[11px] font-bold text-[#004B93] hover:underline"
+                            >
+                                Forgot password?
+                            </Link>
+                        </div>
+                        <div className="relative">
+                            <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
                                 id="login-password"
                                 type={showPassword ? 'text' : 'password'}
                                 placeholder="••••••••••••"
-                                className="premium-input-pass"
+                                autoComplete="current-password"
+                                className={`w-full pl-10 pr-10 py-2.5 bg-slate-50 border rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 focus:border-[#004B93] transition ${
+                                    errors.password ? 'border-red-400 bg-red-50/20' : 'border-slate-200'
+                                }`}
                                 {...register('password')}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', zIndex: 5 }}
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                                aria-label="Toggle password visibility"
                             >
-                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                             </button>
                         </div>
-                        {errors.password && <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, marginTop: 4, display: 'block' }}>{errors.password.message}</span>}
+                        {errors.password && (
+                            <span className="text-[11px] text-red-500 font-semibold mt-1 block">
+                                {errors.password.message}
+                            </span>
+                        )}
                     </div>
 
-                    {/* Forgot */}
-                    <div style={{ textAlign: 'right', marginTop: '-0.5rem', marginBottom: '1.25rem' }}>
-                        <Link href="/auth/forgot-password" className="auth-link" style={{ fontSize: '0.85rem' }}>
-                            Forgot password?
-                        </Link>
-                    </div>
-
+                    {/* Submit Button */}
                     <button
                         id="login-submit"
                         type="submit"
                         disabled={isLoading}
-                        style={{
-                            width: '100%',
-                            padding: '14px',
-                            borderRadius: 12,
-                            border: 'none',
-                            background: 'linear-gradient(135deg, #004B93 0%, #1FAC63 100%)',
-                            color: '#fff',
-                            fontSize: 15,
-                            fontWeight: 800,
-                            cursor: isLoading ? 'not-allowed' : 'pointer',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 10,
-                            boxShadow: '0 8px 20px rgba(0, 75, 147, 0.25)',
-                            marginTop: 24
-                        }}
+                        className="w-full py-3 bg-[#004B93] hover:bg-[#003870] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mt-4 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isLoading ? <div style={{ width: 20, height: 20, border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : (
-                            <>Sign In to {ROLES.find(r => r.id === selectedRole)?.label || 'Portal'} <ArrowRight size={18} /></>
+                        {isLoading ? (
+                            <span className="flex items-center gap-2">
+                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                Authenticating...
+                            </span>
+                        ) : (
+                            <>
+                                <span>Sign In to {activeRoleMeta.label}</span>
+                                <ArrowRight size={14} />
+                            </>
                         )}
                     </button>
                 </form>
-            </div>
 
-            <div style={{ marginTop: 32, textAlign: 'center' }} className="fade-in-up fade-in-up-delay-3">
-                <p style={{ fontSize: 14, color: '#6B7280', fontWeight: 500 }}>
-                    Don&apos;t have an account?{' '}
-                    <Link href="/auth/signup" style={{ color: '#004B93', fontWeight: 800, textDecoration: 'none' }}>Create account</Link>
-                </p>
+                {/* Institutional Notice & Support (Replacing Create Account) */}
+                <div className="mt-8 pt-5 border-t border-slate-100 space-y-3 text-center">
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-left">
+                        <div className="flex items-start gap-2.5">
+                            <ShieldCheck size={16} className="text-[#004B93] shrink-0 mt-0.5" />
+                            <div className="text-[11px] text-slate-600 leading-relaxed">
+                                <strong className="text-slate-800 font-bold block mb-0.5">Authorized Institutional Access Only</strong>
+                                Student, teacher, and administrative accounts are provisioned directly by institution administrators. If you do not have login credentials, please contact your school management.
+                            </div>
+                        </div>
+                    </div>
+
+                    <p className="text-xs text-slate-500 font-medium">
+                        Looking to onboard your school or institute?{' '}
+                        <Link href="/request-demo" className="text-[#004B93] hover:underline font-bold">
+                            Request Institutional Demo
+                        </Link>
+                    </p>
+
+                    <p className="text-[11px] text-slate-400">
+                        Protected by BeBrilliant Enterprise Shield • DPDP Compliant Data Governance
+                    </p>
+                </div>
             </div>
         </AuthLayout>
     )
@@ -247,7 +304,7 @@ function LoginFormContent() {
 
 export default function LoginPage() {
     return (
-        <Suspense fallback={<div style={{ textAlign: 'center', padding: '40px' }}>Loading Portal...</div>}>
+        <Suspense fallback={<div className="text-center py-12 text-xs font-semibold text-slate-500">Loading Secure Portal...</div>}>
             <LoginFormContent />
         </Suspense>
     )

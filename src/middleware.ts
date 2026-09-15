@@ -23,8 +23,15 @@ export function middleware(request: NextRequest) {
     const token = request.cookies.get('bb_token')?.value
 
     const protectedPaths = ['/dashboard', '/admin', '/owner', '/tenant']
+    // Remove public signup: redirect /auth/signup to /auth/login
+    if (pathname.startsWith('/auth/signup')) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/auth/login'
+        return NextResponse.redirect(url)
+    }
+
     const isProtected = protectedPaths.some((p) => pathname.startsWith(p))
-    const authPaths = ['/auth/login', '/auth/signup', '/auth/forgot-password']
+    const authPaths = ['/auth/login', '/auth/forgot-password']
     const isAuthRoute = authPaths.some((p) => pathname.startsWith(p))
 
     if (isProtected && !token) {
