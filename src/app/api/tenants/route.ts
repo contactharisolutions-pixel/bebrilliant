@@ -228,7 +228,7 @@ export async function GET() {
     try {
         const { data, error } = await supabaseAdmin
             .from('tenants')
-            .select('id, name, type')
+            .select('id, name, type, subdomain')
             .eq('is_active', true)
             .order('name')
 
