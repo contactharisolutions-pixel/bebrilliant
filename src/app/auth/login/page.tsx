@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, type LoginSchema } from '@/lib/validations/auth'
@@ -14,14 +14,8 @@ import {
     Eye,
     EyeOff,
     AlertCircle,
-    Building2,
-    UserCheck,
-    School,
-    GraduationCap,
-    Users,
     Globe2,
-    ShieldCheck,
-    HelpCircle
+    ShieldCheck
 } from 'lucide-react'
 
 interface Tenant {
@@ -31,20 +25,8 @@ interface Tenant {
     subdomain?: string
 }
 
-const ROLES = [
-    { id: 'school', label: 'School Admin', icon: Building2 },
-    { id: 'teacher', label: 'Teacher / Faculty', icon: UserCheck },
-    { id: 'institute', label: 'Institute', icon: School },
-    { id: 'student', label: 'Student', icon: GraduationCap },
-    { id: 'parent', label: 'Parent', icon: Users },
-]
-
 function LoginFormContent() {
     const router = useRouter()
-    const searchParams = useSearchParams()
-    const initialRole = searchParams.get('role') || 'school'
-
-    const [selectedRole, setSelectedRole] = useState(initialRole)
     const [showPassword, setShowPassword] = useState(false)
     const [serverError, setServerError] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(false)
@@ -98,7 +80,7 @@ function LoginFormContent() {
                 const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...data, role_hint: selectedRole }),
+                    body: JSON.stringify(data),
                 })
 
                 const json = await res.json()
@@ -124,18 +106,16 @@ function LoginFormContent() {
                 setIsLoading(false)
             }
         },
-        [router, selectedRole]
+        [router]
     )
-
-    const activeRoleMeta = ROLES.find(r => r.id === selectedRole) || ROLES[0]
 
     return (
         <AuthLayout
-            title={detectedTenant ? `${detectedTenant.name} Portal Login` : 'Multi-Role Portal Login'}
+            title={detectedTenant ? `${detectedTenant.name} Portal Login` : 'Institutional Portal Login'}
             subtitle={
                 detectedTenant
                     ? 'Enter your institutional credentials to access your official school console.'
-                    : 'Select your role and enter your institutional credentials to access your dashboard.'
+                    : 'Enter your institutional email and password to access your dashboard.'
             }
             tenantName={detectedTenant?.name}
             tenantSubdomain={detectedSubdomain || undefined}
@@ -149,34 +129,6 @@ function LoginFormContent() {
                     </div>
                 )}
 
-                {/* Role Selector Tabs */}
-                <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                        Select Portal Role
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-2xl">
-                        {ROLES.map((role) => {
-                            const Icon = role.icon
-                            const isActive = selectedRole === role.id
-                            return (
-                                <button
-                                    key={role.id}
-                                    type="button"
-                                    onClick={() => setSelectedRole(role.id)}
-                                    className={`flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl text-xs font-bold transition-all ${
-                                        isActive
-                                            ? 'bg-white text-[#004B93] shadow-sm'
-                                            : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/50'
-                                    }`}
-                                >
-                                    <Icon size={14} className={isActive ? 'text-[#004B93]' : 'text-slate-400'} />
-                                    <span>{role.label}</span>
-                                </button>
-                            )
-                        })}
-                    </div>
-                </div>
-
                 {/* Server Error Alert */}
                 {serverError && (
                     <div className="flex items-start gap-3 p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 animate-in fade-in">
@@ -185,8 +137,8 @@ function LoginFormContent() {
                     </div>
                 )}
 
-                {/* Login Form */}
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5" noValidate>
+                {/* Streamlined Login Form */}
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
                     {/* Email Input */}
                     <div>
                         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -197,8 +149,9 @@ function LoginFormContent() {
                             <input
                                 id="login-email"
                                 type="email"
-                                placeholder="name@domain.com"
+                                placeholder="name@school.edu.in"
                                 autoComplete="email"
+                                autoFocus
                                 className={`w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 focus:border-[#004B93] transition ${
                                     errors.email ? 'border-red-400 bg-red-50/20' : 'border-slate-200'
                                 }`}
@@ -240,7 +193,7 @@ function LoginFormContent() {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
                                 aria-label="Toggle password visibility"
                             >
                                 {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -267,14 +220,14 @@ function LoginFormContent() {
                             </span>
                         ) : (
                             <>
-                                <span>Sign In to {activeRoleMeta.label}</span>
+                                <span>Sign In to Portal</span>
                                 <ArrowRight size={14} />
                             </>
                         )}
                     </button>
                 </form>
 
-                {/* Institutional Notice & Support (Replacing Create Account) */}
+                {/* Institutional Security Notice & Onboarding Contact */}
                 <div className="mt-8 pt-5 border-t border-slate-100 space-y-3 text-center">
                     <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-left">
                         <div className="flex items-start gap-2.5">
