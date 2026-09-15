@@ -280,7 +280,7 @@ export async function GET(request: NextRequest) {
         const institutePlans = available_plans.filter((p: any) => p.category === 'institute')
         const soloPlans = available_plans.filter((p: any) => p.category === 'solo')
 
-        // Default plans for this tenant type
+        // Default plans strictly isolated for this tenant type
         const matchingTypePlans = normalizedTenantType === 'school'
             ? schoolPlans
             : (normalizedTenantType === 'institute' ? institutePlans : soloPlans)
@@ -304,12 +304,10 @@ export async function GET(request: NextRequest) {
                 billing_cycle: subscription?.billing_cycle || 'monthly',
                 amount: currentMonthlyPrice
             },
-            plans: available_plans.length > 0 ? available_plans : [planDetails],
-            matching_plans: matchingTypePlans.length > 0 ? matchingTypePlans : available_plans,
+            plans: matchingTypePlans.length > 0 ? matchingTypePlans : [planDetails],
+            matching_plans: matchingTypePlans.length > 0 ? matchingTypePlans : [planDetails],
             categorized_plans: {
-                school: schoolPlans,
-                institute: institutePlans,
-                solo: soloPlans
+                [normalizedTenantType]: matchingTypePlans
             },
             usage: {
                 students: studentCount,
@@ -374,6 +372,27 @@ export async function POST(request: NextRequest) {
                 .eq('id', plan_id)
                 .single()
             if (planErr || !plan) return NextResponse.json({ error: 'Selected plan not found' }, { status: 404 })
+
+            // 1b. Enforce strict tenant account type isolation for upgrades
+            const { data: tenantInfo } = await supabaseAdmin
+                .from('tenants')
+                .select('tenant_type')
+                .eq('id', tenant_id)
+                .single()
+            
+            const rawTenantType = tenantInfo?.tenant_type || 'school'
+            const isSoloTenant = rawTenantType === 'personal_teacher' || rawTenantType === 'independent_teacher'
+            const normalizedTenantCategory = isSoloTenant ? 'solo' : (rawTenantType === 'institute' ? 'institute' : 'school')
+
+            const isPlanSolo = plan.type === 'personal_teacher' || plan.type === 'independent_teacher'
+            const planCategory = isPlanSolo ? 'solo' : (plan.type === 'institute' ? 'institute' : 'school')
+
+            if (planCategory !== normalizedTenantCategory) {
+                const typeLabel = normalizedTenantCategory === 'school' ? 'School' : (normalizedTenantCategory === 'institute' ? 'Institute' : 'Solo Teacher')
+                return NextResponse.json({
+                    error: `Cross-account upgrade restricted. As a ${typeLabel} account, you can only subscribe to ${typeLabel} plans.`
+                }, { status: 400 })
+            }
 
             // 2. Compute pricing, promo code discounts and GST
             let rawPrice = Number(plan.price)

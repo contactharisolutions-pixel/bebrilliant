@@ -679,7 +679,6 @@ export default function SubscriptionPage() {
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [tenantType, setTenantType] = useState<'school' | 'institute' | 'solo'>('school');
     const [tenantTypeDisplay, setTenantTypeDisplay] = useState<string>('School Tenant');
-    const [planCategoryFilter, setPlanCategoryFilter] = useState<'all' | 'school' | 'institute' | 'solo'>('school');
     const [billingSettings, setBillingSettings] = useState<BillingSettings>({
         legal_name: '',
         gstin: '',
@@ -717,12 +716,6 @@ export default function SubscriptionPage() {
         setTimeout(() => setToast(null), 3500);
     };
 
-    const filteredPlans = useMemo(() => {
-        if (planCategoryFilter === 'all') return plans;
-        const matched = plans.filter((p: any) => p.category === planCategoryFilter);
-        return matched.length > 0 ? matched : plans;
-    }, [plans, planCategoryFilter]);
-
     const fetchData = useCallback(async () => {
         setError(null);
         setLoading(true);
@@ -739,7 +732,6 @@ export default function SubscriptionPage() {
             setInvoices(data.invoices || []);
             if (data.tenant_type) {
                 setTenantType(data.tenant_type);
-                setPlanCategoryFilter(data.tenant_type);
             }
             if (data.tenant_type_display) {
                 setTenantTypeDisplay(data.tenant_type_display);
@@ -1241,84 +1233,40 @@ export default function SubscriptionPage() {
                     {/* TAB 2: PLANS & UPGRADES */}
                     {activeTab === 'plans' && (
                         <div className="space-y-6">
-                            {/* Category Selector & Billing Cycle Header */}
-                            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                            {/* Dedicated Tenant Tier & Billing Cycle Header */}
+                            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                                 <div className="space-y-2.5">
                                     <div className="flex items-center gap-2.5 flex-wrap">
-                                        <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">Subscription Plans & Quota Tiers</h3>
+                                        <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+                                            {tenantTypeDisplay} Subscription Plans & Quotas
+                                        </h3>
                                         <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-[#004B93] border border-blue-200 flex items-center gap-1.5">
                                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                            Your Account: <strong>{tenantTypeDisplay}</strong>
+                                            Active Account Type: <strong>{tenantTypeDisplay}</strong>
                                         </span>
                                     </div>
-                                    <p className="text-xs text-slate-500 font-medium">
-                                        Displaying subscription packages calibrated for {tenantTypeDisplay.toLowerCase()}s with automated teacher allocation quotas.
+                                    <p className="text-xs text-slate-500 font-medium max-w-2xl">
+                                        {tenantType === 'school'
+                                            ? 'Displaying official School subscription packages calibrated with high-capacity student registries and multi-faculty allocations.'
+                                            : tenantType === 'institute'
+                                            ? 'Displaying official Coaching & Institute subscription packages calibrated for batch-oriented coaching and multi-faculty rosters.'
+                                            : 'Displaying official Solo Teacher subscription packages calibrated for independent tutors and personal educators.'
+                                        }
                                     </p>
 
-                                    {/* Category Filter Tabs */}
-                                    <div className="flex flex-wrap items-center gap-2 pt-1">
-                                        <button
-                                            onClick={() => setPlanCategoryFilter('school')}
-                                            className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 ${
-                                                planCategoryFilter === 'school'
-                                                    ? 'bg-[#004B93] text-white shadow-md shadow-blue-900/15'
-                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
-                                            }`}
-                                        >
-                                            🏫 School Plans
-                                            <span className="text-[10px] opacity-80">(Multiple Teachers)</span>
-                                            {tenantType === 'school' && (
-                                                <span className="px-1.5 py-0.2 bg-emerald-400 text-slate-950 text-[9px] font-black rounded-full">
-                                                    Current
-                                                </span>
-                                            )}
-                                        </button>
-                                        <button
-                                            onClick={() => setPlanCategoryFilter('institute')}
-                                            className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 ${
-                                                planCategoryFilter === 'institute'
-                                                    ? 'bg-[#004B93] text-white shadow-md shadow-blue-900/15'
-                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
-                                            }`}
-                                        >
-                                            🏢 Institute Plans
-                                            <span className="text-[10px] opacity-80">(Multiple Teachers)</span>
-                                            {tenantType === 'institute' && (
-                                                <span className="px-1.5 py-0.2 bg-emerald-400 text-slate-950 text-[9px] font-black rounded-full">
-                                                    Current
-                                                </span>
-                                            )}
-                                        </button>
-                                        <button
-                                            onClick={() => setPlanCategoryFilter('solo')}
-                                            className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 ${
-                                                planCategoryFilter === 'solo'
-                                                    ? 'bg-[#004B93] text-white shadow-md shadow-blue-900/15'
-                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
-                                            }`}
-                                        >
-                                            🎓 Solo Teacher Plans
-                                            <span className="text-[10px] opacity-80">(Single Teacher Only)</span>
-                                            {tenantType === 'solo' && (
-                                                <span className="px-1.5 py-0.2 bg-emerald-400 text-slate-950 text-[9px] font-black rounded-full">
-                                                    Current
-                                                </span>
-                                            )}
-                                        </button>
-                                        <button
-                                            onClick={() => setPlanCategoryFilter('all')}
-                                            className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition ${
-                                                planCategoryFilter === 'all'
-                                                    ? 'bg-slate-800 text-white'
-                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                                            }`}
-                                        >
-                                            View All Tiers
-                                        </button>
+                                    {/* Dedicated Account Tier Badge */}
+                                    <div className="pt-1 flex items-center gap-2 flex-wrap">
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-50 text-slate-700 border border-slate-200">
+                                            {tenantType === 'school' ? '🏫 School Plans Only' : tenantType === 'institute' ? '🏢 Institute Plans Only' : '🎓 Solo Teacher Plans Only'}
+                                        </span>
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                            <CheckCircle2 size={13} className="text-emerald-600" />
+                                            {tenantType === 'solo' ? 'Single Teacher Only (Multiple Teachers Not Allowed)' : 'Multiple Teachers Allowed & Configured'}
+                                        </span>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-2xl border border-slate-200 shrink-0">
+                                <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-2xl border border-slate-200 shrink-0 self-start lg:self-center">
                                     <button
                                         onClick={() => setCatalogBillingCycle('monthly')}
                                         className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
@@ -1347,7 +1295,7 @@ export default function SubscriptionPage() {
 
                             {/* Plan Cards Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {filteredPlans.map((p) => {
+                                {plans.map((p) => {
                                     const isCurrent = current.plan_id === p.id;
                                     const displayPrice = catalogBillingCycle === 'annual' ? p.annual_price : p.price;
                                     const isSoloPlan = p.is_solo || p.type === 'personal_teacher' || p.type === 'independent_teacher' || p.category === 'solo';
