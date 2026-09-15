@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import ExamSyllabusPatternPicker, { BlueprintContextData } from '@/components/shared/ExamSyllabusPatternPicker'
 import {
     Zap, Shield, DollarSign, CheckCircle2, Clock, Users, Globe, Search,
     Filter, Play, Share2, Copy, Check, Trash2, Edit3, Plus, ArrowRight,
@@ -138,17 +139,27 @@ export default function OnlineExamsManagementPage() {
 
     // Core Data States
     const [metrics, setMetrics] = useState<DashboardMetrics>({
-        total_vectors: 165,
-        live_sessions: 1,
-        exam_revenue: 18500,
-        integrity_score: 99.8,
-        total_exams: 4,
-        total_attempts: 12
+        total_vectors: 0,
+        live_sessions: 0,
+        exam_revenue: 0,
+        integrity_score: 100,
+        total_exams: 0,
+        total_attempts: 0
     })
     const [exams, setExams] = useState<ExamItem[]>([])
     const [templates, setTemplates] = useState<TemplateBlueprint[]>([])
     const [recentAttempts, setRecentAttempts] = useState<CandidateAttempt[]>([])
     const [syllabuses, setSyllabuses] = useState<any[]>([])
+
+    // Blueprint Context (Unified Syllabus & Owner Patterns)
+    const [blueprintContext, setBlueprintContext] = useState<BlueprintContextData | null>(null)
+    const [contextLoading, setContextLoading] = useState(false)
+    const [selectedBoardId, setSelectedBoardId] = useState('')
+    const [selectedClassId, setSelectedClassId] = useState('')
+    const [selectedSubjectId, setSelectedSubjectId] = useState('')
+    const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([])
+    const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([])
+    const [selectedPatternId, setSelectedPatternId] = useState('')
 
     // Filter & Search Controls
     const [searchQuery, setSearchQuery] = useState('')
@@ -179,22 +190,22 @@ export default function OnlineExamsManagementPage() {
     const [editExamId, setEditExamId] = useState<string | null>(null)
     const [s1, setS1] = useState({
         name: '',
-        targetClass: 'Class 10',
-        subject: 'Mathematics',
+        targetClass: '',
+        subject: '',
         mode: 'cbt_proctored',
         pricing_type: 'free' as 'free' | 'paid',
         price: 0,
         duration: 60,
-        total_marks: 50,
+        total_marks: 100,
         passing_pct: 40,
         instructions: '1. Strict fullscreen mode will be enforced during the assessment.\n2. Attempt all objective questions before the timer expires.\n3. Tab switches beyond 3 will automatically freeze and auto-submit.'
     })
-    const [s2, setS2] = useState({
+    const [s2, setS2] = useState<{
+        syllabusId: string;
+        sections: Array<{ name: string; qCount: number; mark: number; negMark: number; easy: number; med: number; hard: number }>;
+    }>({
         syllabusId: '',
-        sections: [
-            { name: 'Section A - Fundamental Principles', qCount: 15, mark: 2, negMark: 0.5, easy: 50, med: 40, hard: 10 },
-            { name: 'Section B - Advanced Analytical Reasoning', qCount: 10, mark: 2, negMark: 0.5, easy: 20, med: 50, hard: 30 }
-        ]
+        sections: []
     })
     const [studioQuestions, setStudioQuestions] = useState<any[]>([])
     const [approvedQs, setApprovedQs] = useState<Set<number>>(new Set())
@@ -203,6 +214,25 @@ export default function OnlineExamsManagementPage() {
         setToast({ msg, ok })
     }
 
+    // —— FETCH BLUEPRINT CONTEXT (SYLLABUS & PATTERNS) ————
+    const fetchBlueprintContext = useCallback(async () => {
+        setContextLoading(true)
+        try {
+            const res = await fetch('/api/dashboard/exams/blueprint-context')
+            if (res.ok) {
+                const data: BlueprintContextData = await res.json()
+                setBlueprintContext(data)
+                if (data.activeBoards?.length > 0 && !selectedBoardId) {
+                    setSelectedBoardId(data.activeBoards[0].id)
+                }
+            }
+        } catch (err) {
+            console.error('Failed to load blueprint context:', err)
+        } finally {
+            setContextLoading(false)
+        }
+    }, [selectedBoardId])
+
     // —— FETCH MASTER DATA ————————————————————————————————
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -210,7 +240,8 @@ export default function OnlineExamsManagementPage() {
             const [mainRes, sylRes, tmplRes] = await Promise.all([
                 fetch('/api/dashboard/exams/online').then(r => r.json()),
                 fetch('/api/dashboard/syllabus').then(r => r.json()).catch(() => ({ nodes: [] })),
-                fetch('/api/dashboard/exams/online?action=GET_TEMPLATES').then(r => r.json()).catch(() => [])
+                fetch('/api/dashboard/exams/online?action=GET_TEMPLATES').then(r => r.json()).catch(() => []),
+                fetchBlueprintContext()
             ])
 
             if (mainRes?.metrics) setMetrics(mainRes.metrics)
@@ -226,45 +257,59 @@ export default function OnlineExamsManagementPage() {
         } finally {
             setLoading(false)
         }
-    }, [])
+    }, [fetchBlueprintContext])
 
     useEffect(() => {
         fetchData()
     }, [fetchData])
 
-    // —— DEPLOY BLUEPRINT INTO STUDIO ————————————————————
-    const loadBlueprint = (tmpl: TemplateBlueprint) => {
-        setS1({
-            ...s1,
-            name: `${tmpl.name} (Live Benchmark)`,
+    // —— DEPLOY BLUEPRINT / PATTERN INTO STUDIO —————————
+    const handlePatternSelected = (tmpl: any) => {
+        if (!tmpl) return
+        setSelectedPatternId(tmpl.id)
+        setS1(prev => ({
+            ...prev,
+            name: prev.name ? prev.name : `${tmpl.name} (Official Pattern)`,
             duration: tmpl.duration_minutes || 60,
             total_marks: tmpl.total_marks || 100,
-            instructions: Array.isArray(tmpl.instructions) ? tmpl.instructions.join('\n') : (tmpl.description || '')
-        })
+            instructions: Array.isArray(tmpl.instructions) 
+                ? tmpl.instructions.join('\n') 
+                : (tmpl.instructions || tmpl.description || '')
+        }))
 
         if (Array.isArray(tmpl.sections) && tmpl.sections.length > 0) {
             const compiledSections = tmpl.sections.map((sec: any) => {
                 const primaryRule = sec.rules?.[0] || {}
                 return {
                     name: sec.section_name || 'Standard Section',
-                    qCount: primaryRule.num_questions || 15,
+                    qCount: Number(primaryRule.num_questions || 15),
                     mark: Number(primaryRule.marks_per_question || 2),
                     negMark: Number(primaryRule.negative_marks || 0),
-                    easy: primaryRule.difficulty_easy_pct || 40,
-                    med: primaryRule.difficulty_medium_pct || 40,
-                    hard: primaryRule.difficulty_hard_pct || 20
+                    easy: Number(primaryRule.difficulty_easy_pct || 40),
+                    med: Number(primaryRule.difficulty_medium_pct || 40),
+                    hard: Number(primaryRule.difficulty_hard_pct || 20)
                 }
             })
-            setS2({ ...s2, sections: compiledSections })
+            setS2(prev => ({ ...prev, sections: compiledSections }))
         }
 
         setActiveTab('studio')
-        setStudioStep(1)
-        showToast(`Blueprint '${tmpl.name}' loaded into Assessment Studio!`, true)
+        showToast(`Pattern blueprint '${tmpl.name}' applied to Assessment Studio!`, true)
     }
 
-    // —— RUN AI QUESTION PIPELINE ————————————————————————
+    const loadBlueprint = (tmpl: TemplateBlueprint) => {
+        handlePatternSelected(tmpl)
+        setStudioStep(1)
+    }
+
+    // —— RUN AI QUESTION PIPELINE (GENUINE GENERATION) ———
     const handleRunAiQuestions = async () => {
+        if (!s1.subject) {
+            return showToast('Please select a subject from syllabus first', false)
+        }
+        if (s2.sections.length === 0) {
+            return showToast('Please define at least one section or apply an exam pattern', false)
+        }
         setSaving(true)
         try {
             const totalRequired = s2.sections.reduce((acc, s) => acc + Number(s.qCount || 0), 0)
@@ -277,6 +322,12 @@ export default function OnlineExamsManagementPage() {
                         total_nodes: totalRequired || 20,
                         syllabus_name: s1.subject,
                         target_class: s1.targetClass,
+                        board_id: selectedBoardId,
+                        class_id: selectedClassId,
+                        subject_id: selectedSubjectId,
+                        chapter_ids: selectedChapterIds,
+                        topic_ids: selectedTopicIds,
+                        pattern_id: selectedPatternId,
                         subjects: s2.sections,
                         language: 'English',
                         format: 'OBJECTIVE_ONLY'
@@ -287,32 +338,18 @@ export default function OnlineExamsManagementPage() {
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'AI generation pipeline error')
 
-            const questions = Array.isArray(data.questions) && data.questions.length > 0
-                ? data.questions
-                : [
-                    { text: 'Which data structure offers average O(1) time complexity for key lookup and insertion?', options: ['Hash Map', 'Binary Search Tree', 'Doubly Linked List', 'Heap'], correct_answer: 'Hash Map', explanation: 'Hash Maps leverage direct hash key addressing for constant time operations.' },
-                    { text: 'What is the sum of roots of the quadratic polynomial P(x) = 3x^2 - 12x + 9?', options: ['4', '-4', '3', '12'], correct_answer: '4', explanation: 'Sum of roots = -b/a = -(-12)/3 = 4.' },
-                    { text: 'Snell’s law states the ratio of sines of angle of incidence and refraction equals:', options: ['Refractive index ratio', 'Wavelength square', 'Frequency difference', 'Wave amplitude'], correct_answer: 'Refractive index ratio', explanation: 'n1 * sin(i) = n2 * sin(r).' },
-                    { text: 'In supervised classification, which metric penalizes false positives most severely in precision calculations?', options: ['Precision (TP / (TP+FP))', 'Recall (TP / (TP+FN))', 'Accuracy', 'Support'], correct_answer: 'Precision (TP / (TP+FP))', explanation: 'Precision denominator explicitly accounts for false positives.' }
-                ]
+            const questions = Array.isArray(data.questions) ? data.questions : []
+            if (questions.length === 0) {
+                throw new Error('AI could not generate questions for the specified syllabus scope. Please verify your selected chapters.')
+            }
 
             setStudioQuestions(questions)
             setApprovedQs(new Set(questions.map((_: any, i: number) => i)))
             setStudioStep(3)
-            showToast('AI Objective Vectors generated and ready for review!', true)
+            showToast(`${questions.length} Objective question vectors generated and ready for review!`, true)
         } catch (e: any) {
             console.error('AI pipeline error:', e)
-            showToast(e.message || 'AI pipeline unavailable. Using fallback verified vectors.', false)
-            // Fallback verified questions
-            const fallback = [
-                { text: 'What is the degree of the polynomial P(x) = 4x^4 + 0x^3 + 5x^2 + 7?', options: ['4', '3', '2', '1'], correct_answer: '4', explanation: 'Degree is the highest non-zero power: 4.' },
-                { text: 'If a pair of linear equations is consistent and dependent, the lines are:', options: ['Coincident', 'Parallel', 'Intersecting at 1 point', 'None'], correct_answer: 'Coincident', explanation: 'Dependent consistent lines coincide with infinite solutions.' },
-                { text: 'Predicting continuous numeric exam scores based on historical vectors is:', options: ['Regression', 'Classification', 'Clustering', 'Dimensionality Reduction'], correct_answer: 'Regression', explanation: 'Continuous numerical outcome prediction is regression.' },
-                { text: 'Snell’s law constant ratio relates to:', options: ['Relative Refractive Index', 'Frequency Shift', 'Absorption Coeff', 'Diffraction Angle'], correct_answer: 'Relative Refractive Index', explanation: 'Ratio of sines equals relative refractive index.' }
-            ]
-            setStudioQuestions(fallback)
-            setApprovedQs(new Set(fallback.map((_, i) => i)))
-            setStudioStep(3)
+            showToast(e.message || 'AI pipeline unavailable. Please review question parameters.', false)
         } finally {
             setSaving(false)
         }
@@ -338,6 +375,11 @@ export default function OnlineExamsManagementPage() {
                 blueprint: {
                     ...s1,
                     ...s2,
+                    board_id: selectedBoardId,
+                    class_id: selectedClassId,
+                    subject_id: selectedSubjectId,
+                    chapter_ids: selectedChapterIds,
+                    pattern_id: selectedPatternId,
                     total_questions: selectedQuestions.length,
                     antiCheat: antiCheatSettings
                 },
@@ -945,57 +987,91 @@ export default function OnlineExamsManagementPage() {
                         </div>
                     </div>
 
-                    {/* Step 1: Parameters */}
+                    {/* Step 1: Parameters & Syllabus Pattern Scope */}
                     {studioStep === 1 && (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2 space-y-5">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Assessment Title</label>
-                                    <input
-                                        type="text"
-                                        value={s1.name}
-                                        onChange={e => setS1({ ...s1, name: e.target.value })}
-                                        placeholder="e.g. CBSE Term-1 Objective Mathematics Mock Examination"
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-sm font-semibold outline-none focus:ring-2 focus:ring-[#004B93]/20"
-                                    />
-                                </div>
+                        <div className="space-y-6">
+                            {/* Master Unified Syllabus & Pattern Picker */}
+                            <ExamSyllabusPatternPicker
+                                context={blueprintContext}
+                                loadingContext={contextLoading}
+                                onRefreshContext={fetchBlueprintContext}
+                                selectedBoardId={selectedBoardId}
+                                selectedClassId={selectedClassId}
+                                selectedSubjectId={selectedSubjectId}
+                                selectedChapterIds={selectedChapterIds}
+                                selectedTopicIds={selectedTopicIds}
+                                selectedPatternId={selectedPatternId}
+                                onSelectBoard={bId => {
+                                    setSelectedBoardId(bId)
+                                    setSelectedClassId('')
+                                    setSelectedSubjectId('')
+                                    setSelectedChapterIds([])
+                                    setSelectedTopicIds([])
+                                }}
+                                onSelectClass={cNode => {
+                                    setSelectedClassId(cNode.id)
+                                    setS1(prev => ({ ...prev, targetClass: cNode.name }))
+                                    setSelectedSubjectId('')
+                                    setSelectedChapterIds([])
+                                    setSelectedTopicIds([])
+                                }}
+                                onSelectSubject={sNode => {
+                                    setSelectedSubjectId(sNode.id)
+                                    setS1(prev => ({ ...prev, subject: sNode.name }))
+                                    setSelectedChapterIds([])
+                                    setSelectedTopicIds([])
+                                }}
+                                onSelectChapters={chIds => {
+                                    setSelectedChapterIds(chIds)
+                                }}
+                                onSelectTopics={tpIds => {
+                                    setSelectedTopicIds(tpIds)
+                                }}
+                                onSelectPattern={handlePatternSelected}
+                            />
 
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <div className="lg:col-span-2 space-y-5">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Target Standard</label>
-                                        <select
-                                            value={s1.targetClass}
-                                            onChange={e => setS1({ ...s1, targetClass: e.target.value })}
-                                            className="w-full px-3 py-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold outline-none cursor-pointer"
-                                        >
-                                            <option value="Class 8">Class 8</option>
-                                            <option value="Class 9">Class 9</option>
-                                            <option value="Class 10">Class 10</option>
-                                            <option value="Class 11">Class 11</option>
-                                            <option value="Class 12">Class 12</option>
-                                            <option value="All Grades">Inter-School Open</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Subject</label>
+                                        <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Assessment Title</label>
                                         <input
                                             type="text"
-                                            value={s1.subject}
-                                            onChange={e => setS1({ ...s1, subject: e.target.value })}
-                                            placeholder="e.g. Mathematics"
-                                            className="w-full px-3 py-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold outline-none"
+                                            value={s1.name}
+                                            onChange={e => setS1({ ...s1, name: e.target.value })}
+                                            placeholder="e.g. Term Assessment Examination"
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-sm font-semibold outline-none focus:ring-2 focus:ring-[#004B93]/20"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Duration (Mins)</label>
-                                        <input
-                                            type="number"
-                                            value={s1.duration}
-                                            onChange={e => setS1({ ...s1, duration: parseInt(e.target.value) || 60 })}
-                                            className="w-full px-3 py-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold outline-none"
-                                        />
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Selected Class</label>
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                value={s1.targetClass || 'Select from above'}
+                                                className="w-full px-3 py-3 rounded-xl border border-slate-200 bg-slate-100 text-xs font-bold text-slate-700 outline-none cursor-default"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Selected Subject</label>
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                value={s1.subject || 'Select from above'}
+                                                className="w-full px-3 py-3 rounded-xl border border-slate-200 bg-slate-100 text-xs font-bold text-slate-700 outline-none cursor-default"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Duration (Mins)</label>
+                                            <input
+                                                type="number"
+                                                value={s1.duration}
+                                                onChange={e => setS1({ ...s1, duration: parseInt(e.target.value) || 60 })}
+                                                className="w-full px-3 py-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold outline-none"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
@@ -1080,7 +1156,8 @@ export default function OnlineExamsManagementPage() {
                                 </div>
                             </div>
                         </div>
-                    )}
+                    </div>
+                )}
 
                     {/* Step 2: Architecture & Sections */}
                     {studioStep === 2 && (

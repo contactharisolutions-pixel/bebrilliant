@@ -9,6 +9,7 @@ import {
     CheckCircle, XCircle, Copy, Layers, Sliders, Eye, RefreshCw,
     FileSpreadsheet, ArrowUpRight, Award, Check, HelpCircle, Filter
 } from 'lucide-react'
+import ExamSyllabusPatternPicker, { BlueprintContextData } from '@/components/shared/ExamSyllabusPatternPicker'
 
 // —— PALETTE & THEME ————————————————————————————————————
 const P = {
@@ -47,11 +48,21 @@ export default function OfflinePaperManager() {
     const [classes, setClasses] = useState<any[]>([])
     const [subjects, setSubjects] = useState<any[]>([])
     const [metrics, setMetrics] = useState({
-        totalPapers: 4,
-        printedAssets: 1240,
-        questionPool: '12,450+',
-        archivedCount: 18
+        totalPapers: 0,
+        printedAssets: 0,
+        questionPool: '0 Questions',
+        archivedCount: 0
     })
+
+    // Dynamic Syllabus & Exam Pattern Context
+    const [blueprintContext, setBlueprintContext] = useState<BlueprintContextData | null>(null)
+    const [contextLoading, setContextLoading] = useState(false)
+    const [selectedBoardId, setSelectedBoardId] = useState<string>('')
+    const [selectedClassId, setSelectedClassId] = useState<string>('')
+    const [selectedSubjectId, setSelectedSubjectId] = useState<string>('')
+    const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([])
+    const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([])
+    const [selectedPatternId, setSelectedPatternId] = useState<string>('')
 
     // Search & Filters
     const [searchQuery, setSearchQuery] = useState('')
@@ -70,6 +81,7 @@ export default function OfflinePaperManager() {
         class_id: '',
         subject_id: '',
         template_id: '',
+        chapter_ids: [] as string[],
         marks: 80,
         duration: 180,
         total_questions: 25,
@@ -80,6 +92,29 @@ export default function OfflinePaperManager() {
         setToast({ msg, ok })
         setTimeout(() => setToast(null), 4000)
     }
+
+    // Fetch Blueprint Context (Syllabus tree & Owner Public Patterns)
+    const fetchBlueprintContext = useCallback(async () => {
+        setContextLoading(true)
+        try {
+            const res = await fetch('/api/dashboard/exams/blueprint-context')
+            if (res.ok) {
+                const data: BlueprintContextData = await res.json()
+                setBlueprintContext(data)
+                if (data.activeBoards?.length > 0 && !selectedBoardId) {
+                    setSelectedBoardId(data.activeBoards[0].id)
+                }
+            }
+        } catch (err) {
+            console.error('Failed to load blueprint context in Offline Exams:', err)
+        } finally {
+            setContextLoading(false)
+        }
+    }, [selectedBoardId])
+
+    useEffect(() => {
+        fetchBlueprintContext()
+    }, [fetchBlueprintContext])
 
     // Fetch All Dynamic Records
     const fetchData = useCallback(async () => {
@@ -98,10 +133,10 @@ export default function OfflinePaperManager() {
             setClasses(data.classes || [])
             setSubjects(data.subjects || [])
             setMetrics(data.metrics || {
-                totalPapers: (data.exams || []).length || 4,
-                printedAssets: 1240,
-                questionPool: '12,450+',
-                archivedCount: 18
+                totalPapers: (data.exams || []).length,
+                printedAssets: 0,
+                questionPool: `${(data.questions || []).length} Questions`,
+                archivedCount: 0
             })
 
             if (data.classes?.length > 0) {
@@ -550,11 +585,11 @@ export default function OfflinePaperManager() {
                                 </div>
                                 <h2 className="text-2xl font-black text-slate-900 mt-2">Descriptive Paper Composer</h2>
                                 <p className="text-slate-500 text-xs sm:text-sm mt-1">
-                                    Configure sectional weightage, time limits, question selection mode, and bilingual rendering.
+                                    Configure sectional weightage, time limits, question selection mode, and bilingual rendering powered by institutional blueprints.
                                 </p>
                             </div>
 
-                            <form onSubmit={handleCreatePaper} className="space-y-4 text-sm">
+                            <form onSubmit={handleCreatePaper} className="space-y-6 text-sm">
                                 <div>
                                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Examination Title</label>
                                     <input
@@ -567,31 +602,67 @@ export default function OfflinePaperManager() {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Class / Standard</label>
-                                        <select
-                                            value={composerForm.class_id}
-                                            onChange={e => setComposerForm({ ...composerForm, class_id: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
-                                        >
-                                            {classes.map(c => (
-                                                <option key={c.id} value={c.id}>{c.name}</option>
-                                            ))}
-                                        </select>
+                                {/* Dynamic Unified Syllabus Tree & Owner Public Exam Pattern Picker */}
+                                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                                            <BookOpen size={14} className="text-[#004B93]" />
+                                            Syllabus Scope & Blueprint Pattern
+                                        </div>
+                                        <span className="text-[11px] font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
+                                            Dynamic Ingestion
+                                        </span>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Subject</label>
-                                        <select
-                                            value={composerForm.subject_id}
-                                            onChange={e => setComposerForm({ ...composerForm, subject_id: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
-                                        >
-                                            {subjects.map(s => (
-                                                <option key={s.id} value={s.id}>{s.name} ({s.code || 'GEN'})</option>
-                                            ))}
-                                        </select>
-                                    </div>
+
+                                    <ExamSyllabusPatternPicker
+                                        context={blueprintContext}
+                                        loadingContext={contextLoading}
+                                        onRefreshContext={fetchBlueprintContext}
+                                        selectedBoardId={selectedBoardId}
+                                        selectedClassId={selectedClassId}
+                                        selectedSubjectId={selectedSubjectId}
+                                        selectedChapterIds={selectedChapterIds}
+                                        selectedTopicIds={selectedTopicIds}
+                                        selectedPatternId={selectedPatternId}
+                                        onSelectBoard={bId => {
+                                            setSelectedBoardId(bId)
+                                            setSelectedClassId('')
+                                            setSelectedSubjectId('')
+                                            setSelectedChapterIds([])
+                                            setSelectedTopicIds([])
+                                        }}
+                                        onSelectClass={cNode => {
+                                            setSelectedClassId(cNode.id)
+                                            setComposerForm(prev => ({ ...prev, class_id: cNode.id }))
+                                            setSelectedSubjectId('')
+                                            setSelectedChapterIds([])
+                                            setSelectedTopicIds([])
+                                        }}
+                                        onSelectSubject={sNode => {
+                                            setSelectedSubjectId(sNode.id)
+                                            setComposerForm(prev => ({ ...prev, subject_id: sNode.id }))
+                                            setSelectedChapterIds([])
+                                            setSelectedTopicIds([])
+                                        }}
+                                        onSelectChapters={chIds => {
+                                            setSelectedChapterIds(chIds)
+                                            setComposerForm(f => ({ ...f, chapter_ids: chIds }))
+                                        }}
+                                        onSelectTopics={tpIds => {
+                                            setSelectedTopicIds(tpIds)
+                                        }}
+                                        onSelectPattern={pattern => {
+                                            setSelectedPatternId(pattern.id)
+                                            setComposerForm(prev => ({
+                                                ...prev,
+                                                template_id: pattern.id,
+                                                marks: pattern.total_marks || prev.marks,
+                                                duration: pattern.duration_minutes || prev.duration,
+                                                total_questions: pattern.sections?.reduce((sum: number, s: any) => sum + (s.rules?.length || 0), 0) || prev.total_questions
+                                            }))
+                                            showToast(`Applied Pattern: ${pattern.name}`, true)
+                                        }}
+                                    />
                                 </div>
 
                                 <div className="grid grid-cols-3 gap-4">
@@ -628,20 +699,6 @@ export default function OfflinePaperManager() {
                                             className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900"
                                         />
                                     </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Standard Board Pattern Template</label>
-                                    <select
-                                        value={composerForm.template_id}
-                                        onChange={e => setComposerForm({ ...composerForm, template_id: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
-                                    >
-                                        <option value="">General Custom Exam Structure...</option>
-                                        {templates.map(t => (
-                                            <option key={t.id} value={t.id}>{t.name} ({t.total_marks} Marks)</option>
-                                        ))}
-                                    </select>
                                 </div>
 
                                 <div className="space-y-3 pt-2">
@@ -908,8 +965,8 @@ export default function OfflinePaperManager() {
 
             {/* MODAL: GENERATE NEW PAPER */}
             {isCreateModalOpen && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
-                    <div className="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn overflow-y-auto">
+                    <div className="w-full max-w-2xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 my-8 max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div>
                                 <h3 className="text-xl font-black text-slate-900">Generate Examination Paper</h3>
@@ -936,31 +993,66 @@ export default function OfflinePaperManager() {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Class / Standard</label>
-                                    <select
-                                        value={composerForm.class_id}
-                                        onChange={e => setComposerForm({ ...composerForm, class_id: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
-                                    >
-                                        {classes.map(c => (
-                                            <option key={c.id} value={c.id}>{c.name}</option>
-                                        ))}
-                                    </select>
+                            {/* Dynamic Unified Syllabus Tree & Pattern Selector */}
+                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase">
+                                        <BookOpen size={14} className="text-[#004B93]" />
+                                        Select Syllabus Scope & Board Pattern
+                                    </div>
+                                    <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
+                                        Owner Public / Custom
+                                    </span>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Subject</label>
-                                    <select
-                                        value={composerForm.subject_id}
-                                        onChange={e => setComposerForm({ ...composerForm, subject_id: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
-                                    >
-                                        {subjects.map(s => (
-                                            <option key={s.id} value={s.id}>{s.name} ({s.code || 'GEN'})</option>
-                                        ))}
-                                    </select>
-                                </div>
+
+                                <ExamSyllabusPatternPicker
+                                    context={blueprintContext}
+                                    loadingContext={contextLoading}
+                                    onRefreshContext={fetchBlueprintContext}
+                                    selectedBoardId={selectedBoardId}
+                                    selectedClassId={selectedClassId}
+                                    selectedSubjectId={selectedSubjectId}
+                                    selectedChapterIds={selectedChapterIds}
+                                    selectedTopicIds={selectedTopicIds}
+                                    selectedPatternId={selectedPatternId}
+                                    onSelectBoard={bId => {
+                                        setSelectedBoardId(bId)
+                                        setSelectedClassId('')
+                                        setSelectedSubjectId('')
+                                        setSelectedChapterIds([])
+                                        setSelectedTopicIds([])
+                                    }}
+                                    onSelectClass={cNode => {
+                                        setSelectedClassId(cNode.id)
+                                        setComposerForm(prev => ({ ...prev, class_id: cNode.id }))
+                                        setSelectedSubjectId('')
+                                        setSelectedChapterIds([])
+                                        setSelectedTopicIds([])
+                                    }}
+                                    onSelectSubject={sNode => {
+                                        setSelectedSubjectId(sNode.id)
+                                        setComposerForm(prev => ({ ...prev, subject_id: sNode.id }))
+                                        setSelectedChapterIds([])
+                                        setSelectedTopicIds([])
+                                    }}
+                                    onSelectChapters={chIds => {
+                                        setSelectedChapterIds(chIds)
+                                        setComposerForm(f => ({ ...f, chapter_ids: chIds }))
+                                    }}
+                                    onSelectTopics={tpIds => {
+                                        setSelectedTopicIds(tpIds)
+                                    }}
+                                    onSelectPattern={pattern => {
+                                        setSelectedPatternId(pattern.id)
+                                        setComposerForm(prev => ({
+                                            ...prev,
+                                            template_id: pattern.id,
+                                            marks: pattern.total_marks || prev.marks,
+                                            duration: pattern.duration_minutes || prev.duration
+                                        }))
+                                        showToast(`Selected Pattern: ${pattern.name}`, true)
+                                    }}
+                                />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

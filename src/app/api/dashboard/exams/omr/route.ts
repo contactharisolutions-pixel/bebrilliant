@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Default: Hub Overview & All Master Data
-        const [examsRes, templatesRes, uploadsRes, classesRes, subjectsRes, sheetsRes] = await Promise.all([
+        const [examsRes, templatesRes, uploadsRes, classesRes, subjectsRes, sheetsRes, paperTemplatesRes] = await Promise.all([
             supabaseAdmin
                 .from('offline_exams')
                 .select(`
@@ -58,13 +58,15 @@ export async function GET(request: NextRequest) {
                     subject_id,
                     total_questions,
                     omr_template_id,
+                    template_id,
                     duration,
                     created_by,
                     status,
                     created_at,
                     classes:class_id(id, name),
                     subjects:subject_id(id, name, code),
-                    omr_templates:omr_template_id(id, name, total_questions, layout_config)
+                    omr_templates:omr_template_id(id, name, total_questions, layout_config),
+                    paper_templates:template_id(id, name, category, exam_type, total_marks)
                 `)
                 .eq('tenant_id', tenantId)
                 .order('created_at', { ascending: false }),
@@ -72,7 +74,8 @@ export async function GET(request: NextRequest) {
             supabaseAdmin
                 .from('omr_templates')
                 .select('*')
-                .eq('tenant_id', tenantId)
+                .or(`tenant_id.eq.${tenantId},tenant_id.is.null`)
+                .eq('is_active', true)
                 .order('created_at', { ascending: false }),
 
             supabaseAdmin
@@ -99,7 +102,13 @@ export async function GET(request: NextRequest) {
             supabaseAdmin
                 .from('omr_sheets')
                 .select('id, exam_id')
-                .eq('tenant_id', tenantId)
+                .eq('tenant_id', tenantId),
+
+            supabaseAdmin
+                .from('paper_templates')
+                .select('*, sections:template_sections(*, rules:section_question_rules(*))')
+                .eq('is_active', true)
+                .order('name', { ascending: true })
         ])
 
         const exams = examsRes.data || []
@@ -108,26 +117,28 @@ export async function GET(request: NextRequest) {
         const classes = classesRes.data || []
         const subjects = subjectsRes.data || []
         const sheetsCount = sheetsRes.data?.length || 0
+        const paperTemplates = paperTemplatesRes.data || []
 
         const totalScanned = recentUploads.reduce((sum: number, u: any) => sum + (u.processed_sheets || 0), 0) + sheetsCount
         const failedScanned = recentUploads.reduce((sum: number, u: any) => sum + (u.failed_sheets || 0), 0)
         const totalSheetsAttempted = totalScanned + failedScanned
         const successRate = totalSheetsAttempted > 0 
             ? ((totalScanned / totalSheetsAttempted) * 100).toFixed(1)
-            : '99.8'
+            : '100.0'
 
         const metrics = {
-            totalTemplates: templates.length || 4,
-            totalExams: exams.length || 4,
-            totalScanned: totalScanned || 128,
+            totalTemplates: templates.length,
+            totalExams: exams.length,
+            totalScanned: totalScanned,
             successRate: `${successRate}%`,
-            totalEvaluated: totalScanned || 128
+            totalEvaluated: totalScanned
         }
 
         return NextResponse.json({
             metrics,
             exams,
             templates,
+            paperTemplates,
             recentUploads,
             classes,
             subjects
@@ -149,7 +160,7 @@ export async function POST(request: NextRequest) {
         const { action, payload } = body
 
         if (action === 'CREATE_EXAM') {
-            const { title, class_id, subject_id, total_questions, omr_template_id, duration } = payload
+            const { title, class_id, subject_id, total_questions, omr_template_id, template_id, duration } = payload
             if (!title || !class_id || !subject_id) {
                 return NextResponse.json({ error: 'Title, Class, and Subject are required' }, { status: 400 })
             }
@@ -163,6 +174,7 @@ export async function POST(request: NextRequest) {
                     subject_id,
                     total_questions: Number(total_questions) || 50,
                     omr_template_id: omr_template_id || null,
+                    template_id: template_id || null,
                     duration: Number(duration) || 60,
                     created_by: userId,
                     status: 'published'

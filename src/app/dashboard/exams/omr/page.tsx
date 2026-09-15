@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
+import ExamSyllabusPatternPicker, { BlueprintContextData } from '@/components/shared/ExamSyllabusPatternPicker'
 import {
     ScanLine, UploadCloud, Download, CheckCircle, XCircle, FileText,
     Settings, Search, ArrowLeft, Loader2, Sparkles, Printer, Eye, Trash2,
@@ -42,17 +43,27 @@ export default function OMRExamManager() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [metrics, setMetrics] = useState({
-        totalTemplates: 4,
-        totalExams: 4,
-        totalScanned: 128,
-        successRate: '99.8%',
-        totalEvaluated: 128
+        totalTemplates: 0,
+        totalExams: 0,
+        totalScanned: 0,
+        successRate: '100.0%',
+        totalEvaluated: 0
     })
     const [exams, setExams] = useState<any[]>([])
     const [templates, setTemplates] = useState<any[]>([])
     const [recentUploads, setRecentUploads] = useState<any[]>([])
     const [classes, setClasses] = useState<any[]>([])
     const [subjects, setSubjects] = useState<any[]>([])
+
+    // Dynamic Blueprint Context (Syllabus & Patterns)
+    const [blueprintContext, setBlueprintContext] = useState<BlueprintContextData | null>(null)
+    const [contextLoading, setContextLoading] = useState(false)
+    const [selectedBoardId, setSelectedBoardId] = useState('')
+    const [selectedClassId, setSelectedClassId] = useState('')
+    const [selectedSubjectId, setSelectedSubjectId] = useState('')
+    const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([])
+    const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([])
+    const [selectedPatternId, setSelectedPatternId] = useState('')
     
     // Filters & Search
     const [searchQuery, setSearchQuery] = useState('')
@@ -78,12 +89,14 @@ export default function OMRExamManager() {
         subject_id: '',
         total_questions: 50,
         omr_template_id: '',
-        duration: 90
+        template_id: '',
+        chapter_ids: [] as string[],
+        duration: 60
     })
 
     // Designer Form State
     const [designerForm, setDesignerForm] = useState({
-        name: 'CBSE Secondary 50-Bubble Architecture',
+        name: 'Standard 50-Bubble Architecture',
         total_questions: 50,
         options_per_question: 4,
         columns: 2,
@@ -102,21 +115,37 @@ export default function OMRExamManager() {
         setTimeout(() => setToast(null), 4000)
     }
 
+    // Fetch Blueprint Context (Syllabus & Exam Patterns)
+    const fetchBlueprintContext = useCallback(async () => {
+        setContextLoading(true)
+        try {
+            const res = await fetch('/api/dashboard/exams/blueprint-context')
+            if (res.ok) {
+                const data: BlueprintContextData = await res.json()
+                setBlueprintContext(data)
+                if (data.activeBoards?.length > 0 && !selectedBoardId) {
+                    setSelectedBoardId(data.activeBoards[0].id)
+                }
+            }
+        } catch (err) {
+            console.error('Failed to load blueprint context in OMR:', err)
+        } finally {
+            setContextLoading(false)
+        }
+    }, [selectedBoardId])
+
     // Fetch Hub Data
     const fetchData = useCallback(async () => {
         setLoading(true)
         try {
-            const res = await fetch('/api/dashboard/exams/omr')
+            const [res, _] = await Promise.all([
+                fetch('/api/dashboard/exams/omr'),
+                fetchBlueprintContext()
+            ])
             if (!res.ok) throw new Error('Failed to load OMR records')
             const data = await res.json()
 
-            setMetrics(data.metrics || {
-                totalTemplates: 4,
-                totalExams: 4,
-                totalScanned: 128,
-                successRate: '99.8%',
-                totalEvaluated: 128
-            })
+            if (data.metrics) setMetrics(data.metrics)
             setExams(data.exams || [])
             setTemplates(data.templates || [])
             setRecentUploads(data.recentUploads || [])
@@ -137,7 +166,7 @@ export default function OMRExamManager() {
         } finally {
             setLoading(false)
         }
-    }, [newExamForm.class_id])
+    }, [fetchBlueprintContext, newExamForm.class_id])
 
     useEffect(() => {
         fetchData()
@@ -1187,44 +1216,76 @@ export default function OMRExamManager() {
                             </button>
                         </div>
 
-                        <form onSubmit={handleCreateExam} className="space-y-4 text-sm">
+                        <form onSubmit={handleCreateExam} className="space-y-4 text-sm max-h-[75vh] overflow-y-auto pr-1">
+                            {/* Master Unified Syllabus & Exam Pattern Picker */}
+                            <ExamSyllabusPatternPicker
+                                context={blueprintContext}
+                                loadingContext={contextLoading}
+                                onRefreshContext={fetchBlueprintContext}
+                                selectedBoardId={selectedBoardId}
+                                selectedClassId={selectedClassId}
+                                selectedSubjectId={selectedSubjectId}
+                                selectedChapterIds={selectedChapterIds}
+                                selectedTopicIds={selectedTopicIds}
+                                selectedPatternId={selectedPatternId}
+                                onSelectBoard={bId => {
+                                    setSelectedBoardId(bId)
+                                    setSelectedClassId('')
+                                    setSelectedSubjectId('')
+                                    setSelectedChapterIds([])
+                                    setSelectedTopicIds([])
+                                }}
+                                onSelectClass={cNode => {
+                                    setSelectedClassId(cNode.id)
+                                    const matched = classes.find((c: any) => c.name.toLowerCase() === cNode.name.toLowerCase()) || classes[0]
+                                    setNewExamForm(prev => ({ ...prev, class_id: matched?.id || cNode.id }))
+                                    setSelectedSubjectId('')
+                                    setSelectedChapterIds([])
+                                    setSelectedTopicIds([])
+                                }}
+                                onSelectSubject={sNode => {
+                                    setSelectedSubjectId(sNode.id)
+                                    const matched = subjects.find((s: any) => s.name.toLowerCase() === sNode.name.toLowerCase()) || subjects[0]
+                                    setNewExamForm(prev => ({ ...prev, subject_id: matched?.id || sNode.id }))
+                                    setSelectedChapterIds([])
+                                    setSelectedTopicIds([])
+                                }}
+                                onSelectChapters={chIds => {
+                                    setSelectedChapterIds(chIds)
+                                    setNewExamForm(prev => ({ ...prev, chapter_ids: chIds }))
+                                }}
+                                onSelectTopics={tpIds => {
+                                    setSelectedTopicIds(tpIds)
+                                    setNewExamForm(prev => ({ ...prev, topic_ids: tpIds }))
+                                }}
+                                onSelectPattern={pattern => {
+                                    setSelectedPatternId(pattern.id)
+                                    const totalQ = pattern.sections?.reduce(
+                                        (acc: number, s: any) => acc + (s.rules?.reduce((ra: number, r: any) => ra + Number(r.num_questions || 0), 0) || 0), 0
+                                    ) || 50
+                                    const matchingOmr = templates.find((t: any) => t.total_questions === totalQ) || templates[0]
+                                    setNewExamForm(prev => ({
+                                        ...prev,
+                                        template_id: pattern.id,
+                                        title: prev.title ? prev.title : `${pattern.name} OMR Assessment`,
+                                        total_questions: totalQ,
+                                        duration: pattern.duration_minutes || 60,
+                                        omr_template_id: matchingOmr?.id || prev.omr_template_id
+                                    }))
+                                    showToast(`Pattern "${pattern.name}" loaded for physical OMR test!`, true)
+                                }}
+                            />
+
                             <div>
                                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Exam Title</label>
                                 <input
                                     type="text"
                                     required
-                                    placeholder="e.g., Grade 10 Midterm Mathematics OMR Assessment"
+                                    placeholder="e.g. Grade 10 Midterm Mathematics OMR Assessment"
                                     value={newExamForm.title}
                                     onChange={e => setNewExamForm({ ...newExamForm, title: e.target.value })}
                                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
                                 />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Class / Cohort</label>
-                                    <select
-                                        value={newExamForm.class_id}
-                                        onChange={e => setNewExamForm({ ...newExamForm, class_id: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
-                                    >
-                                        {classes.map(c => (
-                                            <option key={c.id} value={c.id}>{c.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Subject</label>
-                                    <select
-                                        value={newExamForm.subject_id}
-                                        onChange={e => setNewExamForm({ ...newExamForm, subject_id: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
-                                    >
-                                        {subjects.map(s => (
-                                            <option key={s.id} value={s.id}>{s.name} ({s.code || 'GEN'})</option>
-                                        ))}
-                                    </select>
-                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -1253,7 +1314,7 @@ export default function OMRExamManager() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Select OMR Blueprint Template</label>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Optical Bubble Grid Layout</label>
                                 <select
                                     value={newExamForm.omr_template_id}
                                     onChange={e => setNewExamForm({ ...newExamForm, omr_template_id: e.target.value })}

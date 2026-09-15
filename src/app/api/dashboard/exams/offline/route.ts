@@ -7,7 +7,9 @@ export async function GET(request: NextRequest) {
         const session = await verifyTenantStaff()
         if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
-        const tenantId = session.tenant_id || '5cccb9be-5b4a-4143-8725-bc6061e337fa'
+        const tenantId = session.tenant_id
+        if (!tenantId) return NextResponse.json({ error: 'Tenant context required' }, { status: 400 })
+
         const action = request.nextUrl.searchParams.get('action')
 
         if (action === 'GET_TEMPLATES') {
@@ -36,9 +38,10 @@ export async function GET(request: NextRequest) {
                         ), '[]'::json
                     ) AS sections
                 FROM public.paper_templates pt
+                WHERE pt.is_global = true OR pt.tenant_id = $1 OR pt.tenant_id IS NULL
                 ORDER BY pt.created_at DESC;
             `
-            const { rows: templates } = await query(templatesQuery)
+            const { rows: templates } = await query(templatesQuery, [tenantId])
             return NextResponse.json(templates || [])
         }
 
@@ -94,15 +97,23 @@ export async function GET(request: NextRequest) {
                     ), '[]'::json
                 ) AS sections
             FROM public.paper_templates pt
+            WHERE pt.is_global = true OR pt.tenant_id = $1 OR pt.tenant_id IS NULL
             ORDER BY pt.name ASC;
         `
 
-        const [examsRes, templatesRes, questionsRes, classesRes, subjectsRes] = await Promise.all([
+        const [examsRes, templatesRes, questionsRes, classesRes, subjectsRes, statsRes] = await Promise.all([
             query(examsQuery, [tenantId]),
-            query(templatesQuery),
+            query(templatesQuery, [tenantId]),
             query(`SELECT id, type, sub_type, difficulty, question_text, marks, source FROM public.questions WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 50`, [tenantId]),
             query(`SELECT id, name FROM public.classes WHERE tenant_id = $1 ORDER BY name ASC`, [tenantId]),
-            query(`SELECT id, name, code FROM public.subjects WHERE tenant_id = $1 ORDER BY name ASC`, [tenantId])
+            query(`SELECT id, name, code FROM public.subjects WHERE tenant_id = $1 ORDER BY name ASC`, [tenantId]),
+            query(`
+                SELECT 
+                    (SELECT COUNT(*) FROM public.offline_exams WHERE tenant_id = $1) AS total_exams,
+                    (SELECT COUNT(*) FROM public.offline_exams WHERE tenant_id = $1 AND status = 'archived') AS archived_exams,
+                    (SELECT COUNT(*) FROM public.questions WHERE tenant_id = $1) AS total_questions,
+                    (SELECT COALESCE(SUM(total_questions), 0) FROM public.offline_exams WHERE tenant_id = $1) AS printed_assets
+            `, [tenantId])
         ])
 
         const exams = examsRes.rows || []
@@ -110,12 +121,13 @@ export async function GET(request: NextRequest) {
         const questions = questionsRes.rows || []
         const classes = classesRes.rows || []
         const subjects = subjectsRes.rows || []
+        const stats = statsRes.rows?.[0] || {}
 
         const metrics = {
-            totalPapers: exams.length || 4,
-            printedAssets: 1240,
-            questionPool: '12,450+',
-            archivedCount: 18
+            totalPapers: Number(stats.total_exams || exams.length || 0),
+            printedAssets: Number(stats.printed_assets || 0),
+            questionPool: `${Number(stats.total_questions || questions.length || 0)} Questions`,
+            archivedCount: Number(stats.archived_exams || 0)
         }
 
         return NextResponse.json({
@@ -137,19 +149,32 @@ export async function POST(request: NextRequest) {
         const session = await verifyTenantStaff()
         if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
-        const tenantId = session.tenant_id || '5cccb9be-5b4a-4143-8725-bc6061e337fa'
-        const userId = session.user?.id || 'f848f0e5-45f2-43a9-a90e-5f2ef4a4e33e'
+        const tenantId = session.tenant_id
+        if (!tenantId) return NextResponse.json({ error: 'Tenant context required' }, { status: 400 })
+
+        const userId = session.user?.id || null
         const body = await request.json()
         const { action, payload } = body
 
         if (action === 'CREATE_EXAM') {
-            const { title, class_id, subject_id, template_id, duration, total_questions } = payload
+            const { title, class_id, subject_id, template_id, duration, total_questions, chapter_ids } = payload
             if (!title) {
                 return NextResponse.json({ error: 'Paper title is required' }, { status: 400 })
             }
 
-            const fallbackClass = class_id || '07e6c35c-3376-4ced-befb-72f6d292e7cf'
-            const fallbackSubject = subject_id || 'cd06490d-f472-4c54-904a-f8be41b078a9'
+            // Dynamically resolve class and subject if not explicitly supplied
+            let resolvedClassId = class_id
+            let resolvedSubjectId = subject_id
+
+            if (!resolvedClassId) {
+                const { rows: firstClass } = await query(`SELECT id FROM public.classes WHERE tenant_id = $1 ORDER BY created_at ASC LIMIT 1`, [tenantId])
+                resolvedClassId = firstClass?.[0]?.id || null
+            }
+
+            if (!resolvedSubjectId) {
+                const { rows: firstSubject } = await query(`SELECT id FROM public.subjects WHERE tenant_id = $1 ORDER BY created_at ASC LIMIT 1`, [tenantId])
+                resolvedSubjectId = firstSubject?.[0]?.id || null
+            }
 
             const { rows: examRows } = await query(
                 `INSERT INTO public.offline_exams 
@@ -159,8 +184,8 @@ export async function POST(request: NextRequest) {
                 [
                     tenantId,
                     title,
-                    fallbackClass,
-                    fallbackSubject,
+                    resolvedClassId,
+                    resolvedSubjectId,
                     template_id || null,
                     Number(total_questions) || 25,
                     Number(duration) || 90,
@@ -169,11 +194,24 @@ export async function POST(request: NextRequest) {
             )
             const exam = examRows[0]
 
-            // Fetch sample questions to map into offline_exam_questions
-            const { rows: existingQs } = await query(
-                `SELECT id FROM public.questions WHERE tenant_id = $1 LIMIT 5`,
-                [tenantId]
-            )
+            // If chapter_ids are specified, try to map real questions from those chapters or general subject questions
+            let questionsQuery = `SELECT id FROM public.questions WHERE tenant_id = $1`
+            const queryParams: any[] = [tenantId]
+
+            if (chapter_ids && Array.isArray(chapter_ids) && chapter_ids.length > 0) {
+                questionsQuery += ` AND chapter_id = ANY($2::uuid[])`
+                queryParams.push(chapter_ids)
+            }
+            questionsQuery += ` ORDER BY created_at DESC LIMIT $${queryParams.length + 1}`
+            queryParams.push(Number(total_questions) || 25)
+
+            let { rows: existingQs } = await query(questionsQuery, queryParams)
+
+            // Fallback to any questions in the tenant if chapter-specific ones aren't populated
+            if (!existingQs || existingQs.length === 0) {
+                const fallbackRes = await query(`SELECT id FROM public.questions WHERE tenant_id = $1 LIMIT 10`, [tenantId])
+                existingQs = fallbackRes.rows || []
+            }
 
             if (existingQs && existingQs.length > 0) {
                 for (let idx = 0; idx < existingQs.length; idx++) {
@@ -186,7 +224,7 @@ export async function POST(request: NextRequest) {
                             exam.id,
                             q.id,
                             idx + 1,
-                            idx < 2 ? 'Section A: Objective Concepts' : 'Section B: Descriptive Problems'
+                            idx < Math.ceil(existingQs.length * 0.4) ? 'Section A: Objective Concepts' : 'Section B: Descriptive Problems'
                         ]
                     )
                 }
