@@ -90,6 +90,23 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Failed to create user profile' }, { status: 500 })
         }
 
+        // If an unlisted institution was requested, record it into CRM leads for institutional outreach
+        if (body.custom_institution) {
+            try {
+                await supabaseAdmin.from('owner_leads').insert({
+                    name: `${first_name} ${last_name}`,
+                    email,
+                    phone,
+                    institution: body.custom_institution,
+                    role: 'Student Inquirer',
+                    status: 'new',
+                    notes: `Requested unlisted institution at signup: ${body.custom_institution}`
+                });
+            } catch (leadErr) {
+                console.warn('Lead capture notification notice:', leadErr);
+            }
+        }
+
         // Send email asynchronously (don't block the response loop if it takes a moment)
         sendWelcomeEmail({
             email,

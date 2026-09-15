@@ -83,6 +83,23 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Failed to create teacher profile' }, { status: 500 })
         }
 
+        // If an unlisted institution was requested, record it into CRM leads for institutional outreach
+        if (body.custom_institution) {
+            try {
+                await supabaseAdmin.from('owner_leads').insert({
+                    name: `${first_name} ${last_name}`,
+                    email,
+                    phone,
+                    institution: body.custom_institution,
+                    role: 'Teacher Inquirer',
+                    status: 'new',
+                    notes: `Teacher applied requesting unlisted institution: ${body.custom_institution}`
+                });
+            } catch (leadErr) {
+                console.warn('Lead capture notification notice:', leadErr);
+            }
+        }
+
         sendTeacherApplicationReceivedEmail({
             email,
             firstName: first_name,
