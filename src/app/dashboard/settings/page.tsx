@@ -65,6 +65,9 @@ interface DomainSettings {
     status: string;
     ssl_status: string;
     verification_token: string;
+    cname_status?: string;
+    txt_status?: string;
+    last_checked?: string | null;
 }
 
 interface TenantSettingsData {
@@ -94,7 +97,11 @@ export default function SettingsPage() {
     const [saving, setSaving] = useState(false);
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
     const [copiedDomain, setCopiedDomain] = useState(false);
+    const [copiedCname, setCopiedCname] = useState(false);
+    const [copiedTxt, setCopiedTxt] = useState(false);
     const [dnsVerifying, setDnsVerifying] = useState(false);
+    const [subdomainSaving, setSubdomainSaving] = useState(false);
+    const [customDomainSaving, setCustomDomainSaving] = useState(false);
 
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok });
@@ -147,6 +154,7 @@ export default function SettingsPage() {
     };
 
     const handleVerifyDNS = async () => {
+        if (!data) return;
         setDnsVerifying(true);
         try {
             const res = await fetch('/api/dashboard/settings', {
@@ -155,22 +163,102 @@ export default function SettingsPage() {
                 body: JSON.stringify({
                     action: 'VERIFY_DOMAIN',
                     payload: {
-                        custom_domain: data?.settings.domains.custom_domain,
-                        subdomain: data?.settings.domains.subdomain
+                        custom_domain: data.settings.domains.custom_domain,
+                        subdomain: data.settings.domains.subdomain
                     }
                 })
             });
             const json = await res.json();
             if (res.ok) {
-                showToast(json.message || 'Domain DNS verified successfully!', true);
+                showToast(json.message || 'DNS status check complete!', true);
                 await fetchData();
             } else {
-                showToast(json.error || 'DNS Verification in progress', false);
+                showToast(json.error || 'DNS Verification failed', false);
             }
         } catch {
             showToast('DNS verification lookup timeout', false);
         } finally {
             setDnsVerifying(false);
+        }
+    };
+
+    const handleUpdateSubdomain = async () => {
+        if (!data) return;
+        const sub = data.settings.domains.subdomain?.trim().toLowerCase();
+        if (!sub) {
+            showToast('Subdomain cannot be empty', false);
+            return;
+        }
+        setSubdomainSaving(true);
+        try {
+            const res = await fetch('/api/dashboard/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'UPDATE_BRANDING',
+                    payload: {
+                        ...data.settings.branding,
+                        subdomain: sub
+                    }
+                })
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error || 'Failed to update subdomain');
+            showToast('Portal subdomain updated successfully!', true);
+            await fetchData();
+        } catch (e: any) {
+            showToast(e.message || 'Subdomain update failed', false);
+        } finally {
+            setSubdomainSaving(false);
+        }
+    };
+
+    const handleSaveCustomDomain = async (domainToSave?: string) => {
+        if (!data) return;
+        const domainVal = domainToSave !== undefined ? domainToSave : (data.settings.domains.custom_domain || '');
+        setCustomDomainSaving(true);
+        try {
+            const res = await fetch('/api/dashboard/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'SAVE_CUSTOM_DOMAIN',
+                    payload: {
+                        custom_domain: domainVal.trim().toLowerCase()
+                    }
+                })
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error || 'Failed to save custom domain');
+            showToast(json.message || 'Custom domain configuration saved!', true);
+            await fetchData();
+        } catch (e: any) {
+            showToast(e.message || 'Saving custom domain failed', false);
+        } finally {
+            setCustomDomainSaving(false);
+        }
+    };
+
+    const handleRemoveCustomDomain = async () => {
+        if (!confirm('Are you sure you want to remove the custom domain? Your portal will switch back to the default cloud subdomain.')) return;
+        setData(prev => prev ? ({
+            ...prev,
+            settings: {
+                ...prev.settings,
+                domains: { ...prev.settings.domains, custom_domain: '' }
+            }
+        }) : null);
+        await handleSaveCustomDomain('');
+    };
+
+    const copyToClipboard = (text: string, type: 'cname' | 'txt') => {
+        navigator.clipboard.writeText(text);
+        if (type === 'cname') {
+            setCopiedCname(true);
+            setTimeout(() => setCopiedCname(false), 2000);
+        } else {
+            setCopiedTxt(true);
+            setTimeout(() => setCopiedTxt(false), 2000);
         }
     };
 
@@ -234,7 +322,7 @@ export default function SettingsPage() {
             <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-8">
                 <Loader2 size={42} className="animate-spin text-[#004B93] mb-4" />
                 <div className="text-xs font-black text-slate-500 uppercase tracking-widest">
-                    Synchronizing Institutional Governance Matrix...
+                    Loading Institutional Settings...
                 </div>
             </div>
         );
@@ -276,7 +364,7 @@ export default function SettingsPage() {
                                     Governance Synchronized
                                 </span>
                                 <span className="text-xs text-slate-400 font-semibold font-mono">
-                                    NODE: {data.subdomain.toUpperCase()} • TIER: {data.subscription_plan}
+                                    PORTAL: {data.subdomain.toLowerCase()}.bebrilliant.in • PLAN: {data.subscription_plan}
                                 </span>
                             </div>
                             <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
@@ -469,25 +557,44 @@ export default function SettingsPage() {
                                     </div>
 
                                     {/* Subdomain Router */}
-                                    <div className="sm:col-span-2">
-                                        <label className="font-bold text-slate-700 block mb-1.5 uppercase tracking-wider text-[11px]">Cloud Portal Subdomain</label>
-                                        <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
-                                            <div className="pl-4 pr-2 text-slate-400 font-mono text-xs">https://</div>
-                                            <input
-                                                type="text"
-                                                value={domains.subdomain}
-                                                onChange={e => setData(prev => ({
-                                                    ...prev!,
-                                                    settings: {
-                                                        ...prev!.settings,
-                                                        domains: { ...prev!.settings.domains, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }
-                                                    }
-                                                }))}
-                                                className="flex-1 py-2.5 bg-transparent font-mono font-bold text-slate-900 focus:outline-none text-xs"
-                                            />
-                                            <div className="px-4 py-2.5 bg-slate-200 text-slate-700 font-mono text-xs font-bold border-l border-slate-300">
-                                                .bebrilliant.in
+                                    <div className="sm:col-span-2 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">Cloud Portal Subdomain</label>
+                                            <span className="text-[11px] text-slate-400 font-medium">Your primary school access address</span>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row gap-2.5">
+                                            <div className="flex-1 flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#004B93]/20 focus-within:border-[#004B93]">
+                                                <div className="pl-4 pr-2 text-slate-400 font-mono text-xs">https://</div>
+                                                <input
+                                                    type="text"
+                                                    value={domains.subdomain}
+                                                    onChange={e => setData(prev => ({
+                                                        ...prev!,
+                                                        settings: {
+                                                            ...prev!.settings,
+                                                            domains: { ...prev!.settings.domains, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }
+                                                        }
+                                                    }))}
+                                                    placeholder="school-name"
+                                                    className="flex-1 py-2.5 bg-transparent font-mono font-bold text-slate-900 focus:outline-none text-xs"
+                                                />
+                                                <div className="px-4 py-2.5 bg-slate-200 text-slate-700 font-mono text-xs font-bold border-l border-slate-300">
+                                                    .bebrilliant.in
+                                                </div>
                                             </div>
+                                            <button
+                                                type="button"
+                                                onClick={handleUpdateSubdomain}
+                                                disabled={subdomainSaving || !domains.subdomain}
+                                                className="px-5 py-2.5 bg-[#004B93] hover:bg-[#003870] disabled:bg-slate-300 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm"
+                                            >
+                                                {subdomainSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                                                Save Subdomain
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                                            <span>Live Link: <a href={`https://${domains.subdomain}.bebrilliant.in`} target="_blank" rel="noreferrer" className="text-[#004B93] font-semibold underline hover:text-blue-800">https://{domains.subdomain}.bebrilliant.in</a></span>
+                                            <span className="text-slate-400 text-[10px]">Lowercase letters, numbers, and hyphens only</span>
                                         </div>
                                     </div>
                                 </div>
@@ -955,23 +1062,44 @@ export default function SettingsPage() {
                         <div className="w-full space-y-6">
                             {/* Primary Domain Router Card */}
                             <div className="w-full bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
-                                <div className="border-b border-slate-100 pb-4">
-                                    <h3 className="text-lg font-black text-slate-900">Custom Domains & DNS White-Labeling</h3>
-                                    <p className="text-xs text-slate-500 font-medium">Bind your institution's custom official website URL (e.g. portal.silverbells.edu.in) directly to BeBrilliant cloud infrastructure</p>
+                                <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                    <div>
+                                        <h3 className="text-lg font-black text-slate-900">Custom Domains & DNS White-Labeling</h3>
+                                        <p className="text-xs text-slate-500 font-medium">Bind your institution's custom official website URL (e.g. portal.silverbells.edu.in) directly to BeBrilliant cloud infrastructure</p>
+                                    </div>
+                                    {domains.last_checked && (
+                                        <div className="text-[11px] text-slate-400 font-mono">
+                                            Last checked: {new Date(domains.last_checked).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Active Subdomain Box */}
                                 <div className="p-6 bg-slate-900 text-white rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+                                        <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0">
                                             <Globe size={20} />
                                         </div>
                                         <div>
-                                            <div className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Default Cloud Route (Active)</div>
-                                            <div className="text-base font-mono font-black text-white">https://{domains.subdomain}.bebrilliant.in</div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Default Cloud Route (Active)</span>
+                                                {domains.custom_domain && (domains.status === 'verified' || domains.cname_status === 'verified') && (
+                                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                                        CUSTOM DOMAIN ACTIVE
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="text-base font-mono font-black text-white">
+                                                https://{domains.subdomain}.bebrilliant.in
+                                            </div>
+                                            {domains.custom_domain && (domains.status === 'verified' || domains.cname_status === 'verified') && (
+                                                <div className="text-xs font-mono text-emerald-400 mt-1 flex items-center gap-1.5">
+                                                    <CheckCircle2 size={12} /> Custom Domain Primary: https://{domains.custom_domain}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex flex-wrap items-center gap-2">
                                         <button
                                             onClick={copySubdomainUrl}
                                             className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
@@ -980,7 +1108,9 @@ export default function SettingsPage() {
                                             {copiedDomain ? 'Copied' : 'Copy URL'}
                                         </button>
                                         <a
-                                            href={`https://${domains.subdomain}.bebrilliant.in`}
+                                            href={domains.custom_domain && (domains.status === 'verified' || domains.cname_status === 'verified')
+                                                ? `https://${domains.custom_domain}`
+                                                : `https://${domains.subdomain}.bebrilliant.in`}
                                             target="_blank"
                                             rel="noreferrer"
                                             className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black flex items-center gap-1.5 transition shadow-sm"
@@ -990,10 +1120,55 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
 
+                                {/* Step-by-Step DNS Guidance Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                                    <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-1.5">
+                                        <div className="flex items-center gap-2 text-xs font-black text-[#004B93]">
+                                            <span className="w-5 h-5 rounded-full bg-[#004B93] text-white flex items-center justify-center text-[10px]">1</span>
+                                            Enter & Save Domain
+                                        </div>
+                                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                                            Type your official FQDN (e.g. <span className="font-mono font-semibold">portal.school.edu</span>) and click <strong>Save Domain</strong>.
+                                        </p>
+                                    </div>
+                                    <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-100 space-y-1.5">
+                                        <div className="flex items-center gap-2 text-xs font-black text-amber-800">
+                                            <span className="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px]">2</span>
+                                            Configure DNS Records
+                                        </div>
+                                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                                            Add the <strong>CNAME</strong> and <strong>TXT</strong> records shown below in your domain registrar's DNS manager.
+                                        </p>
+                                    </div>
+                                    <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 space-y-1.5">
+                                        <div className="flex items-center gap-2 text-xs font-black text-emerald-800">
+                                            <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">3</span>
+                                            Verify DNS Propagation
+                                        </div>
+                                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                                            Click <strong>Verify DNS</strong>. Once DNS resolves, SSL certificate activates automatically.
+                                        </p>
+                                    </div>
+                                </div>
+
                                 {/* Custom Domain Binding Input */}
-                                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
-                                    <div>
-                                        <label className="font-bold text-slate-700 block mb-1.5 uppercase tracking-wider text-[11px]">Bind Custom Domain (FQDN)</label>
+                                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-5">
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">
+                                                Bind Custom Domain (FQDN)
+                                            </label>
+                                            {domains.custom_domain && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleRemoveCustomDomain}
+                                                    disabled={customDomainSaving}
+                                                    className="text-[11px] font-bold text-rose-600 hover:text-rose-800 underline transition"
+                                                >
+                                                    Remove Custom Domain
+                                                </button>
+                                            )}
+                                        </div>
                                         <div className="flex flex-col sm:flex-row gap-3">
                                             <input
                                                 type="text"
@@ -1009,9 +1184,19 @@ export default function SettingsPage() {
                                                 className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
                                             />
                                             <button
+                                                type="button"
+                                                onClick={() => handleSaveCustomDomain()}
+                                                disabled={customDomainSaving || !domains.custom_domain}
+                                                className="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-100 disabled:opacity-50 text-slate-700 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm"
+                                            >
+                                                {customDomainSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                                                Save Domain
+                                            </button>
+                                            <button
+                                                type="button"
                                                 onClick={handleVerifyDNS}
                                                 disabled={dnsVerifying || !domains.custom_domain}
-                                                className="px-6 py-2.5 bg-[#004B93] hover:bg-[#003870] disabled:bg-slate-300 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition"
+                                                className="px-6 py-2.5 bg-[#004B93] hover:bg-[#003870] disabled:bg-slate-300 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm"
                                             >
                                                 {dnsVerifying ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
                                                 Verify DNS Propagation
@@ -1020,40 +1205,111 @@ export default function SettingsPage() {
                                     </div>
 
                                     {/* DNS Records Table */}
-                                    <div className="space-y-2 pt-2">
-                                        <div className="text-[11px] font-black uppercase tracking-wider text-slate-500">Required DNS Records (at your domain registrar)</div>
-                                        <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-                                            <table className="w-full text-left text-xs">
-                                                <thead className="bg-slate-50 text-[10px] uppercase font-bold text-slate-400 border-b border-slate-200">
-                                                    <tr>
-                                                        <th className="p-3">Type</th>
-                                                        <th className="p-3">Host / Name</th>
-                                                        <th className="p-3">Target Value</th>
-                                                        <th className="p-3">TTL</th>
-                                                        <th className="p-3 text-right">Status</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-slate-100 font-mono">
-                                                    <tr>
-                                                        <td className="p-3 font-bold text-slate-900">CNAME</td>
-                                                        <td className="p-3 text-slate-600">{domains.custom_domain ? domains.custom_domain.split('.')[0] : 'portal'}</td>
-                                                        <td className="p-3 font-bold text-[#004B93]">cname.bebrilliant.in</td>
-                                                        <td className="p-3 text-slate-500">Auto (3600)</td>
-                                                        <td className="p-3 text-right font-sans">
-                                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">CONFIGURED</span>
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td className="p-3 font-bold text-slate-900">TXT</td>
-                                                        <td className="p-3 text-slate-600">_bebrilliant-challenge</td>
-                                                        <td className="p-3 text-slate-500 truncate max-w-xs">{domains.verification_token}</td>
-                                                        <td className="p-3 text-slate-500">Auto</td>
-                                                        <td className="p-3 text-right font-sans">
-                                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">VERIFIED</span>
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
+                                    <div className="space-y-3 pt-2">
+                                        <div className="flex items-center justify-between">
+                                            <div className="text-[11px] font-black uppercase tracking-wider text-slate-600 flex items-center gap-2">
+                                                <span>Required DNS Records</span>
+                                                <span className="text-[10px] font-normal text-slate-400 normal-case">(Add these in GoDaddy, Cloudflare, Namecheap, etc.)</span>
+                                            </div>
+                                        </div>
+                                        <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left text-xs">
+                                                    <thead className="bg-slate-50 text-[10px] uppercase font-bold text-slate-400 border-b border-slate-200">
+                                                        <tr>
+                                                            <th className="p-3">Type</th>
+                                                            <th className="p-3">Host / Name</th>
+                                                            <th className="p-3">Target / Value</th>
+                                                            <th className="p-3">TTL</th>
+                                                            <th className="p-3 text-right">DNS Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100 font-mono">
+                                                        <tr>
+                                                            <td className="p-3 font-bold text-slate-900">
+                                                                <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-mono text-[11px]">CNAME</span>
+                                                            </td>
+                                                            <td className="p-3 text-slate-700 font-semibold">
+                                                                {domains.custom_domain ? (
+                                                                    <span>
+                                                                        {domains.custom_domain.split('.').length > 2 ? domains.custom_domain.split('.')[0] : '@'}
+                                                                        <span className="text-slate-400 font-normal text-[10px] block font-sans">
+                                                                            ({domains.custom_domain})
+                                                                        </span>
+                                                                    </span>
+                                                                ) : 'portal'}
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="font-bold text-[#004B93]">cname.bebrilliant.in</span>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => copyToClipboard('cname.bebrilliant.in', 'cname')}
+                                                                        className="p-1 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded transition"
+                                                                        title="Copy target"
+                                                                    >
+                                                                        {copiedCname ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-3 text-slate-500 font-sans">Auto / 3600</td>
+                                                            <td className="p-3 text-right font-sans">
+                                                                {domains.cname_status === 'verified' || domains.status === 'verified' ? (
+                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
+                                                                        <CheckCircle2 size={11} /> VERIFIED
+                                                                    </span>
+                                                                ) : domains.cname_status === 'configured' ? (
+                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">
+                                                                        <AlertCircle size={11} /> DETECTED
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-slate-100 text-slate-600">
+                                                                        PENDING
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td className="p-3 font-bold text-slate-900">
+                                                                <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-mono text-[11px]">TXT</span>
+                                                            </td>
+                                                            <td className="p-3 text-slate-700 font-semibold">
+                                                                _bebrilliant-challenge
+                                                                <span className="text-slate-400 font-normal text-[10px] block font-sans">
+                                                                    (Verification challenge)
+                                                                </span>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-slate-700 truncate max-w-[200px] sm:max-w-xs block font-mono text-[11px]">
+                                                                        {domains.verification_token}
+                                                                    </span>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => copyToClipboard(domains.verification_token, 'txt')}
+                                                                        className="p-1 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded transition shrink-0"
+                                                                        title="Copy token"
+                                                                    >
+                                                                        {copiedTxt ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-3 text-slate-500 font-sans">Auto / 3600</td>
+                                                            <td className="p-3 text-right font-sans">
+                                                                {domains.txt_status === 'verified' || domains.status === 'verified' ? (
+                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
+                                                                        <CheckCircle2 size={11} /> VERIFIED
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-slate-100 text-slate-600">
+                                                                        PENDING
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

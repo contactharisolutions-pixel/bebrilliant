@@ -228,7 +228,7 @@ function WithdrawalModal({
                         </div>
                         <div>
                             <h3 className="text-base font-black text-slate-900">Request Bank Settlement</h3>
-                            <p className="text-xs text-slate-500 font-medium">Clear institutional liquidity to verified bank account</p>
+                            <p className="text-xs text-slate-500 font-medium">Transfer your available school fee earnings to your bank account</p>
                         </div>
                     </div>
                     <button
@@ -240,10 +240,10 @@ function WithdrawalModal({
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-7 overflow-y-auto space-y-5 text-xs">
-                    {/* Available Liquidity Box */}
+                    {/* Available Balance Box */}
                     <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between">
                         <div>
-                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Available Liquidity</span>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Available Balance</span>
                             <div className="text-2xl font-black text-slate-900 mt-0.5">₹{availableBalance.toLocaleString()}</div>
                         </div>
                         <div className="px-3 py-1 bg-emerald-50 text-emerald-700 font-bold rounded-lg text-xs">
@@ -390,7 +390,7 @@ function ManualFeeModal({
                         </div>
                         <div>
                             <h3 className="text-base font-black text-slate-900">Record Offline Fee Collection</h3>
-                            <p className="text-xs text-slate-500 font-medium">Credit cash, cheque, or direct bank deposits to institutional ledger</p>
+                            <p className="text-xs text-slate-500 font-medium">Record cash, cheque, or direct bank deposits collected from students</p>
                         </div>
                     </div>
                     <button
@@ -770,7 +770,7 @@ export default function WalletPayouts() {
             <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-8">
                 <Loader2 size={42} className="animate-spin text-[#004B93] mb-4" />
                 <div className="text-xs font-black text-slate-500 uppercase tracking-widest">
-                    Synchronizing Treasury Liquidity Ledger...
+                    Loading Fee Collections & Bank Balances...
                 </div>
             </div>
         );
@@ -793,7 +793,7 @@ export default function WalletPayouts() {
                 <div className="absolute inset-0 z-0 opacity-40 mix-blend-luminosity">
                     <Image
                         src="/assets/images/dashboard/wallet_earnings_banner.jpg"
-                        alt="Institutional Treasury & Liquidity Command"
+                        alt="School Fee Collections & Bank Settlements"
                         fill
                         className="object-cover object-center"
                         priority
@@ -807,14 +807,14 @@ export default function WalletPayouts() {
                             <div className="flex flex-wrap items-center gap-3">
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                                    Treasury Liquidity Operational
+                                    Fee Treasury Active
                                 </span>
                                 <span className="text-xs text-slate-400 font-semibold font-mono">
-                                    GATEWAY: ENCRYPTED HDFC CLEARING • TDS RATE: 10%
+                                    BANK GATEWAY: HDFC CLEARING • TDS RATE: 10%
                                 </span>
                             </div>
                             <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
-                                Institutional Payments & Earnings Treasury
+                                School Fee Collections & Bank Settlements
                             </h1>
                             <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed font-normal">
                                 Real-time student fee collections, online examination registration revenues, automatic TDS compliance tracking, and scheduled bank disbursements.
@@ -849,11 +849,11 @@ export default function WalletPayouts() {
             <div className="w-full px-6 sm:px-10 mt-8 space-y-8">
                 {/* 4 EXECUTIVE KPI METRICS (FULL WIDTH GRID) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {/* Card 1: Available Liquidity */}
+                    {/* Card 1: Available Balance */}
                     <div className="bg-gradient-to-br from-[#004B93] to-[#002D58] text-white p-6 rounded-3xl shadow-lg shadow-blue-900/15 relative overflow-hidden flex flex-col justify-between">
                         <div>
                             <div className="flex justify-between items-start mb-3">
-                                <span className="text-[11px] font-bold text-white/70 uppercase tracking-wider">Available Liquidity</span>
+                                <span className="text-[11px] font-bold text-white/70 uppercase tracking-wider">Available Balance</span>
                                 <div className="p-2 bg-white/10 text-white rounded-xl">
                                     <WalletCards size={18} />
                                 </div>
@@ -933,7 +933,7 @@ export default function WalletPayouts() {
                 {/* TAB NAVIGATION BAR (FULL WIDTH) */}
                 <div className="w-full border-b border-slate-200 pb-3 flex flex-wrap items-center gap-2.5">
                     {[
-                        { id: 'overview', label: 'Overview & Liquidity Telemetry', icon: Coins },
+                        { id: 'overview', label: 'Fee Overview & Balances', icon: Coins },
                         { id: 'collections', label: 'Inbound Collections & Fee Ledger', icon: Receipt, count: collections.length },
                         { id: 'disbursements', label: 'Bank Disbursements & Settlements', icon: Landmark, count: disbursements.length },
                         { id: 'bank', label: 'Settlement Bank Account & Tax', icon: Building2 },
@@ -966,7 +966,7 @@ export default function WalletPayouts() {
 
                 {/* TAB CONTENT PANELS (FULL WIDTH) */}
                 <div className="w-full">
-                    {/* ── TAB 1: OVERVIEW & LIQUIDITY TELEMETRY ── */}
+                    {/* ── TAB 1: FEE OVERVIEW & BALANCES ── */}
                     {activeTab === 'overview' && (
                         <div className="w-full space-y-6">
                             {/* Revenue Breakdown Matrix */}
@@ -1069,7 +1069,7 @@ export default function WalletPayouts() {
                             <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
                                 <div>
                                     <h3 className="text-base font-bold text-slate-900">Inbound Student Fee Collections</h3>
-                                    <p className="text-xs text-slate-500 font-medium">Real-time ledger of tuition, exam fees, and digital resource purchases</p>
+                                    <p className="text-xs text-slate-500 font-medium">All tuition fees, exam fees, and digital purchases collected from students</p>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-3">
                                     <input

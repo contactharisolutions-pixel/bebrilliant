@@ -795,7 +795,7 @@ export default function NoticeBoardDashboard() {
                         <div className="border-b border-slate-100 pb-5">
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 mb-2">
                                 <Sparkles className="w-3.5 h-3.5" />
-                                Institutional Announcement Composer
+                                New School Circular
                             </span>
                             <h2 className="text-2xl font-bold text-slate-900">Publish Official School Circular</h2>
                             <p className="text-sm text-slate-500 mt-1">

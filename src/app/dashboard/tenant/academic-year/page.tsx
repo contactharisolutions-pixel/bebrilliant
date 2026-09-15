@@ -262,13 +262,13 @@ export default function AcademicYearPortal() {
             })
             const data = await res.json()
             if (res.ok && data.success) {
-                addToast('Promotion vector rules saved successfully', 'success')
+                addToast('Class promotion rules saved successfully', 'success')
                 await fetchInitialData()
             } else {
                 addToast(data.error || 'Failed to save rules', 'error')
             }
         } catch (err) {
-            addToast('Failed to save promotion rules', 'error')
+            addToast('Failed to save class promotion rules', 'error')
         } finally {
             setSavingRules(false)
         }
@@ -284,13 +284,13 @@ export default function AcademicYearPortal() {
             })
             const data = await res.json()
             if (res.ok && data.success) {
-                addToast(`Constructed ${data.count} sequential promotion vector rules from classes`, 'success')
+                addToast(`Created ${data.count} sequential class promotion rules`, 'success')
                 await fetchInitialData()
             } else {
                 addToast(data.error || 'Failed to auto-generate rules', 'error')
             }
         } catch (err) {
-            addToast('Auto-generation pipeline error', 'error')
+            addToast('Failed to generate promotion rules', 'error')
         } finally {
             setGeneratingRules(false)
         }
@@ -454,29 +454,29 @@ export default function AcademicYearPortal() {
                         )}
                     </div>
 
-                    <div className="max-w-2xl">
+                    <div>
                         <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
-                            Academic Lifecycle & Promotion Engine
+                            Academic Years & Student Promotions
                         </h1>
-                        <p className="mt-2 text-sm sm:text-base text-slate-300 font-medium leading-relaxed">
-                            Orchestrate annual academic sessions, calibrate class progression vectors, and execute audit-backed mass student migrations across institutional cycles.
+                        <p className="mt-2 text-sm sm:text-base text-slate-300 font-medium leading-relaxed max-w-3xl">
+                            Manage annual school sessions, set up automatic class promotion rules, and promote students to their next class with complete record history.
                         </p>
                     </div>
                 </div>
             </div>
 
-            {/* ── EXECUTIVE KPI TELEMETRY CARDS ── */}
-            <div className="mx-6 sm:mx-10 mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* ── SUMMARY STATUS CARDS ── */}
+            <div className="w-full px-6 sm:px-10 mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {/* KPI 1 */}
                 <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-start justify-between">
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Active Operational Cycle</p>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Current Academic Year</p>
                         <h3 className="text-xl font-black text-slate-900 mt-2 truncate">
                             {activeYear ? activeYear.name : 'Not Configured'}
                         </h3>
                         <p className="text-xs font-semibold text-slate-500 mt-1 flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5 text-emerald-500" />
-                            {activeYear ? `${formatDate(activeYear.start_date)} → ${formatDate(activeYear.end_date)}` : 'Initialize a session'}
+                            {activeYear ? `${formatDate(activeYear.start_date)} → ${formatDate(activeYear.end_date)}` : 'Add an academic session'}
                         </p>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center shrink-0">
@@ -487,12 +487,12 @@ export default function AcademicYearPortal() {
                 {/* KPI 2 */}
                 <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-start justify-between">
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Session Archives</p>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">All Academic Years</p>
                         <h3 className="text-2xl font-black text-slate-900 mt-2">
-                            {years.length} <span className="text-sm font-semibold text-slate-400">Recorded</span>
+                            {years.length} <span className="text-sm font-semibold text-slate-400">Total</span>
                         </h3>
                         <p className="text-xs font-semibold text-slate-500 mt-1">
-                            {years.filter(y => !y.is_active).length} Archived Historical Sessions
+                            {years.filter(y => !y.is_active).length} Past Completed Years
                         </p>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-sky-50 border border-sky-200/60 flex items-center justify-center shrink-0">
@@ -503,12 +503,12 @@ export default function AcademicYearPortal() {
                 {/* KPI 3 */}
                 <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-start justify-between">
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Promotion Vectors</p>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Class Promotion Rules</p>
                         <h3 className="text-2xl font-black text-slate-900 mt-2">
                             {rules.length} <span className="text-sm font-semibold text-slate-400">Rules</span>
                         </h3>
                         <p className="text-xs font-semibold text-slate-500 mt-1">
-                            {classes.length > 0 ? `${Math.min(100, Math.round((rules.length / classes.length) * 100))}% Class Path Coverage` : 'No classes set'}
+                            {classes.length > 0 ? `${Math.min(100, Math.round((rules.length / classes.length) * 100))}% Classes Mapped` : 'No classes set'}
                         </p>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-200/60 flex items-center justify-center shrink-0">
@@ -519,13 +519,13 @@ export default function AcademicYearPortal() {
                 {/* KPI 4 */}
                 <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-start justify-between">
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Migration Candidates</p>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Students to Promote</p>
                         <h3 className="text-2xl font-black text-slate-900 mt-2">
                             {stats?.total_candidates ?? 0} <span className="text-sm font-semibold text-slate-400">Students</span>
                         </h3>
                         <p className="text-xs font-semibold text-emerald-600 mt-1 flex items-center gap-1">
                             <CheckCircle2 className="w-3.5 h-3.5" />
-                            {stats?.migration_readiness_pct ?? 100}% Vector Compliance
+                            {stats?.migration_readiness_pct ?? 100}% Ready to Promote
                         </p>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200/60 flex items-center justify-center shrink-0">
@@ -535,7 +535,7 @@ export default function AcademicYearPortal() {
             </div>
 
             {/* ── TAB NAVIGATION ── */}
-            <div className="mx-6 sm:mx-10 mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+            <div className="w-full px-6 sm:px-10 mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
                 <div className="flex flex-wrap items-center gap-2 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60 w-fit">
                     <button
                         onClick={() => setActiveTab('years')}
@@ -545,7 +545,7 @@ export default function AcademicYearPortal() {
                                 : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
-                        <Calendar className="w-4 h-4 text-emerald-600" /> Academic Sessions
+                        <Calendar className="w-4 h-4 text-emerald-600" /> Academic Years
                         <span className="px-2 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-700 font-extrabold">
                             {years.length}
                         </span>
@@ -559,7 +559,7 @@ export default function AcademicYearPortal() {
                                 : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
-                        <Settings2 className="w-4 h-4 text-indigo-600" /> Promotion Vectors
+                        <Settings2 className="w-4 h-4 text-indigo-600" /> Class Promotion Rules
                         <span className="px-2 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-700 font-extrabold">
                             {rules.length}
                         </span>
@@ -573,7 +573,7 @@ export default function AcademicYearPortal() {
                                 : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
-                        <TrendingUp className="w-4 h-4 text-sky-600" /> Mass Migration Audit
+                        <TrendingUp className="w-4 h-4 text-sky-600" /> Promote Students
                         {preview.length > 0 && (
                             <span className="px-2 py-0.5 text-[10px] rounded-full bg-sky-100 text-sky-800 font-extrabold">
                                 {preview.length}
@@ -589,7 +589,7 @@ export default function AcademicYearPortal() {
                                 : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
-                        <History className="w-4 h-4 text-amber-600" /> Audit Logs
+                        <History className="w-4 h-4 text-amber-600" /> Promotion History & Records
                         <span className="px-2 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-700 font-extrabold">
                             {migrationLogs.length}
                         </span>
@@ -601,22 +601,22 @@ export default function AcademicYearPortal() {
                         onClick={fetchInitialData}
                         className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition flex items-center gap-2 shadow-sm"
                     >
-                        <RefreshCcw className={`w-3.5 h-3.5 text-slate-500 ${loading ? 'animate-spin' : ''}`} /> Sync Core
+                        <RefreshCcw className={`w-3.5 h-3.5 text-slate-500 ${loading ? 'animate-spin' : ''}`} /> Refresh Data
                     </button>
                 </div>
             </div>
 
             {/* ── TAB 1: ACADEMIC SESSIONS (YEARS) ── */}
             {activeTab === 'years' && (
-                <div className="mx-6 sm:mx-10 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    {/* LEFT: Initialize Session Form */}
+                <div className="w-full px-6 sm:px-10 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    {/* LEFT: Add Academic Year Form */}
                     <div className="lg:col-span-5 bg-white p-7 rounded-3xl border border-slate-200/80 shadow-sm sticky top-6">
                         <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center mb-5">
                             <Plus className="w-6 h-6 text-emerald-600" />
                         </div>
-                        <h3 className="text-xl font-black text-slate-900">Initialize Academic Cycle</h3>
+                        <h3 className="text-xl font-black text-slate-900">Add New Academic Year</h3>
                         <p className="text-xs text-slate-500 font-medium mt-1 mb-6">
-                            Configure standard calendar bounds for your institution&apos;s operational session.
+                            Set up start and end dates for your school&apos;s new academic year.
                         </p>
 
                         {/* Quick Presets */}
@@ -641,7 +641,7 @@ export default function AcademicYearPortal() {
                         <form onSubmit={handleCreateYear} className="space-y-5">
                             <div>
                                 <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
-                                    Cycle Designation <span className="text-rose-500">*</span>
+                                    Academic Year Name <span className="text-rose-500">*</span>
                                 </label>
                                 <input
                                     type="text"
@@ -809,16 +809,16 @@ export default function AcademicYearPortal() {
                 </div>
             )}
 
-            {/* ── TAB 2: PROMOTION VECTORS (RULES) ── */}
+            {/* ── TAB 2: CLASS PROMOTION RULES ── */}
             {activeTab === 'rules' && (
-                <div className="mx-6 sm:mx-10 mt-8 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-sm">
+                <div className="w-full px-6 sm:px-10 mt-8 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-sm">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-8 border-b border-slate-100">
                         <div>
                             <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3">
-                                <Settings2 className="w-7 h-7 text-indigo-600" /> Promotion Mapping Vectors
+                                <Settings2 className="w-7 h-7 text-indigo-600" /> Class Promotion Rules
                             </h3>
                             <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-                                Establish deterministic pathways that govern how cohorts transition from one grade level to the next.
+                                Set up how students automatically move from one class to the next at the end of the year.
                             </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-3">
@@ -829,7 +829,7 @@ export default function AcademicYearPortal() {
                                 title="Inspects class sort order and automatically builds standard sequence"
                             >
                                 <Sparkles className={`w-4 h-4 ${generatingRules ? 'animate-spin' : ''}`} />
-                                Auto-Generate Sequential Ladder
+                                Auto-Create Class Ladder
                             </button>
 
                             <button
@@ -838,7 +838,7 @@ export default function AcademicYearPortal() {
                                 className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider transition flex items-center gap-2 shadow-sm disabled:opacity-50"
                             >
                                 {savingRules ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                Save Vector Schema
+                                Save Promotion Rules
                             </button>
                         </div>
                     </div>
@@ -847,7 +847,7 @@ export default function AcademicYearPortal() {
                     {classes.length === 0 && (
                         <div className="mt-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 flex items-center gap-3 text-xs font-semibold">
                             <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
-                            <span>No classes found in your institutional hierarchy. Add your classes in Academy Setup before building promotion vectors.</span>
+                            <span>No classes found. Please add your school classes in Academy Setup before setting promotion rules.</span>
                         </div>
                     )}
 
@@ -856,9 +856,9 @@ export default function AcademicYearPortal() {
                         {rules.length === 0 && (
                             <div className="col-span-full py-16 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
                                 <Settings2 className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                                <h4 className="text-base font-bold text-slate-700">No Vector Rules Defined</h4>
+                                <h4 className="text-base font-bold text-slate-700">No Promotion Rules Defined Yet</h4>
                                 <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-                                    Click &quot;Auto-Generate Sequential Ladder&quot; to build standard Grade 9 → Grade 10 → Graduated rules, or click &quot;Initialize Mapping Vector&quot; below.
+                                    Click &quot;Auto-Create Class Ladder&quot; to build standard Grade 1 → Grade 2 promotion rules, or click &quot;Add Promotion Rule&quot; below.
                                 </p>
                             </div>
                         )}
@@ -869,10 +869,10 @@ export default function AcademicYearPortal() {
                                 className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-slate-300 transition-all duration-200"
                             >
                                 <div className="grid grid-cols-1 sm:grid-cols-11 gap-3 items-center">
-                                    {/* Source Stage */}
+                                    {/* Source Class */}
                                     <div className="sm:col-span-5">
                                         <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
-                                            Originating Stage
+                                            Current Class
                                         </label>
                                         <select
                                             value={rule.from_class}
@@ -883,7 +883,7 @@ export default function AcademicYearPortal() {
                                             }}
                                             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                                         >
-                                            <option value="">Select Origin Class</option>
+                                            <option value="">Select Current Class</option>
                                             {classes.map(c => (
                                                 <option key={c.id} value={c.name}>{c.name}</option>
                                             ))}
@@ -894,17 +894,17 @@ export default function AcademicYearPortal() {
                                         </select>
                                     </div>
 
-                                    {/* Vector Arrow */}
+                                    {/* Arrow */}
                                     <div className="sm:col-span-1 flex justify-center py-2 sm:py-0">
                                         <div className="w-8 h-8 rounded-full bg-slate-200/80 flex items-center justify-center text-slate-500">
                                             <ArrowRight className="w-4 h-4" />
                                         </div>
                                     </div>
 
-                                    {/* Destination Stage */}
+                                    {/* Destination Class */}
                                     <div className="sm:col-span-5">
                                         <label className="block text-[10px] font-black uppercase tracking-wider text-indigo-500 mb-1">
-                                            Destination Stage
+                                            Promote To Class
                                         </label>
                                         <select
                                             value={rule.to_class}
@@ -916,7 +916,7 @@ export default function AcademicYearPortal() {
                                             className="w-full px-3.5 py-2.5 rounded-xl border border-indigo-200 bg-white text-xs font-extrabold text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                                         >
                                             <option value="">Select Target Class</option>
-                                            <option value="Graduated">🎓 Graduated / Institutional Alumni</option>
+                                            <option value="Graduated">🎓 Graduated / Passed Out</option>
                                             {classes.map(c => (
                                                 <option key={c.id} value={c.name}>{c.name}</option>
                                             ))}
@@ -939,7 +939,7 @@ export default function AcademicYearPortal() {
                                             }}
                                             className="w-3.5 h-3.5 rounded text-indigo-600"
                                         />
-                                        <span>Automated Resolution</span>
+                                        <span>Automatic Promotion</span>
                                     </label>
 
                                     <button
@@ -947,19 +947,19 @@ export default function AcademicYearPortal() {
                                         onClick={() => setRules(rules.filter((_, i) => i !== idx))}
                                         className="text-[11px] font-black text-rose-600 hover:text-rose-800 uppercase tracking-wider flex items-center gap-1 transition"
                                     >
-                                        <X className="w-3.5 h-3.5" /> Scrap Vector
+                                        <X className="w-3.5 h-3.5" /> Remove Rule
                                     </button>
                                 </div>
                             </div>
                         ))}
 
-                        {/* Add Vector Button */}
+                        {/* Add Rule Button */}
                         <button
                             type="button"
                             onClick={() => setRules([...rules, { from_class: '', to_class: '', to_division: '', auto_promote: true }])}
                             className="p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:border-indigo-400 bg-transparent hover:bg-indigo-50/30 transition text-slate-500 hover:text-indigo-600 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 min-h-[140px]"
                         >
-                            <Plus className="w-5 h-5" /> Initialize Mapping Vector
+                            <Plus className="w-5 h-5" /> Add Promotion Rule
                         </button>
                     </div>
                 </div>
@@ -967,28 +967,28 @@ export default function AcademicYearPortal() {
 
             {/* ── TAB 3: MASS MIGRATION ENGINE (PROMOTE) ── */}
             {activeTab === 'promote' && (
-                <div className="mx-6 sm:mx-10 mt-8 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-sm">
+                <div className="w-full px-6 sm:px-10 mt-8 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-sm">
                     {/* Header Controls */}
                     <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-8 border-b border-slate-100">
                         <div className="max-w-xl">
                             <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3">
-                                <TrendingUp className="w-7 h-7 text-sky-600" /> Mass Cohort Migration Audit
+                                <TrendingUp className="w-7 h-7 text-sky-600" /> Promote Students to Next Class
                             </h3>
                             <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-                                Evaluate student readiness against established vectors and execute atomic progression into the target session.
+                                Review student eligibility and promote them into their new classes for the next academic year.
                             </p>
 
                             {/* Destination Session Selector */}
                             <div className="mt-5 flex items-center gap-3">
                                 <label className="text-xs font-black uppercase tracking-wider text-slate-400 shrink-0">
-                                    Target Session:
+                                    Next Academic Year:
                                 </label>
                                 <select
                                     value={targetYearId}
                                     onChange={e => fetchPreview(e.target.value)}
                                     className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                                 >
-                                    <option value="">Select Destination Academic Session</option>
+                                    <option value="">Select Next Academic Year</option>
                                     {years.map(y => (
                                         <option key={y.id} value={y.id}>
                                             {y.name} {y.is_active ? '(Active)' : ''}
@@ -1002,7 +1002,7 @@ export default function AcademicYearPortal() {
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                             {previewSummary && (
                                 <div className="px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 flex items-center gap-4">
-                                    <span>Eligible: <strong className="text-emerald-700">{previewSummary.eligible_count}</strong></span>
+                                    <span>Ready to Promote: <strong className="text-emerald-700">{previewSummary.eligible_count}</strong></span>
                                     <span>Graduating: <strong className="text-indigo-700">{previewSummary.graduating_count}</strong></span>
                                     <span>Missing Rules: <strong className="text-rose-700">{previewSummary.missing_rules_count}</strong></span>
                                 </div>
@@ -1013,7 +1013,7 @@ export default function AcademicYearPortal() {
                                 disabled={selectedStudents.size === 0 || !targetYearId}
                                 className="px-6 py-3 rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-sky-600/20 transition flex items-center justify-center gap-2 disabled:opacity-40"
                             >
-                                <Rocket className="w-4 h-4" /> Authorize Migration ({selectedStudents.size})
+                                <CheckCircle2 className="w-4 h-4" /> Promote Selected Students ({selectedStudents.size})
                             </button>
                         </div>
                     </div>
@@ -1022,8 +1022,8 @@ export default function AcademicYearPortal() {
                     <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
                             {[
-                                { key: 'ALL', label: 'All Candidates' },
-                                { key: 'ELIGIBLE', label: 'Audit Passed' },
+                                { key: 'ALL', label: 'All Students' },
+                                { key: 'ELIGIBLE', label: 'Ready to Promote' },
                                 { key: 'GRADUATING', label: 'Graduating' },
                                 { key: 'MISSING', label: 'Rule Missing' }
                             ].map(tab => (
@@ -1159,15 +1159,15 @@ export default function AcademicYearPortal() {
                 </div>
             )}
 
-            {/* ── TAB 4: AUDIT LOGS (HISTORY) ── */}
+            {/* ── TAB 4: PROMOTION RECORDS (HISTORY) ── */}
             {activeTab === 'logs' && (
-                <div className="mx-6 sm:mx-10 mt-8 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-sm">
+                <div className="w-full px-6 sm:px-10 mt-8 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-sm">
                     <div className="pb-6 border-b border-slate-100">
                         <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3">
-                            <History className="w-7 h-7 text-amber-600" /> Lifecycle Audit Trail
+                            <History className="w-7 h-7 text-amber-600" /> Promotion History & Records
                         </h3>
                         <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-                            Immutable telemetry log of previous cohort promotions and graduation authorizations.
+                            Complete record of previous student promotions and graduation batches.
                         </p>
                     </div>
 
@@ -1175,8 +1175,8 @@ export default function AcademicYearPortal() {
                         <table className="w-full border-collapse text-left text-xs">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-black uppercase tracking-wider text-slate-400">
-                                    <th className="py-3.5 px-4">Event Timestamp</th>
-                                    <th className="py-3.5 px-4">Target Academic Cycle</th>
+                                    <th className="py-3.5 px-4">Date & Time</th>
+                                    <th className="py-3.5 px-4">Academic Year</th>
                                     <th className="py-3.5 px-4 text-center">Promoted</th>
                                     <th className="py-3.5 px-4 text-center">Graduated</th>
                                     <th className="py-3.5 px-4 text-center">Failed</th>
@@ -1188,8 +1188,8 @@ export default function AcademicYearPortal() {
                                     <tr>
                                         <td colSpan={6} className="py-16 text-center text-slate-400">
                                             <History className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                                            <p className="font-bold text-slate-700">No migration events recorded</p>
-                                            <p className="text-[11px] text-slate-400 mt-0.5">Historical logs will appear automatically once a cohort migration is executed.</p>
+                                            <p className="font-bold text-slate-700">No promotion records found</p>
+                                            <p className="text-[11px] text-slate-400 mt-0.5">Records will appear here once students are promoted to their new academic year.</p>
                                         </td>
                                     </tr>
                                 )}
@@ -1329,21 +1329,21 @@ export default function AcademicYearPortal() {
                         <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 border border-sky-200/60 flex items-center justify-center mb-4">
                             <Rocket className="w-6 h-6" />
                         </div>
-                        <h3 className="text-xl font-black text-slate-900">Authorize Mass Migration</h3>
+                        <h3 className="text-xl font-black text-slate-900">Confirm Student Promotion</h3>
                         <p className="text-xs text-slate-500 font-medium mt-1">
-                            You are about to execute an irreversible cohort migration into{' '}
+                            You are about to promote the selected students to the{' '}
                             <strong className="text-slate-800 font-bold">
                                 {years.find(y => y.id === targetYearId)?.name}
-                            </strong>.
+                            </strong>{' '}academic year.
                         </p>
 
                         <div className="my-5 p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
                             <div className="flex justify-between font-semibold">
-                                <span className="text-slate-500">Total Selected Candidates:</span>
+                                <span className="text-slate-500">Total Students Selected:</span>
                                 <span className="font-bold text-slate-900">{selectedStudents.size}</span>
                             </div>
                             <div className="flex justify-between font-semibold">
-                                <span className="text-slate-500">Destination Cycle:</span>
+                                <span className="text-slate-500">Target Academic Year:</span>
                                 <span className="font-bold text-indigo-700">{years.find(y => y.id === targetYearId)?.name}</span>
                             </div>
                             <div className="flex justify-between font-semibold">
@@ -1355,7 +1355,7 @@ export default function AcademicYearPortal() {
                         <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-semibold flex items-start gap-2.5">
                             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                             <span>
-                                Once committed, students will be bound to the new academic session. Previous state will be stored permanently in their historical records ledger.
+                                Once confirmed, selected students will be moved to the new academic year. Their previous academic records will be saved automatically.
                             </span>
                         </div>
 

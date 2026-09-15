@@ -879,7 +879,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                     </div>
                 </div>
 
-                {/* Right Panel: Academic Engines & Subsystem Telemetry */}
+                {/* Right Panel: School Systems & Live Status */}
                 <div style={{
                     background: T.white, borderRadius: 20, border: `1px solid ${T.border}`,
                     padding: '28px 30px', boxShadow: T.shadow, display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
@@ -887,10 +887,10 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                     <div>
                         <div style={{ marginBottom: 20 }}>
                             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: T.slate900, letterSpacing: '-0.02em' }}>
-                                Engines & Telemetry
+                                School Services & Live Status
                             </h2>
                             <p style={{ margin: '4px 0 0', fontSize: 12, color: T.slate500, fontWeight: 500 }}>
-                                Subsystem operations for {subdomain}
+                                Live service operational status for {subdomain}
                             </p>
                         </div>
 
@@ -924,7 +924,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                                 <div style={{ fontSize: 11, color: T.slate500, fontWeight: 500 }}>Batch Optical Engine Ready · 200/min</div>
                             </div>
                             <div style={{ padding: '4px 10px', borderRadius: 100, background: '#EDE9FE', color: '#672AEA', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em' }}>
-                                CALIBRATED
+                                READY
                             </div>
                         </div>
 

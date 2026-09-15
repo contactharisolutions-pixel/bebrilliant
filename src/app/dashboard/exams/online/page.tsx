@@ -222,7 +222,7 @@ export default function OnlineExamsManagementPage() {
             }
         } catch (e: any) {
             console.error('Fetch error:', e)
-            showToast('Failed to sync assessment telemetry', false)
+            showToast('Failed to load online exams', false)
         } finally {
             setLoading(false)
         }
@@ -413,7 +413,7 @@ export default function OnlineExamsManagementPage() {
 
     // —— DELETE EXAM ——————————————————————————————————————
     const handleDeleteExam = async (id: string, title: string) => {
-        if (!confirm(`Are you sure you want to permanently delete "${title}"? All candidate telemetry and question mappings will be removed.`)) return
+        if (!confirm(`Are you sure you want to permanently delete "${title}"? All student attempts and test questions will be removed.`)) return
         try {
             const res = await fetch('/api/dashboard/exams/online', {
                 method: 'POST',
@@ -497,7 +497,7 @@ export default function OnlineExamsManagementPage() {
             <div className="w-full min-h-screen bg-[#F7F8FA] flex flex-col items-center justify-center gap-4">
                 <Loader2 className="w-12 h-12 text-[#004B93] animate-spin" />
                 <div className="text-sm font-bold tracking-widest text-[#004B93] uppercase">
-                    Syncing Neural Assessment Telemetry...
+                    Loading Online Exams & Assessments...
                 </div>
             </div>
         )
@@ -525,14 +525,14 @@ export default function OnlineExamsManagementPage() {
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                             <span className="px-3.5 py-1 rounded-full text-xs font-black bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center gap-1.5 shadow-sm">
                                 <Monitor size={14} className="text-blue-400" />
-                                INSTITUTIONAL CBT ENGINE
+                                ONLINE CBT ENGINE
                             </span>
-                            <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1.5">
+                            <span className="px-3.5 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1.5">
                                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                                AI PROCTORING RADAR ACTIVE
+                                PROCTORING ACTIVE
                             </span>
-                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-slate-200 border border-white/10 backdrop-blur-md">
-                                Objective Vector Evaluation
+                            <span className="px-3.5 py-1 rounded-full text-xs font-semibold bg-white/10 text-slate-200 border border-white/10 backdrop-blur-md">
+                                Automatic Grading Ready
                             </span>
                         </div>
 
@@ -542,7 +542,7 @@ export default function OnlineExamsManagementPage() {
                                 Online Examination & Proctoring Command Center
                             </h1>
                             <p className="text-sm sm:text-base text-slate-300 font-medium leading-relaxed">
-                                Provision standardized CBT tests, enforce biometric anti-cheat browser lockdown, and monitor live candidate telemetry with real-time vector analysis.
+                                Create and publish online tests with anti-cheat controls, browser lockdown, and live student monitoring.
                             </p>
                         </div>
 
@@ -590,13 +590,13 @@ export default function OnlineExamsManagementPage() {
                 {/* Metric 1 */}
                 <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Assessment Vectors</span>
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Exams Created</span>
                         <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#004B93] flex items-center justify-center border border-blue-100">
                             <Zap size={20} />
                         </div>
                     </div>
                     <div className="mt-4">
-                        <div className="text-3xl font-black text-slate-900">{metrics.total_vectors}</div>
+                        <div className="text-3xl font-black text-slate-900">{metrics.total_exams || metrics.total_vectors}</div>
                         <div className="flex items-center gap-2 mt-1.5 text-xs font-semibold text-emerald-600">
                             <span className="w-2 h-2 rounded-full bg-emerald-500" />
                             Compiled Question Bank Active
@@ -616,7 +616,7 @@ export default function OnlineExamsManagementPage() {
                         <div className="text-3xl font-black text-slate-900">{metrics.live_sessions}</div>
                         <div className="flex items-center gap-2 mt-1.5 text-xs font-semibold text-blue-600">
                             <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
-                            Active Candidate Connections
+                            Students Actively Taking Exams
                         </div>
                     </div>
                 </div>
@@ -640,7 +640,7 @@ export default function OnlineExamsManagementPage() {
                 {/* Metric 4 */}
                 <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Proctoring Fidelity</span>
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Exam Security Score</span>
                         <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
                             <Shield size={20} />
                         </div>
@@ -648,7 +648,7 @@ export default function OnlineExamsManagementPage() {
                     <div className="mt-4">
                         <div className="text-3xl font-black text-slate-900">{metrics.integrity_score}%</div>
                         <div className="flex items-center gap-2 mt-1.5 text-xs font-semibold text-purple-700">
-                            Biometric & Tab-Lock Integrity
+                            Anti-Cheat & Tab-Lock Score
                         </div>
                     </div>
                 </div>
@@ -657,11 +657,11 @@ export default function OnlineExamsManagementPage() {
             {/* —— 3. OPERATIONAL TABS NAVIGATION BAR —— */}
             <div className="border-b border-slate-200 bg-white rounded-2xl p-1.5 shadow-sm flex flex-wrap gap-1.5">
                 {[
-                    { id: 'roster', label: 'Assessment Roster', count: exams.length, icon: Layers },
-                    { id: 'studio', label: 'AI Assessment Studio', icon: Sparkles },
-                    { id: 'blueprints', label: 'Blueprint Library', count: templates.length, icon: Globe },
-                    { id: 'proctor', label: 'Live Proctoring Radar', count: metrics.live_sessions, icon: Monitor },
-                    { id: 'analytics', label: 'Performance & Scorecards', icon: BarChart2 }
+                    { id: 'roster', label: 'Exams Roster', count: exams.length, icon: Layers },
+                    { id: 'studio', label: 'Create Exam', icon: Sparkles },
+                    { id: 'blueprints', label: 'Exam Templates', count: templates.length, icon: Globe },
+                    { id: 'proctor', label: 'Live Student Monitor', count: metrics.live_sessions, icon: Monitor },
+                    { id: 'analytics', label: 'Results & Scores', icon: BarChart2 }
                 ].map(tab => {
                     const Icon = tab.icon
                     const isActive = activeTab === tab.id
@@ -1327,10 +1327,10 @@ export default function OnlineExamsManagementPage() {
                         <div>
                             <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
                                 <Monitor size={22} className="text-[#004B93]" />
-                                Real-Time CBT Proctoring Radar & Anomaly Stream
+                                Live Student Monitoring & Anti-Cheat Alerts
                             </h2>
                             <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                                Active candidate telemetry, tab-switch violations, and anti-cheat enforcement metrics.
+                                Active student sessions, tab-switch violations, and exam security enforcement.
                             </p>
                         </div>
                         <div className="flex items-center gap-2">

@@ -211,8 +211,8 @@ function TaxReceiptModal({ invoice, billingSettings, onClose }: { invoice: Invoi
                             <tbody className="divide-y divide-slate-100 text-xs">
                                 <tr>
                                     <td className="p-4">
-                                        <div className="font-bold text-slate-900">{invoice.plan_name} Institutional Node</div>
-                                        <div className="text-[11px] text-slate-500">Cloud ERP, AI Question Engine & LMS Platform Access</div>
+                                        <div className="font-bold text-slate-900">{invoice.plan_name} Subscription Plan</div>
+                                        <div className="text-[11px] text-slate-500">Exam Platform, Question Engine & School Management Access</div>
                                         {invoice.promo_code && (
                                             <div className="text-[10px] text-emerald-600 font-bold mt-1">
                                                 Promo Applied: {invoice.promo_code} (-₹{invoice.discount_amount?.toLocaleString()})
@@ -859,7 +859,7 @@ export default function SubscriptionPage() {
             <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-8">
                 <Loader2 size={42} className="animate-spin text-[#004B93] mb-4" />
                 <div className="text-xs font-black text-slate-500 uppercase tracking-widest">
-                    Calibrating Institutional Billing Gateway...
+                    Loading Billing & Subscription Details...
                 </div>
             </div>
         );
@@ -869,13 +869,13 @@ export default function SubscriptionPage() {
         return (
             <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-8">
                 <ShieldAlert size={56} className="text-rose-500 mb-4" />
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Billing Gateway Desynchronization</h2>
-                <p className="text-sm text-slate-600 text-center max-w-md mb-6">{error || 'Unable to establish secure telemetry connection with the treasury ledger.'}</p>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Unable to Load Billing Data</h2>
+                <p className="text-sm text-slate-600 text-center max-w-md mb-6">{error || 'Could not connect to the billing service. Please check your connection and retry.'}</p>
                 <button
                     onClick={fetchData}
                     className="px-6 py-3 bg-[#004B93] hover:bg-[#003870] text-white rounded-2xl text-xs font-bold flex items-center gap-2 transition"
                 >
-                    <RefreshCcw size={15} /> Re-Sync Telemetry
+                    <RefreshCcw size={15} /> Retry Connection
                 </button>
             </div>
         );
@@ -912,17 +912,17 @@ export default function SubscriptionPage() {
                             <div className="flex items-center gap-3">
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                                    Institutional Node Active
+                                    School Account Active
                                 </span>
                                 <span className="text-xs text-slate-400 font-semibold font-mono">
-                                    NODE ID: {current.plan_id.substring(0, 8).toUpperCase()}
+                                    ACCOUNT ID: {current.plan_id.substring(0, 8).toUpperCase()}
                                 </span>
                             </div>
                             <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
-                                Treasury, Billing & Quota Manager
+                                Billing, Plans & Resource Quotas
                             </h1>
                             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed font-normal">
-                                Enterprise resource orchestration, automated GST compliance, dynamic seat allocations, and tamper-proof financial ledgers.
+                                Manage your school subscription plan, faculty allocations, storage quotas, and official GST tax invoices.
                             </p>
                         </div>
 
@@ -931,7 +931,7 @@ export default function SubscriptionPage() {
                                 onClick={fetchData}
                                 className="px-4 py-2.5 bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700/80 rounded-2xl text-xs font-bold flex items-center gap-2 backdrop-blur-sm transition"
                             >
-                                <RefreshCcw size={14} /> Refresh Telemetry
+                                <RefreshCcw size={14} /> Refresh Status
                             </button>
                             <button
                                 onClick={() => setShowTopupModal(true)}
@@ -1013,7 +1013,7 @@ export default function SubscriptionPage() {
                         </div>
                         <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 font-medium">
                             <Shield size={13} className="text-[#004B93]" />
-                            <span>18% GST Compliant Ledgers</span>
+                            <span>18% GST Compliant Invoices</span>
                         </div>
                     </div>
                 </div>
@@ -1030,7 +1030,7 @@ export default function SubscriptionPage() {
                                     : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
                             }`}
                         >
-                            <Activity size={15} /> Overview & Telemetry
+                            <Activity size={15} /> Overview & Usage
                         </button>
                         <button
                             onClick={() => setActiveTab('plans')}
@@ -1050,7 +1050,7 @@ export default function SubscriptionPage() {
                                     : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
                             }`}
                         >
-                            <History size={15} /> Invoices & Receipts Ledger
+                            <History size={15} /> Invoices & Receipts
                             <span className="px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-mono font-bold">
                                 {invoices.length}
                             </span>
@@ -1067,15 +1067,15 @@ export default function SubscriptionPage() {
                         </button>
                     </div>
 
-                    {/* TAB 1: OVERVIEW & TELEMETRY */}
+                    {/* TAB 1: OVERVIEW & USAGE */}
                     {activeTab === 'overview' && (
                         <div className="space-y-6">
-                            {/* Primary Node Banner */}
+                            {/* Primary Plan Banner */}
                             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm relative overflow-hidden">
                                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-2 text-xs font-black text-[#004B93] uppercase tracking-wider">
-                                            <ShieldCheck size={16} /> Primary Institutional Node
+                                            <ShieldCheck size={16} /> Active School Plan
                                         </div>
                                         <div className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
                                             {currentPlan?.name || 'School (Standard)'}
@@ -1411,14 +1411,14 @@ export default function SubscriptionPage() {
                         </div>
                     )}
 
-                    {/* TAB 3: INVOICES & RECEIPTS LEDGER */}
+                    {/* TAB 3: INVOICES & RECEIPTS */}
                     {activeTab === 'invoices' && (
                         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden space-y-4">
                             {/* Filter Bar */}
                             <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
                                 <div>
                                     <h3 className="text-base font-bold text-slate-900">Financial Invoices & GST Tax Receipts</h3>
-                                    <p className="text-xs text-slate-500 font-medium">Historical transaction ledgers with printable tax invoices</p>
+                                    <p className="text-xs text-slate-500 font-medium">All past invoices and payment receipts, ready for download and printing</p>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-3">
                                     <input
@@ -1478,7 +1478,7 @@ export default function SubscriptionPage() {
                                                         {formatDate(inv.created_at)}
                                                     </td>
                                                     <td className="py-4 px-6 font-semibold text-slate-800">
-                                                        {inv.plan_name} Institutional Node
+                                                        {inv.plan_name} Subscription Plan
                                                         {inv.promo_code && (
                                                             <span className="ml-2 text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-bold">
                                                                 {inv.promo_code}

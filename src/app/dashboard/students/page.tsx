@@ -305,7 +305,7 @@ export default function StudentDirectoryPage() {
             }
         } catch (err) {
             console.error(err)
-            showToast('Error executing bulk import.', 'error')
+            showToast('Error importing students. Please try again.', 'error')
         } finally {
             setIsImportingBulk(false)
         }
@@ -455,7 +455,7 @@ export default function StudentDirectoryPage() {
                             {stats.total_students || students.length}
                         </div>
                         <div className="mt-1 text-xs text-slate-500 font-medium">
-                            Registered candidates in school directory
+                            Students registered in your school
                         </div>
                     </div>
                 </div>
@@ -509,7 +509,7 @@ export default function StudentDirectoryPage() {
                             {stats.top_class || 'Grade 10'}
                         </div>
                         <div className="mt-1 text-xs text-slate-500 font-medium">
-                            Leading cohort in average test scores
+                            Best performing class in test scores
                         </div>
                     </div>
                 </div>

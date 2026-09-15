@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { promises as dnsPromises } from 'dns'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
@@ -164,7 +165,10 @@ export async function GET(request: NextRequest) {
             cname_target: 'cname.bebrilliant.in',
             status: rawSettings.domains?.status || 'active',
             ssl_status: rawSettings.domains?.ssl_status || 'active',
-            verification_token: rawSettings.domains?.verification_token || `bb-verify-${tenant.subdomain || 'node'}`
+            verification_token: rawSettings.domains?.verification_token || `bb-verify-${tenant.subdomain || 'node'}`,
+            cname_status: rawSettings.domains?.cname_status || 'pending',
+            txt_status: rawSettings.domains?.txt_status || 'pending',
+            last_checked: rawSettings.domains?.last_checked || null
         }
 
         // Calculate profile completeness score
@@ -231,6 +235,20 @@ export async function POST(request: NextRequest) {
         if (action === 'SAVE_ALL_SETTINGS') {
             const { branding, contact, security, automation, domains } = payload
 
+            // Subdomain uniqueness check before saving
+            const newSubdomain = domains?.subdomain || branding?.subdomain
+            if (newSubdomain && newSubdomain !== tenant.subdomain) {
+                const { data: existingTenant } = await supabaseAdmin
+                    .from('tenants')
+                    .select('id')
+                    .eq('subdomain', newSubdomain)
+                    .neq('id', tenant_id)
+                    .maybeSingle()
+                if (existingTenant) {
+                    return NextResponse.json({ error: `The subdomain "${newSubdomain}" is already taken. Please choose a different one.` }, { status: 409 })
+                }
+            }
+
             const updatedSettings = {
                 ...currentSettings,
                 branding: { ...(currentSettings.branding || {}), ...(branding || {}) },
@@ -247,7 +265,8 @@ export async function POST(request: NextRequest) {
             }
 
             if (branding?.name) rootUpdates.name = branding.name
-            if (domains?.subdomain) rootUpdates.subdomain = domains.subdomain
+            // Sync subdomain from both possible sources
+            if (newSubdomain) rootUpdates.subdomain = newSubdomain
             if (branding?.logo_url) {
                 rootUpdates.logo_url = branding.logo_url
                 rootUpdates.logo = branding.logo_url
@@ -264,12 +283,25 @@ export async function POST(request: NextRequest) {
 
             return NextResponse.json({
                 success: true,
-                message: 'All institutional configurations saved successfully!'
+                message: 'All school configurations saved successfully!'
             })
         }
 
         if (action === 'UPDATE_BRANDING') {
             const { name, legal_name, tagline, logo_url, favicon_url, primary_color, secondary_color, accent_color, subdomain } = payload
+
+            // Subdomain uniqueness check
+            if (subdomain && subdomain !== tenant.subdomain) {
+                const { data: existingTenant } = await supabaseAdmin
+                    .from('tenants')
+                    .select('id')
+                    .eq('subdomain', subdomain)
+                    .neq('id', tenant_id)
+                    .maybeSingle()
+                if (existingTenant) {
+                    return NextResponse.json({ error: `The subdomain "${subdomain}" is already taken. Please choose a different one.` }, { status: 409 })
+                }
+            }
 
             const updatedSettings = {
                 ...currentSettings,
@@ -358,39 +390,117 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, message: 'Automation triggers updated.' })
         }
 
-        if (action === 'UPDATE_DOMAINS' || action === 'VERIFY_DOMAIN') {
-            const { custom_domain, subdomain } = payload || {}
+        if (action === 'SAVE_CUSTOM_DOMAIN') {
+            const { custom_domain } = payload || {}
+            const updatedSettings = {
+                ...currentSettings,
+                domains: {
+                    ...(currentSettings.domains || {}),
+                    custom_domain: custom_domain || '',
+                    cname_status: custom_domain
+                        ? (currentSettings.domains?.cname_status || 'pending')
+                        : 'pending',
+                    txt_status: custom_domain
+                        ? (currentSettings.domains?.txt_status || 'pending')
+                        : 'pending',
+                    status: custom_domain ? 'pending' : 'active',
+                    last_checked: null
+                }
+            }
+            const { error: scErr } = await supabaseAdmin
+                .from('tenants')
+                .update({ settings: updatedSettings, updated_at: new Date().toISOString() })
+                .eq('id', tenant_id)
+            if (scErr) throw scErr
+            return NextResponse.json({
+                success: true,
+                message: custom_domain
+                    ? `Custom domain "${custom_domain}" saved. Add the DNS records below, then click Verify DNS.`
+                    : 'Custom domain removed. Your school is now using the cloud subdomain.'
+            })
+        }
 
+        if (action === 'UPDATE_DOMAINS') {
+            const { custom_domain, subdomain } = payload || {}
             const updatedSettings = {
                 ...currentSettings,
                 domains: {
                     ...(currentSettings.domains || {}),
                     custom_domain: custom_domain || currentSettings.domains?.custom_domain || '',
                     subdomain: subdomain || tenant.subdomain,
-                    status: custom_domain ? 'verified' : 'active',
-                    ssl_status: 'active',
+                    status: currentSettings.domains?.status || 'active',
+                    last_checked: new Date().toISOString()
+                }
+            }
+            const rootUpdates: any = { settings: updatedSettings, updated_at: new Date().toISOString() }
+            if (subdomain) rootUpdates.subdomain = subdomain
+            await supabaseAdmin.from('tenants').update(rootUpdates).eq('id', tenant_id)
+            return NextResponse.json({ success: true, message: 'Domain configuration saved.' })
+        }
+
+        if (action === 'VERIFY_DOMAIN') {
+            const { custom_domain } = payload || {}
+            const targetDomain = custom_domain || currentSettings.domains?.custom_domain || ''
+
+            if (!targetDomain) {
+                return NextResponse.json({ error: 'No custom domain to verify. Please save a domain first.' }, { status: 400 })
+            }
+
+            let cname_status = 'pending'
+            let txt_status = 'pending'
+
+            // Real CNAME check — query the full FQDN for a CNAME record
+            try {
+                const cnameResults = await dnsPromises.resolveCname(targetDomain)
+                const resolved = cnameResults?.[0] || ''
+                cname_status = resolved.toLowerCase().includes('bebrilliant.in') ? 'verified' : 'configured'
+            } catch {
+                cname_status = 'pending'
+            }
+
+            // Real TXT check — query _bebrilliant-challenge.<root-domain>
+            const verToken = currentSettings.domains?.verification_token || `bb-verify-${tenant.subdomain || 'node'}`
+            try {
+                // Extract the root domain (strip first label from e.g. portal.silverbells.edu.in → silverbells.edu.in)
+                const parts = targetDomain.split('.')
+                const rootDomain = parts.length > 2 ? parts.slice(1).join('.') : targetDomain
+                const txtHost = `_bebrilliant-challenge.${rootDomain}`
+                const txtResults = await dnsPromises.resolveTxt(txtHost)
+                const flatTxt = txtResults.flat()
+                txt_status = flatTxt.some(t => t.includes(verToken) || t.includes('bb-verify-')) ? 'verified' : 'pending'
+            } catch {
+                txt_status = 'pending'
+            }
+
+            const isFullyVerified = cname_status === 'verified' && txt_status === 'verified'
+
+            const updatedSettings = {
+                ...currentSettings,
+                domains: {
+                    ...(currentSettings.domains || {}),
+                    custom_domain: targetDomain,
+                    status: isFullyVerified ? 'verified' : 'pending',
+                    cname_status,
+                    txt_status,
+                    ssl_status: isFullyVerified ? 'active' : (currentSettings.domains?.ssl_status || 'pending'),
                     last_checked: new Date().toISOString()
                 }
             }
 
-            const rootUpdates: any = {
-                settings: updatedSettings,
-                updated_at: new Date().toISOString()
-            }
-            if (subdomain) rootUpdates.subdomain = subdomain
-
-            const { error: updErr } = await supabaseAdmin
+            const { error: vErr } = await supabaseAdmin
                 .from('tenants')
-                .update(rootUpdates)
+                .update({ settings: updatedSettings, updated_at: new Date().toISOString() })
                 .eq('id', tenant_id)
-
-            if (updErr) throw updErr
+            if (vErr) throw vErr
 
             return NextResponse.json({
                 success: true,
-                message: custom_domain
-                    ? `Domain ${custom_domain} verified and bound to cloud infrastructure.`
-                    : 'Subdomain configuration synchronized.'
+                cname_status,
+                txt_status,
+                verified: isFullyVerified,
+                message: isFullyVerified
+                    ? `✅ Domain ${targetDomain} is fully verified and active!`
+                    : `DNS check complete — CNAME: ${cname_status.toUpperCase()}, TXT Record: ${txt_status.toUpperCase()}. DNS changes can take 15–60 minutes to propagate worldwide. Try again shortly.`
             })
         }
 
