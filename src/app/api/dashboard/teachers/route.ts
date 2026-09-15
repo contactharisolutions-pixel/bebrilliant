@@ -80,30 +80,16 @@ export async function GET(request: NextRequest) {
         }))
 
         // 4. Fetch Tenant Subjects (from public.subjects)
-        let { data: subjects, error: subjectError } = await supabaseAdmin
+        const { data: rawSubjects, error: subjectError } = await supabaseAdmin
             .from('subjects')
             .select('id, name, code, is_optional')
             .eq('tenant_id', tenant_id)
             .order('name', { ascending: true })
 
-        // If subjects is empty, fallback/bridge with syllabus_nodes so empty setups still show default subjects
-        if (!subjects || subjects.length === 0) {
-            const { data: globalNodes } = await supabaseAdmin
-                .from('syllabus_nodes')
-                .select('id, name')
-                .eq('type', 'subject')
-                .or(`tenant_id.is.null,tenant_id.eq.${tenant_id}`)
-                .order('name', { ascending: true })
-
-            if (globalNodes && globalNodes.length > 0) {
-                subjects = globalNodes.map(g => ({
-                    id: g.id,
-                    name: g.name,
-                    code: g.name.substring(0, 4).toUpperCase(),
-                    is_optional: false
-                }))
-            }
+        if (subjectError) {
+            console.error('[TEACHERS_SUBJECTS_ERROR]', subjectError)
         }
+        const subjects = rawSubjects || []
 
         // 5. Fetch Relational Teacher Subjects
         const { data: rawTeacherSubjects } = await supabaseAdmin

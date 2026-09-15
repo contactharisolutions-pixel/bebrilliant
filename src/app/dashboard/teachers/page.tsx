@@ -8,8 +8,33 @@ import {
     Filter, Activity, GraduationCap, Clock, Mail, Phone,
     KeyRound, Download, RefreshCw, X, ChevronRight, Check,
     AlertCircle, Sparkles, Layers, SlidersHorizontal, UserCheck,
-    UserX, Building2, Eye, Copy, ExternalLink, ArrowUpDown
+    UserX, Building2, Eye, EyeOff, Copy, ExternalLink, ArrowUpDown
 } from 'lucide-react'
+
+// ── DESIGNATION OPTIONS ──────────────────────────────────────────
+const DESIGNATION_OPTIONS = [
+    'Teacher',
+    'Senior Teacher',
+    'Primary Teacher (PRT)',
+    'Trained Graduate Teacher (TGT)',
+    'Post Graduate Teacher (PGT)',
+    'Head of Department (HOD)',
+    'Assistant Teacher',
+    'Subject Specialist',
+    'Lecturer',
+    'Professor',
+    'Vice Principal',
+    'Principal / Academic Head',
+    'Academic Coordinator',
+    'Lab Instructor',
+    'Sports & PE Coach',
+    'Special Educator',
+    'Counselor',
+    'Other'
+]
+
+const generateEmployeeId = () => 'EMP-' + Math.floor(1000 + Math.random() * 9000)
+const generatePassword = () => 'Teach@' + Math.floor(1000 + Math.random() * 9000)
 
 // ── TYPES ────────────────────────────────────────────────────────
 type Division = { id: string; name: string; capacity?: number }
@@ -271,6 +296,11 @@ export default function FacultyManagement() {
     const [scopingTeacher, setScopingTeacher] = useState<Teacher | null>(null)
     const [deletingTeacher, setDeletingTeacher] = useState<Teacher | null>(null)
     const [credentialModal, setCredentialModal] = useState<{ email: string; pass: string; name: string } | null>(null)
+    const [showPassword, setShowPassword] = useState(false)
+    const [customDesignation, setCustomDesignation] = useState(false)
+    const [customDesignationText, setCustomDesignationText] = useState('')
+    const [editCustomDesignation, setEditCustomDesignation] = useState(false)
+    const [editCustomDesignationText, setEditCustomDesignationText] = useState('')
 
     // Forms
     const [teacherForm, setTeacherForm] = useState({
@@ -375,6 +405,23 @@ export default function FacultyManagement() {
             setShowUpgradeModal(true)
             return
         }
+
+        setTeacherForm({
+            first_name: '',
+            last_name: '',
+            email: '',
+            phone: '',
+            designation: 'Teacher',
+            qualification: '',
+            employee_id: generateEmployeeId(),
+            is_active: true,
+            password: generatePassword(),
+            subjects: [],
+            classes: []
+        })
+        setCustomDesignation(false)
+        setCustomDesignationText('')
+        setShowPassword(false)
         setShowAddModal(true)
     }
 
@@ -387,16 +434,28 @@ export default function FacultyManagement() {
             setToast({ msg: 'Valid email address is required', ok: false })
             return
         }
+        if (!teacherForm.password.trim() || teacherForm.password.trim().length < 6) {
+            setToast({ msg: 'Initial password must be at least 6 characters', ok: false })
+            return
+        }
 
-        const res = await executeApi('CREATE_TEACHER', teacherForm)
+        const finalDesignation = teacherForm.designation === 'Other'
+            ? (customDesignationText.trim() || 'Teacher')
+            : teacherForm.designation
+
+        const res = await executeApi('CREATE_TEACHER', {
+            ...teacherForm,
+            designation: finalDesignation
+        })
         if (res.success) {
             setShowAddModal(false)
             setToast({ msg: 'Teacher registered successfully', ok: true })
-            if (res.data?.temporary_password) {
+            const activePass = teacherForm.password.trim() || res.data?.temporary_password
+            if (activePass) {
                 setCredentialModal({
                     email: teacherForm.email,
-                    pass: res.data.temporary_password,
-                    name: `${teacherForm.first_name} ${teacherForm.last_name}`
+                    pass: activePass,
+                    name: `${teacherForm.first_name} ${teacherForm.last_name}`.trim()
                 })
             }
             setTeacherForm({
@@ -412,6 +471,8 @@ export default function FacultyManagement() {
                 subjects: [],
                 classes: []
             })
+            setCustomDesignation(false)
+            setCustomDesignationText('')
         }
     }
 
@@ -420,7 +481,15 @@ export default function FacultyManagement() {
             setToast({ msg: 'First name is required', ok: false })
             return
         }
-        const res = await executeApi('UPDATE_TEACHER', editForm)
+
+        const finalDesignation = editForm.designation === 'Other'
+            ? (editCustomDesignationText.trim() || 'Teacher')
+            : editForm.designation
+
+        const res = await executeApi('UPDATE_TEACHER', {
+            ...editForm,
+            designation: finalDesignation
+        })
         if (res.success) {
             setEditingTeacher(null)
             setToast({ msg: 'Faculty profile updated successfully', ok: true })
@@ -1322,15 +1391,19 @@ export default function FacultyManagement() {
                                                 <button
                                                     onClick={() => {
                                                         setActiveMenuId(null)
+                                                        const rawDesig = teacher.metadata?.designation || 'Teacher'
+                                                        const isKnown = DESIGNATION_OPTIONS.includes(rawDesig) && rawDesig !== 'Other'
                                                         setEditForm({
                                                             id: teacher.id,
                                                             first_name: teacher.first_name,
                                                             last_name: teacher.last_name,
                                                             phone: teacher.phone || '',
-                                                            designation: teacher.metadata?.designation || 'Teacher',
+                                                            designation: isKnown ? rawDesig : 'Other',
                                                             qualification: teacher.metadata?.qualification || '',
                                                             employee_id: teacher.metadata?.employee_id || ''
                                                         })
+                                                        setEditCustomDesignation(!isKnown)
+                                                        setEditCustomDesignationText(isKnown ? '' : rawDesig)
                                                         setEditingTeacher(teacher)
                                                     }}
                                                     style={{
@@ -1528,24 +1601,78 @@ export default function FacultyManagement() {
                             </div>
                         </div>
 
-                        {/* Professional Info */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                        {/* Professional Info: Designation & Employee ID */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 14 }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
-                                    Designation / Role
+                                    Designation / Role <span style={{ color: '#EF4444' }}>*</span>
                                 </label>
-                                <input
-                                    type="text"
+                                <select
                                     value={teacherForm.designation}
-                                    onChange={e => setTeacherForm({ ...teacherForm, designation: e.target.value })}
-                                    placeholder="e.g. Senior Physics Teacher"
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, outline: 'none' }}
-                                />
+                                    onChange={e => {
+                                        const val = e.target.value
+                                        setTeacherForm({ ...teacherForm, designation: val })
+                                        setCustomDesignation(val === 'Other')
+                                    }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px 14px',
+                                        borderRadius: 8,
+                                        border: '1px solid #D1D5DB',
+                                        fontSize: 13,
+                                        outline: 'none',
+                                        background: '#FFFFFF',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    {DESIGNATION_OPTIONS.map(opt => (
+                                        <option key={opt} value={opt}>{opt}</option>
+                                    ))}
+                                </select>
+                                {teacherForm.designation === 'Other' && (
+                                    <input
+                                        type="text"
+                                        value={customDesignationText}
+                                        onChange={e => setCustomDesignationText(e.target.value)}
+                                        placeholder="Specify custom role / designation..."
+                                        style={{
+                                            width: '100%',
+                                            marginTop: 8,
+                                            padding: '8px 12px',
+                                            borderRadius: 8,
+                                            border: '1px solid #93C5FD',
+                                            fontSize: 12,
+                                            outline: 'none',
+                                            background: '#F0F9FF'
+                                        }}
+                                    />
+                                )}
                             </div>
                             <div>
-                                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
-                                    Employee ID (Optional)
-                                </label>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                    <label style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>
+                                        Employee ID
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTeacherForm(prev => ({ ...prev, employee_id: generateEmployeeId() }))}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                            background: 'none',
+                                            border: 'none',
+                                            color: '#004B93',
+                                            fontSize: 11,
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            padding: 0
+                                        }}
+                                        title="Auto-generate new ID"
+                                    >
+                                        <RefreshCw size={11} /> Auto-Generate
+                                    </button>
+                                </div>
                                 <input
                                     type="text"
                                     value={teacherForm.employee_id}
@@ -1556,41 +1683,80 @@ export default function FacultyManagement() {
                             </div>
                         </div>
 
-                        {/* Initial Subject Selection */}
-                        <div>
-                            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
-                                Initial Subject Specialization
-                            </label>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, maxHeight: 120, overflowY: 'auto', padding: 4 }}>
-                                {subjects.map(s => {
-                                    const active = teacherForm.subjects.includes(s.id)
-                                    return (
-                                        <button
-                                            key={s.id}
-                                            type="button"
-                                            onClick={() => {
-                                                setTeacherForm(prev => ({
-                                                    ...prev,
-                                                    subjects: active ? prev.subjects.filter(id => id !== s.id) : [...prev.subjects, s.id]
-                                                }))
-                                            }}
-                                            style={{
-                                                padding: '6px 12px',
-                                                borderRadius: 8,
-                                                fontSize: 12,
-                                                fontWeight: 600,
-                                                border: '1px solid ' + (active ? '#004B93' : '#E2E8F0'),
-                                                background: active ? '#004B93' : '#FFFFFF',
-                                                color: active ? '#FFFFFF' : '#475569',
-                                                cursor: 'pointer',
-                                                transition: '0.15s'
-                                            }}
-                                        >
-                                            {s.name}
-                                        </button>
-                                    )
-                                })}
+                        {/* Initial Login Credentials */}
+                        <div style={{
+                            background: '#F8FAFC',
+                            border: '1px solid #E2E8F0',
+                            borderRadius: 12,
+                            padding: '14px 16px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 8
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: '#1E293B' }}>
+                                    <KeyRound size={14} color="#004B93" /> Initial Login Password <span style={{ color: '#EF4444' }}>*</span>
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => setTeacherForm(prev => ({ ...prev, password: generatePassword() }))}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 4,
+                                        background: '#EFF6FF',
+                                        border: '1px solid #BFDBFE',
+                                        color: '#1D4ED8',
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        padding: '4px 8px',
+                                        borderRadius: 6,
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <Sparkles size={12} /> Generate Secure
+                                </button>
                             </div>
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={teacherForm.password}
+                                    onChange={e => setTeacherForm({ ...teacherForm, password: e.target.value })}
+                                    placeholder="Enter initial password (min. 6 characters)"
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px 42px 10px 14px',
+                                        borderRadius: 8,
+                                        border: '1px solid #CBD5E1',
+                                        fontSize: 13,
+                                        outline: 'none',
+                                        fontFamily: showPassword ? 'inherit' : 'monospace',
+                                        background: '#FFFFFF'
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    style={{
+                                        position: 'absolute',
+                                        right: 12,
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'none',
+                                        border: 'none',
+                                        color: '#64748B',
+                                        cursor: 'pointer',
+                                        padding: 0,
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                            </div>
+                            <p style={{ margin: 0, fontSize: 11, color: '#64748B' }}>
+                                The teacher will sign in to their portal using their email and this password. You can copy/share it after registration.
+                            </p>
                         </div>
                     </div>
                 </Modal>
@@ -1639,22 +1805,83 @@ export default function FacultyManagement() {
                             />
                         </div>
 
+                        {/* Professional Info */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 14 }}>
                             <div>
-                                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Designation</label>
-                                <input
-                                    type="text"
+                                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+                                    Designation / Role <span style={{ color: '#EF4444' }}>*</span>
+                                </label>
+                                <select
                                     value={editForm.designation}
-                                    onChange={e => setEditForm({ ...editForm, designation: e.target.value })}
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
-                                />
+                                    onChange={e => {
+                                        const val = e.target.value
+                                        setEditForm({ ...editForm, designation: val })
+                                        setEditCustomDesignation(val === 'Other')
+                                    }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px 14px',
+                                        borderRadius: 8,
+                                        border: '1px solid #D1D5DB',
+                                        fontSize: 13,
+                                        outline: 'none',
+                                        background: '#FFFFFF',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    {DESIGNATION_OPTIONS.map(opt => (
+                                        <option key={opt} value={opt}>{opt}</option>
+                                    ))}
+                                </select>
+                                {editForm.designation === 'Other' && (
+                                    <input
+                                        type="text"
+                                        value={editCustomDesignationText}
+                                        onChange={e => setEditCustomDesignationText(e.target.value)}
+                                        placeholder="Specify custom role / designation..."
+                                        style={{
+                                            width: '100%',
+                                            marginTop: 8,
+                                            padding: '8px 12px',
+                                            borderRadius: 8,
+                                            border: '1px solid #93C5FD',
+                                            fontSize: 12,
+                                            outline: 'none',
+                                            background: '#F0F9FF'
+                                        }}
+                                    />
+                                )}
                             </div>
                             <div>
-                                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Employee ID</label>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                    <label style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>
+                                        Employee ID
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditForm(prev => ({ ...prev, employee_id: generateEmployeeId() }))}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                            background: 'none',
+                                            border: 'none',
+                                            color: '#004B93',
+                                            fontSize: 11,
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            padding: 0
+                                        }}
+                                        title="Auto-generate new ID"
+                                    >
+                                        <RefreshCw size={11} /> Auto-Generate
+                                    </button>
+                                </div>
                                 <input
                                     type="text"
                                     value={editForm.employee_id}
                                     onChange={e => setEditForm({ ...editForm, employee_id: e.target.value })}
+                                    placeholder="e.g. EMP-1042"
                                     style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
                                 />
                             </div>
@@ -1698,13 +1925,13 @@ export default function FacultyManagement() {
                                 background: '#F8FAFC'
                             }}>
                                 {subjects.map(s => {
-                                    const active = scopeSubjects.includes(s.id)
+                                    const active = scopeSubjects.includes(s.id) || scopeSubjects.includes(s.name)
                                     return (
                                         <div
                                             key={s.id}
                                             onClick={() => {
                                                 setScopeSubjects(prev =>
-                                                    active ? prev.filter(id => id !== s.id) : [...prev, s.id]
+                                                    active ? prev.filter(id => id !== s.id && id !== s.name) : [...prev, s.id]
                                                 )
                                             }}
                                             style={{
@@ -1720,7 +1947,7 @@ export default function FacultyManagement() {
                                             }}
                                         >
                                             <span style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? '#1D4ED8' : '#334155' }}>
-                                                {s.name}
+                                                {s.name} {s.code ? `(${s.code})` : ''}
                                             </span>
                                             {active && <Check size={16} color="#2563EB" />}
                                         </div>
