@@ -126,26 +126,7 @@ export async function GET(request: NextRequest) {
             .order('name', { ascending: true })
 
         if (subError) throw subError
-
-        // Fallback to syllabus_nodes if subjects empty
-        if (!subjects || subjects.length === 0) {
-            const { data: globalNodes } = await supabaseAdmin
-                .from('syllabus_nodes')
-                .select('id, name')
-                .eq('type', 'subject')
-                .or(`tenant_id.is.null,tenant_id.eq.${tenant_id}`)
-                .order('name', { ascending: true })
-
-            if (globalNodes && globalNodes.length > 0) {
-                subjects = globalNodes.map(g => ({
-                    id: g.id,
-                    name: g.name,
-                    code: g.name.substring(0, 4).toUpperCase(),
-                    is_optional: false,
-                    is_system_fallback: true
-                }))
-            }
-        }
+        if (!subjects) subjects = []
 
         // 4. Fetch Class-Subject Mappings
         const { data: classSubjects, error: csError } = await supabaseAdmin
@@ -481,6 +462,59 @@ export async function POST(request: NextRequest) {
 
             if (delError) throw delError
             return NextResponse.json({ success: true })
+        }
+
+        // ── 9B. BULK DELETE SUBJECTS ────────────────────────────────
+        if (action === 'BULK_DELETE_SUBJECTS') {
+            const { ids } = payload
+            if (!Array.isArray(ids) || ids.length === 0) {
+                return NextResponse.json({ error: 'Subject IDs array required' }, { status: 400 })
+            }
+
+            // Clean up related mappings
+            await supabaseAdmin.from('teacher_subjects').delete().in('subject_id', ids).eq('tenant_id', tenant_id)
+            await supabaseAdmin.from('class_subjects').delete().in('subject_id', ids).eq('tenant_id', tenant_id)
+
+            const { error: delError } = await supabaseAdmin
+                .from('subjects')
+                .delete()
+                .in('id', ids)
+                .eq('tenant_id', tenant_id)
+
+            if (delError) throw delError
+            return NextResponse.json({ success: true, count: ids.length })
+        }
+
+        // ── 9C. SEED DEFAULT CURRICULUM SUBJECTS ────────────────────
+        if (action === 'SEED_DEFAULT_SUBJECTS') {
+            const defaultSubjects = [
+                { name: 'English', code: 'ENGL', is_optional: false },
+                { name: 'Hindi', code: 'HIND', is_optional: false },
+                { name: 'Mathematics', code: 'MATH', is_optional: false },
+                { name: 'Science', code: 'SCIE', is_optional: false },
+                { name: 'Social Science', code: 'SST', is_optional: false },
+                { name: 'EVS', code: 'EVS', is_optional: false },
+                { name: 'Physics', code: 'PHYS', is_optional: false },
+                { name: 'Chemistry', code: 'CHEM', is_optional: false },
+                { name: 'Biology', code: 'BIOL', is_optional: false }
+            ]
+
+            const { data: existing } = await supabaseAdmin
+                .from('subjects')
+                .select('name')
+                .eq('tenant_id', tenant_id)
+
+            const existingNames = new Set((existing || []).map(e => e.name.toLowerCase()))
+            const toInsert = defaultSubjects
+                .filter(s => !existingNames.has(s.name.toLowerCase()))
+                .map(s => ({ ...s, tenant_id }))
+
+            if (toInsert.length > 0) {
+                const { error: insErr } = await supabaseAdmin.from('subjects').insert(toInsert)
+                if (insErr) throw insErr
+            }
+
+            return NextResponse.json({ success: true, count: toInsert.length })
         }
 
         // ── 10. SYNC CLASS SUBJECTS ─────────────────────────────────

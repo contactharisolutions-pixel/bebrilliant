@@ -314,6 +314,8 @@ export default function AcademySetupPage() {
     const [showClassSubModal, setShowClassSubModal] = useState<{ classId: string; className: string } | null>(null)
     const [showSubjectModal, setShowSubjectModal] = useState(false)
     const [editingSubject, setEditingSubject] = useState<Subject | null>(null)
+    const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>([])
+    const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
     const [showMappingModal, setShowMappingModal] = useState(false)
     const [deletingItem, setDeletingItem] = useState<{ type: 'class' | 'division' | 'subject' | 'mapping'; id: string; name: string } | null>(null)
 
@@ -459,6 +461,39 @@ export default function AcademySetupPage() {
         }
     }
 
+    // ── SUBJECT BULK SELECTION & SEEDING HANDLERS ───────────────
+    const handleToggleSubjectSelect = (id: string) => {
+        setSelectedSubjectIds(prev =>
+            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        )
+    }
+
+    const handleSelectAllSubjects = (checked: boolean) => {
+        if (checked) {
+            setSelectedSubjectIds(filteredSubjects.map(s => s.id))
+        } else {
+            setSelectedSubjectIds([])
+        }
+    }
+
+    const handleConfirmBulkDelete = async () => {
+        if (selectedSubjectIds.length === 0) return
+        const count = selectedSubjectIds.length
+        const res = await executeApi('BULK_DELETE_SUBJECTS', { ids: selectedSubjectIds })
+        if (res.success) {
+            setSelectedSubjectIds([])
+            setShowBulkDeleteModal(false)
+            setToast({ msg: `Successfully deleted ${count} subject${count > 1 ? 's' : ''}`, ok: true })
+        }
+    }
+
+    const handleSeedDefaultSubjects = async () => {
+        const res = await executeApi('SEED_DEFAULT_SUBJECTS', {})
+        if (res.success) {
+            setToast({ msg: 'Standard curriculum subjects imported successfully', ok: true })
+        }
+    }
+
     // ── DELETE MODAL CONFIRMATION HANDLER ────────────────────────
     const handleConfirmDelete = async () => {
         if (!deletingItem) return
@@ -469,7 +504,12 @@ export default function AcademySetupPage() {
         if (deletingItem.type === 'mapping') action = 'REVOKE_TEACHER_ASSIGNMENT'
 
         const res = await executeApi(action, { id: deletingItem.id })
-        if (res.success) setDeletingItem(null)
+        if (res.success) {
+            if (deletingItem.type === 'subject') {
+                setSelectedSubjectIds(prev => prev.filter(id => id !== deletingItem.id))
+            }
+            setDeletingItem(null)
+        }
     }
 
     // ── FILTERED DATA ────────────────────────────────────────────
@@ -1230,28 +1270,120 @@ export default function AcademySetupPage() {
                                             ))}
                                         </div>
 
-                                        <button
-                                            onClick={() => {
-                                                setShowSubjectModal(true)
-                                                setSubjectForm({ name: '', code: '', is_optional: false })
-                                            }}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 6,
-                                                padding: '8px 16px',
-                                                background: PALETTE.primary,
-                                                color: '#FFFFFF',
-                                                border: 'none',
-                                                borderRadius: 8,
-                                                fontSize: 13,
-                                                fontWeight: 700,
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            <Plus size={15} /> Create Subject
-                                        </button>
+                                        <div style={{ display: 'flex', gap: 10 }}>
+                                            {subjects.length === 0 && (
+                                                <button
+                                                    onClick={handleSeedDefaultSubjects}
+                                                    disabled={saving}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 6,
+                                                        padding: '8px 16px',
+                                                        background: '#FFFFFF',
+                                                        color: PALETTE.primary,
+                                                        border: `1px solid ${PALETTE.primary}`,
+                                                        borderRadius: 8,
+                                                        fontSize: 13,
+                                                        fontWeight: 700,
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    <Sparkles size={15} /> Import Curriculum
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => {
+                                                    setShowSubjectModal(true)
+                                                    setSubjectForm({ name: '', code: '', is_optional: false })
+                                                }}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                    padding: '8px 16px',
+                                                    background: PALETTE.primary,
+                                                    color: '#FFFFFF',
+                                                    border: 'none',
+                                                    borderRadius: 8,
+                                                    fontSize: 13,
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <Plus size={15} /> Create Subject
+                                            </button>
+                                        </div>
                                     </div>
+
+                                    {/* Bulk Actions Banner */}
+                                    {selectedSubjectIds.length > 0 && (
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '12px 20px',
+                                            marginBottom: 16,
+                                            background: '#FEF2F2',
+                                            border: '1px solid #FECACA',
+                                            borderRadius: 12,
+                                            boxShadow: '0 2px 6px rgba(239, 68, 68, 0.08)'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                <span style={{
+                                                    background: '#EF4444',
+                                                    color: '#FFFFFF',
+                                                    borderRadius: 20,
+                                                    padding: '2px 10px',
+                                                    fontSize: 12,
+                                                    fontWeight: 700
+                                                }}>
+                                                    {selectedSubjectIds.length} Selected
+                                                </span>
+                                                <span style={{ fontSize: 13, fontWeight: 600, color: '#991B1B' }}>
+                                                    {selectedSubjectIds.length} subject{selectedSubjectIds.length > 1 ? 's' : ''} selected for batch actions
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSelectedSubjectIds([])}
+                                                    style={{
+                                                        padding: '7px 14px',
+                                                        borderRadius: 8,
+                                                        border: '1px solid #E2E8F0',
+                                                        background: '#FFFFFF',
+                                                        color: '#475569',
+                                                        fontSize: 12,
+                                                        fontWeight: 600,
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    Deselect All
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowBulkDeleteModal(true)}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 6,
+                                                        padding: '7px 16px',
+                                                        borderRadius: 8,
+                                                        border: 'none',
+                                                        background: '#DC2626',
+                                                        color: '#FFFFFF',
+                                                        fontSize: 12,
+                                                        fontWeight: 700,
+                                                        cursor: 'pointer',
+                                                        boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)'
+                                                    }}
+                                                >
+                                                    <Trash2 size={14} /> Delete Selected ({selectedSubjectIds.length})
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {filteredSubjects.length === 0 ? (
                                         <div style={{
@@ -1280,21 +1412,39 @@ export default function AcademySetupPage() {
                                             <p style={{ fontSize: 14, color: '#64748B', marginTop: 6, maxWidth: 440, margin: '6px auto 20px' }}>
                                                 Add subjects like Mathematics, Physics, and English to start structuring your institutional curriculum.
                                             </p>
-                                            <button
-                                                onClick={() => setShowSubjectModal(true)}
-                                                style={{
-                                                    padding: '11px 22px',
-                                                    borderRadius: 10,
-                                                    background: PALETTE.primary,
-                                                    color: '#FFFFFF',
-                                                    border: 'none',
-                                                    fontSize: 13,
-                                                    fontWeight: 700,
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                + Create New Subject
-                                            </button>
+                                            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                                                <button
+                                                    onClick={() => setShowSubjectModal(true)}
+                                                    style={{
+                                                        padding: '11px 22px',
+                                                        borderRadius: 10,
+                                                        background: PALETTE.primary,
+                                                        color: '#FFFFFF',
+                                                        border: 'none',
+                                                        fontSize: 13,
+                                                        fontWeight: 700,
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    + Create New Subject
+                                                </button>
+                                                <button
+                                                    onClick={handleSeedDefaultSubjects}
+                                                    disabled={saving}
+                                                    style={{
+                                                        padding: '11px 22px',
+                                                        borderRadius: 10,
+                                                        background: '#FFFFFF',
+                                                        color: PALETTE.primary,
+                                                        border: `1px solid ${PALETTE.primary}`,
+                                                        fontSize: 13,
+                                                        fontWeight: 700,
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    ⚡ Import Standard Curriculum
+                                                </button>
+                                            </div>
                                         </div>
                                     ) : (
                                         <div style={{
@@ -1307,109 +1457,137 @@ export default function AcademySetupPage() {
                                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                                                 <thead>
                                                     <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                                                        <th style={{ padding: '16px 24px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subject Name</th>
-                                                        <th style={{ padding: '16px 24px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subject Code</th>
-                                                        <th style={{ padding: '16px 24px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Curriculum Category</th>
-                                                        <th style={{ padding: '16px 24px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Grade Coverage</th>
+                                                        <th style={{ padding: '16px 20px', width: 44, textAlign: 'center' }}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={filteredSubjects.length > 0 && selectedSubjectIds.length === filteredSubjects.length}
+                                                                onChange={e => handleSelectAllSubjects(e.target.checked)}
+                                                                aria-label="Select all subjects"
+                                                                style={{ width: 16, height: 16, cursor: 'pointer', accentColor: PALETTE.primary }}
+                                                            />
+                                                        </th>
+                                                        <th style={{ padding: '16px 20px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subject Name</th>
+                                                        <th style={{ padding: '16px 20px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subject Code</th>
+                                                        <th style={{ padding: '16px 20px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Curriculum Category</th>
+                                                        <th style={{ padding: '16px 20px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Grade Coverage</th>
                                                         <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {filteredSubjects.map(sub => (
-                                                        <tr key={sub.id} style={{ borderBottom: '1px solid #F1F5F9', transition: '0.1s' }}>
-                                                            <td style={{ padding: '16px 24px' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                                    <div style={{
-                                                                        width: 36,
-                                                                        height: 36,
-                                                                        borderRadius: 10,
-                                                                        background: sub.is_optional ? '#FFFBEB' : PALETTE.primaryLight,
-                                                                        color: sub.is_optional ? '#D97706' : PALETTE.primary,
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center'
+                                                    {filteredSubjects.map(sub => {
+                                                        const isSelected = selectedSubjectIds.includes(sub.id)
+                                                        return (
+                                                            <tr
+                                                                key={sub.id}
+                                                                style={{
+                                                                    borderBottom: '1px solid #F1F5F9',
+                                                                    background: isSelected ? '#EFF6FF' : '#FFFFFF',
+                                                                    transition: '0.1s'
+                                                                }}
+                                                            >
+                                                                <td style={{ padding: '16px 20px', width: 44, textAlign: 'center' }}>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={isSelected}
+                                                                        onChange={() => handleToggleSubjectSelect(sub.id)}
+                                                                        aria-label={`Select ${sub.name}`}
+                                                                        style={{ width: 16, height: 16, cursor: 'pointer', accentColor: PALETTE.primary }}
+                                                                    />
+                                                                </td>
+                                                                <td style={{ padding: '16px 20px' }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                                        <div style={{
+                                                                            width: 36,
+                                                                            height: 36,
+                                                                            borderRadius: 10,
+                                                                            background: sub.is_optional ? '#FFFBEB' : PALETTE.primaryLight,
+                                                                            color: sub.is_optional ? '#D97706' : PALETTE.primary,
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center'
+                                                                        }}>
+                                                                            <BookOpen size={18} />
+                                                                        </div>
+                                                                        <div>
+                                                                            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{sub.name}</div>
+                                                                            {sub.is_system_fallback && (
+                                                                                <span style={{ fontSize: 11, color: '#94A3B8' }}>System Standard</span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td style={{ padding: '16px 20px' }}>
+                                                                    <span style={{
+                                                                        padding: '3px 8px',
+                                                                        borderRadius: 6,
+                                                                        background: '#F1F5F9',
+                                                                        color: '#475569',
+                                                                        fontSize: 12,
+                                                                        fontWeight: 800,
+                                                                        letterSpacing: '0.03em'
                                                                     }}>
-                                                                        <BookOpen size={18} />
+                                                                        {sub.code || 'GEN'}
+                                                                    </span>
+                                                                </td>
+                                                                <td style={{ padding: '16px 20px' }}>
+                                                                    <span style={{
+                                                                        padding: '4px 10px',
+                                                                        borderRadius: 20,
+                                                                        fontSize: 11,
+                                                                        fontWeight: 700,
+                                                                        background: sub.is_optional ? '#FFFBEB' : '#ECFDF5',
+                                                                        color: sub.is_optional ? '#B45309' : '#047857',
+                                                                        border: `1px solid ${sub.is_optional ? '#FDE68A' : '#A7F3D0'}`
+                                                                    }}>
+                                                                        {sub.is_optional ? 'Elective / Optional' : 'Core Mandatory'}
+                                                                    </span>
+                                                                </td>
+                                                                <td style={{ padding: '16px 20px', fontSize: 13, color: '#475569', fontWeight: 600 }}>
+                                                                    {sub.mapped_classes_count || 0} Grades
+                                                                </td>
+                                                                <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                                                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setEditingSubject(sub)
+                                                                                setEditSubjectForm({
+                                                                                    id: sub.id,
+                                                                                    name: sub.name,
+                                                                                    code: sub.code || '',
+                                                                                    is_optional: !!sub.is_optional
+                                                                                })
+                                                                            }}
+                                                                            title="Edit subject"
+                                                                            style={{
+                                                                                padding: 6,
+                                                                                borderRadius: 8,
+                                                                                border: '1px solid #E2E8F0',
+                                                                                background: '#FFFFFF',
+                                                                                color: '#64748B',
+                                                                                cursor: 'pointer'
+                                                                            }}
+                                                                        >
+                                                                            <Edit3 size={15} />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => setDeletingItem({ type: 'subject', id: sub.id, name: sub.name })}
+                                                                            title="Delete subject"
+                                                                            style={{
+                                                                                padding: 6,
+                                                                                borderRadius: 8,
+                                                                                border: '1px solid #E2E8F0',
+                                                                                background: '#FFFFFF',
+                                                                                color: '#EF4444',
+                                                                                cursor: 'pointer'
+                                                                            }}
+                                                                        >
+                                                                            <Trash2 size={15} />
+                                                                        </button>
                                                                     </div>
-                                                                    <div>
-                                                                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{sub.name}</div>
-                                                                        {sub.is_system_fallback && (
-                                                                            <span style={{ fontSize: 11, color: '#94A3B8' }}>System Standard</span>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                            <td style={{ padding: '16px 24px' }}>
-                                                                <span style={{
-                                                                    padding: '3px 8px',
-                                                                    borderRadius: 6,
-                                                                    background: '#F1F5F9',
-                                                                    color: '#475569',
-                                                                    fontSize: 12,
-                                                                    fontWeight: 800,
-                                                                    letterSpacing: '0.03em'
-                                                                }}>
-                                                                    {sub.code || 'GEN'}
-                                                                </span>
-                                                            </td>
-                                                            <td style={{ padding: '16px 24px' }}>
-                                                                <span style={{
-                                                                    padding: '4px 10px',
-                                                                    borderRadius: 20,
-                                                                    fontSize: 11,
-                                                                    fontWeight: 700,
-                                                                    background: sub.is_optional ? '#FFFBEB' : '#ECFDF5',
-                                                                    color: sub.is_optional ? '#B45309' : '#047857',
-                                                                    border: `1px solid ${sub.is_optional ? '#FDE68A' : '#A7F3D0'}`
-                                                                }}>
-                                                                    {sub.is_optional ? 'Elective / Optional' : 'Core Mandatory'}
-                                                                </span>
-                                                            </td>
-                                                            <td style={{ padding: '16px 24px', fontSize: 13, color: '#475569', fontWeight: 600 }}>
-                                                                {sub.mapped_classes_count || 0} Grades
-                                                            </td>
-                                                            <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                                                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            setEditingSubject(sub)
-                                                                            setEditSubjectForm({
-                                                                                id: sub.id,
-                                                                                name: sub.name,
-                                                                                code: sub.code || '',
-                                                                                is_optional: !!sub.is_optional
-                                                                            })
-                                                                        }}
-                                                                        title="Edit subject"
-                                                                        style={{
-                                                                            padding: 6,
-                                                                            borderRadius: 8,
-                                                                            border: '1px solid #E2E8F0',
-                                                                            background: '#FFFFFF',
-                                                                            color: '#64748B',
-                                                                            cursor: 'pointer'
-                                                                        }}
-                                                                    >
-                                                                        <Edit3 size={15} />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => setDeletingItem({ type: 'subject', id: sub.id, name: sub.name })}
-                                                                        title="Delete subject"
-                                                                        style={{
-                                                                            padding: 6,
-                                                                            borderRadius: 8,
-                                                                            border: '1px solid #E2E8F0',
-                                                                            background: '#FFFFFF',
-                                                                            color: '#EF4444',
-                                                                            cursor: 'pointer'
-                                                                        }}
-                                                                    >
-                                                                        <Trash2 size={15} />
-                                                                    </button>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
+                                                                </td>
+                                                            </tr>
+                                                        )
+                                                    })}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -2169,6 +2347,75 @@ export default function AcademySetupPage() {
                             {deletingItem.type === 'subject' && 'Deleting this subject will remove it from all class curricula and faculty teaching assignments.'}
                             {deletingItem.type === 'mapping' && 'Revoking this assignment will remove the teacher from this specific classroom section.'}
                         </p>
+                    </div>
+                </Modal>
+            )}
+
+            {/* MODAL 10: BULK DELETE CONFIRMATION */}
+            {showBulkDeleteModal && (
+                <Modal
+                    title={`Confirm Bulk Deletion (${selectedSubjectIds.length} Subjects)`}
+                    subtitle="This action will permanently delete all selected subjects."
+                    onClose={() => setShowBulkDeleteModal(false)}
+                    onSubmit={handleConfirmBulkDelete}
+                    saving={saving}
+                    submitText={`Yes, Delete ${selectedSubjectIds.length} Subject${selectedSubjectIds.length > 1 ? 's' : ''}`}
+                    maxWidth={540}
+                >
+                    <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                        <div style={{
+                            width: 54,
+                            height: 54,
+                            borderRadius: '50%',
+                            background: '#FEF2F2',
+                            color: '#DC2626',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 16px'
+                        }}>
+                            <Trash2 size={26} />
+                        </div>
+                        <h4 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', margin: '0 0 8px' }}>
+                            Are you sure you want to delete {selectedSubjectIds.length} selected subjects?
+                        </h4>
+                        <p style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5, margin: '0 0 16px' }}>
+                            Deleting these subjects will remove them from all class curricula and faculty teaching assignments. This action cannot be undone.
+                        </p>
+
+                        <div style={{
+                            background: '#F8FAFC',
+                            border: '1px solid #E2E8F0',
+                            borderRadius: 12,
+                            padding: 14,
+                            maxHeight: 180,
+                            overflowY: 'auto',
+                            textAlign: 'left'
+                        }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.04em' }}>
+                                Selected for Deletion ({selectedSubjectIds.length}):
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {subjects.filter(s => selectedSubjectIds.includes(s.id)).map(s => (
+                                    <span key={s.id} style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        padding: '4px 10px',
+                                        background: '#FFFFFF',
+                                        border: '1px solid #E2E8F0',
+                                        borderRadius: 8,
+                                        fontSize: 12,
+                                        fontWeight: 600,
+                                        color: '#0F172A'
+                                    }}>
+                                        <BookOpen size={12} color={PALETTE.primary} />
+                                        {s.name}
+                                        <span style={{ fontSize: 10, color: '#64748B' }}>({s.code || 'GEN'})</span>
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </Modal>
             )}
