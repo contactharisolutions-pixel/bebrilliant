@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
     if (!user) return err('Forbidden', 403);
 
     try {
-        const supabase = await createClient();
+        const supabase = supabaseAdmin;
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         const preset = searchParams.get('preset');
@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
     const { action, template, sections, id, templateId, tenantId, syllabusNodeId } = body;
 
     try {
-        const supabase = await createClient();
+        const supabase = supabaseAdmin;
 
         // ── CREATE ──
         if (action === 'CREATE_TEMPLATE') {
@@ -220,6 +220,8 @@ export async function POST(request: NextRequest) {
 
             const marksCheck = validateMarks(template, sections);
             if (!marksCheck.valid) return err(marksCheck.message);
+
+            const isGlobal = template.is_global !== undefined ? Boolean(template.is_global) : true;
 
             const { data: newTemplate, error: tErr } = await supabase
                 .from('paper_templates')
@@ -234,7 +236,7 @@ export async function POST(request: NextRequest) {
                     tags: template.tags ?? [],
                     syllabus_node_id: template.syllabus_node_id ?? null,
                     is_active: true,
-                    is_global: false,
+                    is_global: isGlobal,
                     version: 1,
                     created_by: user.id,
                 }])
@@ -260,24 +262,30 @@ export async function POST(request: NextRequest) {
             if (!marksCheck.valid) return err(marksCheck.message);
 
             // Bump version
-            const { data: existing } = await supabase.from('paper_templates').select('version').eq('id', id).single();
+            const { data: existing } = await supabase.from('paper_templates').select('version, is_global').eq('id', id).single();
             const nextVersion = (existing?.version ?? 1) + 1;
+
+            const updatePayload: Record<string, any> = {
+                name: template.name.trim(),
+                category: template.category,
+                exam_type: template.exam_type,
+                duration_minutes: template.duration_minutes,
+                total_marks: template.total_marks,
+                instructions: template.instructions ?? [],
+                description: template.description ?? null,
+                tags: template.tags ?? [],
+                syllabus_node_id: template.syllabus_node_id ?? null,
+                version: nextVersion,
+                updated_at: new Date().toISOString(),
+            };
+
+            if (template.is_global !== undefined) {
+                updatePayload.is_global = Boolean(template.is_global);
+            }
 
             const { error: tErr } = await supabase
                 .from('paper_templates')
-                .update({
-                    name: template.name.trim(),
-                    category: template.category,
-                    exam_type: template.exam_type,
-                    duration_minutes: template.duration_minutes,
-                    total_marks: template.total_marks,
-                    instructions: template.instructions ?? [],
-                    description: template.description ?? null,
-                    tags: template.tags ?? [],
-                    syllabus_node_id: template.syllabus_node_id ?? null,
-                    version: nextVersion,
-                    updated_at: new Date().toISOString(),
-                })
+                .update(updatePayload)
                 .eq('id', id);
 
             if (tErr) throw new Error(`Template update failed: ${tErr.message}`);
@@ -328,9 +336,10 @@ export async function POST(request: NextRequest) {
         // ── PUBLISH / UNPUBLISH ──
         if (action === 'PUBLISH_TEMPLATE') {
             if (!id) return err('id required');
+            const isPub = body.is_published !== undefined ? Boolean(body.is_published) : true;
             const { data, error: pErr } = await supabase
                 .from('paper_templates')
-                .update({ is_global: body.is_published, updated_at: new Date().toISOString() })
+                .update({ is_global: isPub, updated_at: new Date().toISOString() })
                 .eq('id', id)
                 .select()
                 .single();

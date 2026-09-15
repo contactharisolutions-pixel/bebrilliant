@@ -134,6 +134,11 @@ export default function OMRExamManager() {
         }
     }, [selectedBoardId])
 
+    const handleOpenCreateModal = useCallback(async () => {
+        setIsCreateModalOpen(true)
+        await fetchBlueprintContext()
+    }, [fetchBlueprintContext])
+
     // Fetch Hub Data
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -405,8 +410,8 @@ export default function OMRExamManager() {
 
                         <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
                             <button
-                                onClick={() => setIsCreateModalOpen(true)}
-                                className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-gradient-to-r from-[#004B93] to-sky-600 hover:from-sky-700 hover:to-sky-500 text-white font-bold text-sm shadow-xl shadow-sky-950/40 border border-sky-300/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                onClick={handleOpenCreateModal}
+                                className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-gradient-to-r from-[#004B93] to-sky-600 hover:from-sky-700 hover:to-sky-500 text-white font-bold text-sm shadow-xl shadow-sky-950/40 border border-sky-300/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                             >
                                 <PlusCircle size={18} />
                                 <span>Create OMR Exam</span>
@@ -1097,7 +1102,7 @@ export default function OMRExamManager() {
                                                         omr_template_id: tmpl.id,
                                                         total_questions: tmpl.total_questions
                                                     }))
-                                                    setIsCreateModalOpen(true)
+                                                    handleOpenCreateModal()
                                                 }}
                                                 className="w-full py-2.5 rounded-xl bg-slate-50 hover:bg-[#004B93] text-slate-700 hover:text-white font-bold text-xs border border-slate-200 transition-colors flex items-center justify-center gap-1.5"
                                             >
@@ -1201,149 +1206,251 @@ export default function OMRExamManager() {
 
             {/* MODAL 1: CREATE NEW OMR EXAM */}
             {isCreateModalOpen && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
-                    <div className="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                            <div>
-                                <h3 className="text-xl font-black text-slate-900">Launch New OMR Examination</h3>
-                                <p className="text-xs text-slate-500 mt-0.5">Generates scannable offline bubble sheets linked to your syllabus.</p>
-                            </div>
-                            <button
-                                onClick={() => setIsCreateModalOpen(false)}
-                                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                            >
-                                <XCircle size={22} />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleCreateExam} className="space-y-4 text-sm max-h-[75vh] overflow-y-auto pr-1">
-                            {/* Master Unified Syllabus & Exam Pattern Picker */}
-                            <ExamSyllabusPatternPicker
-                                context={blueprintContext}
-                                loadingContext={contextLoading}
-                                onRefreshContext={fetchBlueprintContext}
-                                selectedBoardId={selectedBoardId}
-                                selectedClassId={selectedClassId}
-                                selectedSubjectId={selectedSubjectId}
-                                selectedChapterIds={selectedChapterIds}
-                                selectedTopicIds={selectedTopicIds}
-                                selectedPatternId={selectedPatternId}
-                                onSelectBoard={bId => {
-                                    setSelectedBoardId(bId)
-                                    setSelectedClassId('')
-                                    setSelectedSubjectId('')
-                                    setSelectedChapterIds([])
-                                    setSelectedTopicIds([])
-                                }}
-                                onSelectClass={cNode => {
-                                    setSelectedClassId(cNode.id)
-                                    const matched = classes.find((c: any) => c.name.toLowerCase() === cNode.name.toLowerCase()) || classes[0]
-                                    setNewExamForm(prev => ({ ...prev, class_id: matched?.id || cNode.id }))
-                                    setSelectedSubjectId('')
-                                    setSelectedChapterIds([])
-                                    setSelectedTopicIds([])
-                                }}
-                                onSelectSubject={sNode => {
-                                    setSelectedSubjectId(sNode.id)
-                                    const matched = subjects.find((s: any) => s.name.toLowerCase() === sNode.name.toLowerCase()) || subjects[0]
-                                    setNewExamForm(prev => ({ ...prev, subject_id: matched?.id || sNode.id }))
-                                    setSelectedChapterIds([])
-                                    setSelectedTopicIds([])
-                                }}
-                                onSelectChapters={chIds => {
-                                    setSelectedChapterIds(chIds)
-                                    setNewExamForm(prev => ({ ...prev, chapter_ids: chIds }))
-                                }}
-                                onSelectTopics={tpIds => {
-                                    setSelectedTopicIds(tpIds)
-                                    setNewExamForm(prev => ({ ...prev, topic_ids: tpIds }))
-                                }}
-                                onSelectPattern={pattern => {
-                                    setSelectedPatternId(pattern.id)
-                                    const totalQ = pattern.sections?.reduce(
-                                        (acc: number, s: any) => acc + (s.rules?.reduce((ra: number, r: any) => ra + Number(r.num_questions || 0), 0) || 0), 0
-                                    ) || 50
-                                    const matchingOmr = templates.find((t: any) => t.total_questions === totalQ) || templates[0]
-                                    setNewExamForm(prev => ({
-                                        ...prev,
-                                        template_id: pattern.id,
-                                        title: prev.title ? prev.title : `${pattern.name} OMR Assessment`,
-                                        total_questions: totalQ,
-                                        duration: pattern.duration_minutes || 60,
-                                        omr_template_id: matchingOmr?.id || prev.omr_template_id
-                                    }))
-                                    showToast(`Pattern "${pattern.name}" loaded for physical OMR test!`, true)
-                                }}
-                            />
-
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Exam Title</label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="e.g. Grade 10 Midterm Mathematics OMR Assessment"
-                                    value={newExamForm.title}
-                                    onChange={e => setNewExamForm({ ...newExamForm, title: e.target.value })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Bubble Count (Questions)</label>
-                                    <input
-                                        type="number"
-                                        value={newExamForm.total_questions}
-                                        onChange={e => setNewExamForm({ ...newExamForm, total_questions: parseInt(e.target.value) })}
-                                        min={10}
-                                        max={200}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900"
-                                    />
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
+                    <div className="w-full max-w-5xl xl:max-w-6xl max-h-[92vh] flex flex-col bg-white rounded-3xl border border-slate-200/90 shadow-2xl overflow-hidden">
+                        
+                        {/* MODAL HEADER (Fixed Top) */}
+                        <div className="shrink-0 px-6 sm:px-8 py-5 border-b border-slate-100 bg-white flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3.5">
+                                <div className="w-11 h-11 rounded-2xl bg-[#004B93]/10 border border-[#004B93]/20 flex items-center justify-center text-[#004B93] shadow-sm">
+                                    <ScanLine size={22} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Duration (Minutes)</label>
-                                    <input
-                                        type="number"
-                                        value={newExamForm.duration}
-                                        onChange={e => setNewExamForm({ ...newExamForm, duration: parseInt(e.target.value) })}
-                                        min={15}
-                                        max={240}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900"
-                                    />
+                                    <div className="flex items-center gap-2.5">
+                                        <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Launch New OMR Examination</h3>
+                                        <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <Sparkles size={12} /> Live Sync
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-0.5">
+                                        Generates standardized scannable bubble sheets mapped to state & national boards, official syllabus & exam patterns.
+                                    </p>
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Optical Bubble Grid Layout</label>
-                                <select
-                                    value={newExamForm.omr_template_id}
-                                    onChange={e => setNewExamForm({ ...newExamForm, omr_template_id: e.target.value })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => fetchBlueprintContext()}
+                                    disabled={contextLoading}
+                                    title="Refire & reload published board patterns from registry"
+                                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
                                 >
-                                    {templates.map(t => (
-                                        <option key={t.id} value={t.id}>{t.name} ({t.total_questions} Qs)</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+                                    <RefreshCw size={13} className={contextLoading ? 'animate-spin text-[#004B93]' : ''} />
+                                    <span className="hidden md:inline">Refire Registry</span>
+                                </button>
                                 <button
                                     type="button"
                                     onClick={() => setIsCreateModalOpen(false)}
-                                    className="px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-700 hover:bg-slate-50"
+                                    className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                                >
+                                    <XCircle size={22} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* MODAL BODY (Scrollable Workspace) */}
+                        <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6 bg-slate-50/50">
+                            <form id="create-omr-form" onSubmit={handleCreateExam} className="space-y-6 text-sm">
+                                
+                                {/* CARD 1: SYLLABUS & STANDARD PATTERN SELECTOR */}
+                                <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-4">
+                                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-8 h-8 rounded-xl bg-sky-50 text-[#004B93] flex items-center justify-center font-black text-xs border border-sky-100">
+                                                1
+                                            </div>
+                                            <div>
+                                                <h4 className="font-black text-slate-900 text-sm sm:text-base">Syllabus Scope & Standard Board Pattern</h4>
+                                                <p className="text-xs text-slate-500">Pick board, class, subject & live exam patterns (e.g. Gujarat Board, CBSE, ICSE).</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Master Unified Syllabus & Exam Pattern Picker */}
+                                    <ExamSyllabusPatternPicker
+                                        context={blueprintContext}
+                                        loadingContext={contextLoading}
+                                        onRefreshContext={fetchBlueprintContext}
+                                        selectedBoardId={selectedBoardId}
+                                        selectedClassId={selectedClassId}
+                                        selectedSubjectId={selectedSubjectId}
+                                        selectedChapterIds={selectedChapterIds}
+                                        selectedTopicIds={selectedTopicIds}
+                                        selectedPatternId={selectedPatternId}
+                                        onSelectBoard={bId => {
+                                            setSelectedBoardId(bId)
+                                            setSelectedClassId('')
+                                            setSelectedSubjectId('')
+                                            setSelectedChapterIds([])
+                                            setSelectedTopicIds([])
+                                        }}
+                                        onSelectClass={cNode => {
+                                            setSelectedClassId(cNode.id)
+                                            const matched = classes.find((c: any) => c.name.toLowerCase() === cNode.name.toLowerCase()) || classes[0]
+                                            setNewExamForm(prev => ({ ...prev, class_id: matched?.id || cNode.id }))
+                                            setSelectedSubjectId('')
+                                            setSelectedChapterIds([])
+                                            setSelectedTopicIds([])
+                                        }}
+                                        onSelectSubject={sNode => {
+                                            setSelectedSubjectId(sNode.id)
+                                            const matched = subjects.find((s: any) => s.name.toLowerCase() === sNode.name.toLowerCase()) || subjects[0]
+                                            setNewExamForm(prev => ({ ...prev, subject_id: matched?.id || sNode.id }))
+                                            setSelectedChapterIds([])
+                                            setSelectedTopicIds([])
+                                        }}
+                                        onSelectChapters={chIds => {
+                                            setSelectedChapterIds(chIds)
+                                            setNewExamForm(prev => ({ ...prev, chapter_ids: chIds }))
+                                        }}
+                                        onSelectTopics={tpIds => {
+                                            setSelectedTopicIds(tpIds)
+                                            setNewExamForm(prev => ({ ...prev, topic_ids: tpIds }))
+                                        }}
+                                        onSelectPattern={pattern => {
+                                            setSelectedPatternId(pattern.id)
+                                            const totalQ = pattern.sections?.reduce(
+                                                (acc: number, s: any) => acc + (s.rules?.reduce((ra: number, r: any) => ra + Number(r.num_questions || 0), 0) || 0), 0
+                                            ) || 50
+                                            const matchingOmr = templates.find((t: any) => t.total_questions === totalQ) || templates[0]
+                                            setNewExamForm(prev => ({
+                                                ...prev,
+                                                template_id: pattern.id,
+                                                title: prev.title ? prev.title : `${pattern.name} OMR Assessment`,
+                                                total_questions: totalQ,
+                                                duration: pattern.duration_minutes || 60,
+                                                omr_template_id: matchingOmr?.id || prev.omr_template_id
+                                            }))
+                                            showToast(`Pattern "${pattern.name}" loaded for physical OMR test!`, true)
+                                        }}
+                                    />
+                                </div>
+
+                                {/* CARD 2: PAPER SPECIFICATIONS & BUBBLE LAYOUT */}
+                                <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-5">
+                                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-8 h-8 rounded-xl bg-sky-50 text-[#004B93] flex items-center justify-center font-black text-xs border border-sky-100">
+                                                2
+                                            </div>
+                                            <div>
+                                                <h4 className="font-black text-slate-900 text-sm sm:text-base">Examination Details & Bubble Sheet Architecture</h4>
+                                                <p className="text-xs text-slate-500">Configure title, duration, question budget and scanner grid template.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Exam Title */}
+                                    <div>
+                                        <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">
+                                            Exam Title <span className="text-rose-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder="e.g. Grade 10 Midterm Mathematics OMR Assessment"
+                                            value={newExamForm.title}
+                                            onChange={e => setNewExamForm({ ...newExamForm, title: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#004B93] focus:border-[#004B93] focus:outline-none transition-all shadow-sm"
+                                        />
+                                    </div>
+
+                                    {/* 3-Column Specifications Grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        <div>
+                                            <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">
+                                                Bubble Count (Questions)
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type="number"
+                                                    value={newExamForm.total_questions}
+                                                    onChange={e => setNewExamForm({ ...newExamForm, total_questions: parseInt(e.target.value) || 0 })}
+                                                    min={10}
+                                                    max={200}
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-sm"
+                                                />
+                                                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none">
+                                                    Qs
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">
+                                                Duration (Minutes)
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type="number"
+                                                    value={newExamForm.duration}
+                                                    onChange={e => setNewExamForm({ ...newExamForm, duration: parseInt(e.target.value) || 0 })}
+                                                    min={15}
+                                                    max={300}
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-sm"
+                                                />
+                                                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none">
+                                                    Mins
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">
+                                                Optical Bubble Grid Layout
+                                            </label>
+                                            <select
+                                                value={newExamForm.omr_template_id}
+                                                onChange={e => setNewExamForm({ ...newExamForm, omr_template_id: e.target.value })}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-sm"
+                                            >
+                                                {templates.map(t => (
+                                                    <option key={t.id} value={t.id}>{t.name} ({t.total_questions} Qs)</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        {/* MODAL FOOTER (Fixed Bottom) */}
+                        <div className="shrink-0 px-6 sm:px-8 py-4 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="flex flex-wrap items-center gap-2 text-xs">
+                                <span className="px-3 py-1 rounded-lg bg-sky-50 text-[#004B93] font-black border border-sky-100">
+                                    {newExamForm.total_questions} Questions
+                                </span>
+                                <span className="px-3 py-1 rounded-lg bg-amber-50 text-amber-800 font-black border border-amber-200/80">
+                                    {newExamForm.duration} Mins
+                                </span>
+                                {newExamForm.template_id && (
+                                    <span className="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-black border border-emerald-200 flex items-center gap-1">
+                                        <CheckCircle size={13} /> Pattern Linked
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCreateModalOpen(false)}
+                                    className="px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
+                                    form="create-omr-form"
                                     disabled={saving}
-                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold shadow-md flex items-center gap-2"
+                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold shadow-md shadow-sky-950/20 flex items-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer"
                                 >
                                     {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
                                     <span>Deploy Examination</span>
                                 </button>
                             </div>
-                        </form>
+                        </div>
+
                     </div>
                 </div>
             )}

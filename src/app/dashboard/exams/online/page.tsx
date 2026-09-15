@@ -267,26 +267,38 @@ export default function OnlineExamsManagementPage() {
     const handlePatternSelected = (tmpl: any) => {
         if (!tmpl) return
         setSelectedPatternId(tmpl.id)
+
+        let parsedInstructions = ''
+        if (typeof tmpl.instructions === 'string') {
+            parsedInstructions = tmpl.instructions
+        } else if (Array.isArray(tmpl.instructions)) {
+            parsedInstructions = tmpl.instructions.filter(Boolean).join('\n')
+        } else if (tmpl.instructions && typeof tmpl.instructions === 'object') {
+            const values = Object.values(tmpl.instructions).filter(v => typeof v === 'string' && (v as string).trim().length > 0)
+            parsedInstructions = values.length > 0 ? values.join('\n') : (tmpl.description || '')
+        } else {
+            parsedInstructions = tmpl.description || ''
+        }
+
         setS1(prev => ({
             ...prev,
             name: prev.name ? prev.name : `${tmpl.name} (Official Pattern)`,
             duration: tmpl.duration_minutes || 60,
             total_marks: tmpl.total_marks || 100,
-            instructions: Array.isArray(tmpl.instructions) 
-                ? tmpl.instructions.join('\n') 
-                : (tmpl.instructions || tmpl.description || '')
+            instructions: parsedInstructions
         }))
 
         if (Array.isArray(tmpl.sections) && tmpl.sections.length > 0) {
             const compiledSections = tmpl.sections.map((sec: any) => {
+                const totalQ = sec.rules?.reduce((acc: number, r: any) => acc + Number(r.num_questions || 0), 0) || 15
                 const primaryRule = sec.rules?.[0] || {}
                 return {
                     name: sec.section_name || 'Standard Section',
-                    qCount: Number(primaryRule.num_questions || 15),
-                    mark: Number(primaryRule.marks_per_question || 2),
+                    qCount: totalQ,
+                    mark: Number(primaryRule.marks_per_question || 1),
                     negMark: Number(primaryRule.negative_marks || 0),
-                    easy: Number(primaryRule.difficulty_easy_pct || 40),
-                    med: Number(primaryRule.difficulty_medium_pct || 40),
+                    easy: Number(primaryRule.difficulty_easy_pct || 30),
+                    med: Number(primaryRule.difficulty_medium_pct || 50),
                     hard: Number(primaryRule.difficulty_hard_pct || 20)
                 }
             })

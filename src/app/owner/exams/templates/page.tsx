@@ -81,7 +81,7 @@ function newSection(idx: number): TemplateSection {
     return { section_name: `Section ${'ABCDEFGHIJ'[idx] ?? idx + 1}`, section_type: 'Mixed', optional_flag: false, rules: [] }
 }
 function blankForm(): Partial<PaperTemplate> {
-    return { name: '', category: 'School', exam_type: 'Mixed', duration_minutes: 180, total_marks: 100, instructions: [], tags: [], description: '' }
+    return { name: '', category: 'School', exam_type: 'Mixed', duration_minutes: 180, total_marks: 100, instructions: [], tags: [], description: '', is_global: true }
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
@@ -308,6 +308,50 @@ function TemplateBuilder({
                                 placeholder="e.g. CBSE, 2024, Mathematics, Class 10"
                                 style={fieldStyle} />
                         </div>
+                        <div style={{
+                            gridColumn: '1 / -1',
+                            background: form.is_global ? P.brandBg : P.bg,
+                            border: `1px solid ${form.is_global ? P.brand : P.border}`,
+                            borderRadius: 14,
+                            padding: '16px 20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 16
+                        }}>
+                            <div>
+                                <div style={{ fontSize: 13, fontWeight: 900, color: P.dark, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <Globe size={16} color={form.is_global ? P.brand : P.muted} />
+                                    Publish to Public Exam Pattern Registry (All Institutions)
+                                </div>
+                                <div style={{ fontSize: 12, color: P.muted, fontWeight: 500, marginTop: 4 }}>
+                                    {form.is_global
+                                        ? 'Published: Instantly live and visible to all school and college tenant portals under Standard Board Exam Patterns.'
+                                        : 'Draft Mode: Private to platform owners only. Will not appear in tenant exam creation.'}
+                                </div>
+                            </div>
+                            <label style={{ position: 'relative', display: 'inline-block', width: 48, height: 26, cursor: 'pointer', flexShrink: 0 }}>
+                                <input
+                                    type="checkbox"
+                                    checked={Boolean(form.is_global)}
+                                    onChange={e => setForm({ ...form, is_global: e.target.checked })}
+                                    style={{ opacity: 0, width: 0, height: 0 }}
+                                />
+                                <span style={{
+                                    position: 'absolute', inset: 0, borderRadius: 26,
+                                    background: form.is_global ? P.brand : '#cbd5e1',
+                                    transition: '0.2s',
+                                    display: 'block'
+                                }}>
+                                    <span style={{
+                                        position: 'absolute', content: '""', height: 20, width: 20,
+                                        left: form.is_global ? 25 : 3, bottom: 3,
+                                        background: '#fff', borderRadius: '50%', transition: '0.2s',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                                    }} />
+                                </span>
+                            </label>
+                        </div>
                     </div>
                 )}
 
@@ -445,7 +489,7 @@ function TemplateBuilder({
                                                     <input type="number" value={r.difficulty_hard_pct} onChange={e => updateRule(sIdx, rIdx, { difficulty_hard_pct: parseInt(e.target.value) || 0 })}
                                                         style={{ flex: 1, padding: '8px 6px', borderRadius: 8, border: 'none', background: P.errorBg, color: P.error, fontSize: 12, fontWeight: 800, textAlign: 'center', outline: 'none' }} />
                                                     {(r.difficulty_easy_pct + r.difficulty_medium_pct + r.difficulty_hard_pct) !== 100 && (
-                                                        <AlertCircle size={14} color={P.error} title="Must sum to 100%" />
+                                                        <span title="Must sum to 100%"><AlertCircle size={14} color={P.error} /></span>
                                                     )}
                                                 </div>
                                             </div>
@@ -675,7 +719,7 @@ export default function ExamFormatTemplatesPage() {
     }
 
     const openEditMode = (t: PaperTemplate) => {
-        setForm({ name: t.name, category: t.category, exam_type: t.exam_type, duration_minutes: t.duration_minutes, total_marks: t.total_marks, instructions: t.instructions, description: t.description, tags: t.tags ?? [], syllabus_node_id: t.syllabus_node_id })
+        setForm({ name: t.name, category: t.category, exam_type: t.exam_type, duration_minutes: t.duration_minutes, total_marks: t.total_marks, instructions: t.instructions, description: t.description, tags: t.tags ?? [], syllabus_node_id: t.syllabus_node_id, is_global: t.is_global ?? true })
         setSections((t.sections ?? []).map(s => ({ ...s, rules: s.rules ?? [] })))
         setIsEdit(true); setEditId(t.id); setActiveTab('builder')
     }
