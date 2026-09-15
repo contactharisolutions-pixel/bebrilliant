@@ -1038,7 +1038,8 @@ export default function FacultyManagement() {
                 background: '#FFFFFF',
                 border: '1px solid #E2E8F0',
                 borderRadius: 16,
-                overflow: 'hidden',
+                overflow: 'visible',
+                position: 'relative',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
             }}>
                 {loading ? (
@@ -1107,6 +1108,8 @@ export default function FacultyManagement() {
                             padding: '14px 24px',
                             background: '#F8FAFC',
                             borderBottom: '1px solid #E2E8F0',
+                            borderTopLeftRadius: 15,
+                            borderTopRightRadius: 15,
                             fontSize: 11,
                             fontWeight: 700,
                             color: '#64748B',
@@ -1165,8 +1168,12 @@ export default function FacultyManagement() {
                                         alignItems: 'center',
                                         padding: '16px 24px',
                                         borderBottom: idx === filteredTeachers.length - 1 ? 'none' : '1px solid #F1F5F9',
+                                        borderBottomLeftRadius: idx === filteredTeachers.length - 1 ? 15 : 0,
+                                        borderBottomRightRadius: idx === filteredTeachers.length - 1 ? 15 : 0,
                                         background: isSelected ? '#F0F9FF' : '#FFFFFF',
-                                        transition: 'background 0.15s ease'
+                                        transition: 'background 0.15s ease',
+                                        position: 'relative',
+                                        zIndex: activeMenuId === teacher.id ? 40 : 1
                                     }}
                                     onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#F8FAFC' }}
                                     onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = '#FFFFFF' }}
@@ -1324,7 +1331,14 @@ export default function FacultyManagement() {
                                     </div>
 
                                     {/* Actions */}
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, position: 'relative' }}>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'flex-end',
+                                        gap: 8,
+                                        position: 'relative',
+                                        zIndex: activeMenuId === teacher.id ? 50 : 2
+                                    }}>
                                         <button
                                             onClick={() => handleOpenScopeModal(teacher)}
                                             style={{
@@ -1375,14 +1389,16 @@ export default function FacultyManagement() {
                                                 style={{
                                                     position: 'absolute',
                                                     right: 0,
-                                                    top: 40,
-                                                    width: 200,
+                                                    ...(idx > 0 && idx >= filteredTeachers.length - 1
+                                                        ? { bottom: 42, top: 'auto' }
+                                                        : { top: 42, bottom: 'auto' }),
+                                                    width: 205,
                                                     background: '#FFFFFF',
                                                     borderRadius: 12,
-                                                    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
-                                                    border: '1px solid #E2E8F0',
+                                                    boxShadow: '0 20px 35px -8px rgba(15, 23, 42, 0.2), 0 8px 16px -4px rgba(15, 23, 42, 0.12)',
+                                                    border: '1px solid #CBD5E1',
                                                     padding: '6px',
-                                                    zIndex: 100,
+                                                    zIndex: 1000,
                                                     display: 'flex',
                                                     flexDirection: 'column',
                                                     gap: 2
