@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { syncSyllabusToTenantAcademy } from '@/lib/syllabus-sync'
 
 async function verifyTenantAdmin() {
     const supabase = await createClient()
@@ -101,13 +102,30 @@ export async function GET(request: NextRequest) {
             .order('start_date', { ascending: false })
 
         // 1. Fetch Classes
-        const { data: rawClasses, error: classError } = await supabaseAdmin
+        let { data: rawClasses, error: classError } = await supabaseAdmin
             .from('classes')
             .select('id, name, code, sort_order, is_active, academic_year_id, created_at, updated_at')
             .eq('tenant_id', tenant_id)
             .order('sort_order', { ascending: true })
 
         if (classError) throw classError
+
+        // If no institutional classes exist yet, auto-sync from active syllabus
+        if (!rawClasses || rawClasses.length === 0) {
+            try {
+                const syncRes = await syncSyllabusToTenantAcademy(tenant_id)
+                if (syncRes.syncedClasses > 0) {
+                    const { data: refetchedClasses } = await supabaseAdmin
+                        .from('classes')
+                        .select('id, name, code, sort_order, is_active, academic_year_id, created_at, updated_at')
+                        .eq('tenant_id', tenant_id)
+                        .order('sort_order', { ascending: true })
+                    if (refetchedClasses) rawClasses = refetchedClasses
+                }
+            } catch (syncErr) {
+                console.error('[Academy GET Auto-sync from Syllabus Error]:', syncErr)
+            }
+        }
 
         // 2. Fetch Divisions (Sections)
         const { data: rawDivisions, error: divError } = await supabaseAdmin

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { verifyTenantStaff } from '@/lib/auth-server'
+import { syncSyllabusToTenantAcademy, getOrCreateActiveAcademicYear } from '@/lib/syllabus-sync'
 
 export async function GET(request: NextRequest) {
     try {
@@ -123,6 +124,21 @@ export async function GET(request: NextRequest) {
         const activeBoardName = activeBoardNode ? activeBoardNode.name : 'Gujarat Board (English Medium)'
         const activeBoardId = activeBoardNode ? activeBoardNode.id : null
 
+        // Auto-synchronize academy classes & subjects if tenant has active syllabus but 0 institutional classes
+        if (activeBoardId) {
+            try {
+                const classCountRes = await query(
+                    `SELECT COUNT(*)::int as count FROM public.classes WHERE tenant_id = $1`,
+                    [tenantId]
+                )
+                if ((classCountRes.rows?.[0]?.count || 0) === 0) {
+                    await syncSyllabusToTenantAcademy(tenantId, activeBoardId)
+                }
+            } catch (autoSyncErr) {
+                console.error('[Auto-sync syllabus to academy on GET warning]:', autoSyncErr)
+            }
+        }
+
         // Compute live metrics for the active curriculum
         const totalClasses = nodes.filter((n: any) => n.type === 'class').length
         const totalSubjects = nodes.filter((n: any) => n.type === 'subject').length
@@ -221,11 +237,20 @@ export async function POST(request: NextRequest) {
                 )
             }
 
-            const message = multiBoardEnabled
-                ? `"${boardName}" imported into your active multi-board curriculum.`
-                : `"${boardName}" successfully set as your active school curriculum.`
+            // Automatically synchronize classes and subjects from this syllabus into academy records
+            let syncStats = { syncedClasses: 0, syncedSubjects: 0 }
+            try {
+                const resSync = await syncSyllabusToTenantAcademy(tenantId, board_id)
+                syncStats = { syncedClasses: resSync.syncedClasses, syncedSubjects: resSync.syncedSubjects }
+            } catch (syncErr) {
+                console.error('[IMPORT_OWNER_SYLLABUS sync error]:', syncErr)
+            }
 
-            return NextResponse.json({ success: true, message, boardName })
+            const message = multiBoardEnabled
+                ? `"${boardName}" imported into curriculum. Automatically synchronized ${syncStats.syncedClasses} classes and ${syncStats.syncedSubjects} subjects in Academy records.`
+                : `"${boardName}" set as active curriculum. Automatically synchronized ${syncStats.syncedClasses} classes and ${syncStats.syncedSubjects} subjects in Academy records.`
+
+            return NextResponse.json({ success: true, message, boardName, syncStats })
         }
 
         // ── 2. DOWNLOAD BOARD SYLLABUS AS DATA ROWS (FOR EXCEL/CSV) ───────
@@ -445,10 +470,22 @@ export async function POST(request: NextRequest) {
                 insertedCount++
             }
 
+            // Automatically synchronize newly imported classes & subjects to institutional academy records
+            let syncStats = { syncedClasses: 0, syncedSubjects: 0 }
+            try {
+                if (boardId) {
+                    const resSync = await syncSyllabusToTenantAcademy(tenantId, boardId)
+                    syncStats = { syncedClasses: resSync.syncedClasses, syncedSubjects: resSync.syncedSubjects }
+                }
+            } catch (syncErr) {
+                console.error('[BULK_UPLOAD_SYLLABUS sync error]:', syncErr)
+            }
+
             return NextResponse.json({
                 success: true,
                 count: insertedCount,
-                message: `Successfully processed ${insertedCount} curriculum items.`
+                message: `Successfully processed ${insertedCount} curriculum items. Automatically created ${syncStats.syncedClasses} classes and ${syncStats.syncedSubjects} subjects in Academy records.`,
+                syncStats
             })
         }
 
@@ -458,12 +495,81 @@ export async function POST(request: NextRequest) {
             if (!name || !name.trim()) return NextResponse.json({ error: 'Item name is required' }, { status: 400 })
             if (!type) return NextResponse.json({ error: 'Item type is required' }, { status: 400 })
 
+            const cleanName = name.trim()
             const { rows: nodeRows } = await query(
                 `INSERT INTO public.syllabus_nodes (parent_id, name, type, order_index, tenant_id, is_active)
                  VALUES ($1, $2, $3, $4, $5, true)
                  RETURNING *`,
-                [parent_id || null, name.trim(), type, Number(order_index) || 0, tenantId]
+                [parent_id || null, cleanName, type, Number(order_index) || 0, tenantId]
             )
+
+            // When created manually, Class and subjects automatically created according to syllabus
+            try {
+                if (type === 'class') {
+                    const academicYearId = await getOrCreateActiveAcademicYear(tenantId)
+                    const cCode = ('CLS-' + cleanName.replace(/[^a-zA-Z0-9]/g, '').slice(-4)).toUpperCase()
+                    const sortOrder = Number(order_index) || 0
+
+                    const insClassRes = await query(
+                        `INSERT INTO public.classes (tenant_id, academic_year_id, name, code, sort_order, is_active)
+                         VALUES ($1, $2, $3, $4, $5, true)
+                         ON CONFLICT (tenant_id, academic_year_id, name)
+                         DO UPDATE SET is_active = true, updated_at = NOW()
+                         RETURNING id`,
+                        [tenantId, academicYearId, cleanName, cCode, sortOrder]
+                    )
+                    const classId = insClassRes.rows?.[0]?.id
+                    if (classId) {
+                        await query(
+                            `INSERT INTO public.divisions (tenant_id, class_id, name, capacity)
+                             VALUES ($1, $2, 'A', 40)
+                             ON CONFLICT (class_id, name) DO NOTHING`,
+                            [tenantId, classId]
+                        )
+                    }
+                } else if (type === 'subject') {
+                    const sCode = cleanName.replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase()
+                    const insSubRes = await query(
+                        `INSERT INTO public.subjects (tenant_id, name, code, is_optional)
+                         VALUES ($1, $2, $3, false)
+                         ON CONFLICT (tenant_id, name)
+                         DO UPDATE SET updated_at = NOW()
+                         RETURNING id`,
+                        [tenantId, cleanName, sCode]
+                    )
+                    const subjectId = insSubRes.rows?.[0]?.id
+
+                    if (parent_id && subjectId) {
+                        // Check if parent node is a class node
+                        const parentNodeRes = await query(
+                            `SELECT name, type FROM public.syllabus_nodes WHERE id = $1`,
+                            [parent_id]
+                        )
+                        const parentNode = parentNodeRes.rows?.[0]
+                        if (parentNode && parentNode.type === 'class') {
+                            const parentClassName = (parentNode.name || '').trim()
+                            const academicYearId = await getOrCreateActiveAcademicYear(tenantId)
+                            const classRes = await query(
+                                `SELECT id FROM public.classes 
+                                 WHERE tenant_id = $1 AND academic_year_id = $2 AND name ILIKE $3 
+                                 LIMIT 1`,
+                                [tenantId, academicYearId, parentClassName]
+                            )
+                            const classId = classRes.rows?.[0]?.id
+                            if (classId) {
+                                await query(
+                                    `INSERT INTO public.class_subjects (tenant_id, class_id, subject_id, is_mandatory)
+                                     VALUES ($1, $2, $3, true)
+                                     ON CONFLICT (class_id, subject_id) DO NOTHING`,
+                                    [tenantId, classId, subjectId]
+                                )
+                            }
+                        }
+                    }
+                }
+            } catch (academySyncErr) {
+                console.error('[CREATE_NODE Academy Auto-Creation Warning]:', academySyncErr)
+            }
 
             return NextResponse.json({ success: true, node: nodeRows[0] })
         }
@@ -539,6 +645,17 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({
                 success: true,
                 message: 'Your multi-board architecture upgrade inquiry has been forwarded to the platform owner.'
+            })
+        }
+
+        // ── 9. SYNC SYLLABUS CLASSES & SUBJECTS TO ACADEMY RECORDS ────────
+        if (action === 'SYNC_SYLLABUS_ACADEMY') {
+            const { board_id } = payload || {}
+            const syncResult = await syncSyllabusToTenantAcademy(tenantId, board_id || null)
+            return NextResponse.json({
+                success: true,
+                message: `Successfully synchronized ${syncResult.syncedClasses} classes and ${syncResult.syncedSubjects} subjects to institutional academy records.`,
+                syncResult
             })
         }
 

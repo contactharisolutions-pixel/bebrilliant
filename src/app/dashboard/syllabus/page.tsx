@@ -103,6 +103,7 @@ export default function SyllabusHubPage() {
     const [bulkMode, setBulkMode] = useState<'APPEND' | 'REPLACE'>('APPEND')
     const [customBoardName, setCustomBoardName] = useState('School Custom Curriculum')
     const [bulkUploading, setBulkUploading] = useState(false)
+    const [syncingAcademy, setSyncingAcademy] = useState(false)
 
     // ── TOAST HELPER ──────────────────────────────────────────────────
     const showToast = (msg: string, ok: boolean) => {
@@ -318,6 +319,29 @@ export default function SyllabusHubPage() {
             showToast(err.message, false)
         } finally {
             setSaving(false)
+        }
+    }
+
+    // ── SYNC SYLLABUS TO INSTITUTIONAL ACADEMY RECORDS ───────────────
+    const handleSyncAcademy = async () => {
+        setSyncingAcademy(true)
+        try {
+            const res = await fetch('/api/dashboard/syllabus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'SYNC_SYLLABUS_ACADEMY',
+                    payload: { board_id: metrics.activeBoardId }
+                })
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed to synchronize with Academy records')
+            showToast(data.message || 'Classes and subjects synchronized to Academy!', true)
+            fetchData()
+        } catch (err: any) {
+            showToast(err.message, false)
+        } finally {
+            setSyncingAcademy(false)
         }
     }
 
@@ -683,6 +707,16 @@ export default function SyllabusHubPage() {
                                     >
                                         <Download className="w-4 h-4 text-indigo-300" />
                                         <span>Download Active Excel</span>
+                                    </button>
+
+                                    <button
+                                        onClick={handleSyncAcademy}
+                                        disabled={syncingAcademy || loading}
+                                        className="px-4 py-2 rounded-xl bg-indigo-500/30 hover:bg-indigo-500/45 text-indigo-100 text-xs font-semibold border border-indigo-400/40 backdrop-blur-sm flex items-center gap-2 transition-all shadow-sm"
+                                        title="Synchronize Classes and Subjects to School Academy & Faculty records"
+                                    >
+                                        <GraduationCap className={`w-4 h-4 text-indigo-300 ${syncingAcademy ? 'animate-bounce' : ''}`} />
+                                        <span>{syncingAcademy ? 'Syncing...' : 'Sync to Academy'}</span>
                                     </button>
                                 </div>
                             </div>
