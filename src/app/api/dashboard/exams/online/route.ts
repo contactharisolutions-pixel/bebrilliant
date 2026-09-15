@@ -182,7 +182,7 @@ export async function GET(request: NextRequest) {
         // Fetch all active Owner Public Exam Patterns (paper_templates)
         const { data: templates } = await supabaseAdmin
             .from('paper_templates')
-            .select('*, sections:template_sections(*, rules:section_question_rules(*))')
+            .select('id, name, category, exam_type, total_marks, duration_minutes, is_active')
             .eq('is_active', true)
             .order('name', { ascending: true })
 

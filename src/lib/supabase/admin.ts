@@ -441,11 +441,19 @@ class SupabaseQueryBuilder {
                 }
             }
 
-            // Universal safeguard: strip any leftover relation patterns from selectStr
+            // Universal safeguard: strip any leftover relation patterns from selectStr, handling nested parentheses
+            while (/,\s*[a-zA-Z0-9_!:]+\s*\([^()]*\)/i.test(selectStr)) {
+                selectStr = selectStr.replace(/,\s*[a-zA-Z0-9_!:]+\s*\([^()]*\)/gi, '')
+            }
             selectStr = selectStr
                 .replace(/,\s*[a-zA-Z0-9_]+:[a-zA-Z0-9_]+\s*\([^)]*\)/gi, '')
                 .replace(/,\s*[a-zA-Z0-9_!]+(?:\([^)]*\))/gi, '')
+                .replace(/\s*\)\s*$/g, '')
+                .replace(/,\s*,/g, ',')
+                .replace(/,\s*$/g, '')
                 .trim()
+            if (selectStr.endsWith(',')) selectStr = selectStr.slice(0, -1).trim()
+            if (!selectStr) selectStr = '*'
 
             sql = `SELECT ${selectStr} FROM ${this.table} ${tableAlias}${leftJoinStr}`
             sql += buildWhere()

@@ -105,16 +105,21 @@ export async function GET(request: NextRequest) {
 
             supabaseAdmin
                 .from('paper_templates')
-                .select('*, sections:template_sections(*, rules:section_question_rules(*))')
+                .select('id, name, category, exam_type, total_marks, duration_minutes, is_active')
                 .eq('is_active', true)
                 .order('name', { ascending: true })
         ])
 
-        const exams = examsRes.data || []
-        const templates = templatesRes.data || []
-        const recentUploads = uploadsRes.data || []
         const classes = classesRes.data || []
         const subjects = subjectsRes.data || []
+        const templates = templatesRes.data || []
+        const exams = (examsRes.data || []).map((e: any) => ({
+            ...e,
+            classes: e.classes || classes.find((c: any) => c.id === e.class_id) || null,
+            subjects: e.subjects || subjects.find((s: any) => s.id === e.subject_id) || null,
+            omr_templates: e.omr_templates || templates.find((t: any) => t.id === e.omr_template_id) || null
+        }))
+        const recentUploads = uploadsRes.data || []
         const sheetsCount = sheetsRes.data?.length || 0
         const paperTemplates = paperTemplatesRes.data || []
 
