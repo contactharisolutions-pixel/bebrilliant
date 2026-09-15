@@ -65,8 +65,7 @@ export async function GET(request: NextRequest) {
                     created_at,
                     classes:class_id(id, name),
                     subjects:subject_id(id, name, code),
-                    omr_templates:omr_template_id(id, name, total_questions, layout_config),
-                    paper_templates:template_id(id, name, category, exam_type, total_marks)
+                    omr_templates:omr_template_id(id, name, total_questions, layout_config)
                 `)
                 .eq('tenant_id', tenantId)
                 .order('created_at', { ascending: false }),
