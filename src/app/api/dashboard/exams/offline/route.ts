@@ -38,7 +38,9 @@ export async function GET(request: NextRequest) {
                         ), '[]'::json
                     ) AS sections
                 FROM public.paper_templates pt
-                WHERE pt.is_global = true OR pt.tenant_id = $1 OR pt.tenant_id IS NULL
+                WHERE pt.is_active = true AND (pt.is_global = true OR pt.created_by = $1 OR pt.id IN (
+                    SELECT template_id FROM public.offline_exams WHERE tenant_id = $1 AND template_id IS NOT NULL
+                ))
                 ORDER BY pt.created_at DESC;
             `
             const { rows: templates } = await query(templatesQuery, [tenantId])
@@ -97,7 +99,9 @@ export async function GET(request: NextRequest) {
                     ), '[]'::json
                 ) AS sections
             FROM public.paper_templates pt
-            WHERE pt.is_global = true OR pt.tenant_id = $1 OR pt.tenant_id IS NULL
+            WHERE pt.is_active = true AND (pt.is_global = true OR pt.created_by = $1 OR pt.id IN (
+                SELECT template_id FROM public.offline_exams WHERE tenant_id = $1 AND template_id IS NOT NULL
+            ))
             ORDER BY pt.name ASC;
         `
 
