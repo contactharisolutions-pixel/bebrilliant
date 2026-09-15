@@ -95,7 +95,10 @@ export async function GET(request: NextRequest) {
                         cname_target: 'cname.bebrilliant.in',
                         status: 'active',
                         ssl_status: 'active',
-                        verification_token: 'bb-verify-platform-master'
+                        verification_token: 'bb-verify-platform-master',
+                        cname_status: 'verified',
+                        txt_status: 'verified',
+                        last_checked: null
                     }
                 },
                 completeness_score: 100

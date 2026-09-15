@@ -102,6 +102,12 @@ export default function SettingsPage() {
     const [dnsVerifying, setDnsVerifying] = useState(false);
     const [subdomainSaving, setSubdomainSaving] = useState(false);
     const [customDomainSaving, setCustomDomainSaving] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    const [fetchError, setFetchError] = useState<string | null>(null);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok });
@@ -110,15 +116,42 @@ export default function SettingsPage() {
 
     const fetchData = useCallback(async () => {
         setLoading(true);
+        setFetchError(null);
         try {
             const res = await fetch('/api/dashboard/settings');
             const json = await res.json();
             if (res.ok) {
-                setData(json);
+                const subFallback = json.subdomain || json.settings?.domains?.subdomain || 'portal';
+                const sanitizedSettings = {
+                    branding: json.settings?.branding || {},
+                    contact: json.settings?.contact || {},
+                    security: json.settings?.security || {},
+                    automation: json.settings?.automation || {},
+                    domains: {
+                        subdomain: subFallback,
+                        custom_domain: '',
+                        cname_target: 'cname.bebrilliant.in',
+                        status: 'active',
+                        ssl_status: 'active',
+                        verification_token: `bb-verify-${subFallback}`,
+                        cname_status: 'pending',
+                        txt_status: 'pending',
+                        last_checked: null,
+                        ...(json.settings?.domains || {})
+                    }
+                };
+                setData({
+                    ...json,
+                    subdomain: subFallback,
+                    subscription_plan: json.subscription_plan || 'Standard',
+                    settings: sanitizedSettings
+                });
             } else {
+                setFetchError(json.error || 'Failed to fetch settings');
                 showToast(json.error || 'Failed to fetch settings', false);
             }
         } catch (e: any) {
+            setFetchError('Gateway connection timeout');
             showToast('Gateway connection timeout', false);
         } finally {
             setLoading(false);
@@ -163,8 +196,8 @@ export default function SettingsPage() {
                 body: JSON.stringify({
                     action: 'VERIFY_DOMAIN',
                     payload: {
-                        custom_domain: data.settings.domains.custom_domain,
-                        subdomain: data.settings.domains.subdomain
+                        custom_domain: data.settings?.domains?.custom_domain || '',
+                        subdomain: data.settings?.domains?.subdomain || data.subdomain || 'portal'
                     }
                 })
             });
@@ -184,7 +217,7 @@ export default function SettingsPage() {
 
     const handleUpdateSubdomain = async () => {
         if (!data) return;
-        const sub = data.settings.domains.subdomain?.trim().toLowerCase();
+        const sub = (data.settings?.domains?.subdomain || data.subdomain || '').trim().toLowerCase();
         if (!sub) {
             showToast('Subdomain cannot be empty', false);
             return;
@@ -197,7 +230,7 @@ export default function SettingsPage() {
                 body: JSON.stringify({
                     action: 'UPDATE_BRANDING',
                     payload: {
-                        ...data.settings.branding,
+                        ...(data.settings?.branding || {}),
                         subdomain: sub
                     }
                 })
@@ -215,7 +248,7 @@ export default function SettingsPage() {
 
     const handleSaveCustomDomain = async (domainToSave?: string) => {
         if (!data) return;
-        const domainVal = domainToSave !== undefined ? domainToSave : (data.settings.domains.custom_domain || '');
+        const domainVal = domainToSave !== undefined ? domainToSave : (data.settings?.domains?.custom_domain || '');
         setCustomDomainSaving(true);
         try {
             const res = await fetch('/api/dashboard/settings', {
@@ -245,14 +278,20 @@ export default function SettingsPage() {
             ...prev,
             settings: {
                 ...prev.settings,
-                domains: { ...prev.settings.domains, custom_domain: '' }
+                domains: { ...(prev.settings?.domains || {}), custom_domain: '' }
             }
         }) : null);
         await handleSaveCustomDomain('');
     };
 
     const copyToClipboard = (text: string, type: 'cname' | 'txt') => {
-        navigator.clipboard.writeText(text);
+        try {
+            if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                navigator.clipboard.writeText(text).catch(() => {});
+            }
+        } catch {
+            // fallback safe
+        }
         if (type === 'cname') {
             setCopiedCname(true);
             setTimeout(() => setCopiedCname(false), 2000);
@@ -312,12 +351,19 @@ export default function SettingsPage() {
 
     const copySubdomainUrl = () => {
         if (!data) return;
-        navigator.clipboard.writeText(`https://${data.settings.domains.subdomain}.bebrilliant.in`);
+        const targetSub = data.settings?.domains?.subdomain || data.subdomain || 'portal';
+        try {
+            if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                navigator.clipboard.writeText(`https://${targetSub}.bebrilliant.in`).catch(() => {});
+            }
+        } catch {
+            // fallback safe
+        }
         setCopiedDomain(true);
         setTimeout(() => setCopiedDomain(false), 2000);
     };
 
-    if (loading || !data) {
+    if (loading) {
         return (
             <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-8">
                 <Loader2 size={42} className="animate-spin text-[#004B93] mb-4" />
@@ -328,7 +374,41 @@ export default function SettingsPage() {
         );
     }
 
-    const { branding, contact, security, automation, domains } = data.settings;
+    if (!data) {
+        return (
+            <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-8 text-center space-y-4">
+                <div className="w-16 h-16 rounded-3xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto">
+                    <AlertCircle size={32} />
+                </div>
+                <div className="space-y-1">
+                    <h3 className="text-lg font-black text-slate-900">Settings Unavailable</h3>
+                    <p className="text-xs text-slate-500 max-w-sm">
+                        {fetchError || 'Unable to retrieve settings for your current profile. Please check your credentials or retry.'}
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    onClick={fetchData}
+                    className="px-5 py-2.5 bg-[#004B93] hover:bg-[#003870] text-white text-xs font-bold rounded-xl transition shadow-sm inline-flex items-center gap-2"
+                >
+                    <RefreshCcw size={14} /> Retry Loading
+                </button>
+            </div>
+        );
+    }
+
+    const branding = data.settings?.branding || {} as BrandingSettings;
+    const contact = data.settings?.contact || {} as ContactSettings;
+    const security = data.settings?.security || {} as SecuritySettings;
+    const automation = data.settings?.automation || {} as AutomationSettings;
+    const domains = data.settings?.domains || {
+        subdomain: data.subdomain || 'portal',
+        custom_domain: '',
+        cname_target: 'cname.bebrilliant.in',
+        status: 'active',
+        ssl_status: 'active',
+        verification_token: `bb-verify-${data.subdomain || 'node'}`
+    } as DomainSettings;
 
     return (
         <div className="w-full min-h-screen bg-[#F8FAFC] text-slate-900 font-sans pb-16">
@@ -364,7 +444,7 @@ export default function SettingsPage() {
                                     Governance Synchronized
                                 </span>
                                 <span className="text-xs text-slate-400 font-semibold font-mono">
-                                    PORTAL: {data.subdomain.toLowerCase()}.bebrilliant.in • PLAN: {data.subscription_plan}
+                                    PORTAL: {(data?.subdomain || domains?.subdomain || 'portal').toLowerCase()}.bebrilliant.in • PLAN: {data?.subscription_plan || 'Standard'}
                                 </span>
                             </div>
                             <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
@@ -1067,8 +1147,8 @@ export default function SettingsPage() {
                                         <h3 className="text-lg font-black text-slate-900">Custom Domains & DNS White-Labeling</h3>
                                         <p className="text-xs text-slate-500 font-medium">Bind your institution's custom official website URL (e.g. portal.silverbells.edu.in) directly to BeBrilliant cloud infrastructure</p>
                                     </div>
-                                    {domains.last_checked && (
-                                        <div className="text-[11px] text-slate-400 font-mono">
+                                    {mounted && domains?.last_checked && (
+                                        <div className="text-[11px] text-slate-400 font-mono" suppressHydrationWarning>
                                             Last checked: {new Date(domains.last_checked).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </div>
                                     )}
