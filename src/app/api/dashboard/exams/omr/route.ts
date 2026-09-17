@@ -471,15 +471,14 @@ export async function POST(request: NextRequest) {
                     const newQuestionId = qRows[0]?.id
 
                     if (newQuestionId) {
-                        // Link in offline_exam_questions
+                        // Link in offline_exam_questions (marks is stored on public.questions)
                         await query(`
                             INSERT INTO public.offline_exam_questions (
                                 exam_id,
                                 question_id,
-                                question_order,
-                                marks
-                            ) VALUES ($1, $2, $3, $4);
-                        `, [exam.id, newQuestionId, i + 1, Number(q.marks) || 1])
+                                question_order
+                            ) VALUES ($1, $2, $3);
+                        `, [exam.id, newQuestionId, i + 1])
                     }
                 }
             }

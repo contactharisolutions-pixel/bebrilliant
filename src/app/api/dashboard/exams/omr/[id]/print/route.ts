@@ -44,7 +44,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             q.options,
             q.correct_answer,
             q.explanation,
-            COALESCE(oeq.marks, q.marks, 1) AS q_marks,
+            COALESCE(q.marks, 1) AS q_marks,
             q.type
         FROM public.offline_exam_questions oeq
         JOIN public.questions q ON oeq.question_id = q.id
