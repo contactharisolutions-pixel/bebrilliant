@@ -1064,7 +1064,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                 <SectionHeader title="Operational Quick Launchpad" subtitle="Direct shortcuts to core academic modules" />
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14 }}>
                     <QuickAction title="CBT Exam Portal" desc="Launch live test" icon={Zap} href="/dashboard/exams/online" variant="primary" />
-                    <QuickAction title="OMR Scanner Hub" desc="Process sheets" icon={ScanLine} href="/dashboard/exams/omr" variant="dark" />
+                    <QuickAction title="Exams & OMR Sheets" desc="Create & print papers" icon={ScanLine} href="/dashboard/exams/omr" variant="dark" />
                     <QuickAction title="AI Question Gen" desc="Author with AI" icon={BrainCircuit} href="/dashboard/ai" variant="ghost" />
                     <QuickAction title="Grade Papers" desc="Faculty grading" icon={FileText} href="/dashboard/faculty/answer-grading" variant="ghost" />
                     <QuickAction title="Course Syllabus" desc="Curriculum maps" icon={BookOpen} href="/dashboard/syllabus" variant="ghost" />

@@ -1,39 +1,16 @@
 'use client'
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
 import ExamSyllabusPatternPicker, { BlueprintContextData } from '@/components/shared/ExamSyllabusPatternPicker'
 import {
-    ScanLine, UploadCloud, Download, CheckCircle, XCircle, FileText,
-    Settings, Search, ArrowLeft, Loader2, Sparkles, Printer, Eye, Trash2,
-    Database, Target, Shield, LayoutDashboard, Globe, AlertCircle, ChevronRight,
-    Zap, Sliders, RefreshCw, BarChart3, Users, PlusCircle, Check, HelpCircle,
-    FileSpreadsheet, ArrowUpRight, Camera, Layers, Award, Clock, BookOpen
+    ScanLine, UploadCloud, Download, CheckCircle, XCircle,
+    Search, Loader2, Sparkles, Printer, Trash2,
+    Database, Target, Shield,
+    Sliders, RefreshCw, BarChart3, Users, PlusCircle, Check, HelpCircle,
+    FileSpreadsheet, ArrowUpRight, Camera, Layers, Award, Clock
 } from 'lucide-react'
-
-// —— COLOR PALETTE & THEME ——————————————————————————————————
-const P = {
-    bg: '#F8FAFC',
-    card: '#FFFFFF',
-    border: '#E2E8F0',
-    brand: '#004B93',
-    brandBg: '#004B9310',
-    brandHover: '#00366b',
-    accent: '#0284C7',
-    cta: '#F59E0B',
-    ctaBg: '#FEF3C7',
-    dark: '#0F172A',
-    text: '#334155',
-    muted: '#64748B',
-    success: '#10B981',
-    successBg: '#D1FAE5',
-    error: '#EF4444',
-    errorBg: '#FEE2E2',
-    info: '#3B82F6',
-    infoBg: '#DBEAFE',
-    purple: '#8B5CF6',
-    purpleBg: '#EDE9FE'
-}
 
 export default function OMRExamManager() {
     // Tab Navigation
@@ -77,12 +54,15 @@ export default function OMRExamManager() {
     const [selectedExam, setSelectedExam] = useState<any>(null)
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
 
+    // Tenant Branding Data
+    const [tenantData, setTenantData] = useState<any>(null)
+
     // Scanner Progress Simulator State
     const [isScanningActive, setIsScanningActive] = useState(false)
     const [scanProgress, setScanProgress] = useState(0)
     const [scanStage, setScanStage] = useState('')
 
-    // New Exam Form State
+    // New Exam Form State (Blank Exam)
     const [newExamForm, setNewExamForm] = useState({
         title: '',
         class_id: '',
@@ -94,9 +74,33 @@ export default function OMRExamManager() {
         duration: 60
     })
 
+    // AI Exam Creator Wizard State
+    const [isAiExamModalOpen, setIsAiExamModalOpen] = useState(false)
+    const [aiStep, setAiStep] = useState<'config' | 'review' | 'success'>('config')
+    const [aiLoading, setAiLoading] = useState(false)
+    const [aiExamForm, setAiExamForm] = useState({
+        title: '',
+        class_id: '',
+        subject_id: '',
+        topic: '',
+        count: 20,
+        difficulty: 'medium' as 'easy' | 'medium' | 'hard',
+        duration: 45,
+        omr_template_id: ''
+    })
+    const [aiQuestions, setAiQuestions] = useState<Array<{
+        id: string
+        text: string
+        options: { A: string; B: string; C: string; D: string }
+        correct_answer: string
+        explanation?: string
+        marks?: number
+    }>>([])
+    const [createdAiExam, setCreatedAiExam] = useState<any>(null)
+
     // Designer Form State
     const [designerForm, setDesignerForm] = useState({
-        name: 'Standard 50-Bubble Architecture',
+        name: 'Standard 50-Question Layout',
         total_questions: 50,
         options_per_question: 4,
         columns: 2,
@@ -109,6 +113,7 @@ export default function OMRExamManager() {
 
     // Answer Key State
     const [answerKeys, setAnswerKeys] = useState<{ [key: number]: string }>({})
+    const [isSavingAnswerKey, setIsSavingAnswerKey] = useState(false)
 
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok })
@@ -156,9 +161,16 @@ export default function OMRExamManager() {
             setRecentUploads(data.recentUploads || [])
             setClasses(data.classes || [])
             setSubjects(data.subjects || [])
+            if (data.tenant) setTenantData(data.tenant)
 
             if (data.classes?.length > 0 && !newExamForm.class_id) {
                 setNewExamForm(prev => ({
+                    ...prev,
+                    class_id: data.classes[0].id,
+                    subject_id: data.subjects?.[0]?.id || '',
+                    omr_template_id: data.templates?.[0]?.id || ''
+                }))
+                setAiExamForm(prev => ({
                     ...prev,
                     class_id: data.classes[0].id,
                     subject_id: data.subjects?.[0]?.id || '',
@@ -331,18 +343,164 @@ export default function OMRExamManager() {
         }
     }
 
-    // Open Answer Key Modal
+    // Open Answer Key Modal - loads real answer key from database if present
     const handleOpenAnswerKey = (exam: any) => {
         setSelectedExam(exam)
-        // initialize default answer keys if empty
         const initial: { [key: number]: string } = {}
         const total = exam.total_questions || 50
         const options = ['A', 'B', 'C', 'D']
+
+        // If exam already has answer_key in DB
+        let existingKey: any = exam.answer_key
+        if (typeof existingKey === 'string') {
+            try { existingKey = JSON.parse(existingKey) } catch (e) { existingKey = null }
+        }
+
         for (let i = 1; i <= total; i++) {
-            initial[i] = options[(i - 1) % 4]
+            if (existingKey && existingKey[i]) {
+                initial[i] = String(existingKey[i]).trim().toUpperCase()
+            } else if (existingKey && existingKey[String(i)]) {
+                initial[i] = String(existingKey[String(i)]).trim().toUpperCase()
+            } else {
+                initial[i] = options[(i - 1) % 4]
+            }
         }
         setAnswerKeys(initial)
         setIsAnswerKeyModalOpen(true)
+    }
+
+    // Save Answer Key to database
+    const handleSaveAnswerKey = async () => {
+        if (!selectedExam) return
+        setIsSavingAnswerKey(true)
+        try {
+            const res = await fetch('/api/dashboard/exams/omr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'UPDATE_ANSWER_KEY',
+                    payload: {
+                        exam_id: selectedExam.id,
+                        answer_key: answerKeys
+                    }
+                })
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed to save answer key')
+
+            showToast('Answer Key saved and synced for automated grading!', true)
+            setIsAnswerKeyModalOpen(false)
+            fetchData()
+        } catch (err: any) {
+            showToast(err.message || 'Error saving answer key', false)
+        } finally {
+            setIsSavingAnswerKey(false)
+        }
+    }
+
+    // AI Exam Creator Handlers
+    const handleOpenAiModal = () => {
+        setAiStep('config')
+        setAiQuestions([])
+        setCreatedAiExam(null)
+        setAiExamForm({
+            title: '',
+            class_id: classes[0]?.id || '',
+            subject_id: subjects[0]?.id || '',
+            topic: '',
+            count: 20,
+            difficulty: 'medium',
+            duration: 45,
+            omr_template_id: templates[0]?.id || ''
+        })
+        setIsAiExamModalOpen(true)
+    }
+
+    const handleGenerateAiQuestions = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!aiExamForm.title.trim()) {
+            showToast('Please enter an exam title', false)
+            return
+        }
+        setAiLoading(true)
+        try {
+            const currentClass = classes.find(c => c.id === aiExamForm.class_id)?.name || 'Class 10'
+            const currentSubject = subjects.find(s => s.id === aiExamForm.subject_id)?.name || 'Science'
+
+            const res = await fetch('/api/dashboard/exams/omr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'GENERATE_AI_QUESTIONS',
+                    payload: {
+                        class_name: currentClass,
+                        subject_name: currentSubject,
+                        topic: aiExamForm.topic,
+                        count: aiExamForm.count,
+                        difficulty: aiExamForm.difficulty
+                    }
+                })
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed to generate questions')
+
+            if (data.questions && data.questions.length > 0) {
+                setAiQuestions(data.questions)
+                setAiStep('review')
+                showToast(`Generated ${data.questions.length} questions! Review and edit before approving.`, true)
+            } else {
+                throw new Error('No questions returned from generator')
+            }
+        } catch (err: any) {
+            showToast(err.message || 'Error generating questions', false)
+        } finally {
+            setAiLoading(false)
+        }
+    }
+
+    const handleApproveAndCreateAiExam = async () => {
+        if (aiQuestions.length === 0) {
+            showToast('No questions to create exam with', false)
+            return
+        }
+        setSaving(true)
+        try {
+            // Build Answer Key from questions
+            const keyMap: Record<number, string> = {}
+            aiQuestions.forEach((q, idx) => {
+                keyMap[idx + 1] = (q.correct_answer || 'A').toUpperCase()
+            })
+
+            const res = await fetch('/api/dashboard/exams/omr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'CREATE_EXAM_WITH_QUESTIONS',
+                    payload: {
+                        title: aiExamForm.title,
+                        class_id: aiExamForm.class_id,
+                        subject_id: aiExamForm.subject_id,
+                        total_questions: aiQuestions.length,
+                        duration: aiExamForm.duration,
+                        omr_template_id: aiExamForm.omr_template_id || null,
+                        instructions: 'Use blue/black ballpoint pen only. Darken the bubbles completely. Each question carries equal marks.',
+                        questions: aiQuestions,
+                        answer_key: keyMap
+                    }
+                })
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed to save exam')
+
+            setCreatedAiExam(data.exam)
+            setAiStep('success')
+            showToast('Exam, Questions, and Answer Key saved successfully!', true)
+            fetchData()
+        } catch (err: any) {
+            showToast(err.message || 'Error saving exam', false)
+        } finally {
+            setSaving(false)
+        }
     }
 
     if (loading) {
@@ -372,12 +530,12 @@ export default function OMRExamManager() {
                 </div>
             )}
 
-            {/* FULL-WIDTH HERO BANNER (OPENAI ART-DIRECTED) */}
+            {/* FULL-WIDTH HERO BANNER */}
             <div className="w-full relative overflow-hidden bg-slate-950 text-white">
                 <div className="absolute inset-0 z-0">
                     <Image
                         src="/assets/images/dashboard/omr_scanner_banner.jpg"
-                        alt="High-Speed Industrial Optical Mark Recognition Hub"
+                        alt="Exams and OMR Sheets Hub"
                         fill
                         priority
                         className="object-cover object-center opacity-40 mix-blend-luminosity scale-105"
@@ -392,29 +550,36 @@ export default function OMRExamManager() {
                             <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/20 backdrop-blur-md">
                                 <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
                                 <span className="text-xs font-black tracking-widest text-sky-400 uppercase">
-                                    GENESIS OMR-8K • OPTICAL INTELLIGENCE LAB
+                                    EXAMINATION & PRINT MANAGEMENT
                                 </span>
                             </div>
                             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-                                OMR Examination & AI Scanner Hub
+                                Exams & OMR Sheets
                             </h1>
                             <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-normal">
-                                Standardized dual-column bubble sheet generation, industrial high-throughput feeder scanning, fiducial deskewing, and 99.8% precision automated bubble evaluation.
+                                Create question papers with matching OMR response sheets in 1-click. Generate questions with Gemini AI, review and edit questions and answers, and print combined exam booklets with your school&apos;s logo and branding.
                             </p>
                             <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300 pt-1">
-                                <span className="flex items-center gap-1.5"><Shield size={15} className="text-emerald-400" /> Automated Roll Number & Barcode Decoding</span>
-                                <span className="flex items-center gap-1.5"><Zap size={15} className="text-amber-400" /> 1,200 Sheets / Min Throughput</span>
-                                <span className="flex items-center gap-1.5"><Layers size={15} className="text-sky-400" /> CBSE, JEE, & NEET Multi-Pattern Ready</span>
+                                <span className="flex items-center gap-1.5"><Shield size={15} className="text-emerald-400" /> Dynamic School Logo & Branding</span>
+                                <span className="flex items-center gap-1.5"><Printer size={15} className="text-sky-400" /> 1-Click Unified Print (Paper + OMR)</span>
+                                <span className="flex items-center gap-1.5"><Sparkles size={15} className="text-amber-400" /> Gemini AI Automated Answer Key</span>
                             </div>
                         </div>
 
                         <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
                             <button
+                                onClick={handleOpenAiModal}
+                                className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-sm shadow-xl shadow-amber-950/40 border border-amber-300/40 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                            >
+                                <Sparkles size={18} />
+                                <span>Create Exam with AI</span>
+                            </button>
+                            <button
                                 onClick={handleOpenCreateModal}
                                 className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-gradient-to-r from-[#004B93] to-sky-600 hover:from-sky-700 hover:to-sky-500 text-white font-bold text-sm shadow-xl shadow-sky-950/40 border border-sky-300/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                             >
                                 <PlusCircle size={18} />
-                                <span>Create OMR Exam</span>
+                                <span>Create Blank Exam</span>
                             </button>
                             <button
                                 onClick={() => {
@@ -424,11 +589,11 @@ export default function OMRExamManager() {
                                 className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/90 text-white font-bold text-sm backdrop-blur-md border border-slate-700 shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                             >
                                 <UploadCloud size={18} className="text-sky-400" />
-                                <span>Batch Ingestion</span>
+                                <span>Upload Scans</span>
                             </button>
                             <button
                                 onClick={fetchData}
-                                className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-all"
+                                className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-all cursor-pointer"
                                 title="Refresh data"
                             >
                                 <RefreshCw size={18} />
@@ -448,10 +613,10 @@ export default function OMRExamManager() {
                             <Target size={26} />
                         </div>
                         <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Standard Blueprints</div>
-                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalTemplates} Patterns</div>
+                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Saved Sheet Formats</div>
+                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalTemplates} Formats</div>
                             <div className="text-[11px] font-semibold text-sky-700 mt-1 flex items-center gap-1">
-                                <CheckCircle size={12} /> Dual & Multi-Column Active
+                                <CheckCircle size={12} /> Ready for Print
                             </div>
                         </div>
                     </div>
@@ -461,10 +626,10 @@ export default function OMRExamManager() {
                             <UploadCloud size={26} />
                         </div>
                         <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Scanned Sheets</div>
+                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Sheets Checked</div>
                             <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalScanned} Sheets</div>
                             <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-                                <ArrowUpRight size={12} /> High-Speed Bulk Feeder
+                                <ArrowUpRight size={12} /> Auto Scanned
                             </div>
                         </div>
                     </div>
@@ -474,10 +639,10 @@ export default function OMRExamManager() {
                             <Shield size={26} />
                         </div>
                         <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Optical Precision</div>
+                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Scanning Accuracy</div>
                             <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.successRate}</div>
                             <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-                                <Check size={12} /> Zero False Positives
+                                <Check size={12} /> High Reliability
                             </div>
                         </div>
                     </div>
@@ -487,10 +652,10 @@ export default function OMRExamManager() {
                             <Award size={26} />
                         </div>
                         <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Evaluated Candidates</div>
+                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Students Evaluated</div>
                             <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalEvaluated} Graded</div>
                             <div className="text-[11px] font-semibold text-purple-700 mt-1 flex items-center gap-1">
-                                <Users size={12} /> Grade Roster Mapped
+                                <Users size={12} /> Marks Recorded
                             </div>
                         </div>
                     </div>
@@ -499,11 +664,11 @@ export default function OMRExamManager() {
                 {/* 5 OPERATIONAL TABS */}
                 <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-2 shadow-sm flex items-center gap-2 overflow-x-auto">
                     {[
-                        { id: 'roster', label: 'OMR Exam Roster', icon: Database, count: exams.length },
-                        { id: 'designer', label: 'Blueprint Designer', icon: Sliders },
-                        { id: 'scanner', label: 'AI Optical Scanner & Evaluator', icon: ScanLine, badge: 'Live AI' },
-                        { id: 'templates', label: 'Standardized Templates Gallery', icon: Layers, count: templates.length },
-                        { id: 'analytics', label: 'Results & Analytics', icon: BarChart3 }
+                        { id: 'roster', label: 'All Exams', icon: Database, count: exams.length },
+                        { id: 'designer', label: 'Design Sheet Layout', icon: Sliders },
+                        { id: 'scanner', label: 'Scan & Check Sheets', icon: ScanLine, badge: 'Auto Checker' },
+                        { id: 'templates', label: 'Saved Sheet Formats', icon: Layers, count: templates.length },
+                        { id: 'analytics', label: 'Results & Reports', icon: BarChart3 }
                     ].map(tab => {
                         const Icon = tab.icon
                         const isActive = activeTab === tab.id
@@ -511,7 +676,7 @@ export default function OMRExamManager() {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
-                                className={`flex items-center gap-2.5 px-5 py-3 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all ${
+                                className={`flex items-center gap-2.5 px-5 py-3 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${
                                     isActive
                                         ? 'bg-[#004B93] text-white shadow-md shadow-sky-950/20'
                                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -585,11 +750,11 @@ export default function OMRExamManager() {
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                                            <th className="py-4 px-6">Physical Examination Identity</th>
-                                            <th className="py-4 px-6">Target Cohort & Subject</th>
-                                            <th className="py-4 px-6">OMR Blueprint Template</th>
-                                            <th className="py-4 px-6">Evaluation Status</th>
-                                            <th className="py-4 px-6 text-right">Actions & Sheet Print</th>
+                                            <th className="py-4 px-6">Exam Title & Details</th>
+                                            <th className="py-4 px-6">Class & Subject</th>
+                                            <th className="py-4 px-6">Sheet Format</th>
+                                            <th className="py-4 px-6">Status</th>
+                                            <th className="py-4 px-6 text-right">Print & Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 text-sm">
@@ -597,13 +762,14 @@ export default function OMRExamManager() {
                                             <tr>
                                                 <td colSpan={5} className="py-12 text-center text-slate-500">
                                                     <Target className="mx-auto text-slate-300 mb-2" size={40} />
-                                                    <p className="font-semibold">No offline physical examinations found</p>
-                                                    <p className="text-xs text-slate-400 mt-1">Click "Create OMR Exam" to launch a new scannable paper test.</p>
+                                                    <p className="font-semibold">No examinations found</p>
+                                                    <p className="text-xs text-slate-400 mt-1">Click &quot;Create Exam with AI&quot; or &quot;Create Blank Exam&quot; to start.</p>
                                                 </td>
                                             </tr>
                                         ) : (
                                             filteredExams.map(ex => {
                                                 const isCompleted = ex.status === 'completed'
+                                                const hasAnswerKey = ex.answer_key && (typeof ex.answer_key === 'object' ? Object.keys(ex.answer_key).length > 0 : true)
                                                 return (
                                                     <tr key={ex.id} className="hover:bg-slate-50/70 transition-colors">
                                                         <td className="py-4 px-6">
@@ -611,75 +777,87 @@ export default function OMRExamManager() {
                                                             <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
                                                                 <span className="flex items-center gap-1 font-semibold text-slate-600">
                                                                     <HelpCircle size={13} className="text-sky-600" />
-                                                                    {ex.total_questions} Bubbles
+                                                                    {ex.total_questions} Questions
                                                                 </span>
                                                                 <span>•</span>
                                                                 <span className="flex items-center gap-1 text-slate-500">
                                                                     <Clock size={13} /> {ex.duration || 60} Mins
                                                                 </span>
-                                                                <span>•</span>
-                                                                <span className="text-[11px] text-slate-400">
-                                                                    ID: {ex.id.slice(0, 8)}...
-                                                                </span>
+                                                                {hasAnswerKey && (
+                                                                    <>
+                                                                        <span>•</span>
+                                                                        <span className="inline-flex items-center gap-1 text-emerald-600 font-bold">
+                                                                            <CheckCircle size={12} /> Answer Key Ready
+                                                                        </span>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                         </td>
                                                         <td className="py-4 px-6">
-                                                            <div className="font-bold text-slate-800">{ex.classes?.name || 'Class 10'}</div>
+                                                            <div className="font-bold text-slate-800">{ex.classes?.name || 'All Classes'}</div>
                                                             <div className="text-xs font-semibold text-sky-700 mt-0.5">
-                                                                {ex.subjects?.name || 'Mathematics'} {ex.subjects?.code ? `(${ex.subjects.code})` : ''}
+                                                                {ex.subjects?.name || 'General'} {ex.subjects?.code ? `(${ex.subjects.code})` : ''}
                                                             </div>
                                                         </td>
                                                         <td className="py-4 px-6">
                                                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-sky-50 text-[#004B93] border border-sky-200">
                                                                 <Layers size={13} />
-                                                                {ex.omr_templates?.name?.slice(0, 32) || 'Standard Dual-Column 50'}...
+                                                                {ex.omr_templates?.name?.slice(0, 32) || 'Standard Layout'}
                                                             </span>
                                                         </td>
                                                         <td className="py-4 px-6">
                                                             {isCompleted ? (
                                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                                    <CheckCircle size={13} /> Evaluated & Scored
+                                                                    <CheckCircle size={13} /> Evaluated
                                                                 </span>
                                                             ) : (
-                                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                                                                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                                                                    Ready for Scan
+                                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200">
+                                                                    <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+                                                                    Ready to Print & Scan
                                                                 </span>
                                                             )}
                                                         </td>
                                                         <td className="py-4 px-6 text-right">
                                                             <div className="flex items-center justify-end gap-2">
+                                                                {/* 1-Click Unified Print (Question Paper + OMR Sheet) */}
+                                                                <button
+                                                                    onClick={() => window.open(`/api/dashboard/exams/omr/${ex.id}/print?mode=unified`, '_blank')}
+                                                                    className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                                                                    title="Print Question Paper and OMR Sheet together in 1-click"
+                                                                >
+                                                                    <Printer size={14} />
+                                                                    <span>Print Booklet</span>
+                                                                </button>
+
+                                                                {/* Edit Answer Key */}
+                                                                <button
+                                                                    onClick={() => handleOpenAnswerKey(ex)}
+                                                                    className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-700 border border-slate-200 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                                                                    title="View or Edit Answer Key"
+                                                                >
+                                                                    <FileSpreadsheet size={14} />
+                                                                    <span>Answer Key</span>
+                                                                </button>
+
+                                                                {/* Scan / Check */}
                                                                 <button
                                                                     onClick={() => {
                                                                         setSelectedExam(ex)
                                                                         setActiveTab('scanner')
                                                                     }}
-                                                                    className="px-3.5 py-1.5 rounded-lg bg-[#004B93] hover:bg-sky-800 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5"
-                                                                    title="Open AI Optical Scanner"
+                                                                    className="p-2 rounded-lg bg-[#004B93] hover:bg-sky-800 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+                                                                    title="Scan Student Sheets"
                                                                 >
-                                                                    <ScanLine size={14} />
-                                                                    <span>Scan</span>
+                                                                    <ScanLine size={15} />
                                                                 </button>
-                                                                <button
-                                                                    onClick={() => window.open(`/api/dashboard/exams/omr/${ex.id}/print`, '_blank')}
-                                                                    className="p-2 rounded-lg bg-slate-100 hover:bg-sky-50 text-slate-700 hover:text-[#004B93] border border-slate-200 transition-all"
-                                                                    title="Print Standardized OMR Sheets"
-                                                                >
-                                                                    <Printer size={16} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleOpenAnswerKey(ex)}
-                                                                    className="p-2 rounded-lg bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-700 border border-slate-200 transition-all"
-                                                                    title="Master Answer Key"
-                                                                >
-                                                                    <FileSpreadsheet size={16} />
-                                                                </button>
+
+                                                                {/* Delete */}
                                                                 <button
                                                                     onClick={() => handleDeleteExam(ex.id, ex.title)}
-                                                                    className="p-2 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-600 border border-slate-200 transition-all"
+                                                                    className="p-2 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200 transition-all cursor-pointer"
                                                                     title="Delete Exam"
                                                                 >
-                                                                    <Trash2 size={16} />
+                                                                    <Trash2 size={15} />
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -702,15 +880,15 @@ export default function OMRExamManager() {
                             <div className="border-b border-slate-100 pb-4">
                                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-sky-50 text-[#004B93] font-bold text-xs">
                                     <Sliders size={14} />
-                                    <span>SHEET SPECIFICATION ENGINE</span>
+                                    <span>SHEET SETTINGS</span>
                                 </div>
-                                <h2 className="text-xl font-black text-slate-900 mt-2">Design OMR Blueprint</h2>
-                                <p className="text-slate-500 text-xs mt-1">Configure layout, fiducial markers, roll digit depth, and bubble counts.</p>
+                                <h2 className="text-xl font-black text-slate-900 mt-2">Customize OMR Sheet</h2>
+                                <p className="text-slate-500 text-xs mt-1">Set question count, options per question, number of columns, and student roll number boxes.</p>
                             </div>
 
                             <div className="space-y-4 text-sm">
                                 <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Blueprint Title</label>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Layout Name</label>
                                     <input
                                         type="text"
                                         value={designerForm.name}
@@ -728,30 +906,30 @@ export default function OMRExamManager() {
                                             className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
                                         >
                                             <option value={20}>20 Questions (Quiz)</option>
-                                            <option value={40}>40 Questions (CBSE T-1)</option>
+                                            <option value={40}>40 Questions (Unit Test)</option>
                                             <option value={50}>50 Questions (Standard)</option>
-                                            <option value={60}>60 Questions (JEE Sectional)</option>
-                                            <option value={100}>100 Questions (State Board)</option>
-                                            <option value={180}>180 Questions (NEET Speed)</option>
+                                            <option value={60}>60 Questions (Mid-Term)</option>
+                                            <option value={100}>100 Questions (Final Exam)</option>
+                                            <option value={180}>180 Questions (Full Mock)</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Column Grid</label>
+                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Columns on Page</label>
                                         <select
                                             value={designerForm.columns}
                                             onChange={e => setDesignerForm({ ...designerForm, columns: parseInt(e.target.value) })}
                                             className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
                                         >
-                                            <option value={1}>1 Column (Compact)</option>
-                                            <option value={2}>2 Columns (Standard Dual)</option>
-                                            <option value={3}>3 Columns (High Density)</option>
+                                            <option value={1}>1 Column</option>
+                                            <option value={2}>2 Columns (Recommended)</option>
+                                            <option value={3}>3 Columns</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Options Per Item</label>
+                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Options Per Question</label>
                                         <select
                                             value={designerForm.options_per_question}
                                             onChange={e => setDesignerForm({ ...designerForm, options_per_question: parseInt(e.target.value) })}
@@ -783,8 +961,8 @@ export default function OMRExamManager() {
                                             className="w-4 h-4 text-[#004B93] rounded"
                                         />
                                         <div>
-                                            <span className="font-bold text-slate-800 text-xs block">Enable QR / Code128 Barcode Verification</span>
-                                            <span className="text-[11px] text-slate-500">Validates exam UUID and seat ID during optical scanner pass.</span>
+                                            <span className="font-bold text-slate-800 text-xs block">Include Barcode</span>
+                                            <span className="text-[11px] text-slate-500">Helps automatically identify student roll number when scanned.</span>
                                         </div>
                                     </label>
 
@@ -796,8 +974,8 @@ export default function OMRExamManager() {
                                             className="w-4 h-4 text-[#004B93] rounded"
                                         />
                                         <div>
-                                            <span className="font-bold text-slate-800 text-xs block">Negative Marking Penalty</span>
-                                            <span className="text-[11px] text-slate-500">Deducts score for incorrect optical darkened responses.</span>
+                                            <span className="font-bold text-slate-800 text-xs block">Negative Marking</span>
+                                            <span className="text-[11px] text-slate-500">Deduct marks for wrong answers during automated checking.</span>
                                         </div>
                                     </label>
                                 </div>
@@ -805,10 +983,10 @@ export default function OMRExamManager() {
                                 <button
                                     onClick={handleSaveBlueprint}
                                     disabled={saving}
-                                    className="w-full py-3.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 mt-4"
+                                    className="w-full py-3.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 mt-4 cursor-pointer"
                                 >
                                     {saving ? <Loader2 size={18} className="animate-spin" /> : <SaveIcon />}
-                                    <span>Save & Register Blueprint</span>
+                                    <span>Save Sheet Layout</span>
                                 </button>
                             </div>
                         </div>
@@ -818,10 +996,10 @@ export default function OMRExamManager() {
                             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                                 <div className="flex items-center gap-2">
                                     <Printer size={18} className="text-[#004B93]" />
-                                    <span className="font-black text-slate-900 text-sm">Real-Time Optical Sheet Render</span>
+                                    <span className="font-black text-slate-900 text-sm">Live Sheet Preview</span>
                                 </div>
                                 <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                                    A4 Physical Ready (300 DPI)
+                                    Ready for Print (A4)
                                 </span>
                             </div>
 
@@ -836,7 +1014,7 @@ export default function OMRExamManager() {
                                 {/* SHEET HEADER */}
                                 <div className="text-center border-b-2 border-black pb-3 mb-4 mx-8">
                                     <div className="font-black text-base uppercase tracking-tight text-slate-950">
-                                        BEBRILLIANT ACADEMY OF EXCELLENCE
+                                        {tenantData?.settings?.branding?.name || tenantData?.name || 'School Name'}
                                     </div>
                                     <div className="font-bold text-xs uppercase text-slate-800 mt-0.5">
                                         {designerForm.name}
@@ -1217,13 +1395,13 @@ export default function OMRExamManager() {
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2.5">
-                                        <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Launch New OMR Examination</h3>
+                                        <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Create Blank Exam</h3>
                                         <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                            <Sparkles size={12} /> Live Sync
+                                            Custom Sheet Format
                                         </span>
                                     </div>
                                     <p className="text-xs text-slate-500 mt-0.5">
-                                        Generates standardized scannable bubble sheets mapped to state & national boards, official syllabus & exam patterns.
+                                        Set up exam details, select class, subject, syllabus, and question count for printing OMR sheets.
                                     </p>
                                 </div>
                             </div>
@@ -1446,7 +1624,7 @@ export default function OMRExamManager() {
                                     className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold shadow-md shadow-sky-950/20 flex items-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer"
                                 >
                                     {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                                    <span>Deploy Examination</span>
+                                    <span>Create Exam</span>
                                 </button>
                             </div>
                         </div>
@@ -1461,7 +1639,7 @@ export default function OMRExamManager() {
                     <div className="w-full max-w-2xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] flex flex-col">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div>
-                                <h3 className="text-xl font-black text-slate-900">Answer Key Master Configuration</h3>
+                                <h3 className="text-xl font-black text-slate-900">Exam Answer Key</h3>
                                 <p className="text-xs text-slate-500 mt-0.5">{selectedExam.title} ({selectedExam.total_questions} Questions)</p>
                             </div>
                             <button
@@ -1525,20 +1703,402 @@ export default function OMRExamManager() {
                         <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
                             <button
                                 onClick={() => setIsAnswerKeyModalOpen(false)}
-                                className="px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-700 hover:bg-slate-50 text-xs"
+                                disabled={isSavingAnswerKey}
+                                className="px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-700 hover:bg-slate-50 text-xs cursor-pointer"
                             >
                                 Close
                             </button>
                             <button
-                                onClick={() => {
-                                    showToast('Master Answer Key saved for automated grading!', true)
-                                    setIsAnswerKeyModalOpen(false)
-                                }}
-                                className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-md"
+                                onClick={handleSaveAnswerKey}
+                                disabled={isSavingAnswerKey}
+                                className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
                             >
-                                Save Answer Key
+                                {isSavingAnswerKey ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+                                <span>{isSavingAnswerKey ? 'Saving...' : 'Save Answer Key'}</span>
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL 4: CREATE EXAM WITH AI (WIZARD WITH INLINE EDITING) */}
+            {isAiExamModalOpen && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
+                    <div className="w-full max-w-5xl xl:max-w-6xl max-h-[92vh] flex flex-col bg-white rounded-3xl border border-slate-200/90 shadow-2xl overflow-hidden">
+                        
+                        {/* WIZARD HEADER */}
+                        <div className="shrink-0 px-6 sm:px-8 py-5 border-b border-slate-100 bg-white flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3.5">
+                                <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shadow-sm">
+                                    <Sparkles size={22} />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2.5">
+                                        <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Create Exam with Gemini AI</h3>
+                                        <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-50 text-amber-800 border border-amber-200">
+                                            Auto Answer Key & Matching OMR
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-0.5">
+                                        Generates questions, 4 multiple choice options, and answers. Review and edit inline, then print Question Paper and OMR sheet together.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setIsAiExamModalOpen(false)}
+                                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                            >
+                                <XCircle size={22} />
+                            </button>
+                        </div>
+
+                        {/* STEP 1: CONFIGURE & GENERATE */}
+                        {aiStep === 'config' && (
+                            <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 bg-slate-50/50">
+                                <form onSubmit={handleGenerateAiQuestions} className="space-y-6 max-w-3xl mx-auto">
+                                    <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-5">
+                                        <h4 className="font-black text-slate-900 text-base">1. Exam Information & Subject</h4>
+
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                                Exam Title <span className="text-rose-500">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="e.g. Grade 10 Science Midterm Test"
+                                                value={aiExamForm.title}
+                                                onChange={e => setAiExamForm({ ...aiExamForm, title: e.target.value })}
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-sm"
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Class / Grade</label>
+                                                <select
+                                                    value={aiExamForm.class_id}
+                                                    onChange={e => setAiExamForm({ ...aiExamForm, class_id: e.target.value })}
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
+                                                >
+                                                    {classes.map(c => (
+                                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Subject</label>
+                                                <select
+                                                    value={aiExamForm.subject_id}
+                                                    onChange={e => setAiExamForm({ ...aiExamForm, subject_id: e.target.value })}
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
+                                                >
+                                                    {subjects.map(s => (
+                                                        <option key={s.id} value={s.id}>{s.name} {s.code ? `(${s.code})` : ''}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                                Topic / Chapters to Cover
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. Light Reflection & Refraction, Chemical Reactions, Electricity"
+                                                value={aiExamForm.topic}
+                                                onChange={e => setAiExamForm({ ...aiExamForm, topic: e.target.value })}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Number of Questions</label>
+                                                <select
+                                                    value={aiExamForm.count}
+                                                    onChange={e => setAiExamForm({ ...aiExamForm, count: parseInt(e.target.value) })}
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
+                                                >
+                                                    <option value={10}>10 Questions</option>
+                                                    <option value={20}>20 Questions (Standard)</option>
+                                                    <option value={30}>30 Questions</option>
+                                                    <option value={40}>40 Questions</option>
+                                                    <option value={50}>50 Questions</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Difficulty</label>
+                                                <select
+                                                    value={aiExamForm.difficulty}
+                                                    onChange={e => setAiExamForm({ ...aiExamForm, difficulty: e.target.value as any })}
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
+                                                >
+                                                    <option value="easy">Easy (Fundamentals)</option>
+                                                    <option value="medium">Medium (Standard Board)</option>
+                                                    <option value="hard">Hard (Advanced Thinking)</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Duration (Minutes)</label>
+                                                <input
+                                                    type="number"
+                                                    value={aiExamForm.duration}
+                                                    onChange={e => setAiExamForm({ ...aiExamForm, duration: parseInt(e.target.value) || 30 })}
+                                                    min={10}
+                                                    max={180}
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2">
+                                            <button
+                                                type="submit"
+                                                disabled={aiLoading}
+                                                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                                            >
+                                                {aiLoading ? (
+                                                    <>
+                                                        <Loader2 size={18} className="animate-spin" />
+                                                        <span>Generating Questions with Gemini AI...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Sparkles size={18} />
+                                                        <span>Generate Questions & Answers</span>
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
+
+                        {/* STEP 2: INLINE REVIEW & EDITING */}
+                        {aiStep === 'review' && (
+                            <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
+                                <div className="p-4 bg-sky-50 border-b border-sky-100 flex items-center justify-between px-6 sm:px-8">
+                                    <div className="text-xs text-sky-900 font-medium">
+                                        <span className="font-bold">Inline Editing Active:</span> Click any question or option text to edit. Click option badge <span className="font-bold">A, B, C, or D</span> to change the correct answer key.
+                                    </div>
+                                    <span className="text-xs font-black bg-white px-3 py-1 rounded-full text-[#004B93] border border-sky-200">
+                                        {aiQuestions.length} Questions Ready
+                                    </span>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-4">
+                                    {aiQuestions.map((q, qIndex) => {
+                                        const currentCorrect = (q.correct_answer || 'A').toUpperCase()
+                                        return (
+                                            <div key={qIndex} className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-3">
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="w-7 h-7 rounded-lg bg-[#004B93] text-white flex items-center justify-center font-bold text-xs">
+                                                            {qIndex + 1}
+                                                        </span>
+                                                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Question {qIndex + 1}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-bold text-slate-500">Correct Answer:</span>
+                                                        <div className="flex gap-1">
+                                                            {(['A', 'B', 'C', 'D'] as const).map(optKey => (
+                                                                <button
+                                                                    key={optKey}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const updated = [...aiQuestions]
+                                                                        updated[qIndex].correct_answer = optKey
+                                                                        setAiQuestions(updated)
+                                                                    }}
+                                                                    className={`w-7 h-7 rounded-lg font-black text-xs transition-all cursor-pointer ${
+                                                                        currentCorrect === optKey
+                                                                            ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400'
+                                                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                                                    }`}
+                                                                >
+                                                                    {optKey}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                if (aiQuestions.length <= 1) {
+                                                                    showToast('At least 1 question is required', false)
+                                                                    return
+                                                                }
+                                                                setAiQuestions(aiQuestions.filter((_, idx) => idx !== qIndex))
+                                                            }}
+                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors ml-2 cursor-pointer"
+                                                            title="Delete question"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Editable Question Text */}
+                                                <div>
+                                                    <textarea
+                                                        value={q.text}
+                                                        rows={2}
+                                                        onChange={e => {
+                                                            const updated = [...aiQuestions]
+                                                            updated[qIndex].text = e.target.value
+                                                            setAiQuestions(updated)
+                                                        }}
+                                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                                    />
+                                                </div>
+
+                                                {/* 4 Editable Options */}
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                                                    {(['A', 'B', 'C', 'D'] as const).map(optKey => {
+                                                        const isSelected = currentCorrect === optKey
+                                                        return (
+                                                            <div
+                                                                key={optKey}
+                                                                className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${
+                                                                    isSelected ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-200 bg-white'
+                                                                }`}
+                                                            >
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const updated = [...aiQuestions]
+                                                                        updated[qIndex].correct_answer = optKey
+                                                                        setAiQuestions(updated)
+                                                                    }}
+                                                                    className={`w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shrink-0 cursor-pointer ${
+                                                                        isSelected ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'
+                                                                    }`}
+                                                                >
+                                                                    {optKey}
+                                                                </button>
+                                                                <input
+                                                                    type="text"
+                                                                    value={q.options[optKey] || ''}
+                                                                    onChange={e => {
+                                                                        const updated = [...aiQuestions]
+                                                                        updated[qIndex].options[optKey] = e.target.value
+                                                                        setAiQuestions(updated)
+                                                                    }}
+                                                                    className="w-full text-xs font-medium text-slate-800 bg-transparent focus:outline-none"
+                                                                />
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+
+                                    {/* Add Another Question Button */}
+                                    <div className="text-center pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setAiQuestions([
+                                                    ...aiQuestions,
+                                                    {
+                                                        id: `q${aiQuestions.length + 1}`,
+                                                        text: 'New question statement',
+                                                        options: { A: 'Option A', B: 'Option B', C: 'Option C', D: 'Option D' },
+                                                        correct_answer: 'A',
+                                                        marks: 1
+                                                    }
+                                                ])
+                                            }}
+                                            className="px-4 py-2 rounded-xl border border-dashed border-slate-300 hover:border-[#004B93] text-slate-600 hover:text-[#004B93] text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                                        >
+                                            <PlusCircle size={15} />
+                                            <span>Add Question</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* REVIEW FOOTER */}
+                                <div className="shrink-0 px-6 sm:px-8 py-4 bg-white border-t border-slate-100 flex items-center justify-between gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setAiStep('config')}
+                                        className="px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-700 hover:bg-slate-50 text-xs cursor-pointer"
+                                    >
+                                        Back to Settings
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={saving}
+                                        onClick={handleApproveAndCreateAiExam}
+                                        className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-950/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                                    >
+                                        {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                                        <span>Approve & Save Exam</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 3: SUCCESS & 1-CLICK COMBINED PRINT */}
+                        {aiStep === 'success' && createdAiExam && (
+                            <div className="flex-1 p-8 sm:p-12 flex flex-col items-center justify-center text-center space-y-6 bg-white">
+                                <div className="w-16 h-16 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-600 shadow-lg">
+                                    <CheckCircle size={36} />
+                                </div>
+                                <div className="max-w-md space-y-2">
+                                    <h3 className="text-2xl font-black text-slate-900">Exam Created Successfully!</h3>
+                                    <p className="text-sm text-slate-600">
+                                        <span className="font-bold text-slate-900">&quot;{createdAiExam.title}&quot;</span> has been saved with {aiQuestions.length} questions and an automated master answer key.
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                                    {/* Primary 1-Click Unified Print */}
+                                    <button
+                                        onClick={() => window.open(`/api/dashboard/exams/omr/${createdAiExam.id}/print?mode=unified`, '_blank')}
+                                        className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-sm shadow-xl flex items-center gap-2 cursor-pointer"
+                                    >
+                                        <Printer size={18} />
+                                        <span>Print Paper & OMR (Combined Booklet)</span>
+                                    </button>
+
+                                    {/* Print OMR Sheet Only */}
+                                    <button
+                                        onClick={() => window.open(`/api/dashboard/exams/omr/${createdAiExam.id}/print?mode=omr`, '_blank')}
+                                        className="px-5 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm border border-slate-200 transition-all cursor-pointer"
+                                    >
+                                        <span>Print OMR Sheet Only</span>
+                                    </button>
+
+                                    {/* Print Answer Key */}
+                                    <button
+                                        onClick={() => window.open(`/api/dashboard/exams/omr/${createdAiExam.id}/print?mode=key`, '_blank')}
+                                        className="px-5 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm border border-slate-200 transition-all cursor-pointer"
+                                    >
+                                        <span>Print Answer Key</span>
+                                    </button>
+                                </div>
+
+                                <div className="pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsAiExamModalOpen(false)
+                                            fetchData()
+                                        }}
+                                        className="text-xs font-bold text-slate-500 hover:text-slate-800 underline cursor-pointer"
+                                    >
+                                        Return to Exam List
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                     </div>
                 </div>
             )}

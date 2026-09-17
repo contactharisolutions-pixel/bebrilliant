@@ -32,7 +32,7 @@ const NAV_GROUPS = [
         items: [
             { label: 'All Exams', icon: ClipboardList, href: '/dashboard/exams' },
             { label: 'Online Exam Portal', icon: Zap, href: '/dashboard/exams/online' },
-            { label: 'OMR Scanner Hub', icon: ScanLine, href: '/dashboard/exams/omr' },
+            { label: 'Exams & OMR Sheets', icon: ScanLine, href: '/dashboard/exams/omr' },
             { label: 'Offline Paper Engine', icon: Printer, href: '/dashboard/exams/offline' },
             { label: 'Grade Answer Sheets', icon: FileText, href: '/dashboard/faculty/answer-grading' },
             { label: 'AI Question Gen', icon: BrainCircuit, href: '/dashboard/ai' },

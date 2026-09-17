@@ -1,6 +1,132 @@
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { query } from '@/lib/db'
 import { verifyTenantStaff } from '@/lib/auth-server'
+import { GoogleGenerativeAI } from '@google/generative-ai'
+
+// Curated curriculum fallback for OMR MCQs if Gemini is not configured
+function generateCurriculumOMRQuestions(
+    subject: string,
+    topic: string,
+    count: number,
+    difficulty: 'easy' | 'medium' | 'hard'
+) {
+    const sub = (subject || '').toLowerCase()
+    const cleanTopic = (topic || '').trim() || 'Core Curriculum'
+
+    const mathPool = [
+        {
+            text: `In the algebraic expression for ${cleanTopic}, what is the root of the equation 3x + 9 = 24?`,
+            options: { A: "x = 5", B: "x = 3", C: "x = 7", D: "x = 15" },
+            correct_answer: "A",
+            explanation: "3x = 24 - 9 = 15 => x = 5. Therefore, option A is correct.",
+            marks: 1
+        },
+        {
+            text: `What is the discriminant of the quadratic equation x² - 6x + 9 = 0 relating to ${cleanTopic}?`,
+            options: { A: "D = 12", B: "D = 0 (Equal real roots)", C: "D = -18", D: "D = 36" },
+            correct_answer: "B",
+            explanation: "D = b² - 4ac = (-6)² - 4(1)(9) = 36 - 36 = 0.",
+            marks: 1
+        },
+        {
+            text: `Find the 10th term of an arithmetic progression where first term a = 4 and common difference d = 3:`,
+            options: { A: "31", B: "34", C: "28", D: "27" },
+            correct_answer: "A",
+            explanation: "a_10 = a + (10 - 1)d = 4 + 9(3) = 4 + 27 = 31.",
+            marks: 1
+        },
+        {
+            text: `The perimeter of a circle is equal to that of a square. The ratio of their areas is:`,
+            options: { A: "22 : 7", B: "14 : 11", C: "7 : 22", D: "11 : 14" },
+            correct_answer: "B",
+            explanation: "2πr = 4s => s = πr/2. Area ratio = (πr²) / (π²r²/4) = 4/π = 14/11.",
+            marks: 1
+        },
+        {
+            text: `If tan θ = 4/3 in trigonometric applications for ${cleanTopic}, find sin θ:`,
+            options: { A: "3/5", B: "4/5", C: "5/4", D: "3/4" },
+            correct_answer: "B",
+            explanation: "Hypotenuse = √(4² + 3²) = 5. sin θ = opposite/hypotenuse = 4/5.",
+            marks: 1
+        }
+    ]
+
+    const sciencePool = [
+        {
+            text: `Which of the following is the SI unit of electric resistance in ${cleanTopic}?`,
+            options: { A: "Ohm (Ω)", B: "Volt (V)", C: "Ampere (A)", D: "Watt (W)" },
+            correct_answer: "A",
+            explanation: "Resistance is measured in Ohms (Ω) according to Ohm's Law.",
+            marks: 1
+        },
+        {
+            text: `According to Snell's law of refraction for ${cleanTopic}, the ratio sin(i) / sin(r) is constant and equals:`,
+            options: { A: "Refractive index of second medium relative to first", B: "Total internal reflection angle", C: "Speed of sound in medium", D: "Electric permittivity" },
+            correct_answer: "A",
+            explanation: "Snell's Law states sin(i) / sin(r) = n2 / n1 (relative refractive index).",
+            marks: 1
+        },
+        {
+            text: `What type of chemical reaction occurs when Calcium Carbonate decomposes into CaO and CO₂?`,
+            options: { A: "Combination reaction", B: "Thermal decomposition", C: "Displacement reaction", D: "Redox precipitation" },
+            correct_answer: "B",
+            explanation: "CaCO₃(s) + Heat -> CaO(s) + CO₂(g) is a thermal decomposition reaction.",
+            marks: 1
+        },
+        {
+            text: `Which part of the human brain is responsible for posture and balance in ${cleanTopic}?`,
+            options: { A: "Cerebrum", B: "Cerebellum", C: "Medulla", D: "Hypothalamus" },
+            correct_answer: "B",
+            explanation: "The cerebellum coordinates voluntary muscle movements, posture, and equilibrium.",
+            marks: 1
+        },
+        {
+            text: `An electric bulb rated 220V, 100W is operated on 110V. The power consumed will be:`,
+            options: { A: "100 W", B: "75 W", C: "50 W", D: "25 W" },
+            correct_answer: "D",
+            explanation: "R = V²/P = (220)²/100 = 484 Ω. At 110V, P = V²/R = (110)²/484 = 25 W.",
+            marks: 1
+        }
+    ]
+
+    const generalPool = [
+        {
+            text: `Which principle forms the conceptual foundation for mastering ${cleanTopic}?`,
+            options: { A: "Systematic deduction and objective analysis", B: "Arbitrary memorization without context", C: "Random approximation", D: "Unverified heuristic guessing" },
+            correct_answer: "A",
+            explanation: "Academic rigor relies on empirical observation and formal logical deduction.",
+            marks: 1
+        },
+        {
+            text: `What is the standard methodology for solving multifaceted problems in ${cleanTopic}?`,
+            options: { A: "Isolating variables, formulating equations, and verifying boundaries", B: "Skipping intermediate steps", C: "Assuming constants as zero", D: "Relying on intuition" },
+            correct_answer: "A",
+            explanation: "Structured problem solving requires variable isolation and boundary verification.",
+            marks: 1
+        }
+    ]
+
+    const sourcePool = sub.includes('math') ? mathPool : (sub.includes('sci') || sub.includes('phys') || sub.includes('chem') || sub.includes('bio')) ? sciencePool : generalPool
+
+    const result: any[] = []
+    for (let i = 0; i < count; i++) {
+        const item = sourcePool[i % sourcePool.length]
+        result.push({
+            id: `gen_omr_${Date.now()}_${i + 1}`,
+            text: item.text,
+            options: item.options,
+            correct_answer: item.correct_answer,
+            explanation: item.explanation,
+            marks: 1,
+            difficulty: difficulty
+        })
+    }
+    return result
+}
 
 export async function GET(request: NextRequest) {
     try {
@@ -46,7 +172,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Default: Hub Overview & All Master Data
-        const [examsRes, templatesRes, uploadsRes, classesRes, subjectsRes, sheetsRes, paperTemplatesRes] = await Promise.all([
+        const [examsRes, templatesRes, uploadsRes, classesRes, subjectsRes, sheetsRes, paperTemplatesRes, tenantRes] = await Promise.all([
             supabaseAdmin
                 .from('offline_exams')
                 .select(`
@@ -60,6 +186,8 @@ export async function GET(request: NextRequest) {
                     omr_template_id,
                     template_id,
                     duration,
+                    instructions,
+                    answer_key,
                     created_by,
                     status,
                     created_at,
@@ -107,7 +235,13 @@ export async function GET(request: NextRequest) {
                 .from('paper_templates')
                 .select('id, name, category, exam_type, total_marks, duration_minutes, is_active')
                 .eq('is_active', true)
-                .order('name', { ascending: true })
+                .order('name', { ascending: true }),
+
+            supabaseAdmin
+                .from('tenants')
+                .select('id, name, logo, settings')
+                .eq('id', tenantId)
+                .single()
         ])
 
         const classes = classesRes.data || []
@@ -122,6 +256,7 @@ export async function GET(request: NextRequest) {
         const recentUploads = uploadsRes.data || []
         const sheetsCount = sheetsRes.data?.length || 0
         const paperTemplates = paperTemplatesRes.data || []
+        const tenant = tenantRes.data || null
 
         const totalScanned = recentUploads.reduce((sum: number, u: any) => sum + (u.processed_sheets || 0), 0) + sheetsCount
         const failedScanned = recentUploads.reduce((sum: number, u: any) => sum + (u.failed_sheets || 0), 0)
@@ -145,7 +280,8 @@ export async function GET(request: NextRequest) {
             paperTemplates,
             recentUploads,
             classes,
-            subjects
+            subjects,
+            tenant
         })
     } catch (error: any) {
         console.error('[OMR API GET Error]:', error)
@@ -163,34 +299,280 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
         const { action, payload } = body
 
+        // ── 1. GENERATE AI QUESTIONS FOR OMR EXAM ──────────────────
+        if (action === 'GENERATE_AI_QUESTIONS') {
+            const {
+                subject_name,
+                class_name,
+                topic,
+                count = 10,
+                difficulty = 'medium'
+            } = payload
+
+            const targetCount = Math.min(Math.max(Number(count) || 10, 1), 50)
+            const apiKey = process.env.GEMINI_API_KEY
+
+            if (apiKey) {
+                try {
+                    const genAI = new GoogleGenerativeAI(apiKey)
+                    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+
+                    const prompt = `
+                        You are an expert CBSE/ICSE school exam creator.
+                        Generate exactly ${targetCount} multiple-choice questions (MCQs) for an offline OMR test.
+                        
+                        Details:
+                        - Grade: ${class_name || 'Class 10'}
+                        - Subject: ${subject_name || 'General Science'}
+                        - Topic / Chapter: ${topic || 'Core Curriculum'}
+                        - Difficulty: ${difficulty}
+                        - Each question MUST have exactly 4 options: A, B, C, D.
+                        - Identify the single correct option ('A', 'B', 'C', or 'D').
+                        
+                        Respond ONLY with a valid JSON array matching this exact schema:
+                        [
+                          {
+                            "id": "q1",
+                            "text": "The clear question statement without any Q1 prefix",
+                            "options": {
+                              "A": "Option A text",
+                              "B": "Option B text",
+                              "C": "Option C text",
+                              "D": "Option D text"
+                            },
+                            "correct_answer": "A",
+                            "explanation": "Clear explanation of why option A is correct",
+                            "marks": 1
+                          }
+                        ]
+                    `
+                    const result = await model.generateContent(prompt)
+                    const rawText = result.response.text()
+                    const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim()
+                    const generated = JSON.parse(cleanJson)
+
+                    if (Array.isArray(generated) && generated.length > 0) {
+                        return NextResponse.json({ success: true, questions: generated, source: 'gemini' })
+                    }
+                } catch (geminiError) {
+                    console.warn('Gemini API call failed, using curriculum generation fallback:', geminiError)
+                }
+            }
+
+            // Fallback
+            const fallbackQs = generateCurriculumOMRQuestions(
+                subject_name,
+                topic,
+                targetCount,
+                difficulty
+            )
+            return NextResponse.json({ success: true, questions: fallbackQs, source: 'curriculum' })
+        }
+
+        // ── 2. CREATE EXAM WITH QUESTIONS & AUTOMATED ANSWER KEY ──
+        if (action === 'CREATE_EXAM_WITH_QUESTIONS') {
+            const {
+                title,
+                class_id,
+                subject_id,
+                total_questions,
+                duration,
+                omr_template_id,
+                template_id,
+                instructions,
+                questions,
+                answer_key
+            } = payload
+
+            if (!title || !class_id || !subject_id) {
+                return NextResponse.json({ error: 'Title, Class, and Subject are required' }, { status: 400 })
+            }
+
+            const qCount = Array.isArray(questions) && questions.length > 0 ? questions.length : (Number(total_questions) || 50)
+
+            // Prepare Master Answer Key
+            const finalAnswerKey: Record<number, string> = {}
+            if (answer_key && typeof answer_key === 'object') {
+                Object.assign(finalAnswerKey, answer_key)
+            } else if (Array.isArray(questions)) {
+                questions.forEach((q: any, idx: number) => {
+                    const ans = q.correct_answer || 'A'
+                    finalAnswerKey[idx + 1] = String(ans).trim().toUpperCase()
+                })
+            }
+
+            // 1. Insert Exam into offline_exams
+            const insertExamQuery = `
+                INSERT INTO public.offline_exams (
+                    tenant_id,
+                    title,
+                    class_id,
+                    subject_id,
+                    total_questions,
+                    duration,
+                    omr_template_id,
+                    template_id,
+                    instructions,
+                    answer_key,
+                    created_by,
+                    status
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'published')
+                RETURNING *;
+            `
+            const { rows: examRows } = await query(insertExamQuery, [
+                tenantId,
+                title,
+                class_id,
+                subject_id,
+                qCount,
+                Number(duration) || 60,
+                omr_template_id || null,
+                template_id || null,
+                instructions || 'Read all questions carefully. Darken circle completely on OMR sheet.',
+                JSON.stringify(finalAnswerKey),
+                userId
+            ])
+            const exam = examRows[0]
+
+            // 2. Insert Questions and link in offline_exam_questions
+            if (Array.isArray(questions) && questions.length > 0) {
+                for (let i = 0; i < questions.length; i++) {
+                    const q = questions[i]
+                    const qText = q.text || q.question_text || `Question ${i + 1}`
+                    const qOptions = q.options ? (typeof q.options === 'string' ? q.options : JSON.stringify(q.options)) : JSON.stringify({ A: 'Option A', B: 'Option B', C: 'Option C', D: 'Option D' })
+                    const qAnswer = q.correct_answer ? String(q.correct_answer).trim().toUpperCase() : (finalAnswerKey[i + 1] || 'A')
+                    const qExp = q.explanation || ''
+
+                    // Insert Question
+                    const insertQQuery = `
+                        INSERT INTO public.questions (
+                            tenant_id,
+                            subject_id,
+                            type,
+                            sub_type,
+                            question_text,
+                            options,
+                            correct_answer,
+                            explanation,
+                            marks,
+                            source
+                        ) VALUES ($1, $2, 'objective', 'mcq', $3, $4, $5, $6, $7, 'ai')
+                        RETURNING id;
+                    `
+                    const { rows: qRows } = await query(insertQQuery, [
+                        tenantId,
+                        subject_id,
+                        JSON.stringify({ en: qText }),
+                        qOptions,
+                        JSON.stringify({ answer: qAnswer }),
+                        JSON.stringify({ en: qExp }),
+                        Number(q.marks) || 1
+                    ])
+                    const newQuestionId = qRows[0]?.id
+
+                    if (newQuestionId) {
+                        // Link in offline_exam_questions
+                        await query(`
+                            INSERT INTO public.offline_exam_questions (
+                                exam_id,
+                                question_id,
+                                question_order,
+                                marks
+                            ) VALUES ($1, $2, $3, $4);
+                        `, [exam.id, newQuestionId, i + 1, Number(q.marks) || 1])
+                    }
+                }
+            }
+
+            return NextResponse.json({
+                success: true,
+                exam,
+                message: `Exam "${title}" and ${qCount} questions with automated answer key created successfully!`
+            })
+        }
+
+        // ── 3. UPDATE MASTER ANSWER KEY ───────────────────────────
+        if (action === 'UPDATE_ANSWER_KEY') {
+            const { exam_id, answer_key } = payload
+            if (!exam_id || !answer_key) {
+                return NextResponse.json({ error: 'Exam ID and Answer Key are required' }, { status: 400 })
+            }
+
+            // Update offline_exams.answer_key
+            await query(`
+                UPDATE public.offline_exams 
+                SET answer_key = $1, updated_at = NOW() 
+                WHERE id = $2 AND tenant_id = $3;
+            `, [JSON.stringify(answer_key), exam_id, tenantId])
+
+            // Also update public.questions correct_answer for mapped questions
+            const { rows: mappedQs } = await query(`
+                SELECT oeq.question_order, oeq.question_id 
+                FROM public.offline_exam_questions oeq
+                WHERE oeq.exam_id = $1;
+            `, [exam_id])
+
+            for (const mq of mappedQs) {
+                const newAns = answer_key[mq.question_order]
+                if (newAns) {
+                    await query(`
+                        UPDATE public.questions 
+                        SET correct_answer = $1, updated_at = NOW() 
+                        WHERE id = $2;
+                    `, [JSON.stringify({ answer: newAns }), mq.question_id])
+                }
+            }
+
+            return NextResponse.json({
+                success: true,
+                message: 'Master answer key saved and synced successfully for automated grading!'
+            })
+        }
+
+        // ── 4. CREATE BLANK EXAM (LEGACY SUPPORT) ─────────────────
         if (action === 'CREATE_EXAM') {
             const { title, class_id, subject_id, total_questions, omr_template_id, template_id, duration } = payload
             if (!title || !class_id || !subject_id) {
                 return NextResponse.json({ error: 'Title, Class, and Subject are required' }, { status: 400 })
             }
 
-            const { data, error } = await supabaseAdmin
-                .from('offline_exams')
-                .insert([{
-                    tenant_id: tenantId,
+            // Default answer key
+            const defaultKey: Record<number, string> = {}
+            const total = Number(total_questions) || 50
+            const opts = ['A', 'B', 'C', 'D']
+            for (let i = 1; i <= total; i++) {
+                defaultKey[i] = opts[(i - 1) % 4]
+            }
+
+            const { rows: examRows } = await query(`
+                INSERT INTO public.offline_exams (
+                    tenant_id,
                     title,
                     class_id,
                     subject_id,
-                    total_questions: Number(total_questions) || 50,
-                    omr_template_id: omr_template_id || null,
-                    template_id: template_id || null,
-                    duration: Number(duration) || 60,
-                    created_by: userId,
-                    status: 'published'
-                }])
-                .select()
-                .single()
+                    total_questions,
+                    omr_template_id,
+                    template_id,
+                    duration,
+                    answer_key,
+                    created_by,
+                    status
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'published')
+                RETURNING *;
+            `, [
+                tenantId,
+                title,
+                class_id,
+                subject_id,
+                total,
+                omr_template_id || null,
+                template_id || null,
+                Number(duration) || 60,
+                JSON.stringify(defaultKey),
+                userId
+            ])
 
-            if (error) {
-                console.error('[Create Exam Error]:', error)
-                return NextResponse.json({ error: error.message }, { status: 500 })
-            }
-            return NextResponse.json({ success: true, exam: data })
+            return NextResponse.json({ success: true, exam: examRows[0] })
         }
 
         if (action === 'CREATE_TEMPLATE') {
@@ -254,6 +636,7 @@ export async function POST(request: NextRequest) {
             const { id } = payload
             if (!id) return NextResponse.json({ error: 'Exam ID is required' }, { status: 400 })
 
+            await query(`DELETE FROM public.offline_exam_questions WHERE exam_id = $1`, [id])
             const { error } = await supabaseAdmin
                 .from('offline_exams')
                 .delete()
@@ -272,3 +655,4 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
     }
 }
+

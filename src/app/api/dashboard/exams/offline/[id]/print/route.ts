@@ -13,9 +13,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const examQuery = `
         SELECT 
             oe.*,
+            t.name AS tenant_name,
+            t.logo AS tenant_logo,
+            t.settings AS tenant_settings,
             json_build_object('id', c.id, 'name', c.name) AS classes,
             json_build_object('id', s.id, 'name', s.name, 'code', s.code) AS subjects
         FROM public.offline_exams oe
+        LEFT JOIN public.tenants t ON oe.tenant_id = t.id
         LEFT JOIN public.classes c ON oe.class_id = c.id
         LEFT JOIN public.subjects s ON oe.subject_id = s.id
         WHERE oe.id = $1
@@ -25,6 +29,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const exam = examRows[0]
 
     if (!exam) return new NextResponse('Exam Not Found', { status: 404 })
+
+    const branding = exam.tenant_settings?.branding || {}
+    const contact = exam.tenant_settings?.contact || {}
+    const schoolName = branding.name || exam.tenant_name || 'BeBrilliant Academy of Excellence'
+    const schoolLogo = branding.logo_url || exam.tenant_logo || ''
+    const schoolTagline = branding.tagline || contact.address || 'Academic Center of Excellence'
 
     const questionsQuery = `
         SELECT 
@@ -71,7 +81,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>${exam.title} ${titleSuffix}</title>
+        <title>${schoolName} - ${exam.title} ${titleSuffix}</title>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Gujarati:wght@400;600;700;800&display=swap');
             
@@ -293,15 +303,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         <div class="sheet-container">
             <!-- INSTITUTION LETTERHEAD -->
             <div class="header">
-                <div class="school-logo">SILVER BELLS SCHOOL OF EXCELLENCE • ACADEMIC TERMINAL</div>
-                <div class="school-name">${exam.classes?.name || 'Secondary Division'} — Examination Assessment</div>
+                ${schoolLogo ? `<div style="margin-bottom: 10px;"><img src="${schoolLogo}" alt="${schoolName}" style="max-height: 60px; max-width: 140px; object-fit: contain;" /></div>` : ''}
+                <div class="school-logo">${schoolTagline}</div>
+                <div class="school-name">${schoolName}</div>
+                <div style="font-size: 13px; font-weight: 700; color: #475569; margin-top: 2px;">${exam.classes?.name || 'Class Grade'} — Academic Assessment</div>
                 <div class="exam-title">${exam.title} ${mode !== 'paper' ? '(' + mode.toUpperCase() + ')' : ''}</div>
                 
                 <div class="meta-bar">
                     <span>SUBJECT: <strong>${exam.subjects?.name || 'Mathematics'} ${exam.subjects?.code ? '(' + exam.subjects.code + ')' : ''}</strong></span>
                     <span>MAX MARKS: <strong>${exam.total_questions ? exam.total_questions * 2 : 100} MARKS</strong></span>
                     <span>DURATION: <strong>${exam.duration || 90} MINUTES</strong></span>
-                    <span>SERIES: <strong>SET-A (OMR-READY)</strong></span>
+                    <span>SERIES: <strong>SET-A</strong></span>
                 </div>
             </div>
 

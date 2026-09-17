@@ -54,7 +54,7 @@ const NAV_GROUPS = [
         roles: ["tenant_admin", "owner", "teacher"],
       },
       {
-        label: "OMR Scanner Hub",
+        label: "Exams & OMR Sheets",
         icon: ScanLine,
         href: "/dashboard/exams/omr",
         roles: ["tenant_admin", "owner", "teacher"],
