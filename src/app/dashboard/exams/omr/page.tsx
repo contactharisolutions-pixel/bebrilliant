@@ -9,7 +9,8 @@ import {
     Search, Loader2, Sparkles, Printer, Trash2,
     Database, Target, Shield,
     Sliders, RefreshCw, BarChart3, Users, PlusCircle, Check, HelpCircle,
-    FileSpreadsheet, ArrowUpRight, Camera, Layers, Award, Clock
+    FileSpreadsheet, ArrowUpRight, Camera, Layers, Award, Clock,
+    BookOpen, GraduationCap, Globe, Filter, CheckSquare, Square, BookMarked, Tag
 } from 'lucide-react'
 
 export default function OMRExamManager() {
@@ -88,6 +89,16 @@ export default function OMRExamManager() {
         duration: 45,
         omr_template_id: ''
     })
+
+    // Dedicated AI Modal Syllabus Cascading State (Saved in Tenant Portal)
+    const [aiBoardId, setAiBoardId] = useState<string>('')
+    const [aiClassNodeId, setAiClassNodeId] = useState<string>('')
+    const [aiSubjectNodeId, setAiSubjectNodeId] = useState<string>('')
+    const [aiSelectedChapterIds, setAiSelectedChapterIds] = useState<string[]>([])
+    const [aiSelectedTopicIds, setAiSelectedTopicIds] = useState<string[]>([])
+    const [aiChapterSearch, setAiChapterSearch] = useState<string>('')
+    const [aiTopicSearch, setAiTopicSearch] = useState<string>('')
+    const [aiCustomDirectives, setAiCustomDirectives] = useState<string>('')
     const [aiQuestions, setAiQuestions] = useState<Array<{
         id: string
         text: string
@@ -138,6 +149,65 @@ export default function OMRExamManager() {
             setContextLoading(false)
         }
     }, [selectedBoardId])
+
+    // ── AI MODAL CASCADING SYLLABUS RESOLUTION ──────────────────────────
+    const availableAiBoards = useMemo(() => {
+        return blueprintContext?.activeBoards || []
+    }, [blueprintContext?.activeBoards])
+
+    const currentAiBoard = useMemo(() => {
+        if (!availableAiBoards.length) return null
+        if (aiBoardId) {
+            return availableAiBoards.find(b => b.id === aiBoardId) || availableAiBoards[0]
+        }
+        return availableAiBoards[0]
+    }, [availableAiBoards, aiBoardId])
+
+    const availableAiClasses = useMemo(() => {
+        if (!blueprintContext?.syllabusTree?.classes || !currentAiBoard) return []
+        return blueprintContext.syllabusTree.classes.filter(c => c.board_id === currentAiBoard.id)
+    }, [blueprintContext?.syllabusTree?.classes, currentAiBoard])
+
+    const currentAiClassNode = useMemo(() => {
+        if (!availableAiClasses.length) return null
+        if (aiClassNodeId) {
+            return availableAiClasses.find(c => c.id === aiClassNodeId) || availableAiClasses[0]
+        }
+        return availableAiClasses[0]
+    }, [availableAiClasses, aiClassNodeId])
+
+    const availableAiSubjects = useMemo(() => {
+        if (!blueprintContext?.syllabusTree?.subjects || !currentAiClassNode) return []
+        return blueprintContext.syllabusTree.subjects.filter(s => s.class_node_id === currentAiClassNode.id)
+    }, [blueprintContext?.syllabusTree?.subjects, currentAiClassNode])
+
+    const currentAiSubjectNode = useMemo(() => {
+        if (!availableAiSubjects.length) return null
+        if (aiSubjectNodeId) {
+            return availableAiSubjects.find(s => s.id === aiSubjectNodeId) || availableAiSubjects[0]
+        }
+        return availableAiSubjects[0]
+    }, [availableAiSubjects, aiSubjectNodeId])
+
+    const availableAiChapters = useMemo(() => {
+        if (!blueprintContext?.syllabusTree?.chapters || !currentAiSubjectNode) return []
+        return blueprintContext.syllabusTree.chapters.filter(ch => ch.subject_node_id === currentAiSubjectNode.id)
+    }, [blueprintContext?.syllabusTree?.chapters, currentAiSubjectNode])
+
+    const filteredAiChapters = useMemo(() => {
+        if (!aiChapterSearch.trim()) return availableAiChapters
+        return availableAiChapters.filter(ch => ch.name.toLowerCase().includes(aiChapterSearch.toLowerCase()))
+    }, [availableAiChapters, aiChapterSearch])
+
+    const availableAiTopics = useMemo(() => {
+        if (!blueprintContext?.syllabusTree?.topics || aiSelectedChapterIds.length === 0) return []
+        return blueprintContext.syllabusTree.topics.filter(tp => aiSelectedChapterIds.includes(tp.chapter_node_id))
+    }, [blueprintContext?.syllabusTree?.topics, aiSelectedChapterIds])
+
+    const filteredAiTopics = useMemo(() => {
+        if (!aiTopicSearch.trim()) return availableAiTopics
+        return availableAiTopics.filter(tp => tp.name.toLowerCase().includes(aiTopicSearch.toLowerCase()))
+    }, [availableAiTopics, aiTopicSearch])
 
     const handleOpenCreateModal = useCallback(async () => {
         setIsCreateModalOpen(true)
@@ -398,15 +468,88 @@ export default function OMRExamManager() {
         }
     }
 
-    // AI Exam Creator Handlers
-    const handleOpenAiModal = () => {
+    // AI Exam Creator Handlers & Cascading Sync
+    const updateAiTopicString = useCallback((nextChapterIds: string[], nextTopicIds: string[], customNotes: string = aiCustomDirectives) => {
+        const selectedChaps = availableAiChapters.filter(ch => nextChapterIds.includes(ch.id)).map(ch => ch.name)
+        const selectedTps = availableAiTopics.filter(tp => nextTopicIds.includes(tp.id)).map(tp => tp.name)
+
+        let compiled = ''
+        if (selectedChaps.length > 0) {
+            compiled = `Chapters: ${selectedChaps.join(', ')}`
+            if (selectedTps.length > 0) {
+                compiled += ` (Key Topics: ${selectedTps.join(', ')})`
+            }
+        }
+        if (customNotes.trim()) {
+            compiled = compiled ? `${compiled} | Directives: ${customNotes.trim()}` : customNotes.trim()
+        }
+
+        setAiExamForm(prev => {
+            let newTitle = prev.title
+            if (currentAiClassNode && currentAiSubjectNode) {
+                if (selectedChaps.length === 1) {
+                    newTitle = `${currentAiClassNode.name} ${currentAiSubjectNode.name} - ${selectedChaps[0]} OMR Exam`
+                } else if (selectedChaps.length > 1) {
+                    newTitle = `${currentAiClassNode.name} ${currentAiSubjectNode.name} (${selectedChaps.length} Chapters) OMR Exam`
+                } else {
+                    newTitle = `${currentAiClassNode.name} ${currentAiSubjectNode.name} OMR Exam`
+                }
+            }
+            return {
+                ...prev,
+                title: newTitle,
+                topic: compiled
+            }
+        })
+    }, [availableAiChapters, availableAiTopics, aiCustomDirectives, currentAiClassNode, currentAiSubjectNode])
+
+    const handleOpenAiModal = useCallback(async () => {
         setAiStep('config')
         setAiQuestions([])
         setCreatedAiExam(null)
+
+        let ctx = blueprintContext
+        if (!ctx) {
+            setContextLoading(true)
+            try {
+                const res = await fetch('/api/dashboard/exams/blueprint-context')
+                if (res.ok) {
+                    ctx = await res.json()
+                    setBlueprintContext(ctx)
+                }
+            } catch (err) {
+                console.error('Failed to load blueprint context:', err)
+            } finally {
+                setContextLoading(false)
+            }
+        }
+
+        const bId = ctx?.activeBoards?.[0]?.id || selectedBoardId || ''
+        setAiBoardId(bId)
+
+        const bClasses = ctx?.syllabusTree?.classes?.filter((c: any) => c.board_id === bId) || []
+        const cNode = bClasses[0] || null
+        const cNodeId = cNode?.id || ''
+        setAiClassNodeId(cNodeId)
+
+        const bSubjects = cNode ? (ctx?.syllabusTree?.subjects?.filter((s: any) => s.class_node_id === cNode.id) || []) : []
+        const sNode = bSubjects[0] || null
+        const sNodeId = sNode?.id || ''
+        setAiSubjectNodeId(sNodeId)
+
+        setAiSelectedChapterIds([])
+        setAiSelectedTopicIds([])
+        setAiChapterSearch('')
+        setAiTopicSearch('')
+        setAiCustomDirectives('')
+
+        const matchedClass = classes.find(c => c.name.toLowerCase() === cNode?.name?.toLowerCase()) || classes[0]
+        const matchedSubject = subjects.find(s => s.name.toLowerCase() === sNode?.name?.toLowerCase()) || subjects[0]
+
         setAiExamForm({
-            title: '',
-            class_id: classes[0]?.id || '',
-            subject_id: subjects[0]?.id || '',
+            title: cNode && sNode ? `${cNode.name} ${sNode.name} OMR Exam` : (classes[0] ? `${classes[0].name} Science OMR Exam` : 'New OMR Exam'),
+            class_id: matchedClass?.id || '',
+            subject_id: matchedSubject?.id || '',
             topic: '',
             count: 20,
             difficulty: 'medium',
@@ -414,6 +557,127 @@ export default function OMRExamManager() {
             omr_template_id: templates[0]?.id || ''
         })
         setIsAiExamModalOpen(true)
+    }, [blueprintContext, selectedBoardId, classes, subjects, templates])
+
+    const handleAiSelectBoard = (newBoardId: string) => {
+        setAiBoardId(newBoardId)
+        const nextClasses = blueprintContext?.syllabusTree?.classes?.filter(c => c.board_id === newBoardId) || []
+        const nextClass = nextClasses[0] || null
+        setAiClassNodeId(nextClass?.id || '')
+
+        const nextSubjects = nextClass ? (blueprintContext?.syllabusTree?.subjects?.filter(s => s.class_node_id === nextClass.id) || []) : []
+        const nextSubject = nextSubjects[0] || null
+        setAiSubjectNodeId(nextSubject?.id || '')
+
+        setAiSelectedChapterIds([])
+        setAiSelectedTopicIds([])
+        setAiCustomDirectives('')
+
+        const matchedClass = classes.find(c => c.name.toLowerCase() === nextClass?.name.toLowerCase()) || classes[0]
+        const matchedSubject = subjects.find(s => s.name.toLowerCase() === nextSubject?.name.toLowerCase()) || subjects[0]
+
+        setAiExamForm(prev => ({
+            ...prev,
+            title: nextClass && nextSubject ? `${nextClass.name} ${nextSubject.name} OMR Exam` : prev.title,
+            class_id: matchedClass?.id || '',
+            subject_id: matchedSubject?.id || '',
+            topic: ''
+        }))
+    }
+
+    const handleAiSelectClass = (newClassNodeId: string) => {
+        setAiClassNodeId(newClassNodeId)
+        const classNode = availableAiClasses.find(c => c.id === newClassNodeId)
+        const nextSubjects = blueprintContext?.syllabusTree?.subjects?.filter(s => s.class_node_id === newClassNodeId) || []
+        const nextSubject = nextSubjects[0] || null
+        setAiSubjectNodeId(nextSubject?.id || '')
+
+        setAiSelectedChapterIds([])
+        setAiSelectedTopicIds([])
+        setAiCustomDirectives('')
+
+        const matchedClass = classes.find(c => c.name.toLowerCase() === classNode?.name.toLowerCase()) || classes[0]
+        const matchedSubject = subjects.find(s => s.name.toLowerCase() === nextSubject?.name.toLowerCase()) || subjects[0]
+
+        setAiExamForm(prev => ({
+            ...prev,
+            title: classNode && nextSubject ? `${classNode.name} ${nextSubject.name} OMR Exam` : prev.title,
+            class_id: matchedClass?.id || '',
+            subject_id: matchedSubject?.id || '',
+            topic: ''
+        }))
+    }
+
+    const handleAiSelectSubject = (newSubjectNodeId: string) => {
+        setAiSubjectNodeId(newSubjectNodeId)
+        const subjectNode = availableAiSubjects.find(s => s.id === newSubjectNodeId)
+        const classNode = availableAiClasses.find(c => c.id === aiClassNodeId)
+
+        setAiSelectedChapterIds([])
+        setAiSelectedTopicIds([])
+        setAiCustomDirectives('')
+
+        const matchedSubject = subjects.find(s => s.name.toLowerCase() === subjectNode?.name.toLowerCase()) || subjects[0]
+
+        setAiExamForm(prev => ({
+            ...prev,
+            title: classNode && subjectNode ? `${classNode.name} ${subjectNode.name} OMR Exam` : prev.title,
+            subject_id: matchedSubject?.id || '',
+            topic: ''
+        }))
+    }
+
+    const handleAiToggleChapter = (chapterId: string) => {
+        const isSelected = aiSelectedChapterIds.includes(chapterId)
+        const nextChapters = isSelected
+            ? aiSelectedChapterIds.filter(id => id !== chapterId)
+            : [...aiSelectedChapterIds, chapterId]
+        
+        setAiSelectedChapterIds(nextChapters)
+
+        let nextTopics = aiSelectedTopicIds
+        if (isSelected && blueprintContext?.syllabusTree?.topics) {
+            const removedChapterTopicIds = blueprintContext.syllabusTree.topics
+                .filter(tp => tp.chapter_node_id === chapterId)
+                .map(tp => tp.id)
+            nextTopics = nextTopics.filter(id => !removedChapterTopicIds.includes(id))
+            setAiSelectedTopicIds(nextTopics)
+        }
+
+        updateAiTopicString(nextChapters, nextTopics)
+    }
+
+    const handleAiSelectAllChapters = () => {
+        const allIds = availableAiChapters.map(ch => ch.id)
+        setAiSelectedChapterIds(allIds)
+        updateAiTopicString(allIds, aiSelectedTopicIds)
+    }
+
+    const handleAiClearChapters = () => {
+        setAiSelectedChapterIds([])
+        setAiSelectedTopicIds([])
+        updateAiTopicString([], [])
+    }
+
+    const handleAiToggleTopic = (topicId: string) => {
+        const isSelected = aiSelectedTopicIds.includes(topicId)
+        const nextTopics = isSelected
+            ? aiSelectedTopicIds.filter(id => id !== topicId)
+            : [...aiSelectedTopicIds, topicId]
+        
+        setAiSelectedTopicIds(nextTopics)
+        updateAiTopicString(aiSelectedChapterIds, nextTopics)
+    }
+
+    const handleAiSelectAllTopics = () => {
+        const allTopicIds = availableAiTopics.map(tp => tp.id)
+        setAiSelectedTopicIds(allTopicIds)
+        updateAiTopicString(aiSelectedChapterIds, allTopicIds)
+    }
+
+    const handleAiClearTopics = () => {
+        setAiSelectedTopicIds([])
+        updateAiTopicString(aiSelectedChapterIds, [])
     }
 
     const handleGenerateAiQuestions = async (e: React.FormEvent) => {
@@ -424,8 +688,11 @@ export default function OMRExamManager() {
         }
         setAiLoading(true)
         try {
-            const currentClass = classes.find(c => c.id === aiExamForm.class_id)?.name || 'Class 10'
-            const currentSubject = subjects.find(s => s.id === aiExamForm.subject_id)?.name || 'Science'
+            const currentClass = currentAiClassNode?.name || classes.find(c => c.id === aiExamForm.class_id)?.name || 'Class 7'
+            const currentSubject = currentAiSubjectNode?.name || subjects.find(s => s.id === aiExamForm.subject_id)?.name || 'Science'
+
+            const selectedChaps = availableAiChapters.filter(ch => aiSelectedChapterIds.includes(ch.id)).map(ch => ch.name)
+            const effectiveTopic = aiExamForm.topic.trim() || (selectedChaps.length > 0 ? `Chapters: ${selectedChaps.join(', ')}` : `${currentSubject} Core Curriculum`)
 
             const res = await fetch('/api/dashboard/exams/omr', {
                 method: 'POST',
@@ -435,7 +702,7 @@ export default function OMRExamManager() {
                     payload: {
                         class_name: currentClass,
                         subject_name: currentSubject,
-                        topic: aiExamForm.topic,
+                        topic: effectiveTopic,
                         count: aiExamForm.count,
                         difficulty: aiExamForm.difficulty
                     }
@@ -465,11 +732,13 @@ export default function OMRExamManager() {
         }
         setSaving(true)
         try {
-            // Build Answer Key from questions
             const keyMap: Record<number, string> = {}
             aiQuestions.forEach((q, idx) => {
                 keyMap[idx + 1] = (q.correct_answer || 'A').toUpperCase()
             })
+
+            const matchedClass = classes.find(c => c.name.toLowerCase() === currentAiClassNode?.name?.toLowerCase()) || classes.find(c => c.id === aiExamForm.class_id) || classes[0]
+            const matchedSubject = subjects.find(s => s.name.toLowerCase() === currentAiSubjectNode?.name?.toLowerCase()) || subjects.find(s => s.id === aiExamForm.subject_id) || subjects[0]
 
             const res = await fetch('/api/dashboard/exams/omr', {
                 method: 'POST',
@@ -478,14 +747,15 @@ export default function OMRExamManager() {
                     action: 'CREATE_EXAM_WITH_QUESTIONS',
                     payload: {
                         title: aiExamForm.title,
-                        class_id: aiExamForm.class_id,
-                        subject_id: aiExamForm.subject_id,
+                        class_id: matchedClass?.id || aiExamForm.class_id,
+                        subject_id: matchedSubject?.id || aiExamForm.subject_id,
                         total_questions: aiQuestions.length,
                         duration: aiExamForm.duration,
                         omr_template_id: aiExamForm.omr_template_id || null,
                         instructions: 'Use blue/black ballpoint pen only. Darken the bubbles completely. Each question carries equal marks.',
                         questions: aiQuestions,
-                        answer_key: keyMap
+                        answer_key: keyMap,
+                        chapter_ids: aiSelectedChapterIds
                     }
                 })
             })
@@ -1758,61 +2028,298 @@ export default function OMRExamManager() {
                         {aiStep === 'config' && (
                             <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 bg-slate-50/50">
                                 <form onSubmit={handleGenerateAiQuestions} className="space-y-6 max-w-3xl mx-auto">
-                                    <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-5">
-                                        <h4 className="font-black text-slate-900 text-base">1. Exam Information & Subject</h4>
-
-                                        <div>
-                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                                                Exam Title <span className="text-rose-500">*</span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                required
-                                                placeholder="e.g. Grade 10 Science Midterm Test"
-                                                value={aiExamForm.title}
-                                                onChange={e => setAiExamForm({ ...aiExamForm, title: e.target.value })}
-                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-sm"
-                                            />
+                                    <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6">
+                                        <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+                                            <div>
+                                                <h4 className="font-black text-slate-900 text-base">1. Syllabus, Class & Subject</h4>
+                                                <p className="text-xs text-slate-500 mt-0.5">
+                                                    Curriculum, classes, subjects, and chapters are fetched from your institutional syllabus saved in the tenant portal.
+                                                </p>
+                                            </div>
+                                            {currentAiBoard && (
+                                                <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-50 text-[#004B93] border border-sky-200">
+                                                    <Globe size={13} />
+                                                    <span>{currentAiBoard.name}</span>
+                                                </span>
+                                            )}
                                         </div>
 
+                                        {/* CURRICULUM BOARD SELECTION (Saved in Tenant Portal) */}
+                                        <div className="p-4 rounded-2xl bg-gradient-to-r from-sky-50/70 to-blue-50/40 border border-sky-100 space-y-3">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                                                    <Globe size={15} className="text-[#004B93]" />
+                                                    <span>Curriculum / Syllabus Board</span>
+                                                    <span className="text-[10px] px-2 py-0.5 rounded-full font-extrabold bg-[#004B93] text-white">
+                                                        Saved in Tenant Portal
+                                                    </span>
+                                                </label>
+                                                {availableAiBoards.length > 1 && (
+                                                    <span className="text-[11px] font-semibold text-slate-500">
+                                                        {availableAiBoards.length} Syllabuses Available
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <select
+                                                value={aiBoardId || currentAiBoard?.id || ''}
+                                                onChange={e => handleAiSelectBoard(e.target.value)}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-800 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-xs text-sm"
+                                            >
+                                                {availableAiBoards.map(b => (
+                                                    <option key={b.id} value={b.id}>
+                                                        {b.name} {b.source_type === 'owner_public' ? '(Master Syllabus)' : b.source_type === 'excel' ? '(Spreadsheet)' : '(Custom)'}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* CLASS & SUBJECT SELECTORS (Cascading from Syllabus) */}
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Class / Grade</label>
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1.5">
+                                                    <GraduationCap size={15} className="text-[#004B93]" />
+                                                    <span>Class / Grade</span>
+                                                </label>
                                                 <select
-                                                    value={aiExamForm.class_id}
-                                                    onChange={e => setAiExamForm({ ...aiExamForm, class_id: e.target.value })}
-                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
+                                                    value={aiClassNodeId || currentAiClassNode?.id || ''}
+                                                    onChange={e => handleAiSelectClass(e.target.value)}
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-xs text-sm"
                                                 >
-                                                    {classes.map(c => (
-                                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                                    ))}
+                                                    {availableAiClasses.length > 0 ? (
+                                                        availableAiClasses.map(c => (
+                                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                                        ))
+                                                    ) : (
+                                                        classes.map(c => (
+                                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                                        ))
+                                                    )}
                                                 </select>
                                             </div>
+
                                             <div>
-                                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Subject</label>
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1.5">
+                                                    <BookOpen size={15} className="text-emerald-600" />
+                                                    <span>Subject</span>
+                                                </label>
                                                 <select
-                                                    value={aiExamForm.subject_id}
-                                                    onChange={e => setAiExamForm({ ...aiExamForm, subject_id: e.target.value })}
-                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
+                                                    value={aiSubjectNodeId || currentAiSubjectNode?.id || ''}
+                                                    onChange={e => handleAiSelectSubject(e.target.value)}
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-xs text-sm"
                                                 >
-                                                    {subjects.map(s => (
-                                                        <option key={s.id} value={s.id}>{s.name} {s.code ? `(${s.code})` : ''}</option>
-                                                    ))}
+                                                    {availableAiSubjects.length > 0 ? (
+                                                        availableAiSubjects.map(s => (
+                                                            <option key={s.id} value={s.id}>{s.name}</option>
+                                                        ))
+                                                    ) : (
+                                                        subjects.map(s => (
+                                                            <option key={s.id} value={s.id}>{s.name} {s.code ? `(${s.code})` : ''}</option>
+                                                        ))
+                                                    )}
                                                 </select>
                                             </div>
                                         </div>
 
-                                        <div>
-                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                                                Topic / Chapters to Cover
-                                            </label>
-                                            <input
-                                                type="text"
-                                                placeholder="e.g. Light Reflection & Refraction, Chemical Reactions, Electricity"
-                                                value={aiExamForm.topic}
-                                                onChange={e => setAiExamForm({ ...aiExamForm, topic: e.target.value })}
-                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
-                                            />
+                                        {/* TOPIC / CHAPTERS (MULTIPLE SELECTION) */}
+                                        <div className="rounded-2xl border border-slate-200/90 p-5 bg-slate-50/50 space-y-4">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/70">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200 shadow-2xs">
+                                                        <Layers size={16} />
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs font-black uppercase tracking-wider text-slate-800">
+                                                                Topic / Chapters to Cover
+                                                            </span>
+                                                            <span className="text-[10px] px-2 py-0.5 rounded-full font-black bg-amber-100 text-amber-900 border border-amber-200">
+                                                                Multiple Selection
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-xs font-semibold text-slate-500">
+                                                            {aiSelectedChapterIds.length} of {availableAiChapters.length} Chapters Selected
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-2 text-xs font-bold">
+                                                    {availableAiChapters.length > 4 && (
+                                                        <div className="relative">
+                                                            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Search chapters..."
+                                                                value={aiChapterSearch}
+                                                                onChange={e => setAiChapterSearch(e.target.value)}
+                                                                className="pl-7 pr-2.5 py-1 text-xs border border-slate-200 rounded-lg outline-none focus:border-[#004B93] bg-white w-36 sm:w-44"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleAiSelectAllChapters}
+                                                        className="px-2.5 py-1 rounded-lg text-[#004B93] hover:bg-sky-50 font-bold cursor-pointer transition-colors"
+                                                    >
+                                                        Select All
+                                                    </button>
+                                                    <span className="text-slate-300">|</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleAiClearChapters}
+                                                        className="px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 font-bold cursor-pointer transition-colors"
+                                                    >
+                                                        Clear
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* CHAPTER PILLS GRID */}
+                                            {availableAiChapters.length > 0 ? (
+                                                <div className="flex flex-wrap gap-2 max-h-56 overflow-y-auto pr-1">
+                                                    {filteredAiChapters.map(ch => {
+                                                        const isSelected = aiSelectedChapterIds.includes(ch.id)
+                                                        return (
+                                                            <button
+                                                                key={ch.id}
+                                                                type="button"
+                                                                onClick={() => handleAiToggleChapter(ch.id)}
+                                                                className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all border flex items-center gap-2 cursor-pointer text-left ${
+                                                                    isSelected
+                                                                        ? 'bg-blue-50 text-[#004B93] border-[#004B93] font-bold shadow-sm ring-1 ring-[#004B93]/20'
+                                                                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                                                                }`}
+                                                            >
+                                                                <span className={`w-4 h-4 rounded flex items-center justify-center shrink-0 text-[10px] ${
+                                                                    isSelected ? 'bg-[#004B93] text-white' : 'border border-slate-300 bg-white'
+                                                                }`}>
+                                                                    {isSelected && <Check size={11} strokeWidth={3} />}
+                                                                </span>
+                                                                <span className="leading-snug">{ch.name}</span>
+                                                                {ch.exam_weightage && Number(ch.exam_weightage) > 0 && (
+                                                                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/90 border border-slate-200 text-slate-600 font-normal shrink-0">
+                                                                        {ch.exam_weightage}%
+                                                                    </span>
+                                                                )}
+                                                            </button>
+                                                        )
+                                                    })}
+                                                </div>
+                                            ) : (
+                                                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+                                                    <p className="font-bold">No saved chapters found for this subject.</p>
+                                                    <p className="mt-0.5 text-amber-800">You can type the chapters or topics manually in the directive box below.</p>
+                                                </div>
+                                            )}
+
+                                            {/* TOPICS IN SCOPE (SUB-SELECTION WITHIN CHOSEN CHAPTERS) */}
+                                            {aiSelectedChapterIds.length > 0 && availableAiTopics.length > 0 && (
+                                                <div className="pt-3 border-t border-slate-200/70 space-y-3">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                                                                <BookMarked size={14} className="text-emerald-600" />
+                                                                <span>Topics in Scope</span>
+                                                            </span>
+                                                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">
+                                                                {aiSelectedTopicIds.length} of {availableAiTopics.length} Selected
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-2 text-xs font-bold">
+                                                            {availableAiTopics.length > 4 && (
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Search topics..."
+                                                                    value={aiTopicSearch}
+                                                                    onChange={e => setAiTopicSearch(e.target.value)}
+                                                                    className="px-2.5 py-1 text-xs border border-slate-200 rounded-lg outline-none focus:border-emerald-600 bg-white w-36"
+                                                                />
+                                                            )}
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleAiSelectAllTopics}
+                                                                className="text-emerald-700 hover:underline cursor-pointer"
+                                                            >
+                                                                Select All
+                                                            </button>
+                                                            <span className="text-slate-300">|</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleAiClearTopics}
+                                                                className="text-slate-500 hover:text-slate-800 cursor-pointer"
+                                                            >
+                                                                Clear
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                                                        {filteredAiTopics.map(tp => {
+                                                            const isSelected = aiSelectedTopicIds.includes(tp.id)
+                                                            const parentChapter = availableAiChapters.find(ch => ch.id === tp.chapter_node_id)
+                                                            return (
+                                                                <button
+                                                                    key={tp.id}
+                                                                    type="button"
+                                                                    onClick={() => handleAiToggleTopic(tp.id)}
+                                                                    className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5 cursor-pointer ${
+                                                                        isSelected
+                                                                            ? 'bg-emerald-50 text-emerald-800 border-emerald-400 font-bold shadow-2xs'
+                                                                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                                                    }`}
+                                                                >
+                                                                    <span className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[10px] ${
+                                                                        isSelected ? 'bg-emerald-600 text-white' : 'border border-slate-300 bg-white'
+                                                                    }`}>
+                                                                        {isSelected && <Check size={10} />}
+                                                                    </span>
+                                                                    <span>{tp.name}</span>
+                                                                    {parentChapter && (
+                                                                        <span className="text-[10px] px-1 py-0.2 rounded bg-slate-100 text-slate-500 border border-slate-200">
+                                                                            {parentChapter.name}
+                                                                        </span>
+                                                                    )}
+                                                                </button>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* AI PROMPT SCOPE PREVIEW & CUSTOM DIRECTIVES */}
+                                            <div className="pt-2 border-t border-slate-200/70 space-y-1.5">
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                                                    Gemini AI Topic Directives & Extra Criteria
+                                                </label>
+                                                <textarea
+                                                    rows={2}
+                                                    placeholder="Selected chapters will automatically appear here. You can add extra directives, e.g. 'Focus on numerical formulas, definitions, and diagram questions'..."
+                                                    value={aiExamForm.topic}
+                                                    onChange={e => setAiExamForm({ ...aiExamForm, topic: e.target.value })}
+                                                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 font-medium text-xs sm:text-sm text-slate-800 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none placeholder:text-slate-400 shadow-2xs"
+                                                />
+                                                <p className="text-[11px] text-slate-500">
+                                                    This exact curriculum scope is passed to Gemini AI to author your questions, answer keys, and explanations.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* EXAM TITLE & CONFIG */}
+                                        <div className="space-y-4 pt-2">
+                                            <div>
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                                    Exam Title <span className="text-rose-500">*</span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    placeholder="e.g. Class 7 Science OMR Exam"
+                                                    value={aiExamForm.title}
+                                                    onChange={e => setAiExamForm({ ...aiExamForm, title: e.target.value })}
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-xs text-sm"
+                                                />
+                                            </div>
                                         </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
