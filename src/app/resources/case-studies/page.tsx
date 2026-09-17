@@ -74,7 +74,7 @@ export default function CaseStudiesPage() {
                                     name: 'Apex JEE & NEET Coaching Academy',
                                     category: 'Coaching Chain · 12 Branches',
                                     metric: '92% Faster Paper Setting',
-                                    desc: 'Automated weekly test creation for 8,000+ NEET & JEE aspirants across 12 branches using Gemini AI & Ready Question Banks.',
+                                    desc: 'Automated weekly test creation for 8,000+ NEET & JEE aspirants across 12 branches using BeBrilliant AI Agent & Ready Question Banks.',
                                     outcomes: [
                                         'Saved 45+ faculty hours per branch weekly',
                                         'Zero paper leakage with 4-set dynamic shuffling',

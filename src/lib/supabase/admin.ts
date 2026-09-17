@@ -859,6 +859,32 @@ class SupabaseQueryBuilder {
             return { data, error: null, count: totalCount }
         }
 
+        const JSONB_COLUMNS = new Set([
+            'payload', 'aadhar_details', 'bank_details', 'pan_details', 'value', 'context',
+            'filters', 'answer', 'details', 'audience_filter', 'filter_config', 'setting_value',
+            'content_json', 'grading_scale', 'structure', 'metadata', 'variables', 'option_order',
+            'answer_key', 'row_data', 'layout_config', 'error_log', 'setup_state', 'tasks',
+            'blueprint', 'instructions', 'custom_fields', 'features', 'vto_config', 'correct_answer',
+            'explanation', 'options', 'question_text', 'plan', 'changes', 'analysis',
+            'limit_overrides', 'custom_config', 'branding', 'settings', 'custom_permissions'
+        ])
+
+        const formatParamForCol = (col: string, val: any): any => {
+            if (val === undefined || val === null) return val
+            if (JSONB_COLUMNS.has(col)) {
+                if (typeof val === 'string') {
+                    try {
+                        JSON.parse(val)
+                        return val
+                    } catch {
+                        return JSON.stringify(val)
+                    }
+                }
+                return JSON.stringify(val)
+            }
+            return val
+        }
+
         if (this.action === 'insert') {
             const data = Array.isArray(this.payload) ? this.payload : [this.payload]
             if (data.length === 0) return { data: this.singleRow ? null : [], error: null }
@@ -868,7 +894,7 @@ class SupabaseQueryBuilder {
             
             data.forEach(row => {
                 const placeholders = cols.map(col => {
-                    params.push(row[col])
+                    params.push(formatParamForCol(col, row[col]))
                     return `$${paramIdx++}`
                 })
                 valPlaceholders.push(`(${placeholders.join(', ')})`)
@@ -888,7 +914,7 @@ class SupabaseQueryBuilder {
             
             data.forEach(row => {
                 const placeholders = cols.map(col => {
-                    params.push(row[col])
+                    params.push(formatParamForCol(col, row[col]))
                     return `$${paramIdx++}`
                 })
                 valPlaceholders.push(`(${placeholders.join(', ')})`)
@@ -909,7 +935,7 @@ class SupabaseQueryBuilder {
         if (this.action === 'update') {
             const cols = Object.keys(this.payload)
             const setStatements = cols.map(col => {
-                params.push(this.payload[col])
+                params.push(formatParamForCol(col, this.payload[col]))
                 return `${col} = $${paramIdx++}`
             })
 

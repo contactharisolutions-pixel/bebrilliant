@@ -196,6 +196,7 @@ export async function GET(request: NextRequest) {
                     omr_templates:omr_template_id(id, name, total_questions, layout_config)
                 `)
                 .eq('tenant_id', tenantId)
+                .or('omr_template_id.not.is.null,title.ilike.%omr%')
                 .order('created_at', { ascending: false }),
 
             supabaseAdmin
@@ -297,62 +298,107 @@ export async function POST(request: NextRequest) {
         const tenantId = session.tenant_id || '5cccb9be-5b4a-4143-8725-bc6061e337fa'
         const userId = session.user?.id || 'f848f0e5-45f2-43a9-a90e-5f2ef4a4e33e'
         const body = await request.json()
-        const { action, payload } = body
+        const action = body.action
+        const payload = body.payload || body
 
         // ── 1. GENERATE AI QUESTIONS FOR OMR EXAM ──────────────────
         if (action === 'GENERATE_AI_QUESTIONS') {
-            const {
-                subject_name,
-                class_name,
-                topic,
-                count = 10,
-                difficulty = 'medium'
-            } = payload
+            const subject_name = payload?.subject_name || payload?.subject || 'Science'
+            const class_name = payload?.class_name || payload?.classLevel || 'Class 10'
+            const topic = payload?.topic || (Array.isArray(payload?.topics) ? payload.topics.join(', ') : '') || 'Core Curriculum'
+            const count = payload?.count || payload?.questionCount || payload?.total_questions || 10
+            const difficulty = (payload?.difficulty || 'medium') as 'easy' | 'medium' | 'hard'
 
-            const targetCount = Math.min(Math.max(Number(count) || 10, 1), 50)
+            const targetCount = Math.min(Math.max(Number(count) || 10, 1), 100)
             const apiKey = process.env.GEMINI_API_KEY
 
             if (apiKey) {
                 try {
                     const genAI = new GoogleGenerativeAI(apiKey)
-                    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+                    const model = genAI.getGenerativeModel({
+                        model: "gemini-2.5-flash",
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            maxOutputTokens: 8192,
+                            temperature: 0.7,
+                        }
+                    })
 
-                    const prompt = `
-                        You are an expert CBSE/ICSE school exam creator.
-                        Generate exactly ${targetCount} multiple-choice questions (MCQs) for an offline OMR test.
-                        
-                        Details:
-                        - Grade: ${class_name || 'Class 10'}
-                        - Subject: ${subject_name || 'General Science'}
-                        - Topic / Chapter: ${topic || 'Core Curriculum'}
-                        - Difficulty: ${difficulty}
-                        - Each question MUST have exactly 4 options: A, B, C, D.
-                        - Identify the single correct option ('A', 'B', 'C', or 'D').
-                        
-                        Respond ONLY with a valid JSON array matching this exact schema:
-                        [
-                          {
-                            "id": "q1",
-                            "text": "The clear question statement without any Q1 prefix",
-                            "options": {
-                              "A": "Option A text",
-                              "B": "Option B text",
-                              "C": "Option C text",
-                              "D": "Option D text"
-                            },
-                            "correct_answer": "A",
-                            "explanation": "Clear explanation of why option A is correct",
-                            "marks": 1
-                          }
-                        ]
-                    `
-                    const result = await model.generateContent(prompt)
-                    const rawText = result.response.text()
-                    const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim()
-                    const generated = JSON.parse(cleanJson)
+                    const generateBatch = async (batchCount: number, startNum: number, subTopic: string) => {
+                        const prompt = `
+                            You are the BeBrilliant AI Agent, an expert school examination and curriculum creator for CBSE and ICSE boards.
+                            Generate exactly ${batchCount} multiple-choice questions (MCQs) for an offline OMR test.
+                            
+                            Details:
+                            - Grade / Class: ${class_name || 'Class 10'}
+                            - Subject: ${subject_name || 'General Science'}
+                            - Topic / Chapters: ${topic || 'Core Curriculum'} ${subTopic ? `(Focus on: ${subTopic})` : ''}
+                            - Difficulty Level: ${difficulty}
+                            - Required count: Exactly ${batchCount} distinct, high-quality questions.
+                            - Numbering: Start question numbering from ${startNum} to ${startNum + batchCount - 1}.
+                            - Each question MUST have exactly 4 clear options: A, B, C, D.
+                            - Specify the single correct option ('A', 'B', 'C', or 'D').
+                            
+                            Respond ONLY with a valid JSON array matching this exact schema:
+                            [
+                              {
+                                "id": "q${startNum}",
+                                "text": "Clear question text without question number prefix",
+                                "options": {
+                                  "A": "Option A text",
+                                  "B": "Option B text",
+                                  "C": "Option C text",
+                                  "D": "Option D text"
+                                },
+                                "correct_answer": "A",
+                                "explanation": "Brief explanation of why this answer is correct",
+                                "marks": 1
+                              }
+                            ]
+                        `
+                        const result = await model.generateContent(prompt)
+                        const rawText = result.response.text()
+                        const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim()
+                        const parsed = JSON.parse(cleanJson)
+                        return Array.isArray(parsed) ? parsed : []
+                    }
 
-                    if (Array.isArray(generated) && generated.length > 0) {
-                        return NextResponse.json({ success: true, questions: generated, source: 'gemini' })
+                    let allGenerated: any[] = []
+                    if (targetCount > 25) {
+                        const batch1Count = Math.ceil(targetCount / 2)
+                        const batch2Count = targetCount - batch1Count
+                        const [batch1, batch2] = await Promise.all([
+                            generateBatch(batch1Count, 1, "Part 1 Core Concepts & Fundamentals"),
+                            generateBatch(batch2Count, batch1Count + 1, "Part 2 Applications & Analysis")
+                        ])
+                        allGenerated = [...batch1, ...batch2]
+                    } else {
+                        allGenerated = await generateBatch(targetCount, 1, "")
+                    }
+
+                    // If slightly short of targetCount (e.g. 48 instead of 50), do a quick fill
+                    if (allGenerated.length < targetCount) {
+                        const needed = targetCount - allGenerated.length
+                        try {
+                            const extra = await generateBatch(needed, allGenerated.length + 1, "Additional Conceptual Questions")
+                            allGenerated = [...allGenerated, ...extra]
+                        } catch (extraErr) {
+                            console.warn("Could not fetch extra batch:", extraErr)
+                        }
+                    }
+
+                    if (allGenerated.length > 0) {
+                        // Normalize question objects and guarantee exact count
+                        const normalized = allGenerated.slice(0, targetCount).map((q, idx) => ({
+                            id: `q${idx + 1}`,
+                            text: q.text || q.question_text || `Question ${idx + 1}`,
+                            options: q.options || { A: 'Option A', B: 'Option B', C: 'Option C', D: 'Option D' },
+                            correct_answer: (q.correct_answer || 'A').toString().trim().toUpperCase(),
+                            explanation: q.explanation || '',
+                            marks: Number(q.marks) || 1
+                        }))
+
+                        return NextResponse.json({ success: true, questions: normalized, source: 'gemini' })
                     }
                 } catch (geminiError) {
                     console.warn('Gemini API call failed, using curriculum generation fallback:', geminiError)
@@ -598,6 +644,51 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ error: error.message }, { status: 500 })
             }
             return NextResponse.json({ success: true, template: data })
+        }
+
+        if (action === 'UPDATE_TEMPLATE') {
+            const { id, name, total_questions, options_per_question, layout_config } = payload
+            if (!id) {
+                return NextResponse.json({ error: 'Template ID is required' }, { status: 400 })
+            }
+
+            const { data, error } = await supabaseAdmin
+                .from('omr_templates')
+                .update({
+                    name: name || 'Standard Sheet Format',
+                    total_questions: Number(total_questions) || 50,
+                    options_per_question: Number(options_per_question) || 4,
+                    layout_config: layout_config || { columns: 2, roll_digits: 8, barcode_enabled: true },
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', id)
+                .select()
+                .single()
+
+            if (error) {
+                console.error('[Update Template Error]:', error)
+                return NextResponse.json({ error: error.message }, { status: 500 })
+            }
+            return NextResponse.json({ success: true, template: data })
+        }
+
+        if (action === 'DELETE_TEMPLATE') {
+            const { id } = payload
+            if (!id) {
+                return NextResponse.json({ error: 'Template ID is required' }, { status: 400 })
+            }
+
+            // Soft-delete to keep historical exam linkage intact
+            const { error } = await supabaseAdmin
+                .from('omr_templates')
+                .update({ is_active: false })
+                .eq('id', id)
+
+            if (error) {
+                console.error('[Delete Template Error]:', error)
+                return NextResponse.json({ error: error.message }, { status: 500 })
+            }
+            return NextResponse.json({ success: true, message: 'Sheet format removed successfully' })
         }
 
         if (action === 'PROCESS_BATCH') {

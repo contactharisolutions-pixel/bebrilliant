@@ -19,19 +19,19 @@ export default function FeaturesPage() {
             number: '01',
             tabName: 'Smart Exam & Proctoring',
             category: 'Smart Exam & Proctoring Engine',
-            subtitle: 'Gemini AI paper creation, randomized anti-cheat question sets, and real-time live exam supervision.',
+            subtitle: 'BeBrilliant AI Agent paper creation, randomized anti-cheat question sets, and real-time live exam supervision.',
             icon: BrainCircuit,
             color: '#004B93',
             badgeBg: '#EBF3FC',
             bgImage: '/tech_hero.png',
-            highlights: ['Gemini AI Question Builder', 'Anti-Cheat Jumbling Engine', 'Instant Automated Solution Keys', 'Timed Exam Control'],
+            highlights: ['BeBrilliant AI Agent Question Builder', 'Anti-Cheat Jumbling Engine', 'Instant Automated Solution Keys', 'Timed Exam Control'],
             metrics: [
                 { val: '< 2s', label: 'AI Generation' },
                 { val: '99.9%', label: 'Supervision SLA' },
                 { val: '500K+', label: 'Question Bank' }
             ],
             items: [
-                { title: 'Create Exams Easily', desc: 'Generate multi-choice and numerical questions instantly with Gemini AI support.' },
+                { title: 'Create Exams Easily', desc: 'Generate multi-choice and numerical questions instantly with BeBrilliant AI Agent support.' },
                 { title: 'Randomized Question Sets', desc: 'Algorithmic question and option shuffling to eliminate student collusion.' },
                 { title: 'Instant Evaluation', desc: 'Real-time automatic grading with detailed solution keys upon test submission.' },
                 { title: 'Custom Exam Timers', desc: 'Set fixed time limits, window closing rules, and late-submission penalties.' }

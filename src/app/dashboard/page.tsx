@@ -1065,7 +1065,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14 }}>
                     <QuickAction title="CBT Exam Portal" desc="Launch live test" icon={Zap} href="/dashboard/exams/online" variant="primary" />
                     <QuickAction title="Exams & OMR Sheets" desc="Create & print papers" icon={ScanLine} href="/dashboard/exams/omr" variant="dark" />
-                    <QuickAction title="AI Question Gen" desc="Author with AI" icon={BrainCircuit} href="/dashboard/ai" variant="ghost" />
+                    <QuickAction title="Offline Paper Engine" desc="Question bank & papers" icon={Printer} href="/dashboard/exams/offline" variant="ghost" />
                     <QuickAction title="Grade Papers" desc="Faculty grading" icon={FileText} href="/dashboard/faculty/answer-grading" variant="ghost" />
                     <QuickAction title="Course Syllabus" desc="Curriculum maps" icon={BookOpen} href="/dashboard/syllabus" variant="ghost" />
                     <QuickAction title="Fee Wallet" desc="Dues & receipts" icon={Wallet} href="/dashboard/wallet" variant="ghost" />

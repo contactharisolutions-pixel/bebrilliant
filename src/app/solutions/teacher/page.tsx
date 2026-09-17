@@ -91,7 +91,7 @@ export default function TeacherPlatformPage() {
                                 {
                                     icon: BrainCircuit,
                                     badge: 'AI Powered · 95% Faster',
-                                    title: 'Gemini AI Question Builder',
+                                    title: 'BeBrilliant AI Agent Question Builder',
                                     desc: 'Instantly generate MCQs, subjective questions, and numerical problems aligned with NCERT & board blueprints.',
                                     bullets: [
                                         'Target by subject, chapter, and difficulty level',

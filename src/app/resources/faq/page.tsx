@@ -36,7 +36,7 @@ export default function DetailedFAQPage() {
         },
         {
             category: 'ai',
-            q: "How accurate is the Gemini AI Question Paper Generator?",
+            q: "How accurate is the BeBrilliant AI Agent Question Paper Generator?",
             a: "Our AI model is 100% trained on NCERT textbook blueprints, CBSE, ICSE, JEE, and NEET syllabus standards. Teachers can review, edit, or regenerate any question before finalizing exam papers."
         },
         {

@@ -541,7 +541,7 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
             const cat = Object.keys(catMap).find(c => catMap[c].includes(selectedBoard)) || 'Syllabus'
             setCategoryName(cat)
 
-            setProgress(p => [...p, `🤖 Contacting Gemini AI for ${selectedBoard}...`])
+            setProgress(p => [...p, `🤖 Contacting BeBrilliant AI Agent for ${selectedBoard}...`])
 
             const res = await fetch('/api/owner/syllabus/generate', {
                 method: 'POST',
@@ -617,7 +617,7 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
                     <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/70 rounded-2xl p-4 mb-4 flex gap-3">
                         <Sparkles size={20} className="text-emerald-600 shrink-0 mt-0.5" />
                         <div className="text-xs text-emerald-900 leading-relaxed">
-                            Gemini AI will synthesize a complete academic structure with classes, subjects, chapters, and topics based on standard curriculum standards.
+                            BeBrilliant AI Agent will synthesize a complete academic structure with classes, subjects, chapters, and topics based on standard curriculum standards.
                         </div>
                     </div>
                     <Field label="Select Board / Exam" required>
@@ -653,7 +653,7 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
                         <Sparkles size={26} className="text-emerald-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                     </div>
                     <h4 className="text-base font-black text-slate-900">Drafting Curriculum</h4>
-                    <p className="text-xs text-slate-500 mt-1 mb-4">Gemini AI is analyzing and structuring the educational hierarchy…</p>
+                    <p className="text-xs text-slate-500 mt-1 mb-4">BeBrilliant AI Agent is analyzing and structuring the educational hierarchy…</p>
                     <div className="bg-slate-900 rounded-xl p-3.5 max-h-40 overflow-y-auto text-left font-mono text-xs">
                         {progress.map((l, i) => <div key={i} className="text-emerald-400 mb-1">{l}</div>)}
                         <div ref={progressEndRef} />

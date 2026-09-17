@@ -68,9 +68,9 @@ export default function TechnologyPage() {
             icon: BrainCircuit,
             accent: '#FB923C',
             accentBg: 'rgba(251, 146, 60, 0.12)',
-            description: 'Gemini 1.5 Pro integration for intelligent question generation, automated solution key creation, and adaptive difficulty scoring — all within < 2s generation windows.',
+            description: 'BeBrilliant AI Agent Core integration for intelligent question generation, automated solution key creation, and adaptive difficulty scoring — all within < 2s generation windows.',
             stackItems: [
-                { name: 'Gemini 1.5 Pro Integration', badge: 'AI Core', detail: 'Multi-modal Gemini API generates MCQ, assertion-reasoning, and numerical questions from teacher-uploaded syllabus PDFs or topic keywords in < 2 seconds.' },
+                { name: 'BeBrilliant AI Agent Core', badge: 'AI Core', detail: 'Multi-modal BeBrilliant AI Agent generates MCQ, assertion-reasoning, and numerical questions from teacher-uploaded syllabus PDFs or topic keywords in < 2 seconds.' },
                 { name: 'Bloom\'s Taxonomy Engine', badge: 'Difficulty AI', detail: 'Custom difficulty calibration model classifies each auto-generated question on a 6-tier Bloom\'s Taxonomy scale — ensuring balanced paper difficulty.' },
                 { name: 'Anti-Cheat Shuffle Algorithm', badge: 'Proctoring AI', detail: 'Proprietary question and option shuffling engine generates 32 unique paper variants from a single template, making student collusion statistically impossible.' },
                 { name: 'Smart Performance Analytics', badge: 'Analytics AI', detail: 'ML-powered cohort analysis identifies at-risk students, predicts AIR rank ranges, and flags learning gaps for teacher intervention dashboards.' }
@@ -382,7 +382,7 @@ export default function TechnologyPage() {
                                 { val: '< 200ms', label: 'API Response Time (P95)', icon: Zap, accent: '#38BDF8', sub: 'Measured at Mumbai PoP during exam peak' },
                                 { val: 'AES-256', label: 'Encryption Standard', icon: Lock, accent: '#A78BFA', sub: 'At-rest and in-transit for all student PII' },
                                 { val: '50,000', label: 'Peak Concurrent Exams', icon: Users2, accent: '#FB923C', sub: 'Observed on JEE mock test series day' },
-                                { val: '< 2 sec', label: 'AI Paper Generation', icon: BrainCircuit, accent: '#F472B6', sub: 'Gemini 1.5 Pro 30-question paper' },
+                                { val: '< 2 sec', label: 'AI Paper Generation', icon: BrainCircuit, accent: '#F472B6', sub: 'BeBrilliant AI Agent 30-question paper' },
                                 { val: '300+', label: 'CDN Points of Presence', icon: GlobeIcon, accent: '#34D399', sub: 'Cloudflare Enterprise edge network' }
                             ].map((b, i) => {
                                 const BIcon = b.icon || Activity

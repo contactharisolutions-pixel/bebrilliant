@@ -89,12 +89,6 @@ const NAV_GROUPS = [
         href: "/dashboard/faculty/analytics/results-360",
         roles: ["tenant_admin", "owner", "teacher"],
       },
-      {
-        label: "AI Question Gen",
-        icon: BrainCircuit,
-        href: "/dashboard/ai",
-        roles: ["tenant_admin", "owner", "teacher"],
-      },
     ],
   },
   {

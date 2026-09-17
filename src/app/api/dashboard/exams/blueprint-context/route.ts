@@ -50,7 +50,6 @@ export async function GET(request: NextRequest) {
              LEFT JOIN public.tenant_syllabus ts ON ts.master_syllabus_id = b.id AND ts.tenant_id = $1
              WHERE (ts.tenant_id = $1 AND ts.is_active = true)
                 OR (b.tenant_id = $1 AND b.parent_id IS NULL AND b.type = 'board' AND b.is_active = true)
-                OR (b.tenant_id IS NULL AND b.parent_id IS NULL AND b.type = 'board' AND b.is_active = true)
              ORDER BY 
                 (CASE WHEN ts.is_active = true THEN 0 WHEN b.tenant_id = $1 THEN 1 ELSE 2 END),
                 b.order_index ASC, b.name ASC`,
@@ -123,7 +122,7 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        // 4. Fetch Owner Public Exam Patterns (paper_templates with sections & rules)
+        // 4. Fetch Owner Public & School Custom Exam Patterns (paper_templates with sections & rules)
         const patternsQuery = `
             SELECT 
                 pt.id,
@@ -137,7 +136,9 @@ export async function GET(request: NextRequest) {
                 pt.tags,
                 pt.is_global,
                 pt.is_active,
+                pt.created_by,
                 pt.created_at,
+                (pt.is_global = true AND (pt.created_by IS NULL OR pt.created_by != $1)) AS is_owner_pattern,
                 COALESCE(
                     (
                         SELECT json_agg(
@@ -175,10 +176,16 @@ export async function GET(request: NextRequest) {
                     ), '[]'::json
                 ) AS sections
             FROM public.paper_templates pt
-            WHERE pt.is_active = true AND (pt.is_global = true OR pt.created_by = $1 OR pt.id IN (
-                SELECT template_id FROM public.offline_exams WHERE tenant_id = $1 AND template_id IS NOT NULL
-            ))
-            ORDER BY pt.category ASC, pt.name ASC;
+            WHERE pt.is_active = true AND (
+                pt.is_global = true 
+                OR pt.created_by = $1 
+                OR pt.id IN (
+                    SELECT template_id FROM public.offline_exams WHERE tenant_id = $1 AND template_id IS NOT NULL
+                )
+            )
+            ORDER BY 
+                (CASE WHEN pt.created_by = $1 THEN 0 ELSE 1 END),
+                pt.category ASC, pt.name ASC;
         `
         const patternsRes = await query(patternsQuery, [tenantId])
         const examPatterns = patternsRes.rows || []
@@ -458,6 +465,248 @@ export async function POST(request: NextRequest) {
                 success: true,
                 message: `Spreadsheet curriculum "${cleanBoardName}" successfully imported and synchronized.`,
                 boardId
+            })
+        }
+
+        // ── 3. CREATE NEW PAPER PATTERN (TENANT CUSTOM) ──────────────────
+        if (action === 'CREATE_PAPER_PATTERN') {
+            const { name, category = 'School', exam_type = 'Mixed', duration_minutes = 180, total_marks = 80, instructions = [], description = '', sections = [] } = payload || {}
+            if (!name?.trim()) {
+                return NextResponse.json({ error: 'Paper pattern name is required' }, { status: 400 })
+            }
+
+            const cleanName = name.trim()
+            const { rows: newPattern } = await query(
+                `INSERT INTO public.paper_templates (
+                    name, category, exam_type, duration_minutes, total_marks, instructions, description, is_global, is_active, created_by, version
+                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, $8, 1) RETURNING id`,
+                [
+                    cleanName,
+                    category,
+                    exam_type,
+                    Number(duration_minutes) || 180,
+                    Number(total_marks) || 80,
+                    JSON.stringify(Array.isArray(instructions) ? instructions : [instructions].filter(Boolean)),
+                    description || null,
+                    tenantId
+                ]
+            )
+            const templateId = newPattern[0].id
+
+            // Insert sections & question rules if provided
+            if (Array.isArray(sections) && sections.length > 0) {
+                for (let si = 0; si < sections.length; si++) {
+                    const sec = sections[si]
+                    const { rows: newSec } = await query(
+                        `INSERT INTO public.template_sections (
+                            template_id, section_name, section_type, optional_flag, instructions, order_index
+                         ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+                        [
+                            templateId,
+                            sec.section_name || `Section ${String.fromCharCode(65 + si)}`,
+                            sec.section_type || 'Mixed',
+                            Boolean(sec.optional_flag),
+                            sec.instructions || '',
+                            si
+                        ]
+                    )
+                    const secId = newSec[0].id
+                    if (Array.isArray(sec.rules) && sec.rules.length > 0) {
+                        for (let ri = 0; ri < sec.rules.length; ri++) {
+                            const r = sec.rules[ri]
+                            await query(
+                                `INSERT INTO public.section_question_rules (
+                                    section_id, question_type, num_questions, marks_per_question, negative_marks,
+                                    difficulty_easy_pct, difficulty_medium_pct, difficulty_hard_pct, internal_choice, order_index
+                                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+                                [
+                                    secId,
+                                    r.question_type || 'MCQ',
+                                    Number(r.num_questions) || 1,
+                                    Number(r.marks_per_question) || 1,
+                                    Number(r.negative_marks) || 0,
+                                    Number(r.difficulty_easy_pct) || 30,
+                                    Number(r.difficulty_medium_pct) || 50,
+                                    Number(r.difficulty_hard_pct) || 20,
+                                    Boolean(r.internal_choice),
+                                    ri
+                                ]
+                            )
+                        }
+                    }
+                }
+            }
+
+            return NextResponse.json({
+                success: true,
+                message: `Paper pattern "${cleanName}" created successfully.`,
+                templateId
+            })
+        }
+
+        // ── 4. UPDATE PAPER PATTERN ──────────────────────────────────────
+        if (action === 'UPDATE_PAPER_PATTERN') {
+            const { id, name, category, exam_type, duration_minutes, total_marks, instructions, description, sections } = payload || {}
+            if (!id) return NextResponse.json({ error: 'Pattern ID is required' }, { status: 400 })
+            if (!name?.trim()) return NextResponse.json({ error: 'Pattern name is required' }, { status: 400 })
+
+            const cleanName = name.trim()
+            const { rows: updated } = await query(
+                `UPDATE public.paper_templates
+                 SET name = $1, category = $2, exam_type = $3, duration_minutes = $4, total_marks = $5,
+                     instructions = $6, description = $7, version = COALESCE(version, 1) + 1, updated_at = NOW()
+                 WHERE id = $8 AND (created_by = $9 OR is_global = false)
+                 RETURNING id`,
+                [
+                    cleanName,
+                    category || 'School',
+                    exam_type || 'Mixed',
+                    Number(duration_minutes) || 180,
+                    Number(total_marks) || 80,
+                    JSON.stringify(Array.isArray(instructions) ? instructions : [instructions].filter(Boolean)),
+                    description || null,
+                    id,
+                    tenantId
+                ]
+            )
+
+            if (updated.length === 0) {
+                return NextResponse.json({ error: 'Pattern not found or cannot be modified directly.' }, { status: 404 })
+            }
+
+            // Replace sections & rules
+            if (Array.isArray(sections)) {
+                await query(`DELETE FROM public.template_sections WHERE template_id = $1`, [id])
+                for (let si = 0; si < sections.length; si++) {
+                    const sec = sections[si]
+                    const { rows: newSec } = await query(
+                        `INSERT INTO public.template_sections (
+                            template_id, section_name, section_type, optional_flag, instructions, order_index
+                         ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+                        [
+                            id,
+                            sec.section_name || `Section ${String.fromCharCode(65 + si)}`,
+                            sec.section_type || 'Mixed',
+                            Boolean(sec.optional_flag),
+                            sec.instructions || '',
+                            si
+                        ]
+                    )
+                    const secId = newSec[0].id
+                    if (Array.isArray(sec.rules)) {
+                        for (let ri = 0; ri < sec.rules.length; ri++) {
+                            const r = sec.rules[ri]
+                            await query(
+                                `INSERT INTO public.section_question_rules (
+                                    section_id, question_type, num_questions, marks_per_question, negative_marks,
+                                    difficulty_easy_pct, difficulty_medium_pct, difficulty_hard_pct, internal_choice, order_index
+                                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+                                [
+                                    secId,
+                                    r.question_type || 'MCQ',
+                                    Number(r.num_questions) || 1,
+                                    Number(r.marks_per_question) || 1,
+                                    Number(r.negative_marks) || 0,
+                                    Number(r.difficulty_easy_pct) || 30,
+                                    Number(r.difficulty_medium_pct) || 50,
+                                    Number(r.difficulty_hard_pct) || 20,
+                                    Boolean(r.internal_choice),
+                                    ri
+                                ]
+                            )
+                        }
+                    }
+                }
+            }
+
+            return NextResponse.json({
+                success: true,
+                message: `Paper pattern "${cleanName}" updated successfully.`
+            })
+        }
+
+        // ── 5. CLONE & CUSTOMIZE OWNER PATTERN FOR TENANT ─────────────────
+        if (action === 'CLONE_AND_CUSTOMIZE_PATTERN') {
+            const { pattern_id, custom_name } = payload || {}
+            if (!pattern_id) return NextResponse.json({ error: 'Source pattern ID is required' }, { status: 400 })
+
+            const { rows: srcRows } = await query(`SELECT * FROM public.paper_templates WHERE id = $1`, [pattern_id])
+            if (srcRows.length === 0) return NextResponse.json({ error: 'Source pattern not found' }, { status: 404 })
+            const src = srcRows[0]
+
+            const cloneName = (custom_name || `${src.name} (Customized)`).trim()
+            const { rows: cloneRows } = await query(
+                `INSERT INTO public.paper_templates (
+                    name, category, exam_type, duration_minutes, total_marks, instructions, description,
+                    is_global, is_active, created_by, version, cloned_from
+                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, $8, 1, $9) RETURNING id`,
+                [
+                    cloneName,
+                    src.category,
+                    src.exam_type,
+                    src.duration_minutes,
+                    src.total_marks,
+                    JSON.stringify(src.instructions || []),
+                    src.description,
+                    tenantId,
+                    src.id
+                ]
+            )
+            const cloneId = cloneRows[0].id
+
+            // Copy sections & rules from source
+            const { rows: srcSections } = await query(
+                `SELECT * FROM public.template_sections WHERE template_id = $1 ORDER BY order_index ASC`,
+                [src.id]
+            )
+            for (const sec of srcSections) {
+                const { rows: newSec } = await query(
+                    `INSERT INTO public.template_sections (
+                        template_id, section_name, section_type, optional_flag, instructions, order_index
+                     ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+                    [cloneId, sec.section_name, sec.section_type, sec.optional_flag, sec.instructions, sec.order_index]
+                )
+                const newSecId = newSec[0].id
+                const { rows: srcRules } = await query(
+                    `SELECT * FROM public.section_question_rules WHERE section_id = $1 ORDER BY order_index ASC`,
+                    [sec.id]
+                )
+                for (const r of srcRules) {
+                    await query(
+                        `INSERT INTO public.section_question_rules (
+                            section_id, question_type, num_questions, marks_per_question, negative_marks,
+                            difficulty_easy_pct, difficulty_medium_pct, difficulty_hard_pct, internal_choice, order_index
+                         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+                        [
+                            newSecId, r.question_type, r.num_questions, r.marks_per_question, r.negative_marks,
+                            r.difficulty_easy_pct, r.difficulty_medium_pct, r.difficulty_hard_pct, r.internal_choice, r.order_index
+                        ]
+                    )
+                }
+            }
+
+            return NextResponse.json({
+                success: true,
+                message: `Pattern customized as "${cloneName}".`,
+                clonedId: cloneId
+            })
+        }
+
+        // ── 6. DELETE PAPER PATTERN (TENANT CUSTOM) ──────────────────────
+        if (action === 'DELETE_PAPER_PATTERN') {
+            const { id } = payload || {}
+            if (!id) return NextResponse.json({ error: 'Pattern ID is required' }, { status: 400 })
+
+            await query(
+                `UPDATE public.paper_templates
+                 SET is_active = false, updated_at = NOW()
+                 WHERE id = $1 AND (created_by = $2 OR is_global = false)`,
+                [id, tenantId]
+            )
+
+            return NextResponse.json({
+                success: true,
+                message: 'Paper pattern deleted successfully.'
             })
         }
 

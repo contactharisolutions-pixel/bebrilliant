@@ -117,7 +117,7 @@ export default function AboutPage() {
         {
             number: '02',
             title: 'AI Capabilities Without Vendor Lock-In',
-            desc: 'Our Gemini 1.5 Pro paper generation engine delivers exam-ready MCQ, assertion-reasoning, and numerical questions from any topic in < 2 seconds. Your question bank belongs to you — fully exportable, always.',
+            desc: 'Our BeBrilliant AI Agent paper generation engine delivers exam-ready MCQ, assertion-reasoning, and numerical questions from any topic in < 2 seconds. Your question bank belongs to you — fully exportable, always.',
             proof: ['< 2s paper generation', "Bloom's Taxonomy difficulty AI", '500K+ question heritage bank'],
             color: '#1FAC63', accent: '#34D399', accentBg: 'rgba(52,211,153,0.08)',
         },
@@ -138,7 +138,7 @@ export default function AboutPage() {
     ]
 
     const COMPARISON_ROWS = [
-        { cap: 'AI Question Generation', bb: '✓ Gemini 1.5 Pro', manual: '✗ Not possible', lms: '△ Basic templates', foreign: '✓ Available' },
+        { cap: 'AI Question Generation', bb: '✓ BeBrilliant AI Agent', manual: '✗ Not possible', lms: '△ Basic templates', foreign: '✓ Available' },
         { cap: 'UPI / Indian Payments', bb: '✓ Native Razorpay', manual: '△ Cash only', lms: '✗ Foreign gateways', foreign: '✗ Stripe / foreign' },
         { cap: 'WhatsApp Affiliate Growth', bb: '✓ Built-in engine', manual: '✗ Not possible', lms: '✗ None', foreign: '✗ None' },
         { cap: 'DPDP Act 2023 Compliance', bb: '✓ Full compliance', manual: '✗ No audit trail', lms: '△ Partial', foreign: '✗ GDPR-aligned only' },

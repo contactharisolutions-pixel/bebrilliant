@@ -20,7 +20,7 @@ const SOLUTIONS_ITEMS = [
 
 const FEATURES_ITEMS = [
     { icon: ShieldCheck, title: 'Online Examination', desc: 'Create & conduct secure online tests', href: '/features/online-exam' },
-    { icon: BrainCircuit, title: 'AI Question Generator', desc: 'Generate papers using Gemini AI', href: '/features/ai-generator', badge: 'AI Powered' },
+    { icon: BrainCircuit, title: 'AI Question Generator', desc: 'Generate papers using BeBrilliant AI Agent', href: '/features/ai-generator', badge: 'AI Powered' },
     { icon: BarChart3, title: 'Results & Analytics', desc: 'Student, class & performance reports', href: '/features/results-analytics' },
     { icon: Users, title: 'Student Management', desc: 'Manage students, classes and batches', href: '/features/student-management' },
     { icon: FileText, title: 'Question Bank', desc: 'Create, import and manage question repositories', href: '/features/question-bank' },

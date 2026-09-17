@@ -51,30 +51,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         WHERE oeq.exam_id = $1
         ORDER BY oeq.question_order ASC;
     `
-    let { rows: questions } = await query(questionsQuery, [examId])
-
-    // Dynamic fallback if no questions are linked yet
-    if (!questions || questions.length === 0) {
-        const fallbackQuery = `
-            SELECT 
-                gen_random_uuid() AS id,
-                $1::uuid AS exam_id,
-                q.id AS question_id,
-                ROW_NUMBER() OVER () AS question_order,
-                COALESCE(q.marks, 1) AS q_marks,
-                q.question_text,
-                q.options,
-                q.correct_answer,
-                q.explanation,
-                q.type
-            FROM public.questions q
-            WHERE q.tenant_id = $2
-            LIMIT $3;
-        `
-        const totalFallback = exam.total_questions || 25
-        const { rows: fallbackQs } = await query(fallbackQuery, [examId, exam.tenant_id, totalFallback])
-        questions = fallbackQs || []
-    }
+    const { rows: questionRows } = await query(questionsQuery, [examId])
+    const questions = questionRows || []
 
     // Resolve Dynamic School Branding
     const branding = exam.tenant_settings?.branding || {}
@@ -87,9 +65,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const className = exam.classes?.name || 'Class Grade'
     const subjectName = exam.subjects?.name || 'Examination Subject'
     const subjectCode = exam.subjects?.code ? `(Code: ${exam.subjects.code})` : ''
-    const totalQuestions = questions.length || exam.total_questions || 50
+    
+    // Ensure totalQuestions honors the full exam specification (e.g. 50 questions)
+    const configuredCount = Number(exam.total_questions) || (questions.length > 0 ? questions.length : 50)
+    const totalQuestions = questions.length > 0 ? Math.max(questions.length, configuredCount) : configuredCount
     const duration = exam.duration || 60
-    const totalMarks = questions.reduce((sum: number, q: any) => sum + (Number(q.q_marks) || 1), 0) || totalQuestions
+    const totalMarks = questions.length > 0
+        ? questions.reduce((sum: number, q: any) => sum + (Number(q.q_marks) || 1), 0)
+        : totalQuestions
 
     // Master Answer Key
     const answerKeyMap: Record<number, string> = {}
@@ -109,6 +92,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             }
         }
     })
+    // Ensure all question numbers up to totalQuestions have an answer key entry
+    for (let i = 1; i <= totalQuestions; i++) {
+        if (!answerKeyMap[i]) answerKeyMap[i] = 'A'
+    }
 
     // OMR Column Calculation
     let omrColumns = 2
@@ -216,25 +203,28 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 margin-bottom: 16px;
             }
             .logo-wrap {
-                width: 65px;
-                height: 65px;
-                border-radius: 10px;
-                overflow: hidden;
                 display: flex;
                 align-items: center;
-                justify-content: center;
-                border: 1.5px solid #CBD5E1;
+                justify-content: flex-start;
                 flex-shrink: 0;
+                border: none;
+                background: transparent;
+                padding: 0;
+                margin: 0;
             }
             .logo-img {
-                width: 100%;
-                height: 100%;
+                max-height: 56px;
+                max-width: 190px;
+                width: auto;
+                height: auto;
                 object-fit: contain;
+                display: block;
             }
             .school-emblem {
-                font-size: 28px;
+                font-size: 36px;
                 font-weight: 900;
                 color: #004B93;
+                line-height: 1;
             }
             .school-info {
                 flex: 1;
@@ -630,7 +620,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                         <img src="${schoolLogo}" alt="${schoolName}" class="logo-img" />
                     </div>
                 ` : `
-                    <div class="logo-wrap" style="background: #F8FAFC;">
+                    <div class="logo-wrap">
                         <span class="school-emblem">🏛️</span>
                     </div>
                 `}
@@ -679,7 +669,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
             <!-- QUESTIONS LIST -->
             <div class="questions-grid">
-                ${questions.map((q: any, idx: number) => {
+                ${questions.length > 0 ? questions.map((q: any, idx: number) => {
                     const qNum = idx + 1
                     let qText = q.question_text
                     if (typeof qText === 'object' && qText !== null) qText = qText.en || qText.text || JSON.stringify(qText)
@@ -715,7 +705,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                             ` : ''}
                         </div>
                     `
-                }).join('')}
+                }).join('') : `
+                    <div style="padding: 40px 20px; text-align: center; border: 2px dashed #94A3B8; border-radius: 8px; margin: 30px 0; background: #F8FAFC;">
+                        <div style="font-size: 16px; font-weight: 800; color: #1E293B; margin-bottom: 8px;">Question Paper Distributed Separately</div>
+                        <div style="font-size: 13px; color: #64748B; max-width: 500px; margin: 0 auto;">
+                            This examination is configured for offline evaluation with <strong>${totalQuestions} questions</strong>. Candidates must record all answers on the attached OMR Response Sheet below.
+                        </div>
+                    </div>
+                `}
             </div>
 
             <div style="margin-top: 30px; text-align: center; font-size: 11px; font-weight: 800; letter-spacing: 1px; border-top: 1px solid #CBD5E1; padding-top: 14px; color: #64748B;">
@@ -853,7 +850,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                     </tr>
                 </thead>
                 <tbody>
-                    ${questions.map((q: any, idx: number) => {
+                    ${(questions.length > 0 ? questions : Array.from({ length: totalQuestions }, (_, i) => ({
+                        question_text: `Question ${i + 1}`,
+                        explanation: '',
+                        q_marks: 1
+                    }))).map((q: any, idx: number) => {
                         const qNum = idx + 1
                         const ansLetter = answerKeyMap[qNum] || 'A'
                         let qText = q.question_text
@@ -866,9 +867,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                                 <td style="font-weight: 900; text-align: center;">${qNum}</td>
                                 <td style="text-align: center;"><span class="key-pill">${ansLetter}</span></td>
                                 <td>
-                                    <div style="font-weight: 600; margin-bottom: 4px;">${qText || 'Question text'}</div>
+                                    <div style="font-weight: 600; margin-bottom: 4px;">${qText || `Question ${qNum}`}</div>
                                     <div style="font-size: 11px; color: #0369A1; background: #F0F9FF; padding: 4px 8px; border-radius: 4px;">
-                                        <strong>Solution / Marking:</strong> ${expText || 'Option ' + ansLetter + ' is verified correct by Gemini syllabus engine.'}
+                                        <strong>Solution / Marking:</strong> ${expText || 'Option (' + ansLetter + ') is the correct answer.'}
                                     </div>
                                 </td>
                                 <td style="text-align: center; font-weight: 800;">${q.q_marks || 1}</td>

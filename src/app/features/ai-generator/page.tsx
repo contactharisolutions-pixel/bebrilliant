@@ -22,7 +22,7 @@ export default function AIGeneratorPage() {
 
                     <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 10 }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255, 255, 255, 0.12)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#DDD6FE', marginBottom: 20 }}>
-                            <BrainCircuit size={14} /> Feature Highlight · Gemini AI Generator
+                            <BrainCircuit size={14} /> Feature Highlight · BeBrilliant AI Agent Generator
                         </div>
 
                         <h1 style={{ fontSize: 'clamp(30px, 3.8vw, 52px)', fontWeight: 800, lineHeight: 1.2, fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 18 }}>
@@ -30,7 +30,7 @@ export default function AIGeneratorPage() {
                         </h1>
 
                         <p style={{ fontSize: 17, color: '#C4B5FD', fontWeight: 500, lineHeight: 1.6, maxWidth: 740, margin: '0 auto 32px' }}>
-                            Powered by Gemini AI — instantly synthesize NCERT-aligned MCQs, subjective questions, numerical problems, and solution keys with customizable difficulty weights.
+                            Powered by BeBrilliant AI Agent — instantly synthesize NCERT-aligned MCQs, subjective questions, numerical problems, and solution keys with customizable difficulty weights.
                         </p>
 
                         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 14 }}>
@@ -193,7 +193,7 @@ export default function AIGeneratorPage() {
                 <section style={{ padding: '70px 5%', background: '#4C1D95', color: '#FFFFFF', textAlign: 'center' }}>
                     <div style={{ maxWidth: 750, margin: '0 auto' }}>
                         <h2 style={{ fontSize: 'clamp(26px, 3vw, 38px)', fontWeight: 800, fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 14 }}>
-                            Experience Gemini AI Paper Creation
+                            Experience BeBrilliant AI Agent Paper Creation
                         </h2>
                         <p style={{ fontSize: 16, color: '#DDD6FE', marginBottom: 28 }}>
                             Save 10+ hours weekly on test preparation and paper setting.

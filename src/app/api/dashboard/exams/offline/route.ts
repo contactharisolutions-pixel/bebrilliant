@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
             LEFT JOIN public.classes c ON oe.class_id = c.id
             LEFT JOIN public.subjects s ON oe.subject_id = s.id
             LEFT JOIN public.paper_templates pt ON oe.template_id = pt.id
-            WHERE oe.tenant_id = $1
+            WHERE oe.tenant_id = $1 AND oe.omr_template_id IS NULL AND (oe.title NOT ILIKE '%omr%' OR oe.title IS NULL)
             ORDER BY oe.created_at DESC;
         `
 
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
                 ) AS sections
             FROM public.paper_templates pt
             WHERE pt.is_active = true AND (pt.is_global = true OR pt.created_by = $1 OR pt.id IN (
-                SELECT template_id FROM public.offline_exams WHERE tenant_id = $1 AND template_id IS NOT NULL
+                SELECT template_id FROM public.offline_exams WHERE tenant_id = $1 AND template_id IS NOT NULL AND omr_template_id IS NULL
             ))
             ORDER BY pt.name ASC;
         `
@@ -113,10 +113,10 @@ export async function GET(request: NextRequest) {
             query(`SELECT id, name, code FROM public.subjects WHERE tenant_id = $1 ORDER BY name ASC`, [tenantId]),
             query(`
                 SELECT 
-                    (SELECT COUNT(*) FROM public.offline_exams WHERE tenant_id = $1) AS total_exams,
-                    (SELECT COUNT(*) FROM public.offline_exams WHERE tenant_id = $1 AND status = 'archived') AS archived_exams,
+                    (SELECT COUNT(*) FROM public.offline_exams WHERE tenant_id = $1 AND omr_template_id IS NULL AND (title NOT ILIKE '%omr%' OR title IS NULL)) AS total_exams,
+                    (SELECT COUNT(*) FROM public.offline_exams WHERE tenant_id = $1 AND status = 'archived' AND omr_template_id IS NULL AND (title NOT ILIKE '%omr%' OR title IS NULL)) AS archived_exams,
                     (SELECT COUNT(*) FROM public.questions WHERE tenant_id = $1) AS total_questions,
-                    (SELECT COALESCE(SUM(total_questions), 0) FROM public.offline_exams WHERE tenant_id = $1) AS printed_assets
+                    (SELECT COALESCE(SUM(total_questions), 0) FROM public.offline_exams WHERE tenant_id = $1 AND omr_template_id IS NULL AND (title NOT ILIKE '%omr%' OR title IS NULL)) AS printed_assets
             `, [tenantId])
         ])
 

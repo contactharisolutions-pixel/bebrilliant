@@ -92,7 +92,7 @@ export default function StudentPlatformPage() {
                                     icon: BrainCircuit,
                                     badge: 'AI Powered · Custom Mocks',
                                     title: 'Custom AI Question Paper & Exam Creator',
-                                    desc: 'Generate custom practice papers on demand by selecting your subject, specific chapters, question count, and difficulty level with Gemini AI.',
+                                    desc: 'Generate custom practice papers on demand by selecting your subject, specific chapters, question count, and difficulty level with BeBrilliant AI Agent.',
                                     bullets: [
                                         'Custom multi-chapter & topic test assembly',
                                         'Flexible question count & difficulty (Easy, Medium, Hard)',
@@ -157,7 +157,7 @@ export default function StudentPlatformPage() {
                                     icon: Sparkles,
                                     badge: 'Instant Feedback',
                                     title: 'AI Revision & Detailed Explanations',
-                                    desc: 'Review failed questions with Gemini AI step-by-step solution guides, concept hints, and formula memory cards.',
+                                    desc: 'Review failed questions with BeBrilliant AI Agent step-by-step solution guides, concept hints, and formula memory cards.',
                                     bullets: [
                                         'Step-by-step AI solution explanations',
                                         'Instant concept revision & formula drills',

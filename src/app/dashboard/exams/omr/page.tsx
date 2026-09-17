@@ -11,7 +11,7 @@ import {
     Sliders, RefreshCw, BarChart3, Users, PlusCircle, Check, HelpCircle,
     FileSpreadsheet, ArrowUpRight, Camera, Layers, Award, Clock,
     BookOpen, GraduationCap, Globe, Filter, CheckSquare, Square, BookMarked, Tag,
-    ChevronDown, ChevronUp
+    ChevronDown, ChevronUp, Pencil
 } from 'lucide-react'
 
 export default function OMRExamManager() {
@@ -110,6 +110,24 @@ export default function OMRExamManager() {
         marks?: number
     }>>([])
     const [createdAiExam, setCreatedAiExam] = useState<any>(null)
+    const [aiProgress, setAiProgress] = useState(0)
+    const [aiProgressStage, setAiProgressStage] = useState('')
+
+    // Edit Template State
+    const [isEditTemplateModalOpen, setIsEditTemplateModalOpen] = useState(false)
+    const [editingTemplate, setEditingTemplate] = useState<any>(null)
+    const [editTemplateForm, setEditTemplateForm] = useState({
+        name: '',
+        total_questions: 50,
+        options_per_question: 4,
+        columns: 2,
+        roll_digits: 8,
+        has_barcode: true,
+        has_subject_code: true,
+        negative_marking: false,
+        negative_value: 0.25
+    })
+    const [isUpdatingTemplate, setIsUpdatingTemplate] = useState(false)
 
     // Designer Form State
     const [designerForm, setDesignerForm] = useState({
@@ -261,9 +279,13 @@ export default function OMRExamManager() {
         fetchData()
     }, [fetchData])
 
-    // Filtered Exams
+    // Filtered Exams (Strictly OMR Evaluation Exams)
     const filteredExams = useMemo(() => {
         return exams.filter(ex => {
+            // Strictly require OMR template or OMR exam identity
+            const isOmr = Boolean(ex.omr_template_id || ex.title?.toLowerCase().includes('omr'))
+            if (!isOmr) return false
+
             const matchesSearch = ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 ex.subjects?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 ex.classes?.name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -349,26 +371,26 @@ export default function OMRExamManager() {
         }
         setIsScanningActive(true)
         setScanProgress(10)
-        setScanStage('Connecting high-speed optical feeder...')
+        setScanStage('Loading student answer sheets...')
 
         setTimeout(() => {
             setScanProgress(35)
-            setScanStage('Corner fiducial alignment & deskewing...')
+            setScanStage('Aligning and straightening sheets...')
         }, 800)
 
         setTimeout(() => {
             setScanProgress(65)
-            setScanStage('Barcoding decode & student seat mapping...')
+            setScanStage('Reading student roll numbers...')
         }, 1600)
 
         setTimeout(() => {
             setScanProgress(90)
-            setScanStage('Optical density bubble grading (99.8% precision)...')
+            setScanStage('Checking marks against answer key...')
         }, 2400)
 
         setTimeout(async () => {
             setScanProgress(100)
-            setScanStage('Batch evaluation completed!')
+            setScanStage('All sheets checked successfully!')
 
             try {
                 await fetch('/api/dashboard/exams/omr', {
@@ -689,6 +711,32 @@ export default function OMRExamManager() {
             return
         }
         setAiLoading(true)
+        setAiProgress(10)
+        setAiProgressStage('Connecting to BeBrilliant AI Agent & curriculum database...')
+
+        // Smoothly advance progress bar while AI generates questions
+        const progressTimer = setInterval(() => {
+            setAiProgress(prev => {
+                if (prev < 30) {
+                    setAiProgressStage('Connecting to BeBrilliant AI Agent & curriculum database...')
+                    return prev + 3.5
+                } else if (prev < 55) {
+                    setAiProgressStage("Formulating Bloom's taxonomy multiple-choice questions...")
+                    return prev + 2.2
+                } else if (prev < 78) {
+                    setAiProgressStage('Creating 4 clear options (A, B, C, D) & distractors...')
+                    return prev + 1.6
+                } else if (prev < 92) {
+                    setAiProgressStage('Generating automated answer keys & rationale explanations...')
+                    return prev + 1.1
+                } else if (prev < 97) {
+                    setAiProgressStage('Finalizing question paper & OMR sheet layout...')
+                    return prev + 0.3
+                }
+                return prev
+            })
+        }, 280)
+
         try {
             const currentClass = currentAiClassNode?.name || classes.find(c => c.id === aiExamForm.class_id)?.name || 'Class 7'
             const currentSubject = currentAiSubjectNode?.name || subjects.find(s => s.id === aiExamForm.subject_id)?.name || 'Science'
@@ -714,15 +762,23 @@ export default function OMRExamManager() {
             if (!res.ok) throw new Error(data.error || 'Failed to generate questions')
 
             if (data.questions && data.questions.length > 0) {
-                setAiQuestions(data.questions)
-                setAiStep('review')
-                showToast(`Generated ${data.questions.length} questions! Review and edit before approving.`, true)
+                clearInterval(progressTimer)
+                setAiProgress(100)
+                setAiProgressStage('Question paper created successfully!')
+
+                setTimeout(() => {
+                    setAiQuestions(data.questions)
+                    setAiStep('review')
+                    showToast(`Generated ${data.questions.length} questions with BeBrilliant AI Agent!`, true)
+                }, 350)
             } else {
                 throw new Error('No questions returned from generator')
             }
         } catch (err: any) {
+            clearInterval(progressTimer)
             showToast(err.message || 'Error generating questions', false)
         } finally {
+            clearInterval(progressTimer)
             setAiLoading(false)
         }
     }
@@ -775,6 +831,88 @@ export default function OMRExamManager() {
         }
     }
 
+    // Sheet Format (Template) Edit & Delete Handlers
+    const handleOpenEditTemplate = (tmpl: any) => {
+        setEditingTemplate(tmpl)
+        const config = tmpl.layout_config || {}
+        setEditTemplateForm({
+            name: tmpl.name || '',
+            total_questions: tmpl.total_questions || 50,
+            options_per_question: tmpl.options_per_question || 4,
+            columns: config.columns || 2,
+            roll_digits: config.roll_digits || 8,
+            has_barcode: config.barcode_enabled ?? true,
+            has_subject_code: config.has_subject_code ?? true,
+            negative_marking: config.has_negative_marking ?? false,
+            negative_value: config.negative_value || 0.25
+        })
+        setIsEditTemplateModalOpen(true)
+    }
+
+    const handleUpdateTemplate = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!editingTemplate || !editTemplateForm.name.trim()) {
+            showToast('Please enter a sheet format name', false)
+            return
+        }
+        setIsUpdatingTemplate(true)
+        try {
+            const res = await fetch('/api/dashboard/exams/omr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'UPDATE_TEMPLATE',
+                    payload: {
+                        id: editingTemplate.id,
+                        name: editTemplateForm.name,
+                        total_questions: editTemplateForm.total_questions,
+                        options_per_question: editTemplateForm.options_per_question,
+                        layout_config: {
+                            columns: editTemplateForm.columns,
+                            roll_digits: editTemplateForm.roll_digits,
+                            barcode_enabled: editTemplateForm.has_barcode,
+                            has_subject_code: editTemplateForm.has_subject_code,
+                            has_negative_marking: editTemplateForm.negative_marking,
+                            negative_value: editTemplateForm.negative_value
+                        }
+                    }
+                })
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed to update sheet format')
+
+            showToast('Sheet format updated successfully!', true)
+            setIsEditTemplateModalOpen(false)
+            setEditingTemplate(null)
+            fetchData()
+        } catch (err: any) {
+            showToast(err.message || 'Error updating sheet format', false)
+        } finally {
+            setIsUpdatingTemplate(false)
+        }
+    }
+
+    const handleDeleteTemplate = async (tmpl: any) => {
+        if (!confirm(`Are you sure you want to delete the "${tmpl.name}" sheet format?`)) return
+        try {
+            const res = await fetch('/api/dashboard/exams/omr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'DELETE_TEMPLATE',
+                    payload: { id: tmpl.id }
+                })
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed to delete sheet format')
+
+            showToast(`Sheet format "${tmpl.name}" deleted!`, true)
+            fetchData()
+        } catch (err: any) {
+            showToast(err.message || 'Error deleting sheet format', false)
+        }
+    }
+
     if (loading) {
         return (
             <div className="w-full min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8">
@@ -822,19 +960,19 @@ export default function OMRExamManager() {
                             <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/20 backdrop-blur-md">
                                 <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
                                 <span className="text-xs font-black tracking-widest text-sky-400 uppercase">
-                                    EXAMINATION & PRINT MANAGEMENT
+                                    School Exams & Print Center
                                 </span>
                             </div>
                             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
                                 Exams & OMR Sheets
                             </h1>
                             <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-normal">
-                                Create question papers with matching OMR response sheets in 1-click. Generate questions with Gemini AI, review and edit questions and answers, and print combined exam booklets with your school&apos;s logo and branding.
+                                Create offline exams, print question papers with matching OMR answer sheets together, and calculate student marks automatically.
                             </p>
                             <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300 pt-1">
-                                <span className="flex items-center gap-1.5"><Shield size={15} className="text-emerald-400" /> Dynamic School Logo & Branding</span>
-                                <span className="flex items-center gap-1.5"><Printer size={15} className="text-sky-400" /> 1-Click Unified Print (Paper + OMR)</span>
-                                <span className="flex items-center gap-1.5"><Sparkles size={15} className="text-amber-400" /> Gemini AI Automated Answer Key</span>
+                                <span className="flex items-center gap-1.5"><Shield size={15} className="text-emerald-400" /> Printed with School Logo & Header</span>
+                                <span className="flex items-center gap-1.5"><Printer size={15} className="text-sky-400" /> Print Question Paper & OMR Sheet Together</span>
+                                <span className="flex items-center gap-1.5"><Sparkles size={15} className="text-amber-400" /> Powered by BeBrilliant AI Agent</span>
                             </div>
                         </div>
 
@@ -844,7 +982,7 @@ export default function OMRExamManager() {
                                 className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-sm shadow-xl shadow-amber-950/40 border border-amber-300/40 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                             >
                                 <Sparkles size={18} />
-                                <span>Create Exam with AI</span>
+                                <span>Create with BeBrilliant AI Agent</span>
                             </button>
                             <button
                                 onClick={handleOpenCreateModal}
@@ -885,10 +1023,10 @@ export default function OMRExamManager() {
                             <Target size={26} />
                         </div>
                         <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Saved Sheet Formats</div>
+                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">OMR Sheet Formats</div>
                             <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalTemplates} Formats</div>
                             <div className="text-[11px] font-semibold text-sky-700 mt-1 flex items-center gap-1">
-                                <CheckCircle size={12} /> Ready for Print
+                                <CheckCircle size={12} /> Ready to Print
                             </div>
                         </div>
                     </div>
@@ -898,10 +1036,10 @@ export default function OMRExamManager() {
                             <UploadCloud size={26} />
                         </div>
                         <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Sheets Checked</div>
+                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Answer Sheets Checked</div>
                             <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalScanned} Sheets</div>
                             <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-                                <ArrowUpRight size={12} /> Auto Scanned
+                                <ArrowUpRight size={12} /> Auto Checked
                             </div>
                         </div>
                     </div>
@@ -911,10 +1049,10 @@ export default function OMRExamManager() {
                             <Shield size={26} />
                         </div>
                         <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Scanning Accuracy</div>
+                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Accuracy Rate</div>
                             <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.successRate}</div>
                             <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-                                <Check size={12} /> High Reliability
+                                <Check size={12} /> Verified Accurate
                             </div>
                         </div>
                     </div>
@@ -924,10 +1062,10 @@ export default function OMRExamManager() {
                             <Award size={26} />
                         </div>
                         <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Students Evaluated</div>
-                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalEvaluated} Graded</div>
+                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Students Scored</div>
+                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalEvaluated} Scored</div>
                             <div className="text-[11px] font-semibold text-purple-700 mt-1 flex items-center gap-1">
-                                <Users size={12} /> Marks Recorded
+                                <Users size={12} /> Marks Saved
                             </div>
                         </div>
                     </div>
@@ -937,10 +1075,10 @@ export default function OMRExamManager() {
                 <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-2 shadow-sm flex items-center gap-2 overflow-x-auto">
                     {[
                         { id: 'roster', label: 'All Exams', icon: Database, count: exams.length },
-                        { id: 'designer', label: 'Design Sheet Layout', icon: Sliders },
-                        { id: 'scanner', label: 'Scan & Check Sheets', icon: ScanLine, badge: 'Auto Checker' },
-                        { id: 'templates', label: 'Saved Sheet Formats', icon: Layers, count: templates.length },
-                        { id: 'analytics', label: 'Results & Reports', icon: BarChart3 }
+                        { id: 'designer', label: 'Create Custom OMR Sheet', icon: Sliders },
+                        { id: 'scanner', label: 'Check Student Answer Sheets', icon: ScanLine, badge: 'Auto Checker' },
+                        { id: 'templates', label: 'Ready-to-Use OMR Sheets', icon: Layers, count: templates.length },
+                        { id: 'analytics', label: 'Exam Results & Student Marks', icon: BarChart3 }
                     ].map(tab => {
                         const Icon = tab.icon
                         const isActive = activeTab === tab.id
@@ -1095,10 +1233,10 @@ export default function OMRExamManager() {
                                                                 <button
                                                                     onClick={() => window.open(`/api/dashboard/exams/omr/${ex.id}/print?mode=unified`, '_blank')}
                                                                     className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
-                                                                    title="Print Question Paper and OMR Sheet together in 1-click"
+                                                                    title="Print Question Paper and OMR Sheet together"
                                                                 >
                                                                     <Printer size={14} />
-                                                                    <span>Print Booklet</span>
+                                                                    <span>Print Paper & OMR</span>
                                                                 </button>
 
                                                                 {/* Edit Answer Key */}
@@ -1111,16 +1249,17 @@ export default function OMRExamManager() {
                                                                     <span>Answer Key</span>
                                                                 </button>
 
-                                                                {/* Scan / Check */}
+                                                                {/* Check Sheets */}
                                                                 <button
                                                                     onClick={() => {
                                                                         setSelectedExam(ex)
                                                                         setActiveTab('scanner')
                                                                     }}
-                                                                    className="p-2 rounded-lg bg-[#004B93] hover:bg-sky-800 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
-                                                                    title="Scan Student Sheets"
+                                                                    className="px-3 py-1.5 rounded-lg bg-[#004B93] hover:bg-sky-800 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1 cursor-pointer"
+                                                                    title="Check Student Answer Sheets"
                                                                 >
-                                                                    <ScanLine size={15} />
+                                                                    <ScanLine size={14} />
+                                                                    <span>Check Sheets</span>
                                                                 </button>
 
                                                                 {/* Delete */}
@@ -1364,18 +1503,18 @@ export default function OMRExamManager() {
                                 <div>
                                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-amber-50 text-amber-800 font-bold text-xs">
                                         <ScanLine size={14} />
-                                        <span>ACTIVE SCANNING ENGINE</span>
+                                        <span>SHEET CHECKER</span>
                                     </div>
                                     <h2 className="text-2xl font-black text-slate-900 mt-2">
-                                        AI Optical Recognition & Evaluation Desk
+                                        Check Student Answer Sheets
                                     </h2>
                                     <p className="text-slate-500 text-xs sm:text-sm mt-1">
-                                        Ingest high-speed batch scans or upload photos directly from school administrative tablets.
+                                        Upload scanned answer sheets or take photos with your mobile or tablet camera to calculate marks.
                                     </p>
                                 </div>
 
                                 <div className="flex items-center gap-3">
-                                    <label className="text-xs font-bold uppercase text-slate-500">Target Exam:</label>
+                                    <label className="text-xs font-bold uppercase text-slate-500">Selected Exam:</label>
                                     <select
                                         value={selectedExam?.id || ''}
                                         onChange={e => {
@@ -1399,9 +1538,9 @@ export default function OMRExamManager() {
                                         <div className="w-16 h-16 rounded-2xl bg-white shadow-md flex items-center justify-center text-[#004B93] mx-auto mb-4 border border-sky-100">
                                             <UploadCloud size={32} />
                                         </div>
-                                        <h3 className="text-lg font-black text-slate-900">Ingest Scanned Bubble Sheets</h3>
+                                        <h3 className="text-lg font-black text-slate-900">Upload Student Answer Sheets (PDF / Images)</h3>
                                         <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto">
-                                            Drop PDF bundles from your feeder scanner or high-res photos (JPG, PNG). The AI engine will align corner fiducials and evaluate student answers.
+                                            Upload scanned PDF files or student sheet photos (JPG, PNG). The system will automatically check each sheet against the answer key.
                                         </p>
 
                                         {isScanningActive ? (
@@ -1421,17 +1560,17 @@ export default function OMRExamManager() {
                                             <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
                                                 <button
                                                     onClick={handleTriggerBatchScan}
-                                                    className="px-6 py-3 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-sm shadow-md transition-all flex items-center gap-2"
+                                                    className="px-6 py-3 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-sm shadow-md transition-all flex items-center gap-2 cursor-pointer"
                                                 >
                                                     <ScanLine size={16} />
-                                                    <span>Run Automated Ingestion (32 Sheets)</span>
+                                                    <span>Check Sample Sheets (32 Sheets)</span>
                                                 </button>
                                                 <button
-                                                    onClick={() => showToast('Tablet Camera Scanner Ready', true)}
-                                                    className="px-6 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm border border-slate-300 shadow-sm transition-all flex items-center gap-2"
+                                                    onClick={() => showToast('Camera Scanner Ready', true)}
+                                                    className="px-6 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm border border-slate-300 shadow-sm transition-all flex items-center gap-2 cursor-pointer"
                                                 >
                                                     <Camera size={16} />
-                                                    <span>Capture via Tablet</span>
+                                                    <span>Scan with Camera</span>
                                                 </button>
                                             </div>
                                         )}
@@ -1440,16 +1579,16 @@ export default function OMRExamManager() {
                                     {/* PRECISION METRICS BANNER */}
                                     <div className="grid grid-cols-3 gap-4">
                                         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                                            <div className="text-xs text-slate-500 font-bold">Fiducial Tolerance</div>
-                                            <div className="text-lg font-black text-slate-900 mt-0.5">±15° Skew</div>
+                                            <div className="text-xs text-slate-500 font-bold">Page Tilt</div>
+                                            <div className="text-lg font-black text-slate-900 mt-0.5">Auto-Straighten</div>
                                         </div>
                                         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                                            <div className="text-xs text-slate-500 font-bold">Bubble Threshold</div>
-                                            <div className="text-lg font-black text-slate-900 mt-0.5">55% Shading</div>
+                                            <div className="text-xs text-slate-500 font-bold">Mark Detection</div>
+                                            <div className="text-lg font-black text-slate-900 mt-0.5">Dark Circles</div>
                                         </div>
                                         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                                            <div className="text-xs text-slate-500 font-bold">Barcode Support</div>
-                                            <div className="text-lg font-black text-emerald-600 mt-0.5">Auto-Mapped</div>
+                                            <div className="text-xs text-slate-500 font-bold">Roll Number Barcode</div>
+                                            <div className="text-lg font-black text-emerald-600 mt-0.5">Supported</div>
                                         </div>
                                     </div>
                                 </div>
@@ -1457,8 +1596,8 @@ export default function OMRExamManager() {
                                 {/* RIGHT: RECENT BATCH LOGS */}
                                 <div className="lg:col-span-5 bg-slate-50 rounded-2xl p-6 border border-slate-200 space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <h4 className="font-extrabold text-slate-900 text-sm">Batch Ingestion History</h4>
-                                        <span className="text-[11px] font-bold text-slate-500">{recentUploads.length} Batches Logged</span>
+                                        <h4 className="font-extrabold text-slate-900 text-sm">Recent Sheet Checking History</h4>
+                                        <span className="text-[11px] font-bold text-slate-500">{recentUploads.length} Batches Checked</span>
                                     </div>
 
                                     <div className="space-y-3">
@@ -1491,21 +1630,22 @@ export default function OMRExamManager() {
                 )}
 
                 {/* TAB 4: STANDARDIZED TEMPLATES GALLERY */}
+                {/* TAB 4: STANDARDIZED TEMPLATES GALLERY */}
                 {activeTab === 'templates' && (
                     <div className="w-full space-y-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-xl font-black text-slate-900">Standardized Bubble Sheet Catalog</h2>
+                                <h2 className="text-xl font-black text-slate-900">Ready-to-Use OMR Sheets</h2>
                                 <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
-                                    Pre-engineered, tested optical templates compliant with Indian and International school board mandates.
+                                    Standard 20, 30, 50, 60, and 100 question formats ready to print.
                                 </p>
                             </div>
                             <button
                                 onClick={() => setActiveTab('designer')}
-                                className="px-4 py-2 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs flex items-center gap-2"
+                                className="px-4 py-2 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs flex items-center gap-2 cursor-pointer"
                             >
                                 <PlusCircle size={15} />
-                                <span>Create Custom Blueprint</span>
+                                <span>Create Custom OMR Sheet</span>
                             </button>
                         </div>
 
@@ -1544,7 +1684,7 @@ export default function OMRExamManager() {
                                             </div>
                                         </div>
 
-                                        <div className="pt-6">
+                                        <div className="pt-6 space-y-2">
                                             <button
                                                 onClick={() => {
                                                     setNewExamForm(prev => ({
@@ -1554,11 +1694,32 @@ export default function OMRExamManager() {
                                                     }))
                                                     handleOpenCreateModal()
                                                 }}
-                                                className="w-full py-2.5 rounded-xl bg-slate-50 hover:bg-[#004B93] text-slate-700 hover:text-white font-bold text-xs border border-slate-200 transition-colors flex items-center justify-center gap-1.5"
+                                                className="w-full py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-sm transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                                             >
-                                                <span>Deploy with Exam</span>
+                                                <span>Use for New Exam</span>
                                                 <ArrowUpRight size={14} />
                                             </button>
+
+                                            <div className="flex items-center gap-2 pt-0.5">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleOpenEditTemplate(tmpl)}
+                                                    className="flex-1 py-1.5 px-3 rounded-lg bg-slate-100 hover:bg-sky-50 text-slate-700 hover:text-[#004B93] font-bold text-[11px] border border-slate-200 hover:border-sky-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                                                    title="Edit sheet format"
+                                                >
+                                                    <Pencil size={12} />
+                                                    <span>Edit Format</span>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteTemplate(tmpl)}
+                                                    className="py-1.5 px-2.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 font-bold text-[11px] border border-slate-200 hover:border-rose-200 transition-colors flex items-center justify-center cursor-pointer"
+                                                    title="Delete sheet format"
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 )
@@ -1572,23 +1733,23 @@ export default function OMRExamManager() {
                     <div className="w-full space-y-6">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                             <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
-                                <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Cohort Average Score</div>
+                                <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Class Average Score</div>
                                 <div className="text-3xl font-black text-slate-900 mt-2">78.4%</div>
                                 <div className="text-xs font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-                                    <ArrowUpRight size={13} /> +4.2% vs previous term
+                                    <ArrowUpRight size={13} /> +4.2% from previous exam
                                 </div>
                             </div>
 
                             <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
-                                <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Peak Performance</div>
+                                <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Highest Score</div>
                                 <div className="text-3xl font-black text-[#004B93] mt-2">98.0%</div>
-                                <div className="text-xs font-semibold text-slate-500 mt-1">Aarav Sharma • Grade 10 Math</div>
+                                <div className="text-xs font-semibold text-slate-500 mt-1">Aarav Sharma • Class 10 Math</div>
                             </div>
 
                             <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
-                                <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Scanner Audit Status</div>
+                                <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Sheet Checking Status</div>
                                 <div className="text-3xl font-black text-emerald-600 mt-2">100% Verified</div>
-                                <div className="text-xs font-semibold text-slate-500 mt-1">0 manual intervention flags</div>
+                                <div className="text-xs font-semibold text-slate-500 mt-1">All sheets verified accurately</div>
                             </div>
                         </div>
 
@@ -1596,15 +1757,15 @@ export default function OMRExamManager() {
                         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
                             <div className="p-6 border-b border-slate-200 flex items-center justify-between">
                                 <div>
-                                    <h3 className="font-black text-slate-900 text-lg">Candidate Evaluation Ledger</h3>
-                                    <p className="text-xs text-slate-500 mt-0.5">Direct optical sheet responses mapped to student gradebook.</p>
+                                    <h3 className="font-black text-slate-900 text-lg">Student Marks List</h3>
+                                    <p className="text-xs text-slate-500 mt-0.5">View individual marks and results scored on checked answer sheets.</p>
                                 </div>
                                 <button
                                     onClick={() => showToast('Exporting OMR Results to CSV...', true)}
-                                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-2"
+                                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-2 cursor-pointer"
                                 >
                                     <Download size={14} />
-                                    <span>Export Gradebook CSV</span>
+                                    <span>Download Marks (Excel / CSV)</span>
                                 </button>
                             </div>
 
@@ -1612,22 +1773,22 @@ export default function OMRExamManager() {
                                 <table className="w-full text-left border-collapse text-sm">
                                     <thead>
                                         <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                                            <th className="py-3.5 px-6">Candidate / Seat</th>
+                                            <th className="py-3.5 px-6">Student Name & Roll No.</th>
                                             <th className="py-3.5 px-6">Exam Title</th>
                                             <th className="py-3.5 px-6">Total Questions</th>
                                             <th className="py-3.5 px-6">Correct</th>
                                             <th className="py-3.5 px-6">Total Marks</th>
-                                            <th className="py-3.5 px-6">Optical Confidence</th>
+                                            <th className="py-3.5 px-6">Scan Quality</th>
                                             <th className="py-3.5 px-6 text-right">Result</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                         {[
-                                            { name: 'Aarav Sharma', seat: 'SEAT-101', exam: 'All-India STEM & Cyber Talent', total: 60, correct: 58, marks: 232, conf: 99.8, res: 'PASS' },
-                                            { name: 'Diya Kapoor', seat: 'SEAT-102', exam: 'All-India STEM & Cyber Talent', total: 60, correct: 54, marks: 212, conf: 99.4, res: 'PASS' },
-                                            { name: 'Rohan Gupta', seat: 'SEAT-103', exam: 'All-India STEM & Cyber Talent', total: 60, correct: 51, marks: 198, conf: 99.1, res: 'PASS' },
-                                            { name: 'Ananya Iyer', seat: 'SEAT-104', exam: 'Senior Physics Weekly Drill', total: 25, correct: 24, marks: 96, conf: 99.9, res: 'PASS' },
-                                            { name: 'Siddharth Nair', seat: 'SEAT-105', exam: 'Senior Physics Weekly Drill', total: 25, correct: 21, marks: 84, conf: 98.7, res: 'PASS' }
+                                            { name: 'Aarav Sharma', seat: 'ROLL-101', exam: 'Class 10 Science Midterm', total: 60, correct: 58, marks: 232, conf: 99.8, res: 'PASS' },
+                                            { name: 'Diya Kapoor', seat: 'ROLL-102', exam: 'Class 10 Science Midterm', total: 60, correct: 54, marks: 212, conf: 99.4, res: 'PASS' },
+                                            { name: 'Rohan Gupta', seat: 'ROLL-103', exam: 'Class 10 Science Midterm', total: 60, correct: 51, marks: 198, conf: 99.1, res: 'PASS' },
+                                            { name: 'Ananya Iyer', seat: 'ROLL-104', exam: 'Class 9 Physics Weekly Test', total: 25, correct: 24, marks: 96, conf: 99.9, res: 'PASS' },
+                                            { name: 'Siddharth Nair', seat: 'ROLL-105', exam: 'Class 9 Physics Weekly Test', total: 25, correct: 21, marks: 84, conf: 98.7, res: 'PASS' }
                                         ].map((r, i) => (
                                             <tr key={i} className="hover:bg-slate-50/60">
                                                 <td className="py-4 px-6 font-bold text-slate-900">
@@ -1637,7 +1798,7 @@ export default function OMRExamManager() {
                                                 <td className="py-4 px-6 font-semibold text-slate-700">{r.exam}</td>
                                                 <td className="py-4 px-6 text-slate-600">{r.total} Qs</td>
                                                 <td className="py-4 px-6 font-bold text-emerald-600">{r.correct}</td>
-                                                <td className="py-4 px-6 font-black text-slate-900">{r.marks} pts</td>
+                                                <td className="py-4 px-6 font-black text-slate-900">{r.marks} Marks</td>
                                                 <td className="py-4 px-6 font-semibold text-sky-700">{r.conf}%</td>
                                                 <td className="py-4 px-6 text-right">
                                                     <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -1683,11 +1844,11 @@ export default function OMRExamManager() {
                                     type="button"
                                     onClick={() => fetchBlueprintContext()}
                                     disabled={contextLoading}
-                                    title="Refire & reload published board patterns from registry"
+                                    title="Reload published syllabus and board patterns"
                                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
                                 >
                                     <RefreshCw size={13} className={contextLoading ? 'animate-spin text-[#004B93]' : ''} />
-                                    <span className="hidden md:inline">Refire Registry</span>
+                                    <span className="hidden md:inline">Refresh Syllabus</span>
                                 </button>
                                 <button
                                     type="button"
@@ -1711,8 +1872,8 @@ export default function OMRExamManager() {
                                                 1
                                             </div>
                                             <div>
-                                                <h4 className="font-black text-slate-900 text-sm sm:text-base">Syllabus Scope & Standard Board Pattern</h4>
-                                                <p className="text-xs text-slate-500">Pick board, class, subject & live exam patterns (e.g. Gujarat Board, CBSE, ICSE).</p>
+                                                <h4 className="font-black text-slate-900 text-sm sm:text-base">1. Select Class, Subject & Syllabus</h4>
+                                                <p className="text-xs text-slate-500">Choose board, class, subject, and syllabus chapters.</p>
                                             </div>
                                         </div>
                                     </div>
@@ -1785,8 +1946,8 @@ export default function OMRExamManager() {
                                                 2
                                             </div>
                                             <div>
-                                                <h4 className="font-black text-slate-900 text-sm sm:text-base">Examination Details & Bubble Sheet Architecture</h4>
-                                                <p className="text-xs text-slate-500">Configure title, duration, question budget and scanner grid template.</p>
+                                                <h4 className="font-black text-slate-900 text-sm sm:text-base">2. Exam Details & Sheet Format</h4>
+                                                <p className="text-xs text-slate-500">Set exam title, duration, total questions, and OMR sheet format.</p>
                                             </div>
                                         </div>
                                     </div>
@@ -1799,7 +1960,7 @@ export default function OMRExamManager() {
                                         <input
                                             type="text"
                                             required
-                                            placeholder="e.g. Grade 10 Midterm Mathematics OMR Assessment"
+                                            placeholder="e.g. Class 10 Midterm Mathematics Exam"
                                             value={newExamForm.title}
                                             onChange={e => setNewExamForm({ ...newExamForm, title: e.target.value })}
                                             className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#004B93] focus:border-[#004B93] focus:outline-none transition-all shadow-sm"
@@ -1810,7 +1971,7 @@ export default function OMRExamManager() {
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                         <div>
                                             <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">
-                                                Bubble Count (Questions)
+                                                Total Questions
                                             </label>
                                             <div className="relative">
                                                 <input
@@ -2006,13 +2167,13 @@ export default function OMRExamManager() {
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2.5">
-                                        <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Create Exam with Gemini AI</h3>
+                                        <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Create Exam with BeBrilliant AI Agent</h3>
                                         <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-50 text-amber-800 border border-amber-200">
-                                            Auto Answer Key & Matching OMR
+                                            Includes Question Paper & OMR Sheet
                                         </span>
                                     </div>
                                     <p className="text-xs text-slate-500 mt-0.5">
-                                        Generates questions, 4 multiple choice options, and answers. Review and edit inline, then print Question Paper and OMR sheet together.
+                                        BeBrilliant AI Agent creates syllabus-aligned questions with automated answer keys. Review and edit questions, then print Question Paper and OMR sheet together.
                                     </p>
                                 </div>
                             </div>
@@ -2191,14 +2352,14 @@ export default function OMRExamManager() {
                                                     </div>
                                                 </div>
 
-                                                {/* AI DIRECTIVES */}
+                                                {/* ADDITIONAL INSTRUCTIONS */}
                                                 <div className="pt-1">
                                                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
-                                                        Special Directives (Optional)
+                                                        Additional Instructions (Optional)
                                                     </label>
                                                     <textarea
                                                         rows={2}
-                                                        placeholder="e.g. Focus on reading comprehension, definitions, grammar..."
+                                                        placeholder="e.g. Focus on definitions, formulas, or grammar..."
                                                         value={aiExamForm.topic}
                                                         onChange={e => setAiExamForm({ ...aiExamForm, topic: e.target.value })}
                                                         className="w-full px-3 py-2 rounded-xl border border-slate-200 font-medium text-xs text-slate-800 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none placeholder:text-slate-400 shadow-2xs"
@@ -2403,6 +2564,43 @@ export default function OMRExamManager() {
                                     </div>
                                 </div>
 
+                                {/* PROGRESS BAR CARD WHEN GENERATING */}
+                                {aiLoading && (
+                                    <div className="shrink-0 px-6 sm:px-8 py-4 bg-gradient-to-r from-sky-50 via-blue-50 to-amber-50/60 border-t border-sky-200/80 space-y-2.5 animate-fadeIn">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                <div className="w-8 h-8 rounded-xl bg-[#004B93] text-white flex items-center justify-center shrink-0 shadow-xs">
+                                                    <Sparkles size={16} className="animate-spin text-amber-300" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="text-xs font-black text-slate-900 tracking-tight">
+                                                        BeBrilliant AI Agent is Generating Questions...
+                                                    </div>
+                                                    <div className="text-[11px] font-semibold text-sky-800 truncate">
+                                                        {aiProgressStage}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span className="hidden sm:inline text-[11px] font-bold text-slate-500">
+                                                    {aiExamForm.count} Questions
+                                                </span>
+                                                <span className="px-3 py-1 rounded-full bg-[#004B93] text-white font-black text-xs shadow-xs">
+                                                    {Math.round(aiProgress)}%
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Smooth Animated Progress Bar */}
+                                        <div className="w-full bg-slate-200/80 rounded-full h-3 overflow-hidden p-0.5 border border-slate-200/90">
+                                            <div
+                                                className="bg-gradient-to-r from-[#004B93] via-sky-500 to-amber-500 h-full rounded-full transition-all duration-300 ease-out shadow-xs"
+                                                style={{ width: `${Math.min(Math.max(aiProgress, 4), 100)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* STICKY MODAL FOOTER */}
                                 <div className="shrink-0 px-6 sm:px-8 py-4 bg-white border-t border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
                                     <div className="flex items-center gap-2 flex-wrap text-xs text-slate-600">
@@ -2439,12 +2637,12 @@ export default function OMRExamManager() {
                                             {aiLoading ? (
                                                 <>
                                                     <Loader2 size={16} className="animate-spin" />
-                                                    <span>Generating Questions with Gemini AI...</span>
+                                                    <span>Creating Questions ({Math.round(aiProgress)}%)...</span>
                                                 </>
                                             ) : (
                                                 <>
                                                     <Sparkles size={16} />
-                                                    <span>Generate Questions & Answers</span>
+                                                    <span>Generate Questions</span>
                                                 </>
                                             )}
                                         </button>
@@ -2458,7 +2656,7 @@ export default function OMRExamManager() {
                             <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
                                 <div className="p-4 bg-sky-50 border-b border-sky-100 flex items-center justify-between px-6 sm:px-8">
                                     <div className="text-xs text-sky-900 font-medium">
-                                        <span className="font-bold">Inline Editing Active:</span> Click any question or option text to edit. Click option badge <span className="font-bold">A, B, C, or D</span> to change the correct answer key.
+                                        <span className="font-bold">Review Questions:</span> Click any question or option text to edit. Click <span className="font-bold">A, B, C, or D</span> to change the correct answer.
                                     </div>
                                     <span className="text-xs font-black bg-white px-3 py-1 rounded-full text-[#004B93] border border-sky-200">
                                         {aiQuestions.length} Questions Ready
@@ -2612,7 +2810,7 @@ export default function OMRExamManager() {
                                         className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-950/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
                                     >
                                         {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                                        <span>Approve & Save Exam</span>
+                                        <span>Save Exam & Answer Key</span>
                                     </button>
                                 </div>
                             </div>
@@ -2638,7 +2836,7 @@ export default function OMRExamManager() {
                                         className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-sm shadow-xl flex items-center gap-2 cursor-pointer"
                                     >
                                         <Printer size={18} />
-                                        <span>Print Paper & OMR (Combined Booklet)</span>
+                                        <span>Print Question Paper & OMR Sheet</span>
                                     </button>
 
                                     {/* Print OMR Sheet Only */}
@@ -2677,14 +2875,14 @@ export default function OMRExamManager() {
                 </div>
             )}
 
-            {/* MODAL 3: BATCH INGESTION DRAWER */}
+            {/* MODAL 3: UPLOAD STUDENT ANSWER SHEETS */}
             {isUploadModalOpen && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
                     <div className="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div>
-                                <h3 className="text-xl font-black text-slate-900">Batch Feeder Ingestion</h3>
-                                <p className="text-xs text-slate-500 mt-0.5">Feed physical scans directly into the AI optical recognition engine.</p>
+                                <h3 className="text-xl font-black text-slate-900">Upload Student Answer Sheets</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">Upload scanned answer sheets or photos to calculate student marks.</p>
                             </div>
                             <button
                                 onClick={() => setIsUploadModalOpen(false)}
@@ -2696,7 +2894,7 @@ export default function OMRExamManager() {
 
                         <div className="space-y-4 text-sm">
                             <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Target Physical Examination</label>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Select Exam</label>
                                 <select
                                     value={selectedExam?.id || ''}
                                     onChange={e => {
@@ -2713,13 +2911,13 @@ export default function OMRExamManager() {
 
                             <div className="border-2 border-dashed border-sky-200 bg-sky-50/50 rounded-2xl p-8 text-center">
                                 <UploadCloud size={40} className="mx-auto text-[#004B93] mb-3" />
-                                <div className="font-bold text-slate-900 text-sm">Upload Multi-Page Scan PDF or Image Batch</div>
-                                <div className="text-xs text-slate-500 mt-1">Supports ADF Scanners (Fujitsu, Epson, Canon, HP) up to 200 sheets</div>
+                                <div className="font-bold text-slate-900 text-sm">Drop Scanned PDF or Answer Sheet Images Here</div>
+                                <div className="text-xs text-slate-500 mt-1">Works with any scanner or mobile photos (up to 200 sheets at once)</div>
                             </div>
 
                             <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                                <span className="font-bold text-slate-700">Estimated Processing Speed:</span>
-                                <span className="font-black text-sky-700">1,200 sheets / min (AI Engine)</span>
+                                <span className="font-bold text-slate-700">Automated Grading Speed:</span>
+                                <span className="font-black text-sky-700">Instant automatic checking & score calculation</span>
                             </div>
 
                             <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
@@ -2733,13 +2931,162 @@ export default function OMRExamManager() {
                                 <button
                                     type="button"
                                     onClick={handleTriggerBatchScan}
-                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold shadow-md flex items-center gap-2"
+                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold shadow-md flex items-center gap-2 cursor-pointer"
                                 >
                                     <ScanLine size={16} />
-                                    <span>Initiate Batch Evaluation</span>
+                                    <span>Start Checking Sheets</span>
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL 5: EDIT SHEET FORMAT */}
+            {isEditTemplateModalOpen && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
+                    <div className="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[#004B93]">
+                                    <Pencil size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900">Edit Sheet Format</h3>
+                                    <p className="text-xs text-slate-500 mt-0.5">Update layout, questions, and bubble settings for this format.</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsEditTemplateModalOpen(false)}
+                                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                            >
+                                <XCircle size={22} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleUpdateTemplate} className="space-y-4 text-sm">
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                    Sheet Format Name
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={editTemplateForm.name}
+                                    onChange={e => setEditTemplateForm({ ...editTemplateForm, name: e.target.value })}
+                                    placeholder="e.g. Standard 50-Question Layout"
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                        Total Questions
+                                    </label>
+                                    <select
+                                        value={editTemplateForm.total_questions}
+                                        onChange={e => setEditTemplateForm({ ...editTemplateForm, total_questions: Number(e.target.value) })}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
+                                    >
+                                        <option value={20}>20 Questions</option>
+                                        <option value={30}>30 Questions</option>
+                                        <option value={40}>40 Questions</option>
+                                        <option value={50}>50 Questions</option>
+                                        <option value={60}>60 Questions</option>
+                                        <option value={80}>80 Questions</option>
+                                        <option value={100}>100 Questions</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                        Options Per Question
+                                    </label>
+                                    <select
+                                        value={editTemplateForm.options_per_question}
+                                        onChange={e => setEditTemplateForm({ ...editTemplateForm, options_per_question: Number(e.target.value) })}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
+                                    >
+                                        <option value={4}>4 Choices (A, B, C, D)</option>
+                                        <option value={5}>5 Choices (A, B, C, D, E)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                        Column Grid
+                                    </label>
+                                    <select
+                                        value={editTemplateForm.columns}
+                                        onChange={e => setEditTemplateForm({ ...editTemplateForm, columns: Number(e.target.value) })}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
+                                    >
+                                        <option value={1}>1 Column (Compact)</option>
+                                        <option value={2}>2 Columns (Standard A4)</option>
+                                        <option value={3}>3 Columns (Multi-subject)</option>
+                                        <option value={4}>4 Columns (Dense)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                        Roll Number Digits
+                                    </label>
+                                    <select
+                                        value={editTemplateForm.roll_digits}
+                                        onChange={e => setEditTemplateForm({ ...editTemplateForm, roll_digits: Number(e.target.value) })}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
+                                    >
+                                        <option value={6}>6 Digits</option>
+                                        <option value={8}>8 Digits</option>
+                                        <option value={10}>10 Digits</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 pt-2">
+                                <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={editTemplateForm.has_barcode}
+                                        onChange={e => setEditTemplateForm({ ...editTemplateForm, has_barcode: e.target.checked })}
+                                        className="w-4 h-4 rounded text-[#004B93] focus:ring-[#004B93]"
+                                    />
+                                    <span className="text-xs font-bold text-slate-800">Roll No. Barcode</span>
+                                </label>
+
+                                <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={editTemplateForm.has_subject_code}
+                                        onChange={e => setEditTemplateForm({ ...editTemplateForm, has_subject_code: e.target.checked })}
+                                        className="w-4 h-4 rounded text-[#004B93] focus:ring-[#004B93]"
+                                    />
+                                    <span className="text-xs font-bold text-slate-800">Subject Code Field</span>
+                                </label>
+                            </div>
+
+                            <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsEditTemplateModalOpen(false)}
+                                    className="px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isUpdatingTemplate}
+                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                                >
+                                    {isUpdatingTemplate ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                                    <span>{isUpdatingTemplate ? 'Updating...' : 'Update Sheet Format'}</span>
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

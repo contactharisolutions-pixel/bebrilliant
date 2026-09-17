@@ -78,7 +78,7 @@ export default function SuccessStoriesPage() {
                                     stars: 5
                                 },
                                 {
-                                    quote: "Generating custom paper sets with Gemini AI used to take hours. Now I compile 4 distinct test sets with answer keys in under 5 minutes.",
+                                    quote: "Generating custom paper sets with BeBrilliant AI Agent used to take hours. Now I compile 4 distinct test sets with answer keys in under 5 minutes.",
                                     name: "Dr. Sunita Deshmukh",
                                     role: "Senior Physics Faculty, Pune",
                                     badge: "Educator",

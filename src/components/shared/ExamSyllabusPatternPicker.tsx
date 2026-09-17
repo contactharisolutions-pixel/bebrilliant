@@ -35,6 +35,7 @@ export interface BlueprintContextData {
         total_marks: number
         instructions: string[] | string
         description?: string
+        is_owner_pattern?: boolean
         sections: Array<{
             id: string
             section_name: string
@@ -51,6 +52,7 @@ export interface BlueprintContextData {
             }>
         }>
     }>
+    patterns?: any[]
     ownerCatalog: Array<{
         id: string
         name: string
@@ -320,9 +322,9 @@ export default function ExamSyllabusPatternPicker({
                                 <BookOpen size={18} />
                             </div>
                             <div>
-                                <h4 className="font-extrabold text-sm text-slate-900">Curriculum Sourcing & Syllabus Scope</h4>
+                                <h4 className="font-extrabold text-sm text-slate-900">Select Syllabus & Chapters</h4>
                                 <p className="text-xs text-slate-500">
-                                    Bound to active institutional syllabus (Owner Public, Manual, or Excel).
+                                    Choose your school's board, class, subject, and chapters for this exam.
                                 </p>
                             </div>
                         </div>
@@ -342,13 +344,13 @@ export default function ExamSyllabusPatternPicker({
                                         activeBoard.source_type === 'owner_public' ? 'bg-sky-100 text-sky-800' :
                                         activeBoard.source_type === 'excel' ? 'bg-emerald-100 text-emerald-800' : 'bg-purple-100 text-purple-800'
                                     }`}>
-                                        {activeBoard.source_type === 'owner_public' ? 'Owner Public' :
-                                         activeBoard.source_type === 'excel' ? 'Excel Import' : 'Manual'}
+                                        {activeBoard.source_type === 'owner_public' ? 'Board Standard' :
+                                         activeBoard.source_type === 'excel' ? 'Spreadsheet' : 'Custom'}
                                     </span>
                                 </div>
                             ) : (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                                    <AlertCircle size={13} /> No Active Board
+                                    <AlertCircle size={13} /> No Board Selected
                                 </span>
                             )}
 
@@ -356,10 +358,10 @@ export default function ExamSyllabusPatternPicker({
                                 type="button"
                                 onClick={() => setShowSyllabusManagerModal(true)}
                                 className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-[#004B93] text-[#004B93] text-xs font-bold bg-slate-50/70 hover:bg-blue-50/50 transition-all flex items-center gap-1 cursor-pointer"
-                                title="Change or Import Curriculum"
+                                title="Change Curriculum Board"
                             >
                                 <RefreshCw size={12} className={loadingContext ? 'animate-spin' : ''} />
-                                <span>Switch / Import</span>
+                                <span>Change Board</span>
                             </button>
                         </div>
                     </div>
@@ -602,9 +604,9 @@ export default function ExamSyllabusPatternPicker({
                                 <Layers size={18} />
                             </div>
                             <div>
-                                <h4 className="font-extrabold text-sm text-slate-900">Standard Board Exam Pattern</h4>
+                                <h4 className="font-extrabold text-sm text-slate-900">Select Exam Paper Pattern</h4>
                                 <p className="text-xs text-slate-500">
-                                    Fetched live from official Owner Public exam pattern registry.
+                                    Choose from official board patterns or your custom school patterns.
                                 </p>
                             </div>
                         </div>
@@ -664,6 +666,13 @@ export default function ExamSyllabusPatternPicker({
                                             </div>
 
                                             <div className="flex flex-wrap gap-1.5 text-[11px]">
+                                                <span className={`px-2 py-0.5 rounded-md font-bold ${
+                                                    pt.is_owner_pattern
+                                                        ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                                                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                }`}>
+                                                    {pt.is_owner_pattern ? 'Official Board' : 'School Custom'}
+                                                </span>
                                                 <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold">
                                                     {pt.category || 'School'}
                                                 </span>
@@ -708,9 +717,9 @@ export default function ExamSyllabusPatternPicker({
                     <div className="w-full max-w-2xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-7 space-y-5 max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
                             <div>
-                                <h3 className="text-lg font-black text-slate-900">Curriculum Sourcing Hub</h3>
+                                <h3 className="text-lg font-black text-slate-900">Select Board Curriculum</h3>
                                 <p className="text-xs text-slate-500">
-                                    Adopt standard public curriculum or import custom Excel spreadsheet.
+                                    Choose an official board curriculum or upload a spreadsheet for your school.
                                 </p>
                             </div>
                             <button
@@ -732,7 +741,7 @@ export default function ExamSyllabusPatternPicker({
                                 }`}
                             >
                                 <Sparkles size={14} />
-                                <span>Owner Public Catalog ({context?.ownerCatalog?.length || 0})</span>
+                                <span>Official Board Catalog ({context?.ownerCatalog?.length || 0})</span>
                             </button>
                             <button
                                 type="button"
@@ -742,7 +751,7 @@ export default function ExamSyllabusPatternPicker({
                                 }`}
                             >
                                 <FileSpreadsheet size={14} />
-                                <span>Excel / CSV Spreadsheet Upload</span>
+                                <span>Upload Spreadsheet (Excel / CSV)</span>
                             </button>
                         </div>
 
@@ -760,12 +769,12 @@ export default function ExamSyllabusPatternPicker({
                         {managerTab === 'catalog' && (
                             <div className="space-y-3">
                                 <p className="text-xs text-slate-500 font-medium">
-                                    Select an official curriculum to automatically synchronize institutional classes, subjects, and chapters:
+                                    Select an official curriculum to load your school's classes, subjects, and chapters:
                                 </p>
                                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                                     {(!context?.ownerCatalog || context.ownerCatalog.length === 0) ? (
                                         <div className="text-center py-8 text-xs text-slate-400">
-                                            No Owner Public Syllabuses available in catalog.
+                                            No board curriculums available in catalog.
                                         </div>
                                     ) : (
                                         context.ownerCatalog.map(board => (
@@ -791,7 +800,7 @@ export default function ExamSyllabusPatternPicker({
                                                     className="px-3.5 py-1.5 rounded-xl bg-[#004B93] hover:bg-blue-800 text-white font-bold text-xs shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                                                 >
                                                     {actionLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                                                    <span>1-Click Adopt</span>
+                                                    <span>Select for School</span>
                                                 </button>
                                             </div>
                                         ))

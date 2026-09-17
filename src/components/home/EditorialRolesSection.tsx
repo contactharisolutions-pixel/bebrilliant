@@ -39,7 +39,7 @@ export function EditorialRolesSection() {
             desc: 'Streamline operations, manage teacher assignments, configure online/OMR examinations, and handle academic logistics with automated result generation and fee oversight.',
             perks: [
                 'Teacher & class allocation matrix with RBAC',
-                'Bulk question bank import via CSV & Gemini AI',
+                'Bulk question bank import via CSV & BeBrilliant AI Agent',
                 'Automated scorecard generation and WhatsApp circulars',
                 'Comprehensive fee collection reconciliation & ledger'
             ],
@@ -54,9 +54,9 @@ export function EditorialRolesSection() {
             category: 'Educator Suite',
             icon: UserCheck,
             headline: 'Curriculum-aligned question generation, live proctoring, and student grading.',
-            desc: 'Generate custom exam papers with Gemini AI, monitor ongoing tests live, grade offline OMR sheets automatically, and track individual student learning trajectories.',
+            desc: 'Generate custom exam papers with BeBrilliant AI Agent, monitor ongoing tests live, grade offline OMR sheets automatically, and track individual student learning trajectories.',
             perks: [
-                'Gemini AI question paper authoring by Bloom’s taxonomy',
+                'BeBrilliant AI Agent question paper authoring by Bloom’s taxonomy',
                 'Real-time exam supervision and tab-switch detection',
                 'Per-student diagnostic performance view and weaknesses',
                 'Instant automated answer keys and step-by-step solutions'

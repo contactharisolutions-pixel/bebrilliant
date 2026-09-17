@@ -3,135 +3,152 @@ import { query } from '@/lib/db'
 import { verifyTenantStaff } from '@/lib/auth-server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-// Curated curriculum fallback question repository generator for Indian CBSE / ICSE boards
-function generateCurriculumQuestions(
-    subject: string,
-    topic: string,
-    questionType: 'objective' | 'subjective',
-    difficulty: 'easy' | 'medium' | 'hard',
-    count: number,
-    includeAnswers: boolean
-) {
-    const questions: any[] = []
-    const sub = subject.toLowerCase()
-    const cleanTopic = topic.trim() || 'Core Curriculum Concepts'
+// ── Master Gemini AI Question Generator for BeBrilliant Platform ──────────────
+// Strictly adheres to GEMINI_AI_QUESTION_PREPARATION_RULES.md and GEMINI_AI_QUESTION_PREPARATION_SKILL.md
+const GEMINI_MODELS_TO_TRY = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
 
-    const mathTemplates = [
-        {
-            q: `Find the value of x if 2x + 5 = 15 in the linear algebraic expression for ${cleanTopic}.`,
-            options: ["x = 5", "x = 10", "x = 2", "x = 7.5"],
-            ans: "x = 5",
-            exp: "Subtract 5 from both sides: 2x = 10. Divide by 2: x = 5.",
-            marks: 1
-        },
-        {
-            q: `Which of the following defines a quadratic polynomial relating to ${cleanTopic}?`,
-            options: ["P(x) = ax² + bx + c, a ≠ 0", "P(x) = ax + b", "P(x) = ax³ + bx² + c", "P(x) = a/x + b"],
-            ans: "P(x) = ax² + bx + c, a ≠ 0",
-            exp: "A polynomial of degree 2 with a non-zero leading coefficient is a quadratic polynomial.",
-            marks: 1
-        },
-        {
-            q: `Calculate the discriminant of the quadratic equation 2x² - 4x + 3 = 0.`,
-            options: ["-8 (No real roots)", "8 (Two real roots)", "0 (Equal roots)", "16"],
-            ans: "-8 (No real roots)",
-            exp: "D = b² - 4ac = (-4)² - 4(2)(3) = 16 - 24 = -8. Since D < 0, no real roots exist.",
-            marks: 2
-        },
-        {
-            q: `If the sum of first n terms of an arithmetic progression is given by S_n = 3n² + 5n, find its common difference.`,
-            options: ["d = 6", "d = 3", "d = 8", "d = 5"],
-            ans: "d = 6",
-            exp: "S_1 = a_1 = 8. S_2 = 3(4) + 10 = 22. a_2 = 22 - 8 = 14. Common difference d = a_2 - a_1 = 14 - 8 = 6.",
-            marks: 2
-        },
-        {
-            q: `State and prove the Fundamental Theorem of Arithmetic with an example from ${cleanTopic}.`,
-            type: 'subjective',
-            ans: "Every composite number can be expressed as the product of powers of primes, and this factorization is unique apart from the order of prime factors.",
-            exp: "Detailed proof includes prime decomposition, existence of factorization, and uniqueness using Euclid's lemma.",
-            marks: 3
-        }
-    ]
-
-    const scienceTemplates = [
-        {
-            q: `According to Newton's Second Law of Motion regarding ${cleanTopic}, the rate of change of momentum is directly proportional to:`,
-            options: ["Applied unbalanced force", "Inertia of the body", "Acceleration alone", "Total displacement"],
-            ans: "Applied unbalanced force",
-            exp: "Force is directly proportional to rate of change of linear momentum (F = dp/dt = ma).",
-            marks: 1
-        },
-        {
-            q: `What is the SI unit of electric potential difference in ${cleanTopic}?`,
-            options: ["Volt (V)", "Ampere (A)", "Ohm (Ω)", "Coulomb (C)"],
-            ans: "Volt (V)",
-            exp: "One volt is defined as the difference in electric potential between two points of a conducting wire when an electric current of one ampere dissipates one watt of power.",
-            marks: 1
-        },
-        {
-            q: `A concave mirror produces a real image of size twice the object size. What is the magnification?`,
-            options: ["-2", "+2", "+0.5", "-0.5"],
-            ans: "-2",
-            exp: "Real images formed by spherical mirrors are always inverted, so magnification m = -v/u = -2.",
-            marks: 2
-        },
-        {
-            q: `Explain the working principle and diagrammatic ray-tracing for total internal reflection in ${cleanTopic}.`,
-            type: 'subjective',
-            ans: "Total internal reflection occurs when a light ray traveling from an optically denser medium to a rarer medium strikes the interface at an angle of incidence greater than the critical angle.",
-            exp: "Critical angle definition, condition for incidence (i > c), and prism applications.",
-            marks: 3
-        }
-    ]
-
-    const generalTemplates = [
-        {
-            q: `Which fundamental principle governs the study of ${cleanTopic}?`,
-            options: ["Empirical verification and theoretical consistency", "Random speculative hypothesis", "Arbitrary historical preference", "Uncalibrated approximation"],
-            ans: "Empirical verification and theoretical consistency",
-            exp: "Scientific and academic domains rely on rigorous empirical observation and formal proof.",
-            marks: 1
-        },
-        {
-            q: `What is the primary significance of ${cleanTopic} within the modern academic curriculum?`,
-            options: ["Fostering analytical problem-solving and critical comprehension", "Memorization of raw values", "Elimination of foundational concepts", "Standardized guess-work"],
-            ans: "Fostering analytical problem-solving and critical comprehension",
-            exp: "Core syllabus aims to instill conceptual mastery and practical application capabilities.",
-            marks: 2
-        },
-        {
-            q: `Elaborate on the key steps required to analyze and resolve challenges in ${cleanTopic}.`,
-            type: 'subjective',
-            ans: "Structured analysis requires identifying given parameters, establishing governing equations or rules, evaluating edge conditions, and validating the final solution.",
-            exp: "Methodological framework: identification, deduction, calculation, and empirical verification.",
-            marks: 4
-        }
-    ]
-
-    const pool = sub.includes('math') ? mathTemplates : (sub.includes('physics') || sub.includes('science') || sub.includes('chem')) ? scienceTemplates : generalTemplates
-
-    for (let i = 0; i < count; i++) {
-        const item = pool[i % pool.length]
-        const isSubjective = questionType === 'subjective' || item.type === 'subjective'
-
-        questions.push({
-            id: `gen-q-${Date.now()}-${i + 1}`,
-            subject: subject,
-            topic: cleanTopic,
-            type: isSubjective ? 'subjective' : 'objective',
-            sub_type: isSubjective ? 'descriptive' : 'mcq',
-            difficulty: difficulty,
-            marks: isSubjective ? (difficulty === 'hard' ? 5 : 3) : (difficulty === 'hard' ? 2 : 1),
-            negative_marks: 0,
-            text: item.q,
-            options: isSubjective ? null : item.options,
-            correct_answer: includeAnswers ? item.ans : 'Answer available in evaluation key',
-            explanation: includeAnswers ? item.exp : 'Marking guide available on paper submission'
-        })
+async function generateQuestionsWithGemini(params: {
+    subject_name: string
+    class_name: string
+    syllabus_name: string
+    pattern_name?: string
+    section_name?: string
+    chapters: string[]
+    topics: string[]
+    count: number
+    marks: number
+    negative_marks: number
+    question_type: string
+    difficulty: string
+    language: string
+}) {
+    const apiKey = process.env.GEMINI_API_KEY
+    if (!apiKey) {
+        throw new Error('GEMINI_API_KEY is not configured in environment variables.')
     }
 
-    return questions
+    const {
+        subject_name,
+        class_name,
+        syllabus_name,
+        pattern_name,
+        section_name = 'Section A',
+        chapters,
+        topics,
+        count,
+        marks,
+        negative_marks,
+        question_type,
+        difficulty,
+        language
+    } = params
+
+    const combinedTopicStr = [
+        chapters.length > 0 ? `Chapters: ${chapters.join(', ')}` : '',
+        topics.length > 0 ? `Topics: ${topics.join(', ')}` : ''
+    ].filter(Boolean).join(' | ') || 'Core Prescribed Curriculum'
+
+    const prompt = `
+You are the Gemini AI Question Preparation Agent for the BeBrilliant Examination Platform, adhering strictly to Indian curriculum standards (CBSE / State Boards).
+
+Generate exactly ${count} distinct, high-quality, syllabus-aligned examination questions strictly adhering to the parameters below:
+
+ACADEMIC CONTEXT & BLUEPRINT:
+- Board / Curriculum: ${syllabus_name}
+- Class / Grade: ${class_name}
+- Subject: ${subject_name}
+- Target Chapters & Topics: ${combinedTopicStr}
+${pattern_name ? `- Exam Pattern: ${pattern_name}` : ''}
+- Section: ${section_name} (${marks} Marks per question, ${negative_marks} Negative Marks)
+- Question Format: ${question_type === 'subjective' ? 'Subjective (Short/Long Answer, Descriptive)' : 'Objective (Multiple Choice Questions with 4 distinct options)'}
+- Difficulty Level: ${difficulty} (easy = foundational concept, medium = standard school board level, hard = higher-order thinking skill / HOTS)
+- Medium / Language: ${language}
+
+MANDATORY RULES (Strictly Follow These Rules):
+1. EASY, SIMPLE, AND CLEAN ENGLISH (MANDATORY RULE 24 & SKILL 31):
+   - All questions and options MUST use short, direct, clear, and natural English suitable for Indian school students of ${class_name}.
+   - Use familiar school-level vocabulary. Ask one clear thing at a time with unambiguous wording.
+   - Strictly avoid unnecessary academic jargon, complex passive sentence structures, and decorative vocabulary.
+   - Difficulty must come from the concept and application, NEVER from difficult English.
+2. SYLLABUS & SUBJECT PRESERVATION (RULE 13):
+   - Every question MUST be strictly and exclusively for "${subject_name}" for ${class_name}.
+   - NEVER generate questions for Mathematics or any other subject when "${subject_name}" is requested.
+   - If chapters are specified (${chapters.join(', ') || 'prescribed syllabus'}), all questions must be derived from these chapters.
+3. FRESHNESS & NON-REPETITION (RULE 2):
+   - Generate fresh, original questions. Do not repeat question phrasing or standard clichés.
+4. ANSWER INTEGRITY (RULE 9 & 10):
+   - For MCQs: Provide exactly 4 realistic, plausible options. Exactly ONE option must be unambiguously correct.
+   - Provide a clear, student-friendly explanation showing the direct reasoning or solution step.
+5. NO HARDCODED OR PLACEHOLDER DATA:
+   - Generate authentic, accurate questions matching the syllabus.
+
+OUTPUT FORMAT:
+Respond ONLY with a valid JSON array of objects without any markdown wrappers (no \`\`\`json, no backticks, no comments).
+Exact schema for each item:
+[
+  {
+    "section": "${section_name}",
+    "subject": "${subject_name}",
+    "topic": "Name of specific chapter or topic",
+    "type": "${question_type}",
+    "sub_type": "${question_type === 'subjective' ? 'descriptive' : 'mcq'}",
+    "difficulty": "${difficulty}",
+    "marks": ${marks},
+    "negative_marks": ${negative_marks},
+    "text": "Clearly written question text in simple English",
+    "options": ${question_type === 'subjective' ? 'null' : '["Option A", "Option B", "Option C", "Option D"]'},
+    "correct_answer": "Exact text of the correct option",
+    "explanation": "Concise step-by-step rationale in simple English"
+  }
+]
+`
+
+    const genAI = new GoogleGenerativeAI(apiKey)
+    let lastErr: any = null
+
+    for (const modelName of GEMINI_MODELS_TO_TRY) {
+        try {
+            const model = genAI.getGenerativeModel({ model: modelName })
+            const result = await model.generateContent(prompt)
+            const text = result.response.text()
+            if (!text) continue
+
+            const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim()
+            const match = cleanJson.match(/\[[\s\S]*\]/)
+            const jsonStr = match ? match[0] : cleanJson
+            const questions = JSON.parse(jsonStr)
+
+            if (Array.isArray(questions) && questions.length > 0) {
+                // Ensure proper formatting, fields, and globally unique IDs
+                const secSlug = (section_name || 'sec').toLowerCase().replace(/[^a-z0-9]/g, '_')
+                const timestamp = Date.now()
+                return questions.map((q: any, idx: number) => {
+                    const uniqueSuffix = Math.random().toString(36).substring(2, 8)
+                    return {
+                        id: `gen_${secSlug}_${timestamp}_${idx + 1}_${uniqueSuffix}`,
+                        section: q.section || section_name,
+                        subject: q.subject || subject_name,
+                        topic: q.topic || combinedTopicStr,
+                        type: q.type || question_type,
+                        sub_type: q.sub_type || (question_type === 'subjective' ? 'descriptive' : 'mcq'),
+                        difficulty: q.difficulty || difficulty,
+                        marks: Number(q.marks) || marks,
+                        negative_marks: Number(q.negative_marks) || negative_marks,
+                        text: q.text || q.question_text || '',
+                        question_text: q.text || q.question_text || '',
+                        options: Array.isArray(q.options) ? q.options : (question_type === 'subjective' ? null : ['Option A', 'Option B', 'Option C', 'Option D']),
+                        correct_answer: q.correct_answer || '',
+                        explanation: q.explanation || ''
+                    }
+                })
+            }
+        } catch (err: any) {
+            lastErr = err
+            console.warn(`[GeminiAI] Model ${modelName} attempt failed:`, err?.message?.split('\n')[0])
+        }
+    }
+
+    throw new Error(lastErr?.message || 'Gemini AI was unable to generate questions. Please verify your connection or API key.')
 }
 
 export async function GET(request: NextRequest) {
@@ -279,79 +296,85 @@ export async function POST(request: NextRequest) {
 
         // 2. GENERATE TEST QUESTIONS
         if (action === 'GENERATE_QUESTIONS') {
-            const {
-                subject_name,
-                subject_id,
-                class_name,
-                topic,
-                question_type = 'objective',
-                difficulty = 'medium',
-                count = 5,
-                include_answers = true
-            } = payload
+            const p = payload || body || {}
 
-            const targetCount = Math.min(Math.max(Number(count) || 5, 1), 20)
-            const apiKey = process.env.GEMINI_API_KEY
+            // Extract subject name — never fallback to math if subject or syllabus is passed
+            const subject_name = (
+                p.subject_name ||
+                p.subject ||
+                (p.syllabus_name && !p.syllabus_name.toLowerCase().includes('board') ? p.syllabus_name : '') ||
+                'English'
+            ).trim()
 
-            if (apiKey) {
-                try {
-                    const genAI = new GoogleGenerativeAI(apiKey)
-                    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+            // Extract class, board, and pattern
+            const class_name = (p.class_name || p.class || p.target_class || 'Class 10').trim()
+            const syllabus_name = (p.board_name || p.board || p.syllabus_name || p.syllabus || 'Gujarat / CBSE Board').trim()
+            const pattern_name = (p.pattern_name || p.exam_pattern || p.pattern || '').trim()
 
-                    const prompt = `
-                        You are a senior academic question author for an Indian CBSE / ICSE high school.
-                        Generate exactly ${targetCount} unique, high-quality examination questions.
-                        
-                        Parameters:
-                        - Class / Grade: ${class_name || 'Standard 10'}
-                        - Subject: ${subject_name || 'General Science'}
-                        - Topic / Chapter: ${topic || 'Core Curriculum'}
-                        - Question Type: ${question_type === 'subjective' ? 'Subjective (Descriptive / Analytical)' : 'Objective (Multiple Choice Questions)'}
-                        - Difficulty Level: ${difficulty} (Easy = foundational, Medium = standard exam, Hard = higher-order thinking)
-                        
-                        Respond ONLY with a valid JSON array matching this exact schema:
-                        [
-                          {
-                            "id": "temp_id_1",
-                            "subject": "${subject_name || 'Subject'}",
-                            "topic": "${topic || 'Topic'}",
-                            "type": "${question_type}",
-                            "sub_type": "${question_type === 'subjective' ? 'descriptive' : 'mcq'}",
-                            "difficulty": "${difficulty}",
-                            "marks": ${question_type === 'subjective' ? (difficulty === 'hard' ? 5 : 3) : (difficulty === 'hard' ? 2 : 1)},
-                            "negative_marks": 0,
-                            "text": "The clearly written question text without prefix numbers",
-                            "options": ${question_type === 'subjective' ? 'null' : '["Option A text", "Option B text", "Option C text", "Option D text"]'},
-                            "correct_answer": "The correct option or model answer",
-                            "explanation": "Step-by-step marking guide and theoretical explanation"
-                          }
-                        ]
-                    `
+            // Extract section, marks, negative marks
+            const section_name = (p.section_name || p.section || 'Section A').trim()
+            const marks = Number(p.marks ?? p.mark ?? 1)
+            const negative_marks = Number(p.negative_marks ?? p.negMark ?? 0)
 
-                    const result = await model.generateContent(prompt)
-                    const text = result.response.text()
-                    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim()
-                    const generatedQuestions = JSON.parse(cleanJson)
+            // Extract chapters & topics
+            let chapters: string[] = []
+            if (Array.isArray(p.chapters)) chapters = p.chapters.filter(Boolean).map(String)
+            else if (typeof p.chapters === 'string') chapters = p.chapters.split(',').map((s: string) => s.trim()).filter(Boolean)
+            else if (p.chapter) chapters = [String(p.chapter).trim()]
 
-                    if (Array.isArray(generatedQuestions) && generatedQuestions.length > 0) {
-                        return NextResponse.json({ success: true, questions: generatedQuestions, source: 'gemini' })
-                    }
-                } catch (geminiError) {
-                    console.warn('Gemini API call failed, using curriculum generation fallback:', geminiError)
-                }
+            let topics: string[] = []
+            if (Array.isArray(p.topics)) topics = p.topics.filter(Boolean).map(String)
+            else if (typeof p.topics === 'string') topics = p.topics.split(',').map((s: string) => s.trim()).filter(Boolean)
+            else if (p.topic && typeof p.topic === 'string') {
+                topics = p.topic.split(',').map((s: string) => s.trim()).filter(Boolean)
             }
 
-            // Fallback to high quality curriculum generation
-            const fallbackQuestions = generateCurriculumQuestions(
-                subject_name || 'Pure Mathematics & Calculus',
-                topic || 'Core Curriculum Concepts',
-                question_type,
-                difficulty,
-                targetCount,
-                include_answers
-            )
+            // Extract question types and difficulty
+            const question_type = p.question_type || p.type || 'objective'
+            const difficulty = p.difficulty || 'medium'
+            const language = p.language || 'English'
 
-            return NextResponse.json({ success: true, questions: fallbackQuestions, source: 'curriculum_engine' })
+            // Extract exact requested count (capped to reasonable bounds for single LLM call)
+            const rawCount = p.count ?? p.total_nodes ?? p.num_questions ?? 10
+            const count = Math.min(Math.max(Number(rawCount) || 1, 1), 60)
+
+            try {
+                const questions = await generateQuestionsWithGemini({
+                    subject_name,
+                    class_name,
+                    syllabus_name,
+                    pattern_name,
+                    section_name,
+                    chapters,
+                    topics,
+                    count,
+                    marks,
+                    negative_marks,
+                    question_type,
+                    difficulty,
+                    language
+                })
+
+                return NextResponse.json({
+                    success: true,
+                    questions,
+                    count: questions.length,
+                    source: 'gemini',
+                    metadata: {
+                        subject: subject_name,
+                        class: class_name,
+                        board: syllabus_name,
+                        section: section_name,
+                        pattern: pattern_name
+                    }
+                })
+            } catch (err: any) {
+                console.error('[AI Generation Error]', err)
+                return NextResponse.json({
+                    success: false,
+                    error: err.message || 'AI generation failed. Please ensure GEMINI_API_KEY is valid and try again.'
+                }, { status: 500 })
+            }
         }
 
         // 3. SAVE QUESTIONS TO SCHOOL QUESTION BANK

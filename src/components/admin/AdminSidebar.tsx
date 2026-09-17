@@ -35,7 +35,6 @@ const NAV_GROUPS = [
             { label: 'Exams & OMR Sheets', icon: ScanLine, href: '/dashboard/exams/omr' },
             { label: 'Offline Paper Engine', icon: Printer, href: '/dashboard/exams/offline' },
             { label: 'Grade Answer Sheets', icon: FileText, href: '/dashboard/faculty/answer-grading' },
-            { label: 'AI Question Gen', icon: BrainCircuit, href: '/dashboard/ai' },
         ]
     },
     {

@@ -26,7 +26,7 @@ const CASE_STUDIES = [
             { val: '3.2x', label: 'Student Admissions via Referral' },
         ],
         challenge: 'Zenith Academy was struggling with server crashes during synchronized Sunday mock tests for 25,000+ JEE aspirants across 6 branches in Rajasthan. Physical paper evaluation took 4+ days, delaying rank feedback.',
-        solution: 'Migrated to BeBrilliant Enterprise Cloud with 300-PoP Edge CDN and Supabase Real-Time syncing. Deployed Gemini AI paper generation for 32 randomized set variants to eliminate test collusion.',
+        solution: 'Migrated to BeBrilliant Enterprise Cloud with 300-PoP Edge CDN and Supabase Real-Time syncing. Deployed BeBrilliant AI Agent paper generation for 32 randomized set variants to eliminate test collusion.',
         results: [
             'Instant AIR rank generation within 5 seconds of test completion',
             'Zero server latency or connection drops during 3-hour mock exam peak',

@@ -71,7 +71,7 @@ export default function BlogKnowledgePage() {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 28 }}>
                             {[
                                 {
-                                    title: "How Gemini AI is Revolutionizing CBSE & Entrance Exam Paper Setting",
+                                    title: "How BeBrilliant AI Agent is Revolutionizing CBSE & Entrance Exam Paper Setting",
                                     cat: "AI Assessment",
                                     read: "5 min read",
                                     desc: "Explore how Indian educators save 10+ hours weekly while maintaining strict NCERT blueprint alignment using AI generation.",

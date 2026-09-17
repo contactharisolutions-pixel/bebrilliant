@@ -80,7 +80,7 @@ export default function HelpCenterPage() {
                                     icon: Zap,
                                     title: "Creating Your First Exam",
                                     desc: "Step-by-step guide to generating AI question papers, setting test timers, and publishing exams.",
-                                    bullets: ["Gemini AI paper synthesis", "Custom timer & mark allocation", "Batch assignment & publishing"],
+                                    bullets: ["BeBrilliant AI Agent paper synthesis", "Custom timer & mark allocation", "Batch assignment & publishing"],
                                     color: "#059669",
                                     bg: "#ECFDF5"
                                 },
