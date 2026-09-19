@@ -166,6 +166,11 @@ export async function GET(request: NextRequest) {
                 name: tenantInfo.name,
                 multiBoardEnabled: Boolean(tenantInfo.multi_board_enabled),
                 subscriptionPlan: tenantInfo.subscription_plan
+            },
+            user: {
+                role: session.role || 'teacher',
+                isTeacher: session.role === 'teacher',
+                canManageSyllabus: ['owner', 'tenant_admin', 'admin'].includes(session.role || '')
             }
         })
     } catch (e: any) {
@@ -182,6 +187,25 @@ export async function POST(request: NextRequest) {
         const tenantId = session.tenant_id || '5cccb9be-5b4a-4143-8725-bc6061e337fa'
         const body = await request.json()
         const { action, payload } = body
+
+        // Restrict teachers to read-only access (teachers cannot create, edit, delete, or upload course syllabus)
+        const isTeacher = session.role === 'teacher'
+        const MUTATING_ACTIONS = [
+            'CREATE_NODE',
+            'UPDATE_NODE',
+            'DELETE_NODE',
+            'TOGGLE_NODE',
+            'BULK_UPLOAD_SYLLABUS',
+            'IMPORT_OWNER_SYLLABUS',
+            'SYNC_SYLLABUS_ACADEMY',
+            'REQUEST_MULTI_BOARD'
+        ]
+
+        if (isTeacher && MUTATING_ACTIONS.includes(action)) {
+            return NextResponse.json({
+                error: 'Permission Denied: Teachers do not have permission to create, edit, delete, or upload course syllabus. Please contact your school administrator.'
+            }, { status: 403 })
+        }
 
         // Check multi-board licensing status
         const { rows: tRows } = await query(

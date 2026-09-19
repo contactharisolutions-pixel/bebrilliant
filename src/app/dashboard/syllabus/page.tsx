@@ -7,9 +7,10 @@ import {
     Download, Upload, Eye, EyeOff, Edit3, Trash2, ChevronRight, ChevronDown,
     GraduationCap, Globe, BookMarked, FileSpreadsheet,
     FileText, Check, Plus, ArrowRight, AlertCircle, ShieldCheck,
-    HelpCircle, Sparkles, Building2, Zap, Award
+    HelpCircle, Sparkles, Building2, Zap, Award, Lock
 } from 'lucide-react'
 import Papa from 'papaparse'
+import { useIdentity } from '@/contexts/IdentityContext'
 
 // ── TYPES ─────────────────────────────────────────────────────────────
 type NodeType = 'board' | 'class' | 'subject' | 'chapter' | 'topic'
@@ -48,6 +49,20 @@ const TYPE_META: Record<NodeType, { label: string; badgeBg: string; badgeText: s
 }
 
 export default function SyllabusHubPage() {
+    // ── IDENTITY & PERMISSIONS ─────────────────────────────────────────
+    const { identity } = useIdentity()
+    const [userPermissions, setUserPermissions] = useState<{
+        role: string
+        isTeacher: boolean
+        canManageSyllabus: boolean
+    }>({
+        role: 'teacher',
+        isTeacher: false,
+        canManageSyllabus: true
+    })
+
+    const isTeacher = userPermissions.isTeacher || identity?.role === 'teacher'
+
     // ── STATE ─────────────────────────────────────────────────────────
     const [activeTab, setActiveTab] = useState<'structure' | 'owner_published' | 'upload'>('structure')
     const [loading, setLoading] = useState(true)
@@ -126,6 +141,7 @@ export default function SyllabusHubPage() {
             setNodes(loadedNodes)
             setOwnerPublished(data.ownerPublishedSyllabuses || [])
             if (data.metrics) setMetrics(data.metrics)
+            if (data.user) setUserPermissions(data.user)
 
             // Auto-expand first 2 levels (Board & Classes)
             const initialExpanded = new Set<string>()
@@ -204,6 +220,10 @@ export default function SyllabusHubPage() {
 
     // ── ITEM CRUD HANDLERS ────────────────────────────────────────────
     const handleSaveItem = async () => {
+        if (isTeacher) {
+            showToast('Permission Denied: Teachers cannot create or edit course syllabus.', false)
+            return
+        }
         if (!itemForm.name.trim()) {
             showToast('Please enter an item title', false)
             return
@@ -254,6 +274,10 @@ export default function SyllabusHubPage() {
     }
 
     const handleToggleNode = async (node: SyllabusNode) => {
+        if (isTeacher) {
+            showToast('Permission Denied: Teachers cannot modify course syllabus visibility.', false)
+            return
+        }
         try {
             const nextStatus = !node.is_active
             const res = await fetch('/api/dashboard/syllabus', {
@@ -275,6 +299,10 @@ export default function SyllabusHubPage() {
     }
 
     const handleDeleteNode = async () => {
+        if (isTeacher) {
+            showToast('Permission Denied: Teachers cannot delete course syllabus.', false)
+            return
+        }
         if (!deleteModal.id) return
         setSaving(true)
         try {
@@ -299,6 +327,10 @@ export default function SyllabusHubPage() {
 
     // ── ONE-CLICK IMPORT OWNER SYLLABUS ───────────────────────────────
     const handleOneClickImport = async (board: OwnerPublishedSyllabus) => {
+        if (isTeacher) {
+            showToast('Permission Denied: Only school administrators can import or change curriculum boards.', false)
+            return
+        }
         setSaving(true)
         try {
             const res = await fetch('/api/dashboard/syllabus', {
@@ -324,6 +356,10 @@ export default function SyllabusHubPage() {
 
     // ── SYNC SYLLABUS TO INSTITUTIONAL ACADEMY RECORDS ───────────────
     const handleSyncAcademy = async () => {
+        if (isTeacher) {
+            showToast('Permission Denied: Only school administrators can sync curriculum with academy records.', false)
+            return
+        }
         setSyncingAcademy(true)
         try {
             const res = await fetch('/api/dashboard/syllabus', {
@@ -451,6 +487,10 @@ export default function SyllabusHubPage() {
     }
 
     const handleCommitBulkUpload = async () => {
+        if (isTeacher) {
+            showToast('Permission Denied: Teachers cannot upload new syllabus.', false)
+            return
+        }
         if (bulkRows.length === 0) {
             showToast('No valid rows available to import', false)
             return
@@ -551,77 +591,87 @@ export default function SyllabusHubPage() {
                         )}
                     </div>
 
-                    {/* Right: Administrative Actions */}
-                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                        {/* Visibility Toggle */}
-                        <button
-                            onClick={() => handleToggleNode(node)}
-                            className={`p-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all ${
-                                node.is_active
-                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                                    : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
-                            }`}
-                            title={node.is_active ? 'Visible in Student App & Portal' : 'Hidden from Student App & Portal'}
-                        >
-                            {node.is_active ? (
-                                <>
-                                    <Eye className="w-3.5 h-3.5 text-emerald-600" />
-                                    <span className="hidden xl:inline text-[11px]">Visible</span>
-                                </>
-                            ) : (
-                                <>
-                                    <EyeOff className="w-3.5 h-3.5" />
-                                    <span className="hidden xl:inline text-[11px]">Hidden</span>
-                                </>
-                            )}
-                        </button>
+                    {/* Right: Administrative Actions or Teacher Read-Only Status */}
+                    {!isTeacher ? (
+                        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                            {/* Visibility Toggle */}
+                            <button
+                                onClick={() => handleToggleNode(node)}
+                                className={`p-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all ${
+                                    node.is_active
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                        : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+                                }`}
+                                title={node.is_active ? 'Visible in Student App & Portal' : 'Hidden from Student App & Portal'}
+                            >
+                                {node.is_active ? (
+                                    <>
+                                        <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                                        <span className="hidden xl:inline text-[11px]">Visible</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <EyeOff className="w-3.5 h-3.5" />
+                                        <span className="hidden xl:inline text-[11px]">Hidden</span>
+                                    </>
+                                )}
+                            </button>
 
-                        {/* Add Child Level Button */}
-                        {nextChildType && (
+                            {/* Add Child Level Button */}
+                            {nextChildType && (
+                                <button
+                                    onClick={() => {
+                                        setItemModal({
+                                            open: true,
+                                            mode: 'add',
+                                            nodeType: nextChildType!,
+                                            parent: node
+                                        })
+                                        setItemForm({ name: '', order_index: children.length + 1 })
+                                    }}
+                                    className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-medium flex items-center gap-1 transition-colors"
+                                    title={`Add ${TYPE_META[nextChildType].label}`}
+                                >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    <span className="hidden lg:inline text-[11px]">Add {nextChildType}</span>
+                                </button>
+                            )}
+
+                            {/* Edit Item Button */}
                             <button
                                 onClick={() => {
                                     setItemModal({
                                         open: true,
-                                        mode: 'add',
-                                        nodeType: nextChildType!,
-                                        parent: node
+                                        mode: 'edit',
+                                        nodeType: node.type,
+                                        node: node
                                     })
-                                    setItemForm({ name: '', order_index: children.length + 1 })
+                                    setItemForm({ name: node.name, order_index: node.order_index || 0 })
                                 }}
-                                className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-medium flex items-center gap-1 transition-colors"
-                                title={`Add ${TYPE_META[nextChildType].label}`}
+                                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-colors"
+                                title="Edit Item Details"
                             >
-                                <Plus className="w-3.5 h-3.5" />
-                                <span className="hidden lg:inline text-[11px]">Add {nextChildType}</span>
+                                <Edit3 className="w-3.5 h-3.5" />
                             </button>
-                        )}
 
-                        {/* Edit Item Button */}
-                        <button
-                            onClick={() => {
-                                setItemModal({
-                                    open: true,
-                                    mode: 'edit',
-                                    nodeType: node.type,
-                                    node: node
-                                })
-                                setItemForm({ name: node.name, order_index: node.order_index || 0 })
-                            }}
-                            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-colors"
-                            title="Edit Item Details"
-                        >
-                            <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-
-                        {/* Delete Item Button */}
-                        <button
-                            onClick={() => setDeleteModal({ open: true, id: node.id, name: node.name })}
-                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors"
-                            title="Delete Item & Contents"
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                    </div>
+                            {/* Delete Item Button */}
+                            <button
+                                onClick={() => setDeleteModal({ open: true, id: node.id, name: node.name })}
+                                className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors"
+                                title="Delete Item & Contents"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2 shrink-0">
+                            <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
+                                node.is_active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'
+                            }`}>
+                                {node.is_active ? 'Active' : 'Hidden'}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Recursive Children Container */}
@@ -685,7 +735,7 @@ export default function SyllabusHubPage() {
                                         <span>
                                             {metrics.multiBoardEnabled ? 'Multi-Board Enterprise Plan' : 'Single Board License'}
                                         </span>
-                                        {!metrics.multiBoardEnabled && (
+                                        {!metrics.multiBoardEnabled && !isTeacher && (
                                             <span className="underline ml-1 text-amber-300 font-bold">Upgrade</span>
                                         )}
                                     </button>
@@ -709,15 +759,17 @@ export default function SyllabusHubPage() {
                                         <span>Download Active Excel</span>
                                     </button>
 
-                                    <button
-                                        onClick={handleSyncAcademy}
-                                        disabled={syncingAcademy || loading}
-                                        className="px-4 py-2 rounded-xl bg-indigo-500/30 hover:bg-indigo-500/45 text-indigo-100 text-xs font-semibold border border-indigo-400/40 backdrop-blur-sm flex items-center gap-2 transition-all shadow-sm"
-                                        title="Synchronize Classes and Subjects to School Academy & Faculty records"
-                                    >
-                                        <GraduationCap className={`w-4 h-4 text-indigo-300 ${syncingAcademy ? 'animate-bounce' : ''}`} />
-                                        <span>{syncingAcademy ? 'Syncing...' : 'Sync to Academy'}</span>
-                                    </button>
+                                    {!isTeacher && (
+                                        <button
+                                            onClick={handleSyncAcademy}
+                                            disabled={syncingAcademy || loading}
+                                            className="px-4 py-2 rounded-xl bg-indigo-500/30 hover:bg-indigo-500/45 text-indigo-100 text-xs font-semibold border border-indigo-400/40 backdrop-blur-sm flex items-center gap-2 transition-all shadow-sm"
+                                            title="Synchronize Classes and Subjects to School Academy & Faculty records"
+                                        >
+                                            <GraduationCap className={`w-4 h-4 text-indigo-300 ${syncingAcademy ? 'animate-bounce' : ''}`} />
+                                            <span>{syncingAcademy ? 'Syncing...' : 'Sync to Academy'}</span>
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
@@ -732,26 +784,56 @@ export default function SyllabusHubPage() {
                                     </p>
                                 </div>
 
-                                <div className="flex items-center gap-2.5 shrink-0">
-                                    <button
-                                        onClick={() => {
-                                            setItemModal({
-                                                open: true,
-                                                mode: 'add',
-                                                nodeType: 'class'
-                                            })
-                                            setItemForm({ name: '', order_index: metrics.totalClasses + 1 })
-                                        }}
-                                        className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"
-                                    >
-                                        <PlusCircle className="w-4 h-4" />
-                                        <span>+ Add Grade / Class</span>
-                                    </button>
-                                </div>
+                                {!isTeacher ? (
+                                    <div className="flex items-center gap-2.5 shrink-0">
+                                        <button
+                                            onClick={() => {
+                                                setItemModal({
+                                                    open: true,
+                                                    mode: 'add',
+                                                    nodeType: 'class'
+                                                })
+                                                setItemForm({ name: '', order_index: metrics.totalClasses + 1 })
+                                            }}
+                                            className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"
+                                        >
+                                            <PlusCircle className="w-4 h-4" />
+                                            <span>+ Add Grade / Class</span>
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 text-indigo-200 text-xs font-semibold backdrop-blur-sm">
+                                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                                        <span>Teacher View Mode</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
                 </div>
+
+                {/* Teacher Read-Only Scope Active Banner */}
+                {isTeacher && (
+                    <div className="bg-blue-50/90 border border-blue-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm animate-fadeIn">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                                <ShieldCheck className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <div className="text-xs font-bold uppercase tracking-wider text-blue-700 flex items-center gap-2">
+                                    <span>Teacher Academic Curriculum View</span>
+                                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                </div>
+                                <div className="text-xs sm:text-sm font-semibold text-slate-800 mt-0.5">
+                                    Curriculum syllabuses are centrally managed and published by School Administration. You have read-only access to browse, search, and download approved curricula.
+                                </div>
+                            </div>
+                        </div>
+                        <div className="text-[11px] font-bold text-blue-800 bg-blue-100/90 border border-blue-200 px-3 py-1.5 rounded-xl shrink-0 self-start sm:self-center shadow-xs">
+                            Read-Only Syllabus
+                        </div>
+                    </div>
+                )}
 
                 {/* ── 2. EXECUTIVE LIVE KPIS ───────────────────────────── */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -856,17 +938,19 @@ export default function SyllabusHubPage() {
                             </span>
                         </button>
 
-                        <button
-                            onClick={() => setActiveTab('upload')}
-                            className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all ${
-                                activeTab === 'upload'
-                                    ? 'bg-white text-slate-900 shadow-sm'
-                                    : 'text-slate-600 hover:text-slate-900'
-                            }`}
-                        >
-                            <FileSpreadsheet className="w-4 h-4 text-blue-600" />
-                            <span>Excel / CSV Manual Upload</span>
-                        </button>
+                        {!isTeacher && (
+                            <button
+                                onClick={() => setActiveTab('upload')}
+                                className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all ${
+                                    activeTab === 'upload'
+                                        ? 'bg-white text-slate-900 shadow-sm'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                            >
+                                <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+                                <span>Excel / CSV Manual Upload</span>
+                            </button>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -1080,18 +1164,25 @@ export default function SyllabusHubPage() {
 
                                     {/* Action Buttons */}
                                     <div className="flex flex-col gap-2 mt-6 pt-4 border-t border-slate-100">
-                                        <button
-                                            onClick={() => setImportConfirmModal({ open: true, board })}
-                                            disabled={saving}
-                                            className={`w-full py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-                                                board.is_active_for_tenant
-                                                    ? 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm'
-                                            }`}
-                                        >
-                                            <CheckCircle className="w-4 h-4" />
-                                            <span>{board.is_active_for_tenant ? 'Re-Apply Syllabus' : 'One-Click Import'}</span>
-                                        </button>
+                                        {!isTeacher ? (
+                                            <button
+                                                onClick={() => setImportConfirmModal({ open: true, board })}
+                                                disabled={saving}
+                                                className={`w-full py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                                                    board.is_active_for_tenant
+                                                        ? 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm'
+                                                }`}
+                                            >
+                                                <CheckCircle className="w-4 h-4" />
+                                                <span>{board.is_active_for_tenant ? 'Re-Apply Syllabus' : 'One-Click Import'}</span>
+                                            </button>
+                                        ) : (
+                                            <div className="w-full py-2.5 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 text-xs font-semibold flex items-center justify-center gap-2">
+                                                <Lock className="w-3.5 h-3.5 text-slate-400" />
+                                                <span>Curriculum Managed by School Admin</span>
+                                            </div>
+                                        )}
 
                                         <button
                                             onClick={() => handleDownloadBoardSyllabus(board)}
@@ -1109,6 +1200,23 @@ export default function SyllabusHubPage() {
 
                 {/* ─── TAB 3: MANUAL EXCEL / CSV UPLOAD ────────────────── */}
                 {activeTab === 'upload' && (
+                    isTeacher ? (
+                        <div className="p-12 rounded-2xl bg-white border border-slate-200 shadow-sm text-center space-y-3">
+                            <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
+                                <Lock className="w-7 h-7" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900">Curriculum Upload Restricted</h3>
+                            <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
+                                Teachers do not have permission to upload new syllabus spreadsheets. School curriculum uploads and modifications are reserved exclusively for school administrators.
+                            </p>
+                            <button
+                                onClick={() => setActiveTab('structure')}
+                                className="mt-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all"
+                            >
+                                Return to Curriculum Structure
+                            </button>
+                        </div>
+                    ) : (
                     <div className="space-y-6">
                         {/* Guided 3-Step Container */}
                         <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-6">
@@ -1310,13 +1418,14 @@ export default function SyllabusHubPage() {
                             )}
                         </div>
                     </div>
+                    )
                 )}
             </div>
 
             {/* ── 5. MODALS ────────────────────────────────────────────── */}
 
             {/* ─── MODAL 1: ADD / EDIT CURRICULUM ITEM ──────────────────── */}
-            {itemModal.open && (
+            {itemModal.open && !isTeacher && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
                         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
@@ -1391,7 +1500,7 @@ export default function SyllabusHubPage() {
             )}
 
             {/* ─── MODAL 2: ONE-CLICK IMPORT CONFIRMATION ───────────────── */}
-            {importConfirmModal.open && importConfirmModal.board && (
+            {importConfirmModal.open && !isTeacher && importConfirmModal.board && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
                         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
@@ -1557,7 +1666,7 @@ export default function SyllabusHubPage() {
             )}
 
             {/* ─── MODAL 4: DELETE CONFIRMATION ─────────────────────────── */}
-            {deleteModal.open && (
+            {deleteModal.open && !isTeacher && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl border border-slate-200 p-6 space-y-4">
                         <div className="p-3 rounded-full bg-rose-50 text-rose-600 w-fit">
