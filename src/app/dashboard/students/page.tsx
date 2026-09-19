@@ -774,6 +774,14 @@ export default function StudentDirectoryPage() {
                                                     </td>
                                                     <td className="py-4 px-5 text-right">
                                                         <div className="flex items-center justify-end gap-1.5">
+                                                            <Link
+                                                                href={`/dashboard/faculty/analytics/results-360?student_id=${st.id}`}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                className="p-1.5 rounded-lg text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 transition-colors"
+                                                                title="View 360° Performance Analytics"
+                                                            >
+                                                                <BarChart3 className="w-4 h-4" />
+                                                            </Link>
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation()
@@ -1216,14 +1224,16 @@ export default function StudentDirectoryPage() {
 
                         <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
                             <Link
-                                href="/dashboard/faculty/analytics/results-360"
-                                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                                href={`/dashboard/faculty/analytics/results-360?student_id=${selectedStudentForModal.id}`}
+                                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 bg-blue-50/80 hover:bg-blue-100/80 px-3 py-1.5 rounded-xl border border-blue-200/80 transition-all"
                             >
-                                Open Full Academic Analytics <ChevronRight className="w-3.5 h-3.5" />
+                                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                                <span>Open 360° Academic Dossier</span>
+                                <ChevronRight className="w-3.5 h-3.5" />
                             </Link>
                             <button
                                 onClick={() => setSelectedStudentForModal(null)}
-                                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all"
+                                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all"
                             >
                                 Done
                             </button>

@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
                 [session.user.id, tenantId]
             )
             if (tsClasses.length > 0) {
-                assignedClasses = tsClasses.map(r => r.name)
+                assignedClasses = tsClasses.map((r: any) => r.name)
             }
         }
 
@@ -196,7 +196,7 @@ export async function GET(request: NextRequest) {
 
         // Filter dropdowns for teachers to only include permitted classes and divisions
         if (isTeacher && assignedClasses.length > 0) {
-            availableClasses = availableClasses.filter(c => 
+            availableClasses = availableClasses.filter((c: any) => 
                 assignedClasses.some(ac => 
                     c.name === ac || 
                     c.name.toLowerCase().includes(ac.toLowerCase()) || 
@@ -207,10 +207,10 @@ export async function GET(request: NextRequest) {
                     )
                 )
             )
-            const allowedClassIds = new Set(availableClasses.map(c => c.id))
-            availableDivisions = availableDivisions.filter(d => allowedClassIds.has(d.class_id))
+            const allowedClassIds = new Set(availableClasses.map((c: any) => c.id))
+            availableDivisions = availableDivisions.filter((d: any) => allowedClassIds.has(d.class_id))
             if (assignedDivisions.length > 0) {
-                availableDivisions = availableDivisions.filter(d => 
+                availableDivisions = availableDivisions.filter((d: any) => 
                     assignedDivisions.some(ad => d.name === ad || d.name.toLowerCase().includes(ad.toLowerCase()))
                 )
             }
