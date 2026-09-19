@@ -45,6 +45,12 @@ interface StatsSummary {
     top_class: string
 }
 
+interface TeacherScope {
+    is_scoped: boolean
+    assigned_classes: string[]
+    assigned_divisions: string[]
+}
+
 export default function StudentDirectoryPage() {
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
@@ -60,6 +66,7 @@ export default function StudentDirectoryPage() {
     })
     const [classes, setClasses] = useState<{ id: string; name: string }[]>([])
     const [divisions, setDivisions] = useState<{ id: string; name: string; class_id: string }[]>([])
+    const [teacherScope, setTeacherScope] = useState<TeacherScope | null>(null)
 
     // Search & Filter states
     const [searchQuery, setSearchQuery] = useState('')
@@ -115,6 +122,7 @@ export default function StudentDirectoryPage() {
                 setStats(json.data.stats || stats)
                 setClasses(json.data.classes || [])
                 setDivisions(json.data.divisions || [])
+                setTeacherScope(json.data.teacherScope || null)
 
                 // Set default class if empty
                 if (json.data.classes?.length > 0 && !studentForm.school_class) {
@@ -555,6 +563,49 @@ export default function StudentDirectoryPage() {
             {/* ── TAB 1: STUDENT ROSTER DIRECTORY ───────────────────────── */}
             {activeTab === 'directory' && (
                 <div className="space-y-6 animate-fadeIn">
+                    {/* Teacher Scope Active Banner */}
+                    {teacherScope?.is_scoped && (
+                        teacherScope.assigned_classes.length > 0 ? (
+                            <div className="bg-blue-50/90 border border-blue-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                                        <ShieldCheck className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <div className="text-xs font-bold uppercase tracking-wider text-blue-700 flex items-center gap-2">
+                                            <span>Teacher Class Scope Active</span>
+                                            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                        </div>
+                                        <div className="text-xs sm:text-sm font-semibold text-slate-800 mt-0.5">
+                                            Restricted to your assigned classes:{' '}
+                                            <span className="text-blue-700 font-bold bg-blue-100/80 px-2 py-0.5 rounded-lg">
+                                                {teacherScope.assigned_classes.join(', ')}
+                                            </span>
+                                            {teacherScope.assigned_divisions.length > 0 && (
+                                                <span className="text-slate-600 font-medium ml-1">
+                                                    (Sections: {teacherScope.assigned_divisions.join(', ')})
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="text-[11px] font-bold text-blue-800 bg-blue-100/90 border border-blue-200 px-3 py-1.5 rounded-xl self-start sm:self-center shadow-xs">
+                                    Teacher Access Mode
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3.5 shadow-sm">
+                                <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <div className="text-sm font-bold text-amber-900">No Classes Assigned to Your Teacher Account</div>
+                                    <div className="text-xs text-amber-700 font-medium mt-1">
+                                        Your teacher profile does not currently have any classes assigned. Please contact your school administrator to configure your assigned classes in the Staff Directory.
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    )}
+
                     {/* Search & Dynamic Filter Controls */}
                     <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm">
                         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
@@ -780,6 +831,21 @@ export default function StudentDirectoryPage() {
                         </p>
                     </div>
 
+                    {/* Teacher Scope Notice in Add Form */}
+                    {teacherScope?.is_scoped && (
+                        teacherScope.assigned_classes.length === 0 ? (
+                            <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3 text-amber-800 text-xs font-semibold">
+                                <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                                <span>Enrollment Disabled: Your teacher account does not currently have any assigned classes. Please contact your school administrator.</span>
+                            </div>
+                        ) : (
+                            <div className="mb-6 p-3.5 rounded-xl bg-blue-50 border border-blue-200 flex items-center gap-2.5 text-blue-800 text-xs font-semibold">
+                                <ShieldCheck className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                <span>Teacher Scope Active: You can enroll students into your assigned classes: {teacherScope.assigned_classes.join(', ')}.</span>
+                            </div>
+                        )
+                    )}
+
                     <form onSubmit={handleCreateStudent} className="space-y-5">
                         {/* Name Fields */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -923,8 +989,8 @@ export default function StudentDirectoryPage() {
                             </button>
                             <button
                                 type="submit"
-                                disabled={isSavingStudent}
-                                className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow transition-all flex items-center gap-2 active:scale-95 disabled:opacity-60"
+                                disabled={isSavingStudent || (Boolean(teacherScope?.is_scoped) && (teacherScope?.assigned_classes.length ?? 0) === 0)}
+                                className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow transition-all flex items-center gap-2 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                                 {isSavingStudent ? (
                                     <>
@@ -962,6 +1028,27 @@ export default function StudentDirectoryPage() {
                             </button>
                         </div>
 
+                        {/* Teacher Scope Notice in Bulk Import */}
+                        {teacherScope?.is_scoped && (
+                            <div className={`p-4 rounded-xl mb-6 flex items-center gap-3 text-xs font-semibold ${
+                                teacherScope.assigned_classes.length > 0
+                                    ? 'bg-blue-50 border border-blue-200 text-blue-800'
+                                    : 'bg-amber-50 border border-amber-200 text-amber-800'
+                            }`}>
+                                {teacherScope.assigned_classes.length > 0 ? (
+                                    <>
+                                        <ShieldCheck className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                        <span>Teacher Scope Active: You can only import students for your assigned classes ({teacherScope.assigned_classes.join(', ')}). Any student records for unassigned classes will be rejected by the server.</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                                        <span>Import Disabled: Your teacher profile has no assigned classes. Contact your school administrator to configure your classes.</span>
+                                    </>
+                                )}
+                            </div>
+                        )}
+
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
@@ -982,8 +1069,8 @@ export default function StudentDirectoryPage() {
                             <div className="flex items-center gap-3">
                                 <button
                                     onClick={handleParseBulkData}
-                                    disabled={!bulkRawData.trim()}
-                                    className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition-all disabled:opacity-50"
+                                    disabled={!bulkRawData.trim() || (Boolean(teacherScope?.is_scoped) && (teacherScope?.assigned_classes.length ?? 0) === 0)}
+                                    className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Validate & Preview Roster
                                 </button>
