@@ -222,7 +222,7 @@ async function generateAndSaveQuestionsForExam({
                 explanation,
                 marks,
                 source
-            ) VALUES ($1, $2, 'objective', 'mcq', $3, $4, $5, $6, 1, 'curriculum_bank')
+            ) VALUES ($1, $2, 'objective', 'mcq', $3, $4, $5, $6, 1, 'ai_generated')
             RETURNING id;
         `
         const { rows: qRows } = await query(insertQQuery, [
