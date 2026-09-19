@@ -17,12 +17,13 @@ const P = {
 export default function OnlineResult() {
     const params = useParams()
     const router = useRouter()
-    const examId = params.id as string
+    const examId = (params?.id || '') as string
 
     const [loading, setLoading] = useState(true)
     const [data, setData] = useState<any>(null)
 
     const fetchResult = useCallback(async () => {
+        if (!examId) return
         try {
             const res = await fetch(`/api/dashboard/exams/online/${examId}/analytics?studentId=current`)
             const json = await res.json()

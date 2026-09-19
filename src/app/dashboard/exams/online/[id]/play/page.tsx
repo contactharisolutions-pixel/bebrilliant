@@ -21,7 +21,7 @@ const STANDARD_SECTIONS = ['Section A', 'Section B', 'Section C', 'Section D', '
 export default function OnlinePlayer() {
     const params = useParams()
     const router = useRouter()
-    const examId = params.id as string
+    const examId = (params?.id || '') as string
 
     const [loading, setLoading] = useState(true)
     const [exam, setExam] = useState<any>(null)
@@ -42,6 +42,7 @@ export default function OnlinePlayer() {
     const [selectedSection, setSelectedSection] = useState('Section A')
 
     const fetchExam = useCallback(async () => {
+        if (!examId) return
         setLoading(true)
         setErrorMsg(null)
         try {
@@ -450,6 +451,11 @@ export default function OnlinePlayer() {
                         <span style={{ background: P.card, border: '1px solid ' + P.border, padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 900 }}>
                             QUESTION {currentIdx + 1} OF {questions.length}
                         </span>
+                        {(q?.sub_type || q?.details?.sub_type) && (
+                            <span style={{ fontSize: 11, fontWeight: 800, color: P.brand, background: P.brandBg, padding: '4px 10px', borderRadius: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                {(q?.sub_type || q?.details?.sub_type).replace(/_/g, ' ')}
+                            </span>
+                        )}
                         {q?.marks && (
                             <span style={{ fontSize: 11, color: P.text, background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: 8 }}>
                                 +{q.marks} Marks {q.negative_marks ? `(${q.negative_marks} neg)` : ''}
@@ -457,32 +463,56 @@ export default function OnlinePlayer() {
                         )}
                     </div>
 
-                    <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.45, color: P.light }}>
+                    <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.45, color: P.light, whiteSpace: 'pre-line' }}>
                         {qText}
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                        {renderedOptions.map(({ key, label }) => {
-                            const isSelected = answers[qId] === key
-                            return (
-                                <button
-                                    key={key}
-                                    onClick={() => setAnswers({ ...answers, [qId]: key })}
-                                    style={{
-                                        textAlign: 'left', padding: '20px 24px', borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16, transition: 'all 0.15s',
-                                        background: isSelected ? P.brand + '20' : P.card,
-                                        border: '1px solid ' + (isSelected ? P.brand : P.border),
-                                        color: isSelected ? P.brand : P.light
-                                    }}
-                                >
-                                    <div style={{ width: 34, height: 34, borderRadius: 10, background: isSelected ? P.brand : P.bg, color: isSelected ? P.bg : P.text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, flexShrink: 0 }}>
-                                        {key}
-                                    </div>
-                                    <div style={{ fontSize: 16, fontWeight: 600 }}>{label}</div>
-                                </button>
-                            )
-                        })}
-                    </div>
+                    {renderedOptions.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                            {renderedOptions.map(({ key, label }) => {
+                                const isSelected = answers[qId] === key || answers[qId] === label
+                                return (
+                                    <button
+                                        key={key}
+                                        onClick={() => setAnswers({ ...answers, [qId]: key })}
+                                        style={{
+                                            textAlign: 'left', padding: '20px 24px', borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16, transition: 'all 0.15s',
+                                            background: isSelected ? P.brand + '20' : P.card,
+                                            border: '1px solid ' + (isSelected ? P.brand : P.border),
+                                            color: isSelected ? P.brand : P.light
+                                        }}
+                                    >
+                                        <div style={{ width: 34, height: 34, borderRadius: 10, background: isSelected ? P.brand : P.bg, color: isSelected ? P.bg : P.text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, flexShrink: 0 }}>
+                                            {key}
+                                        </div>
+                                        <div style={{ fontSize: 16, fontWeight: 600 }}>{label}</div>
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <label style={{ fontSize: 13, fontWeight: 700, color: P.text }}>Type your answer / response:</label>
+                            <textarea
+                                value={answers[qId] || ''}
+                                onChange={(e) => setAnswers({ ...answers, [qId]: e.target.value })}
+                                placeholder="Type your answer here..."
+                                rows={6}
+                                style={{
+                                    width: '100%',
+                                    background: P.card,
+                                    border: '1px solid ' + P.border,
+                                    borderRadius: 14,
+                                    padding: '16px 20px',
+                                    color: P.light,
+                                    fontSize: 15,
+                                    outline: 'none',
+                                    fontFamily: 'inherit',
+                                    resize: 'vertical'
+                                }}
+                            />
+                        </div>
+                    )}
 
                     <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 24 }}>
                         <button 

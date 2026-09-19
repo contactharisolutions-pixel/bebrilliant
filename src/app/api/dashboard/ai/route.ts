@@ -5,7 +5,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // ── Master Gemini AI Question Generator for BeBrilliant Platform ──────────────
 // Strictly adheres to GEMINI_AI_QUESTION_PREPARATION_RULES.md and GEMINI_AI_QUESTION_PREPARATION_SKILL.md
-const GEMINI_MODELS_TO_TRY = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+const GEMINI_MODELS_TO_TRY = ["gemini-2.5-flash", "gemini-3.6-flash", "gemini-2.5-pro"]
 
 async function generateQuestionsWithGemini(params: {
     subject_name: string
@@ -19,6 +19,7 @@ async function generateQuestionsWithGemini(params: {
     marks: number
     negative_marks: number
     question_type: string
+    sub_type?: string
     difficulty: string
     language: string
 }) {
@@ -39,9 +40,91 @@ async function generateQuestionsWithGemini(params: {
         marks,
         negative_marks,
         question_type,
+        sub_type: rawSubType,
         difficulty,
         language
     } = params
+
+    // Normalize sub-type according to academic rules
+    const normalizeSubType = (input?: string): string => {
+        if (!input) return question_type === 'subjective' ? 'short_answer' : 'mcq'
+        const s = input.toLowerCase().replace(/[^a-z0-9]/g, '_')
+        if (s.includes('true') || s.includes('false')) return 'true_false'
+        if (s.includes('assertion') || s.includes('reason')) return 'assertion_reason'
+        if (s.includes('fill') || s.includes('blank')) return 'fill_blank'
+        if (s.includes('numeric') || s.includes('integer') || s.includes('calc')) return 'numerical'
+        if (s.includes('diagram') || s.includes('graph') || s.includes('visual')) return 'diagram_based'
+        if (s.includes('case')) return 'case_based'
+        if (s.includes('short')) return 'short_answer'
+        if (s.includes('long') || s.includes('essay')) return 'long_answer'
+        if (s.includes('descript')) return 'descriptive'
+        return 'mcq'
+    }
+
+    const sub_type = normalizeSubType(rawSubType || question_type)
+
+    const getFormatInstructions = (st: string) => {
+        switch (st) {
+            case 'true_false':
+                return `FORMAT: True/False Question.
+- The question text must be a clear, unambiguous factual or conceptual statement suitable for ${class_name}.
+- "options" MUST be exactly ["True", "False"].
+- "correct_answer" MUST be either "True" or "False".`
+
+            case 'assertion_reason':
+                return `FORMAT: Assertion & Reason Question (Board Standard for ${class_name}).
+- The question text MUST follow this exact structure:
+Assertion (A): [Clear, concise statement A]
+Reason (R): [Clear, concise explanation or reasoning statement R]
+- "options" MUST be exactly:
+[
+  "Both Assertion (A) and Reason (R) are true, and Reason (R) is the correct explanation of Assertion (A)",
+  "Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A)",
+  "Assertion (A) is true, but Reason (R) is false",
+  "Assertion (A) is false, but Reason (R) is true"
+]
+- "correct_answer" MUST be the exact matching string from one of the options above.`
+
+            case 'fill_blank':
+                return `FORMAT: Fill in the Blanks Question.
+- The question text MUST contain exactly one blank indicated by "______" (e.g. "The teacher asked the students to ______ their homework before Monday.").
+- "options" MUST contain exactly 4 distinct plausible fill-in words/phrases so students can answer online.
+- "correct_answer" MUST be the exact word from options that correctly completes the sentence.`
+
+            case 'numerical':
+                return `FORMAT: Numerical / Problem-Solving Question.
+- The question must present a clear problem requiring calculation or numerical understanding suitable for ${class_name}.
+- "options" MUST be 4 distinct numerical values with units where appropriate (e.g. ["15 cm", "30 cm", "45 cm", "60 cm"]).
+- "correct_answer" MUST be the exact correct numerical value from the options.`
+
+            case 'diagram_based':
+                return `FORMAT: Diagram-based / Visual Context Question.
+- The question text MUST include a visual context / diagram description inside brackets, e.g.:
+[Diagram Context: A labelled diagram showing parts of a plant / circuit / flowchart]
+Followed by a direct question asking the student to interpret or apply the concept shown in the diagram.
+- "options" MUST contain 4 distinct options.
+- "correct_answer" MUST be the exact correct option text.`
+
+            case 'short_answer':
+                return `FORMAT: Short Answer Question (${marks} Marks).
+- A focused conceptual question requiring a concise answer (1-3 sentences).
+- "options" can be 4 structured answer choices for automatic online evaluation, OR null if descriptive.
+- "correct_answer" MUST be the accurate model answer.`
+
+            case 'long_answer':
+                return `FORMAT: Long Answer / Descriptive Question (${marks} Marks).
+- An analytical question requiring structured explanation.
+- Provide 4 comprehensive answer choices for online interactive grading OR the detailed model answer key.
+- "correct_answer" MUST be the accurate model answer.`
+
+            case 'mcq':
+            default:
+                return `FORMAT: Multiple Choice Question (MCQ).
+- The question must ask a clear, direct question in simple English.
+- "options" MUST contain exactly 4 distinct, plausible options.
+- "correct_answer" MUST be the exact text of the single unambiguously correct option.`
+        }
+    }
 
     const combinedTopicStr = [
         chapters.length > 0 ? `Chapters: ${chapters.join(', ')}` : '',
@@ -60,9 +143,12 @@ ACADEMIC CONTEXT & BLUEPRINT:
 - Target Chapters & Topics: ${combinedTopicStr}
 ${pattern_name ? `- Exam Pattern: ${pattern_name}` : ''}
 - Section: ${section_name} (${marks} Marks per question, ${negative_marks} Negative Marks)
-- Question Format: ${question_type === 'subjective' ? 'Subjective (Short/Long Answer, Descriptive)' : 'Objective (Multiple Choice Questions with 4 distinct options)'}
-- Difficulty Level: ${difficulty} (easy = foundational concept, medium = standard school board level, hard = higher-order thinking skill / HOTS)
+- Question Subtype: ${sub_type.toUpperCase()}
+- Difficulty Level: ${difficulty} (easy = foundational recall, medium = standard school board level, hard = higher-order thinking skill / HOTS)
 - Medium / Language: ${language}
+
+QUESTION FORMAT SPECIFICATION:
+${getFormatInstructions(sub_type)}
 
 MANDATORY RULES (Strictly Follow These Rules):
 1. EASY, SIMPLE, AND CLEAN ENGLISH (MANDATORY RULE 24 & SKILL 31):
@@ -77,7 +163,7 @@ MANDATORY RULES (Strictly Follow These Rules):
 3. FRESHNESS & NON-REPETITION (RULE 2):
    - Generate fresh, original questions. Do not repeat question phrasing or standard clichés.
 4. ANSWER INTEGRITY (RULE 9 & 10):
-   - For MCQs: Provide exactly 4 realistic, plausible options. Exactly ONE option must be unambiguously correct.
+   - Provide realistic, plausible options. Exactly ONE option must be unambiguously correct.
    - Provide a clear, student-friendly explanation showing the direct reasoning or solution step.
 5. NO HARDCODED OR PLACEHOLDER DATA:
    - Generate authentic, accurate questions matching the syllabus.
@@ -90,13 +176,13 @@ Exact schema for each item:
     "section": "${section_name}",
     "subject": "${subject_name}",
     "topic": "Name of specific chapter or topic",
-    "type": "${question_type}",
-    "sub_type": "${question_type === 'subjective' ? 'descriptive' : 'mcq'}",
+    "type": "${['short_answer', 'long_answer', 'descriptive'].includes(sub_type) ? 'subjective' : 'objective'}",
+    "sub_type": "${sub_type}",
     "difficulty": "${difficulty}",
     "marks": ${marks},
     "negative_marks": ${negative_marks},
-    "text": "Clearly written question text in simple English",
-    "options": ${question_type === 'subjective' ? 'null' : '["Option A", "Option B", "Option C", "Option D"]'},
+    "text": "Clearly written question text in simple English adhering to format",
+    "options": ${sub_type === 'true_false' ? '["True", "False"]' : '["Option A", "Option B", "Option C", "Option D"]'},
     "correct_answer": "Exact text of the correct option",
     "explanation": "Concise step-by-step rationale in simple English"
   }
@@ -124,20 +210,28 @@ Exact schema for each item:
                 const timestamp = Date.now()
                 return questions.map((q: any, idx: number) => {
                     const uniqueSuffix = Math.random().toString(36).substring(2, 8)
+                    const isSubj = ['short_answer', 'long_answer', 'descriptive'].includes(sub_type)
+                    let finalOptions = q.options
+                    if (sub_type === 'true_false') {
+                        finalOptions = ['True', 'False']
+                    } else if (!Array.isArray(finalOptions) && !isSubj) {
+                        finalOptions = ['Option A', 'Option B', 'Option C', 'Option D']
+                    }
+
                     return {
                         id: `gen_${secSlug}_${timestamp}_${idx + 1}_${uniqueSuffix}`,
                         section: q.section || section_name,
                         subject: q.subject || subject_name,
                         topic: q.topic || combinedTopicStr,
-                        type: q.type || question_type,
-                        sub_type: q.sub_type || (question_type === 'subjective' ? 'descriptive' : 'mcq'),
+                        type: isSubj ? 'subjective' : 'objective',
+                        sub_type: sub_type,
                         difficulty: q.difficulty || difficulty,
                         marks: Number(q.marks) || marks,
                         negative_marks: Number(q.negative_marks) || negative_marks,
                         text: q.text || q.question_text || '',
                         question_text: q.text || q.question_text || '',
-                        options: Array.isArray(q.options) ? q.options : (question_type === 'subjective' ? null : ['Option A', 'Option B', 'Option C', 'Option D']),
-                        correct_answer: q.correct_answer || '',
+                        options: finalOptions,
+                        correct_answer: q.correct_answer || (Array.isArray(finalOptions) ? finalOptions[0] : ''),
                         explanation: q.explanation || ''
                     }
                 })
@@ -331,6 +425,7 @@ export async function POST(request: NextRequest) {
 
             // Extract question types and difficulty
             const question_type = p.question_type || p.type || 'objective'
+            const sub_type = p.sub_type || p.subtype || p.question_format || ''
             const difficulty = p.difficulty || 'medium'
             const language = p.language || 'English'
 
@@ -351,6 +446,7 @@ export async function POST(request: NextRequest) {
                     marks,
                     negative_marks,
                     question_type,
+                    sub_type,
                     difficulty,
                     language
                 })

@@ -301,7 +301,7 @@ export default function OnlineExamsPage() {
         }))
     }
     const [s2, setS2] = useState<{
-        sections: Array<{ name: string; qCount: number; mark: number; negMark: number }>
+        sections: Array<{ name: string; qCount: number; mark: number; negMark: number; rules?: any[] }>
     }>({ sections: [] })
     const [studioQuestions, setStudioQuestions] = useState<any[]>([])
     const [approvedQs, setApprovedQs] = useState<Set<number>>(new Set())
@@ -432,7 +432,8 @@ export default function OnlineExamsPage() {
                     name: sec.section_name || 'Section A',
                     qCount: totalQ,
                     mark: Number(rule.marks_per_question || 1),
-                    negMark: Number(rule.negative_marks || 0)
+                    negMark: Number(rule.negative_marks || 0),
+                    rules: sec.rules || []
                 }
             })
             setS2({ sections: compiled })
@@ -482,7 +483,8 @@ export default function OnlineExamsPage() {
                 name: sec.name || 'Section A',
                 qCount: sec.qCount || 10,
                 mark: sec.mark || 1,
-                negMark: sec.negMark || 0
+                negMark: sec.negMark || 0,
+                rules: sec.rules || []
             })) })
         } else {
             setS2({ sections: [] })
@@ -551,23 +553,63 @@ export default function OnlineExamsPage() {
                 // Mark section as generating
                 setAiSectionStats(prev => prev.map((item, idx) => idx === sIdx ? { ...item, status: 'generating' } : item))
 
-                // Determine batches for this section (max 25 questions per LLM call to guarantee speed & avoid timeouts)
-                const batches: number[] = []
-                let remaining = secTarget
-                while (remaining > 0) {
-                    const chunkSize = Math.min(remaining, 25)
-                    batches.push(chunkSize)
-                    remaining -= chunkSize
+                // Determine batches for this section based on template rules if present
+                interface BatchPlanItem {
+                    count: number
+                    sub_type: string
+                    difficulty: string
+                    marks: number
+                    negMark: number
+                    label: string
+                }
+
+                const batches: BatchPlanItem[] = []
+                const rules = Array.isArray(sec.rules) && sec.rules.length > 0 ? sec.rules : null
+
+                if (rules) {
+                    for (const r of rules) {
+                        const rCount = Number(r.num_questions || 0)
+                        if (rCount <= 0) continue
+                        const rType = r.question_type || 'MCQ'
+                        const rMarks = Number(r.marks_per_question || secMark)
+                        const rNeg = Number(r.negative_marks || secNegMark)
+
+                        const easyPct = Number(r.difficulty_easy_pct ?? 30)
+                        const hardPct = Number(r.difficulty_hard_pct ?? 20)
+                        const easyN = Math.round((rCount * easyPct) / 100)
+                        const hardN = Math.round((rCount * hardPct) / 100)
+                        const medN = Math.max(0, rCount - easyN - hardN)
+
+                        if (easyN > 0) batches.push({ count: easyN, sub_type: rType, difficulty: 'easy', marks: rMarks, negMark: rNeg, label: `${rType} (Easy)` })
+                        if (medN > 0) batches.push({ count: medN, sub_type: rType, difficulty: 'medium', marks: rMarks, negMark: rNeg, label: `${rType} (Medium)` })
+                        if (hardN > 0) batches.push({ count: hardN, sub_type: rType, difficulty: 'hard', marks: rMarks, negMark: rNeg, label: `${rType} (Hard)` })
+                    }
+                } else {
+                    let remaining = secTarget
+                    while (remaining > 0) {
+                        const chunkSize = Math.min(remaining, 25)
+                        batches.push({
+                            count: chunkSize,
+                            sub_type: 'MCQ',
+                            difficulty: 'medium',
+                            marks: secMark,
+                            negMark: secNegMark,
+                            label: 'Standard MCQ'
+                        })
+                        remaining -= chunkSize
+                    }
                 }
 
                 let secCompletedCount = 0
 
                 for (let bIdx = 0; bIdx < batches.length; bIdx++) {
-                    const batchCount = batches[bIdx]
+                    const batch = batches[bIdx]
                     const batchStartNum = totalGeneratedSoFar + 1
-                    const batchEndNum = totalGeneratedSoFar + batchCount
+                    const batchEndNum = totalGeneratedSoFar + batch.count
 
-                    setAiGenStatus(`Drafting ${secName} questions in simple English (${batchStartNum} to ${batchEndNum} of ${totalRequired})...`)
+                    setAiGenStatus(`Drafting ${secName}: ${batch.label} (${batchStartNum} to ${batchEndNum} of ${totalRequired})...`)
+
+                    const isSubjective = ['short_answer', 'long_answer', 'descriptive'].includes(batch.sub_type.toLowerCase().replace(/[^a-z0-9]/g, '_'))
 
                     const res = await fetch('/api/dashboard/ai', {
                         method: 'POST',
@@ -582,11 +624,12 @@ export default function OnlineExamsPage() {
                                 topics: topicNames,
                                 pattern_name: patternName,
                                 section_name: secName,
-                                count: batchCount,
-                                marks: secMark,
-                                negative_marks: secNegMark,
-                                question_type: 'objective',
-                                difficulty: 'medium',
+                                count: batch.count,
+                                marks: batch.marks,
+                                negative_marks: batch.negMark,
+                                question_type: isSubjective ? 'subjective' : 'objective',
+                                sub_type: batch.sub_type,
+                                difficulty: batch.difficulty,
                                 language: 'English'
                             }
                         })
@@ -616,13 +659,13 @@ export default function OnlineExamsPage() {
                             subject: subjectName,
                             chapter: q.topic || chapterNames[0] || 'Curriculum',
                             topic: q.topic || topicNames[0] || chapterNames[0] || 'Core Subject',
-                            type: q.type || 'objective',
-                            sub_type: q.sub_type || 'mcq',
-                            difficulty: q.difficulty || 'medium',
-                            marks: secMark,
-                            negative_marks: secNegMark,
+                            type: q.type || (isSubjective ? 'subjective' : 'objective'),
+                            sub_type: q.sub_type || batch.sub_type.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+                            difficulty: q.difficulty || batch.difficulty,
+                            marks: batch.marks,
+                            negative_marks: batch.negMark,
                             text: q.text || q.question_text || '',
-                            options: Array.isArray(q.options) ? q.options : ['Option A', 'Option B', 'Option C', 'Option D'],
+                            options: Array.isArray(q.options) ? q.options : (isSubjective ? null : ['Option A', 'Option B', 'Option C', 'Option D']),
                             correct_answer: q.correct_answer || '',
                             explanation: q.explanation || ''
                         }

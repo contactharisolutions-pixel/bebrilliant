@@ -143,7 +143,8 @@ export async function GET(request: NextRequest) {
                         rules:section_question_rules(*)
                     )
                 `)
-                .eq('is_global', true)
+                .eq('is_active', true)
+                .or(`tenant_id.eq.${session.tenant_id},is_global.eq.true`)
             if (tErr) throw tErr
             return NextResponse.json(templates)
         }

@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
                 .from('paper_templates')
                 .select('*, sections:template_sections(*, rules:section_question_rules(*))')
                 .eq('is_active', true)
+                .or(`tenant_id.eq.${tenant_id},is_global.eq.true`)
                 .order('created_at', { ascending: true })
             if (tErr) throw tErr
             return NextResponse.json(templates || [])
@@ -88,8 +89,10 @@ export async function GET(request: NextRequest) {
                 return {
                     id: m.question_id || m.id,
                     question_id: m.question_id,
+                    type: m.q?.type || 'objective',
+                    sub_type: m.q?.sub_type || 'mcq',
                     text: qText,
-                    options: Array.isArray(rawOptions) ? rawOptions : ['Option A', 'Option B', 'Option C', 'Option D'],
+                    options: Array.isArray(rawOptions) ? rawOptions : (m.q?.type === 'subjective' ? [] : ['Option A', 'Option B', 'Option C', 'Option D']),
                     correct_answer: correctAnswer,
                     explanation,
                     difficulty: m.q?.difficulty || 'medium',
@@ -113,7 +116,7 @@ export async function GET(request: NextRequest) {
         if (action === 'GET_EXAM_QUESTIONS' && examId) {
             const { data: mappings, error } = await supabaseAdmin
                 .from('online_exam_questions')
-                .select('*, q:questions(id, question_text, options, correct_answer, difficulty, type)')
+                .select('*, q:questions(id, question_text, options, correct_answer, difficulty, type, sub_type)')
                 .eq('exam_id', examId)
                 .order('created_at', { ascending: true })
             if (error) throw error

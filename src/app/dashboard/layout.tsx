@@ -32,20 +32,27 @@ import {
   School,
   AlertCircle,
   Printer,
+  SlidersHorizontal,
 } from "lucide-react";
 import { IdentityProvider, useIdentity } from "@/contexts/IdentityContext";
 import { C, GRADIENT, getRoleAccent } from "@/lib/theme";
 // NAVIGATION STRUCTURE
 const NAV_GROUPS = [
   {
-    title: "Academic Records",
-    roles: ["tenant_admin", "owner", "teacher"],
+    title: "Academics & Testing",
+    roles: ["tenant_admin", "owner", "teacher", "student", "parent"],
     items: [
       {
         label: "Dashboard",
         icon: LayoutDashboard,
         href: "/dashboard",
         roles: ["tenant_admin", "owner", "teacher", "student", "parent"],
+      },
+      {
+        label: "Exam Formats",
+        icon: SlidersHorizontal,
+        href: "/dashboard/exams/templates",
+        roles: ["tenant_admin", "owner", "teacher"],
       },
       {
         label: "Online Exam Portal",
