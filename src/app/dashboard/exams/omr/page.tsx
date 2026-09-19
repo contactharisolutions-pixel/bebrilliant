@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
 import ExamSyllabusPatternPicker, { BlueprintContextData } from '@/components/shared/ExamSyllabusPatternPicker'
 import {
-    ScanLine, UploadCloud, Download, CheckCircle, XCircle,
+    ScanLine, UploadCloud, Download, CheckCircle, XCircle, AlertCircle,
     Search, Loader2, Sparkles, Printer, Trash2,
     Database, Target, Shield,
     Sliders, RefreshCw, BarChart3, Users, PlusCircle, Check, HelpCircle,
@@ -21,6 +21,7 @@ export default function OMRExamManager() {
     // Core Data States
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
+    const [generatingExamId, setGeneratingExamId] = useState<string | null>(null)
     const [metrics, setMetrics] = useState({
         totalTemplates: 0,
         totalExams: 0,
@@ -320,6 +321,33 @@ export default function OMRExamManager() {
             showToast(err.message || 'Error creating exam', false)
         } finally {
             setSaving(false)
+        }
+    }
+
+    // Auto-Generate Questions For Exam Handler
+    const handleGenerateQuestionsForExam = async (exam: any) => {
+        setGeneratingExamId(exam.id)
+        try {
+            const res = await fetch('/api/dashboard/exams/omr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'GENERATE_QUESTIONS_FOR_EXAM',
+                    payload: {
+                        exam_id: exam.id,
+                        count: exam.total_questions || 20
+                    }
+                })
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed to generate questions')
+
+            showToast(data.message || 'Questions and Answer Key generated successfully!', true)
+            fetchData()
+        } catch (err: any) {
+            showToast(err.message || 'Error generating questions', false)
+        } finally {
+            setGeneratingExamId(null)
         }
     }
 
@@ -1190,6 +1218,21 @@ export default function OMRExamManager() {
                                                                 <span className="flex items-center gap-1 text-slate-500">
                                                                     <Clock size={13} /> {ex.duration || 60} Mins
                                                                 </span>
+                                                                {ex.mapped_questions_count > 0 ? (
+                                                                    <>
+                                                                        <span>•</span>
+                                                                        <span className="inline-flex items-center gap-1 text-emerald-600 font-bold">
+                                                                            <CheckCircle size={12} /> {ex.mapped_questions_count} Qs Ready
+                                                                        </span>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <span>•</span>
+                                                                        <span className="inline-flex items-center gap-1 text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                                                            <AlertCircle size={12} /> No Qs Attached
+                                                                        </span>
+                                                                    </>
+                                                                )}
                                                                 {hasAnswerKey && (
                                                                     <>
                                                                         <span>•</span>
@@ -1226,6 +1269,19 @@ export default function OMRExamManager() {
                                                         </td>
                                                         <td className="py-4 px-6 text-right">
                                                             <div className="flex items-center justify-end gap-2">
+                                                                {/* Auto-Generate Questions if missing */}
+                                                                {(!ex.mapped_questions_count || ex.mapped_questions_count === 0) && (
+                                                                    <button
+                                                                        onClick={() => handleGenerateQuestionsForExam(ex)}
+                                                                        disabled={generatingExamId === ex.id}
+                                                                        className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                                                                        title="Generate Questions & Answer Key for this Exam"
+                                                                    >
+                                                                        <Sparkles size={14} className={generatingExamId === ex.id ? 'animate-spin' : ''} />
+                                                                        <span>{generatingExamId === ex.id ? 'Generating...' : '⚡ Generate Qs'}</span>
+                                                                    </button>
+                                                                )}
+
                                                                 {/* 1-Click Unified Print (Question Paper + OMR Sheet) */}
                                                                 <button
                                                                     onClick={() => window.open(`/api/dashboard/exams/omr/${ex.id}/print?mode=unified`, '_blank')}
