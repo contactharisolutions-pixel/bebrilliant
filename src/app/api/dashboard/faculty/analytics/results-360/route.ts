@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
                 asu.evaluated_by,
                 asu.evaluated_at,
                 asu.file_url,
-                COALESCE(oe.title, 'Academic Term Exam') AS exam_title,
+                COALESCE(NULLIF(oe.title, ''), '') AS exam_title,
                 DENSE_RANK() OVER (ORDER BY asu.percentage DESC, asu.awarded_marks DESC) AS rank
             FROM public.answer_sheet_uploads asu
             LEFT JOIN public.offline_exams oe ON asu.exam_id = oe.id
@@ -389,7 +389,7 @@ export async function GET(request: NextRequest) {
             studentMap[st.student_id].exam_history.push({
                 exam_title: st.exam_title,
                 subject_name: st.subject_name,
-                date: st.evaluated_at ? new Date(st.evaluated_at).toLocaleDateString() : 'Recent Term',
+                date: st.evaluated_at ? new Date(st.evaluated_at).toLocaleDateString() : null,
                 awarded_marks: Number(st.awarded_marks),
                 max_marks: Number(st.max_marks),
                 percentage: Number(st.percentage),
@@ -413,22 +413,31 @@ export async function GET(request: NextRequest) {
             
             // Derive strengths & weaker areas
             const sortedMastery = [...st.subject_mastery].sort((a: any, b: any) => b.score - a.score)
-            if (sortedMastery.length > 0) {
-                st.strengths = [
-                    `Top proficiency in ${sortedMastery[0].subject_name} (${sortedMastery[0].score}%)`,
-                    'Active class engagement and timely assignment delivery',
-                    'Demonstrates clear conceptual reasoning in descriptive answers'
-                ]
-                const weakest = sortedMastery[sortedMastery.length - 1]
-                st.weaker_areas = [
-                    `${weakest.subject_name} requires structured revision (current score: ${weakest.score}%)`,
-                    'Needs extra practice with formula calculations and time management during exams',
-                    'Recommended for weekly peer review and faculty clinic sessions'
-                ]
-            }
+            // Only emit data-derived bullets — no generic fabricated text
+            st.strengths = sortedMastery
+                .filter((s: any) => s.score >= 75)
+                .map((s: any) => `${s.subject_name}: ${s.score}% (Grade ${s.grade})`)
+            st.weaker_areas = sortedMastery
+                .filter((s: any) => s.score < 60)
+                .map((s: any) => `${s.subject_name}: ${s.score}% — targeted revision required`)
         })
 
-        // 8. Exam-Wise Performance Trends
+        // 8. Exam-Wise Performance Trends — teacher class-scoped
+        const examsWhereClauses = ['oe.tenant_id = $1']
+        const examsQueryParams: any[] = [tenantId]
+
+        if (isTeacher && assignedClasses.length > 0) {
+            const exClassTokens = assignedClasses.map((c: string) => c.replace(/[^0-9]/g, '')).filter(Boolean)
+            examsQueryParams.push(assignedClasses)
+            examsQueryParams.push(exClassTokens)
+            examsWhereClauses.push(`(
+                c.name = ANY($${examsQueryParams.length - 1})
+                OR regexp_replace(COALESCE(c.name, ''), '[^0-9]', '', 'g') = ANY($${examsQueryParams.length})
+                OR asu.class_name = ANY($${examsQueryParams.length - 1})
+                OR regexp_replace(COALESCE(asu.class_name, ''), '[^0-9]', '', 'g') = ANY($${examsQueryParams.length})
+            )`)
+        }
+
         const examsQuery = `
             SELECT 
                 oe.id AS exam_id,
@@ -443,19 +452,19 @@ export async function GET(request: NextRequest) {
             LEFT JOIN public.classes c ON oe.class_id = c.id
             LEFT JOIN public.subjects s ON oe.subject_id = s.id
             LEFT JOIN public.answer_sheet_uploads asu ON asu.exam_id = oe.id
-            WHERE oe.tenant_id = $1
+            WHERE ${examsWhereClauses.join(' AND ')}
             GROUP BY oe.id, oe.title, c.name, s.name, oe.created_at
             ORDER BY oe.created_at DESC;
         `
-        const examsRes = await query(examsQuery, [tenantId])
+        const examsRes = await query(examsQuery, examsQueryParams)
         const exams = examsRes.rows || []
 
-        // 9. Scoped Filter Dropdown Options
+        // 9. Scoped Filter Dropdown Options — fully teacher-isolated
         let classFilterQuery = `SELECT id, name FROM public.classes WHERE tenant_id = $1 ORDER BY name ASC;`
         let classFilterParams = [tenantId]
 
         if (isTeacher && assignedClasses.length > 0) {
-            const tokens = assignedClasses.map(c => c.replace(/[^0-9]/g, '')).filter(Boolean)
+            const tokens = assignedClasses.map((c: string) => c.replace(/[^0-9]/g, '')).filter(Boolean)
             classFilterQuery = `
                 SELECT id, name FROM public.classes 
                 WHERE tenant_id = $1 
@@ -466,8 +475,52 @@ export async function GET(request: NextRequest) {
         }
 
         const filterClassesRes = await query(classFilterQuery, classFilterParams)
-        const filterSubjectsRes = await query(`SELECT id, name FROM public.subjects WHERE tenant_id = $1 ORDER BY name ASC;`, [tenantId])
-        const filterExamsRes = await query(`SELECT id, title FROM public.offline_exams WHERE tenant_id = $1 ORDER BY created_at DESC;`, [tenantId])
+
+        // Subjects: derived from actual answer_sheet_uploads for teacher's classes — not all school subjects
+        let filterSubjectsRes
+        if (isTeacher && assignedClasses.length > 0) {
+            const subTokens = assignedClasses.map((c: string) => c.replace(/[^0-9]/g, '')).filter(Boolean)
+            filterSubjectsRes = await query(
+                `SELECT DISTINCT subject_name AS id, subject_name AS name
+                 FROM public.answer_sheet_uploads
+                 WHERE tenant_id = $1
+                   AND (
+                       class_name = ANY($2)
+                       OR regexp_replace(COALESCE(class_name, ''), '[^0-9]', '', 'g') = ANY($3)
+                   )
+                   AND subject_name IS NOT NULL AND subject_name <> ''
+                 ORDER BY subject_name ASC`,
+                [tenantId, assignedClasses, subTokens]
+            )
+        } else {
+            filterSubjectsRes = await query(
+                `SELECT id::text AS id, name FROM public.subjects WHERE tenant_id = $1 ORDER BY name ASC`,
+                [tenantId]
+            )
+        }
+
+        // Exams: scoped to teacher's assigned classes only
+        let filterExamsRes
+        if (isTeacher && assignedClasses.length > 0) {
+            const exTokens = assignedClasses.map((c: string) => c.replace(/[^0-9]/g, '')).filter(Boolean)
+            filterExamsRes = await query(
+                `SELECT oe.id, oe.title
+                 FROM public.offline_exams oe
+                 LEFT JOIN public.classes c ON oe.class_id = c.id
+                 WHERE oe.tenant_id = $1
+                   AND (
+                       c.name = ANY($2)
+                       OR regexp_replace(COALESCE(c.name, ''), '[^0-9]', '', 'g') = ANY($3)
+                   )
+                 ORDER BY oe.created_at DESC`,
+                [tenantId, assignedClasses, exTokens]
+            )
+        } else {
+            filterExamsRes = await query(
+                `SELECT id, title FROM public.offline_exams WHERE tenant_id = $1 ORDER BY created_at DESC`,
+                [tenantId]
+            )
+        }
 
         return NextResponse.json({
             success: true,

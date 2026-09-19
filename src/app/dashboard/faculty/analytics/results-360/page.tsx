@@ -115,7 +115,7 @@ interface Student360Profile {
     total_exams: number
     overall_average: number
     overall_grade: string
-    attendance_rate: number
+    attendance_rate: number | null
     subject_mastery: {
         subject_name: string
         score: number
@@ -316,7 +316,7 @@ export default function Result360Analytics() {
         if (student360Map[studentId]) {
             setSelectedStudentFor360(student360Map[studentId])
         } else if (fallbackRecord) {
-            // Build fallback 360 profile from record
+            // Build fallback 360 profile from available record data only — no fabricated text
             setSelectedStudentFor360({
                 student_id: fallbackRecord.student_id,
                 student_name: fallbackRecord.student_name,
@@ -332,14 +332,14 @@ export default function Result360Analytics() {
                         subject_name: fallbackRecord.subject_name,
                         score: Number(fallbackRecord.percentage),
                         grade: fallbackRecord.grade_badge,
-                        status: Number(fallbackRecord.percentage) >= 75 ? 'Mastered' : 'On Track'
+                        status: Number(fallbackRecord.percentage) >= 75 ? 'Mastered' : Number(fallbackRecord.percentage) >= 55 ? 'On Track' : 'Needs Support'
                     }
                 ],
                 exam_history: [
                     {
                         exam_title: fallbackRecord.exam_title,
                         subject_name: fallbackRecord.subject_name,
-                        date: 'Recent Exam',
+                        date: null,
                         awarded_marks: Number(fallbackRecord.awarded_marks),
                         max_marks: Number(fallbackRecord.max_marks),
                         percentage: Number(fallbackRecord.percentage),
@@ -347,14 +347,14 @@ export default function Result360Analytics() {
                         remarks: fallbackRecord.teacher_remarks
                     }
                 ],
-                strengths: [
-                    `Solid grasp of ${fallbackRecord.subject_name} concepts`,
-                    'Active class participation and consistent assignment completion'
-                ],
-                weaker_areas: [
-                    'Reinforce formula derivation and time allocation in subjective tests'
-                ],
-                teacher_recommendation: fallbackRecord.teacher_remarks || 'Good academic consistency.'
+                // Derive strengths/weaknesses from subject score only — no generic text
+                strengths: Number(fallbackRecord.percentage) >= 75
+                    ? [`${fallbackRecord.subject_name}: ${fallbackRecord.percentage}% (Grade ${fallbackRecord.grade_badge})`]
+                    : [],
+                weaker_areas: Number(fallbackRecord.percentage) < 60
+                    ? [`${fallbackRecord.subject_name}: ${fallbackRecord.percentage}% — targeted revision required`]
+                    : [],
+                teacher_recommendation: fallbackRecord.teacher_remarks || ''
             })
         }
     }
@@ -1277,7 +1277,7 @@ export default function Result360Analytics() {
                                 </div>
 
                                 <h4 className="text-base font-bold text-slate-900 mb-1">{ex.exam_title}</h4>
-                                <p className="text-xs text-slate-500 font-medium mb-4">Subject: {ex.subject_name || 'General'}</p>
+                                <p className="text-xs text-slate-500 font-medium mb-4">Subject: {ex.subject_name || '—'}</p>
 
                                 <div className="grid grid-cols-3 gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-center">
                                     <div>
@@ -1348,10 +1348,15 @@ export default function Result360Analytics() {
                                 <div className="text-2xl font-black text-amber-900 mt-0.5">#{selectedStudentFor360.rank}</div>
                                 <div className="text-[10px] font-semibold text-amber-700 mt-0.5">In Current Class</div>
                             </div>
-                            <div className="p-3.5 bg-emerald-50/60 rounded-2xl border border-emerald-100 text-center">
+                                <div className="p-3.5 bg-emerald-50/60 rounded-2xl border border-emerald-100 text-center">
                                 <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Attendance Rate</div>
-                                <div className="text-2xl font-black text-emerald-900 mt-0.5">{selectedStudentFor360.attendance_rate}%</div>
-                                <div className="text-[10px] font-semibold text-emerald-700 mt-0.5">Exams Attended</div>
+                                <div className="text-2xl font-black text-emerald-900 mt-0.5">
+                                    {selectedStudentFor360.attendance_rate !== null && selectedStudentFor360.attendance_rate !== undefined
+                                        ? `${selectedStudentFor360.attendance_rate}%`
+                                        : <span className="text-sm font-semibold text-slate-400">No Record</span>
+                                    }
+                                </div>
+                                <div className="text-[10px] font-semibold text-emerald-700 mt-0.5">School Attendance</div>
                             </div>
                             <div className="p-3.5 bg-purple-50/60 rounded-2xl border border-purple-100 text-center">
                                 <div className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Evaluations</div>
@@ -1451,7 +1456,7 @@ export default function Result360Analytics() {
                                             <tr key={idx} className="hover:bg-slate-50">
                                                 <td className="p-3 font-bold text-slate-900">{h.exam_title}</td>
                                                 <td className="p-3 text-slate-600">{h.subject_name}</td>
-                                                <td className="p-3 text-slate-500">{h.date}</td>
+                                                <td className="p-3 text-slate-500">{h.date || '—'}</td>
                                                 <td className="p-3 font-semibold text-slate-800">{h.awarded_marks} / {h.max_marks}</td>
                                                 <td className="p-3 font-black text-slate-900">{h.percentage}%</td>
                                                 <td className="p-3">
