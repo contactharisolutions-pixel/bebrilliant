@@ -8,12 +8,29 @@ import {
     BookOpen, Sparkles, RefreshCw
 } from 'lucide-react'
 
-// —— PALETTE ————————————————————————————————————
+// —— CLEAN ENTERPRISE LIGHT PALETTE ————————————————————————————
 const P = {
-    bg: '#0F172A', card: '#1E293B', border: '#334155',
-    brand: '#38BDF8', brandBg: '#38BDF815',
-    text: '#94A3B8', light: '#F8FAFC',
-    success: '#10B981', error: '#EF4444', warning: '#F59E0B'
+    bg: '#F8FAFC',
+    card: '#FFFFFF',
+    border: '#E2E8F0',
+    borderLight: '#F1F5F9',
+    brand: '#0284C7',
+    brandHover: '#0369A1',
+    brandBg: '#F0F9FF',
+    brandBorder: '#BAE6FD',
+    text: '#64748B',
+    textDark: '#0F172A',
+    textMuted: '#94A3B8',
+    success: '#10B981',
+    successBg: '#ECFDF5',
+    successBorder: '#A7F3D0',
+    successText: '#047857',
+    error: '#EF4444',
+    errorBg: '#FEF2F2',
+    errorBorder: '#FECACA',
+    errorText: '#B91C1C',
+    warning: '#F59E0B',
+    warningBg: '#FFFBEB'
 }
 
 const STANDARD_SECTIONS = ['Section A', 'Section B', 'Section C', 'Section D', 'Section E']
@@ -158,7 +175,7 @@ export default function OnlinePlayer() {
     if (loading) return (
         <div style={{ background: P.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <Loader2 color={P.brand} className="spin" size={48} />
-            <div style={{ color: P.brand, marginTop: 20, fontWeight: 900, letterSpacing: '0.05em' }}>VERIFYING EXAM SCHEDULE...</div>
+            <div style={{ color: P.brand, marginTop: 20, fontWeight: 800, fontSize: 14, letterSpacing: '0.05em' }}>VERIFYING EXAM SCHEDULE...</div>
         </div>
     )
 
@@ -181,12 +198,12 @@ export default function OnlinePlayer() {
     }
 
     const getSlotStatus = (s: any) => {
-        if (!s.start || !s.end) return { label: 'Scheduled', color: P.text, bg: 'rgba(255,255,255,0.05)' }
+        if (!s.start || !s.end) return { label: 'Scheduled', color: P.text, bg: P.borderLight, border: P.border }
         const st = new Date(s.start)
         const en = new Date(s.end)
-        if (now >= st && now <= en) return { label: 'Live Now', color: P.success, bg: 'rgba(16, 185, 129, 0.15)' }
-        if (now < st) return { label: 'Upcoming', color: P.brand, bg: 'rgba(56, 189, 248, 0.15)' }
-        return { label: 'Closed', color: '#64748B', bg: 'rgba(100, 116, 139, 0.1)' }
+        if (now >= st && now <= en) return { label: 'Live Now', color: P.successText, bg: P.successBg, border: P.successBorder }
+        if (now < st) return { label: 'Upcoming', color: P.brand, bg: P.brandBg, border: P.brandBorder }
+        return { label: 'Closed', color: P.textMuted, bg: P.borderLight, border: P.border }
     }
 
     // Unique classes from slots
@@ -199,41 +216,44 @@ export default function OnlinePlayer() {
     // ── ENTRY & VERIFICATION SCREEN (Before attempt starts) ─────────────
     if (!attemptId) {
         return (
-            <div style={{ background: P.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', color: P.light, padding: '40px 20px', alignItems: 'center' }}>
+            <div style={{ background: P.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', color: P.textDark, padding: '40px 20px', alignItems: 'center' }}>
                 <div style={{ maxWidth: 780, width: '100%' }}>
                     {/* Brand header */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div style={{ width: 44, height: 44, borderRadius: 12, background: P.brandBg, border: '1px solid ' + P.brand + '40', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <GraduationCap size={24} color={P.brand} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                            <div style={{ width: 48, height: 48, borderRadius: 14, background: P.brandBg, border: '1px solid ' + P.brandBorder, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <GraduationCap size={26} color={P.brand} />
                             </div>
                             <div>
-                                <div style={{ fontSize: 11, fontWeight: 900, color: P.brand, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Online Assessment Portal</div>
-                                <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: P.light }}>{exam?.title || 'Online Examination'}</h1>
+                                <div style={{ fontSize: 11, fontWeight: 800, color: P.brand, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Online Assessment Portal</div>
+                                <h1 style={{ margin: '2px 0 0', fontSize: 24, fontWeight: 900, color: P.textDark }}>{exam?.title || 'Online Examination'}</h1>
                             </div>
                         </div>
-                        <button onClick={() => router.push('/dashboard/exams/online')} style={{ background: 'transparent', border: '1px solid ' + P.border, color: P.text, padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+                        <button 
+                            onClick={() => router.push('/dashboard/exams/online')} 
+                            style={{ background: P.card, border: '1px solid ' + P.border, color: P.text, padding: '8px 18px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 700, transition: 'all 0.15s' }}
+                        >
                             Exit
                         </button>
                     </div>
 
                     {/* Exam Overview Strip */}
-                    <div style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 16, padding: '18px 24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16, marginBottom: 24 }}>
+                    <div style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 18, padding: '20px 28px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16, marginBottom: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                         <div>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: P.text, textTransform: 'uppercase' }}>Duration</div>
-                            <div style={{ fontSize: 16, fontWeight: 900, color: P.light, marginTop: 4 }}>{exam?.duration || 60} Minutes</div>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: P.text, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Duration</div>
+                            <div style={{ fontSize: 18, fontWeight: 900, color: P.textDark, marginTop: 4 }}>{exam?.duration || 60} Minutes</div>
                         </div>
                         <div>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: P.text, textTransform: 'uppercase' }}>Total Marks</div>
-                            <div style={{ fontSize: 16, fontWeight: 900, color: P.light, marginTop: 4 }}>{exam?.total_marks || 100} Marks</div>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: P.text, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Marks</div>
+                            <div style={{ fontSize: 18, fontWeight: 900, color: P.textDark, marginTop: 4 }}>{exam?.total_marks || 100} Marks</div>
                         </div>
                         <div>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: P.text, textTransform: 'uppercase' }}>Questions</div>
-                            <div style={{ fontSize: 16, fontWeight: 900, color: P.light, marginTop: 4 }}>{questions.length} Questions</div>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: P.text, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Questions</div>
+                            <div style={{ fontSize: 18, fontWeight: 900, color: P.textDark, marginTop: 4 }}>{questions.length} Questions</div>
                         </div>
                         <div>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: P.text, textTransform: 'uppercase' }}>Schedule Type</div>
-                            <div style={{ fontSize: 16, fontWeight: 900, color: scheduleSlots.length > 0 ? P.brand : P.success, marginTop: 4 }}>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: P.text, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Schedule Type</div>
+                            <div style={{ fontSize: 18, fontWeight: 900, color: scheduleSlots.length > 0 ? P.brand : P.success, marginTop: 4 }}>
                                 {scheduleSlots.length > 0 ? `${scheduleSlots.length} Section Slots` : 'Open Window'}
                             </div>
                         </div>
@@ -241,9 +261,9 @@ export default function OnlinePlayer() {
 
                     {/* Schedule Slots Timeline Notice */}
                     {scheduleSlots.length > 0 && (
-                        <div style={{ background: 'rgba(30, 41, 59, 0.6)', border: '1px solid ' + P.border, borderRadius: 16, padding: 20, marginBottom: 24 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 900, color: P.light }}>
+                        <div style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 18, padding: 22, marginBottom: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 800, color: P.textDark }}>
                                     <Calendar size={16} color={P.brand} />
                                     Exam Schedule by Class & Section
                                 </div>
@@ -253,9 +273,9 @@ export default function OnlinePlayer() {
                                 {scheduleSlots.map((s, idx) => {
                                     const st = getSlotStatus(s)
                                     return (
-                                        <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, background: 'rgba(15, 23, 42, 0.5)', border: '1px solid ' + (st.label === 'Live Now' ? P.success + '40' : P.border) }}>
+                                        <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderRadius: 12, background: P.bg, border: '1px solid ' + st.border }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                <span style={{ fontSize: 11, fontWeight: 900, background: P.card, padding: '3px 8px', borderRadius: 6, color: P.light }}>Slot {idx + 1}</span>
+                                                <span style={{ fontSize: 11, fontWeight: 800, background: P.card, border: '1px solid ' + P.border, padding: '3px 8px', borderRadius: 6, color: P.textDark }}>Slot {idx + 1}</span>
                                                 <span style={{ fontSize: 13, fontWeight: 800, color: P.brand }}>{s.class_name || 'All Classes'} · {s.section_name || 'All Sections'}</span>
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -263,11 +283,11 @@ export default function OnlinePlayer() {
                                                     {s.start ? formatSlotDateTime(s.start) : '--'} → {s.end ? formatSlotDateTime(s.end) : '--'}
                                                 </span>
                                                 {s.max_attempts && (
-                                                    <span style={{ fontSize: 11, color: P.text, background: P.card, padding: '2px 8px', borderRadius: 6 }}>
+                                                    <span style={{ fontSize: 11, color: P.text, background: P.card, border: '1px solid ' + P.border, padding: '2px 8px', borderRadius: 6 }}>
                                                         Max {s.max_attempts} seats
                                                     </span>
                                                 )}
-                                                <span style={{ fontSize: 11, fontWeight: 800, color: st.color, background: st.bg, padding: '3px 10px', borderRadius: 20 }}>
+                                                <span style={{ fontSize: 11, fontWeight: 800, color: st.color, background: st.bg, border: '1px solid ' + st.border, padding: '3px 10px', borderRadius: 20 }}>
                                                     {st.label}
                                                 </span>
                                             </div>
@@ -280,27 +300,27 @@ export default function OnlinePlayer() {
 
                     {/* Rejection / Schedule Error Box */}
                     {errorMsg && (
-                        <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid ' + P.error + '50', borderRadius: 16, padding: 20, marginBottom: 24, display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                        <div style={{ background: P.errorBg, border: '1px solid ' + P.errorBorder, borderRadius: 16, padding: 20, marginBottom: 24, display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                             <AlertCircle size={22} color={P.error} style={{ flexShrink: 0, marginTop: 2 }} />
                             <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: 14, fontWeight: 900, color: P.error, marginBottom: 4 }}>Access Restricted: Schedule Slot Notice</div>
-                                <div style={{ fontSize: 13, color: P.light, lineHeight: 1.5 }}>{errorMsg}</div>
+                                <div style={{ fontSize: 14, fontWeight: 800, color: P.errorText, marginBottom: 4 }}>Access Restricted: Schedule Slot Notice</div>
+                                <div style={{ fontSize: 13, color: P.errorText, lineHeight: 1.5 }}>{errorMsg}</div>
                             </div>
                             <button onClick={() => setErrorMsg(null)} style={{ background: 'none', border: 'none', color: P.text, cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
                         </div>
                     )}
 
                     {/* Student Verification Card */}
-                    <div style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 24, padding: 32, boxShadow: '0 20px 40px -15px rgba(0,0,0,0.5)' }}>
+                    <div style={{ background: P.card, border: '1px solid ' + P.border, borderRadius: 24, padding: 36, boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.03)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                             <Sparkles size={20} color={P.brand} />
-                            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: P.light }}>Student Verification</h2>
+                            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: P.textDark }}>Student Verification</h2>
                         </div>
                         <p style={{ margin: '0 0 24px', fontSize: 13, color: P.text }}>
                             Please confirm your Class and Section to enter your scheduled exam slot.
                         </p>
 
-                        <form onSubmit={handleStartAttempt} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                        <form onSubmit={handleStartAttempt} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                                 <div>
                                     <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: P.text, marginBottom: 6 }}>
@@ -311,7 +331,7 @@ export default function OnlinePlayer() {
                                         placeholder="e.g. Rahul Sharma"
                                         value={studentName}
                                         onChange={e => setStudentName(e.target.value)}
-                                        style={{ width: '100%', boxSizing: 'border-box', background: P.bg, border: '1px solid ' + P.border, color: P.light, padding: '12px 14px', borderRadius: 10, fontSize: 13 }}
+                                        style={{ width: '100%', boxSizing: 'border-box', background: '#FFFFFF', border: '1px solid ' + P.border, color: P.textDark, padding: '12px 14px', borderRadius: 10, fontSize: 13, outline: 'none' }}
                                     />
                                 </div>
                                 <div>
@@ -323,7 +343,7 @@ export default function OnlinePlayer() {
                                         placeholder="e.g. 104"
                                         value={rollNo}
                                         onChange={e => setRollNo(e.target.value)}
-                                        style={{ width: '100%', boxSizing: 'border-box', background: P.bg, border: '1px solid ' + P.border, color: P.light, padding: '12px 14px', borderRadius: 10, fontSize: 13 }}
+                                        style={{ width: '100%', boxSizing: 'border-box', background: '#FFFFFF', border: '1px solid ' + P.border, color: P.textDark, padding: '12px 14px', borderRadius: 10, fontSize: 13, outline: 'none' }}
                                     />
                                 </div>
                             </div>
@@ -337,7 +357,7 @@ export default function OnlinePlayer() {
                                         value={selectedClass}
                                         onChange={e => setSelectedClass(e.target.value)}
                                         required
-                                        style={{ width: '100%', boxSizing: 'border-box', background: P.bg, border: '1px solid ' + P.border, color: P.light, padding: '12px 14px', borderRadius: 10, fontSize: 13 }}
+                                        style={{ width: '100%', boxSizing: 'border-box', background: '#FFFFFF', border: '1px solid ' + P.border, color: P.textDark, padding: '12px 14px', borderRadius: 10, fontSize: 13, outline: 'none' }}
                                     >
                                         {availableSlotClasses.map(cls => (
                                             <option key={cls} value={cls}>{cls}</option>
@@ -352,7 +372,7 @@ export default function OnlinePlayer() {
                                         value={selectedSection}
                                         onChange={e => setSelectedSection(e.target.value)}
                                         required
-                                        style={{ width: '100%', boxSizing: 'border-box', background: P.bg, border: '1px solid ' + P.border, color: P.light, padding: '12px 14px', borderRadius: 10, fontSize: 13 }}
+                                        style={{ width: '100%', boxSizing: 'border-box', background: '#FFFFFF', border: '1px solid ' + P.border, color: P.textDark, padding: '12px 14px', borderRadius: 10, fontSize: 13, outline: 'none' }}
                                     >
                                         {STANDARD_SECTIONS.map(sec => (
                                             <option key={sec} value={sec}>{sec}</option>
@@ -362,9 +382,9 @@ export default function OnlinePlayer() {
                             </div>
 
                             {/* Integrity Notice */}
-                            <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid ' + P.border, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ background: P.bg, border: '1px solid ' + P.border, borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                                 <Shield size={18} color={P.brand} style={{ flexShrink: 0 }} />
-                                <span style={{ fontSize: 12, color: P.text, lineHeight: 1.4 }}>
+                                <span style={{ fontSize: 12, color: P.text, lineHeight: 1.45 }}>
                                     Each section is isolated to its assigned slot. Only students whose section matches an active slot will be permitted to start.
                                 </span>
                             </div>
@@ -373,14 +393,14 @@ export default function OnlinePlayer() {
                                 <button
                                     type="button"
                                     onClick={fetchExam}
-                                    style={{ background: 'transparent', border: '1px solid ' + P.border, color: P.text, padding: '12px 20px', borderRadius: 12, fontWeight: 700, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}
+                                    style={{ background: P.card, border: '1px solid ' + P.border, color: P.text, padding: '12px 20px', borderRadius: 12, fontWeight: 700, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}
                                 >
                                     <RefreshCw size={14} /> Refresh Schedule
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={startingAttempt}
-                                    style={{ background: P.brand, color: P.bg, border: 'none', padding: '12px 28px', borderRadius: 12, fontWeight: 900, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 14px rgba(56, 189, 248, 0.3)' }}
+                                    style={{ background: P.brand, color: '#FFFFFF', border: 'none', padding: '12px 28px', borderRadius: 12, fontWeight: 800, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 14px rgba(2, 132, 199, 0.25)' }}
                                 >
                                     {startingAttempt ? <Loader2 size={18} className="spin" /> : <ArrowRight size={18} />}
                                     {startingAttempt ? 'Verifying Slot...' : 'Start Exam Attempt'}
@@ -414,56 +434,61 @@ export default function OnlinePlayer() {
     }
 
     return (
-        <div style={{ background: P.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', color: P.light, fontSmooth: 'antialiased' }}>
-            {/* Header */}
-            <header style={{ padding: '16px 36px', borderBottom: '1px solid ' + P.border, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 100 }}>
+        <div style={{ background: P.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', color: P.textDark, fontSmooth: 'antialiased' }}>
+            {/* Sticky Header */}
+            <header style={{ padding: '14px 36px', borderBottom: '1px solid ' + P.border, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <div style={{ background: P.brandBg, color: P.brand, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 900 }}>LIVE EXAM</div>
+                    <div style={{ background: P.brandBg, color: P.brand, border: '1px solid ' + P.brandBorder, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 900, letterSpacing: '0.05em' }}>LIVE EXAM</div>
                     <div>
-                        <h1 style={{ margin: 0, fontSize: 18, fontWeight: 900 }}>{exam?.title || 'Online Assessment'}</h1>
+                        <h1 style={{ margin: 0, fontSize: 17, fontWeight: 900, color: P.textDark }}>{exam?.title || 'Online Assessment'}</h1>
                         <div style={{ fontSize: 11, color: P.text, fontWeight: 600 }}>
                             {selectedClass} · {selectedSection} {studentName ? `· ${studentName}` : ''}
                         </div>
                     </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
                     {tabSwitches > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: P.error, fontSize: 12, fontWeight: 800 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: P.errorText, background: P.errorBg, border: '1px solid ' + P.errorBorder, padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 800 }}>
                             <Shield size={16}/> INTEGRITY WARNING: {tabSwitches}
                         </div>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: timeLeft < 300 ? P.error + '20' : P.card, padding: '8px 18px', borderRadius: 12, border: '1px solid ' + (timeLeft < 300 ? P.error + '40' : P.border) }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: timeLeft < 300 ? P.errorBg : '#FFFFFF', padding: '8px 18px', borderRadius: 12, border: '1px solid ' + (timeLeft < 300 ? P.errorBorder : P.border), boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
                         <Clock size={18} color={timeLeft < 300 ? P.error : P.brand} />
-                        <span style={{ fontSize: 18, fontWeight: 900, fontFamily: 'monospace', color: timeLeft < 300 ? P.error : P.light }}>
+                        <span style={{ fontSize: 18, fontWeight: 900, fontFamily: 'monospace', color: timeLeft < 300 ? P.error : P.textDark }}>
                             {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
                         </span>
                     </div>
-                    <button onClick={handleSubmit} disabled={submitting} style={{ background: P.brand, color: P.bg, border: 'none', padding: '10px 22px', borderRadius: 12, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button 
+                        onClick={handleSubmit} 
+                        disabled={submitting} 
+                        style={{ background: P.brand, color: '#FFFFFF', border: 'none', padding: '10px 22px', borderRadius: 12, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)' }}
+                    >
                         {submitting ? <Loader2 size={18} className="spin" /> : <Send size={18} />} Submit Exam
                     </button>
                 </div>
             </header>
 
-            {/* Main Content */}
-            <main style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 320px', gap: 1, background: P.border }}>
-                <div style={{ background: P.bg, padding: '48px 60px', display: 'flex', flexDirection: 'column', gap: 32 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <span style={{ background: P.card, border: '1px solid ' + P.border, padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 900 }}>
+            {/* Main Content Pane */}
+            <main style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 340px', gap: 0 }}>
+                {/* Question Area */}
+                <div style={{ background: '#FFFFFF', padding: '44px 56px', display: 'flex', flexDirection: 'column', gap: 28, borderRight: '1px solid ' + P.border }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <span style={{ background: P.borderLight, border: '1px solid ' + P.border, color: P.textDark, padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 800 }}>
                             QUESTION {currentIdx + 1} OF {questions.length}
                         </span>
                         {(q?.sub_type || q?.details?.sub_type) && (
-                            <span style={{ fontSize: 11, fontWeight: 800, color: P.brand, background: P.brandBg, padding: '4px 10px', borderRadius: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            <span style={{ fontSize: 11, fontWeight: 800, color: P.brand, background: P.brandBg, border: '1px solid ' + P.brandBorder, padding: '5px 10px', borderRadius: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 {(q?.sub_type || q?.details?.sub_type).replace(/_/g, ' ')}
                             </span>
                         )}
                         {q?.marks && (
-                            <span style={{ fontSize: 11, color: P.text, background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: 8 }}>
+                            <span style={{ fontSize: 11, color: P.text, background: P.bg, border: '1px solid ' + P.border, padding: '5px 10px', borderRadius: 8, fontWeight: 700 }}>
                                 +{q.marks} Marks {q.negative_marks ? `(${q.negative_marks} neg)` : ''}
                             </span>
                         )}
                     </div>
 
-                    <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.45, color: P.light, whiteSpace: 'pre-line' }}>
+                    <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.55, color: P.textDark, whiteSpace: 'pre-line' }}>
                         {qText}
                     </div>
 
@@ -476,23 +501,30 @@ export default function OnlinePlayer() {
                                         key={key}
                                         onClick={() => setAnswers({ ...answers, [qId]: key })}
                                         style={{
-                                            textAlign: 'left', padding: '20px 24px', borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16, transition: 'all 0.15s',
-                                            background: isSelected ? P.brand + '20' : P.card,
-                                            border: '1px solid ' + (isSelected ? P.brand : P.border),
-                                            color: isSelected ? P.brand : P.light
+                                            textAlign: 'left', padding: '18px 22px', borderRadius: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16, transition: 'all 0.15s',
+                                            background: isSelected ? P.brandBg : '#FFFFFF',
+                                            border: isSelected ? '2px solid ' + P.brand : '1px solid ' + P.border,
+                                            color: isSelected ? P.brandHover : P.textDark,
+                                            boxShadow: isSelected ? '0 4px 12px rgba(2, 132, 199, 0.08)' : '0 1px 2px rgba(0,0,0,0.02)'
                                         }}
                                     >
-                                        <div style={{ width: 34, height: 34, borderRadius: 10, background: isSelected ? P.brand : P.bg, color: isSelected ? P.bg : P.text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, flexShrink: 0 }}>
+                                        <div style={{ 
+                                            width: 34, height: 34, borderRadius: 10, 
+                                            background: isSelected ? P.brand : P.borderLight, 
+                                            color: isSelected ? '#FFFFFF' : P.textDark, 
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                            fontSize: 14, fontWeight: 900, flexShrink: 0 
+                                        }}>
                                             {key}
                                         </div>
-                                        <div style={{ fontSize: 16, fontWeight: 600 }}>{label}</div>
+                                        <div style={{ fontSize: 15, fontWeight: isSelected ? 700 : 500, lineHeight: 1.4 }}>{label}</div>
                                     </button>
                                 )
                             })}
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            <label style={{ fontSize: 13, fontWeight: 700, color: P.text }}>Type your answer / response:</label>
+                            <label style={{ fontSize: 13, fontWeight: 800, color: P.text }}>Type your answer / response:</label>
                             <textarea
                                 value={answers[qId] || ''}
                                 onChange={(e) => setAnswers({ ...answers, [qId]: e.target.value })}
@@ -500,32 +532,33 @@ export default function OnlinePlayer() {
                                 rows={6}
                                 style={{
                                     width: '100%',
-                                    background: P.card,
+                                    background: '#FFFFFF',
                                     border: '1px solid ' + P.border,
                                     borderRadius: 14,
                                     padding: '16px 20px',
-                                    color: P.light,
+                                    color: P.textDark,
                                     fontSize: 15,
                                     outline: 'none',
                                     fontFamily: 'inherit',
-                                    resize: 'vertical'
+                                    resize: 'vertical',
+                                    boxSizing: 'border-box'
                                 }}
                             />
                         </div>
                     )}
 
-                    <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 24 }}>
+                    <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 28 }}>
                         <button 
                             onClick={() => setCurrentIdx(prev => Math.max(0, prev - 1))} 
                             disabled={currentIdx === 0}
-                            style={{ padding: '14px 28px', borderRadius: 12, border: '1px solid ' + P.border, color: currentIdx === 0 ? '#475569' : P.text, background: 'none', fontWeight: 800, cursor: currentIdx === 0 ? 'not-allowed' : 'pointer' }}
+                            style={{ padding: '12px 24px', borderRadius: 12, border: '1px solid ' + P.border, color: currentIdx === 0 ? P.textMuted : P.textDark, background: P.card, fontWeight: 800, cursor: currentIdx === 0 ? 'not-allowed' : 'pointer' }}
                         >
                             Previous
                         </button>
                         <button 
                             onClick={() => setCurrentIdx(prev => Math.min(questions.length - 1, prev + 1))} 
                             disabled={currentIdx === questions.length - 1}
-                            style={{ padding: '14px 32px', borderRadius: 12, background: P.card, border: '1px solid ' + P.border, color: currentIdx === questions.length - 1 ? '#475569' : P.light, fontWeight: 800, cursor: currentIdx === questions.length - 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                            style={{ padding: '12px 28px', borderRadius: 12, background: P.brand, border: 'none', color: '#FFFFFF', fontWeight: 800, cursor: currentIdx === questions.length - 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)' }}
                         >
                             Next Question <ChevronRight size={18}/>
                         </button>
@@ -533,7 +566,7 @@ export default function OnlinePlayer() {
                 </div>
 
                 {/* Sidebar Navigation */}
-                <div style={{ background: P.bg, padding: 28, overflowY: 'auto' }}>
+                <div style={{ background: P.bg, padding: 26, overflowY: 'auto' }}>
                     <h4 style={{ margin: '0 0 16px', fontSize: 12, fontWeight: 900, color: P.text, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         Questions Palette
                     </h4>
@@ -547,9 +580,11 @@ export default function OnlinePlayer() {
                                     key={i}
                                     onClick={() => setCurrentIdx(i)}
                                     style={{
-                                        height: 44, borderRadius: 10, border: '1px solid ' + (isCurrent ? P.brand : P.border), cursor: 'pointer', fontSize: 13, fontWeight: 900, transition: 'all 0.15s',
-                                        background: isCurrent ? P.brand : (isAnswered ? P.success + '20' : 'transparent'),
-                                        color: isCurrent ? P.bg : (isAnswered ? P.success : P.text)
+                                        height: 42, borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 900, transition: 'all 0.15s',
+                                        background: isCurrent ? P.brand : (isAnswered ? P.successBg : '#FFFFFF'),
+                                        color: isCurrent ? '#FFFFFF' : (isAnswered ? P.successText : P.textDark),
+                                        border: isCurrent ? '1px solid ' + P.brand : (isAnswered ? '1px solid ' + P.successBorder : '1px solid ' + P.border),
+                                        boxShadow: isCurrent ? '0 2px 8px rgba(2, 132, 199, 0.35)' : 'none'
                                     }}
                                 >
                                     {i + 1}
@@ -560,12 +595,16 @@ export default function OnlinePlayer() {
 
                     <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid ' + P.border, display: 'flex', flexDirection: 'column', gap: 10, fontSize: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 12, height: 12, borderRadius: 3, background: P.success + '30', border: '1px solid ' + P.success }}></div>
-                            <span style={{ color: P.text }}>Answered ({Object.keys(answers).length})</span>
+                            <div style={{ width: 14, height: 14, borderRadius: 4, background: P.successBg, border: '1px solid ' + P.successBorder }}></div>
+                            <span style={{ color: P.text, fontWeight: 600 }}>Answered ({Object.keys(answers).length})</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 12, height: 12, borderRadius: 3, background: 'transparent', border: '1px solid ' + P.border }}></div>
-                            <span style={{ color: P.text }}>Unanswered ({questions.length - Object.keys(answers).length})</span>
+                            <div style={{ width: 14, height: 14, borderRadius: 4, background: '#FFFFFF', border: '1px solid ' + P.border }}></div>
+                            <span style={{ color: P.text, fontWeight: 600 }}>Unanswered ({questions.length - Object.keys(answers).length})</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 14, height: 14, borderRadius: 4, background: P.brand, border: '1px solid ' + P.brand }}></div>
+                            <span style={{ color: P.text, fontWeight: 600 }}>Current Question</span>
                         </div>
                     </div>
                 </div>
@@ -573,4 +612,3 @@ export default function OnlinePlayer() {
         </div>
     )
 }
-
