@@ -141,6 +141,7 @@ interface TeacherScope {
     is_scoped: boolean
     assigned_classes: string[]
     assigned_divisions: string[]
+    assigned_subjects?: string[]
 }
 
 // ── CIRCULAR SCORE GAUGE COMPONENT ──────────────────────────
@@ -197,6 +198,7 @@ export default function Result360Analytics() {
     const [selectedSubject, setSelectedSubject] = useState<string>('all')
     const [searchQuery, setSearchQuery] = useState<string>('')
     const [weakerFilterSeverity, setWeakerFilterSeverity] = useState<'all' | 'critical' | 'moderate'>('all')
+    const [ledgerView, setLedgerView] = useState<'students' | 'submissions'>('students')
 
     // Data states
     const [teacherScope, setTeacherScope] = useState<TeacherScope | null>(null)
@@ -295,33 +297,53 @@ export default function Result360Analytics() {
         return weakerAnalytics.weaker_topics.filter(t => t.risk_level.toLowerCase() === weakerFilterSeverity)
     }, [weakerAnalytics.weaker_topics, weakerFilterSeverity])
 
-    // Export student records to CSV
+    // Export student records to CSV (supports both unique students and paper submissions)
     const exportToCSV = () => {
-        if (!students.length) return
-
-        const headers = ['Rank', 'Student Name', 'Roll Number', 'Class', 'Subject', 'Marks Awarded', 'Max Marks', 'Percentage', 'Grade Badge', 'Exam Title', 'Status']
-        const csvRows = students.map(s => [
-            s.rank,
-            `"${s.student_name.replace(/"/g, '""')}"`,
-            `"${s.roll_number}"`,
-            `"${s.class_name.replace(/"/g, '""')}"`,
-            `"${s.subject_name.replace(/"/g, '""')}"`,
-            s.awarded_marks,
-            s.max_marks,
-            `${s.percentage}%`,
-            s.grade_badge,
-            `"${s.exam_title.replace(/"/g, '""')}"`,
-            s.status
-        ])
-
-        const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...csvRows.map(r => r.join(','))].join('\n')
-        const encodedUri = encodeURI(csvContent)
-        const link = document.createElement('a')
-        link.setAttribute('href', encodedUri)
-        link.setAttribute('download', `Student_Marks_Ledger_${new Date().toISOString().slice(0, 10)}.csv`)
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
+        if (ledgerView === 'students') {
+            if (!uniqueStudentRanks.length) return
+            const headers = ['Rank', 'Student Name', 'Roll Number', 'Class', 'Overall Average', 'Overall Grade', 'Total Exams Evaluated']
+            const csvRows = uniqueStudentRanks.map(s => [
+                s.rank,
+                `"${s.student_name.replace(/"/g, '""')}"`,
+                `"${s.roll_number}"`,
+                `"${s.class_name.replace(/"/g, '""')}"`,
+                `${s.overall_average}%`,
+                s.overall_grade,
+                s.total_exams
+            ])
+            const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...csvRows.map(r => r.join(','))].join('\n')
+            const encodedUri = encodeURI(csvContent)
+            const link = document.createElement('a')
+            link.setAttribute('href', encodedUri)
+            link.setAttribute('download', `Student_Rank_Ledger_${new Date().toISOString().slice(0, 10)}.csv`)
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+        } else {
+            if (!students.length) return
+            const headers = ['Rank', 'Student Name', 'Roll Number', 'Class', 'Subject', 'Marks Awarded', 'Max Marks', 'Percentage', 'Grade Badge', 'Exam Title', 'Status']
+            const csvRows = students.map(s => [
+                s.rank,
+                `"${s.student_name.replace(/"/g, '""')}"`,
+                `"${s.roll_number}"`,
+                `"${s.class_name.replace(/"/g, '""')}"`,
+                `"${s.subject_name.replace(/"/g, '""')}"`,
+                s.awarded_marks,
+                s.max_marks,
+                `${s.percentage}%`,
+                s.grade_badge,
+                `"${s.exam_title.replace(/"/g, '""')}"`,
+                s.status
+            ])
+            const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...csvRows.map(r => r.join(','))].join('\n')
+            const encodedUri = encodeURI(csvContent)
+            const link = document.createElement('a')
+            link.setAttribute('href', encodedUri)
+            link.setAttribute('download', `Student_Paper_Submissions_${new Date().toISOString().slice(0, 10)}.csv`)
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+        }
     }
 
     const open360ModalForStudent = (studentId: string, fallbackRecord?: StudentRecord) => {
@@ -351,7 +373,7 @@ export default function Result360Analytics() {
                     {
                         exam_title: fallbackRecord.exam_title,
                         subject_name: fallbackRecord.subject_name,
-                        date: null,
+                        date: '',
                         awarded_marks: Number(fallbackRecord.awarded_marks),
                         max_marks: Number(fallbackRecord.max_marks),
                         percentage: Number(fallbackRecord.percentage),
@@ -439,7 +461,7 @@ export default function Result360Analytics() {
 
             {/* ── TEACHER SCOPE BANNER (IF ACTIVE) ────────────────────── */}
             {teacherScope?.is_scoped && (
-                teacherScope.assigned_classes.length > 0 ? (
+                teacherScope.assigned_classes.length > 0 || (teacherScope.assigned_subjects && teacherScope.assigned_subjects.length > 0) ? (
                     <div className="mb-6 bg-blue-50/90 border border-blue-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
@@ -450,14 +472,26 @@ export default function Result360Analytics() {
                                     <span>Teacher Analytics Scope Active</span>
                                     <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                 </div>
-                                <div className="text-xs sm:text-sm font-semibold text-slate-800 mt-0.5">
-                                    Analytics restricted to your assigned classes:{' '}
-                                    <span className="text-blue-700 font-bold bg-blue-100/80 px-2 py-0.5 rounded-lg">
-                                        {teacherScope.assigned_classes.join(', ')}
-                                    </span>
+                                <div className="text-xs sm:text-sm font-semibold text-slate-800 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                                    {teacherScope.assigned_classes.length > 0 && (
+                                        <span>
+                                            Assigned Classes:{' '}
+                                            <span className="text-blue-700 font-bold bg-blue-100/80 px-2 py-0.5 rounded-lg">
+                                                {teacherScope.assigned_classes.join(', ')}
+                                            </span>
+                                        </span>
+                                    )}
                                     {teacherScope.assigned_divisions.length > 0 && (
-                                        <span className="text-slate-600 font-medium ml-1">
+                                        <span className="text-slate-600 font-medium">
                                             (Sections: {teacherScope.assigned_divisions.join(', ')})
+                                        </span>
+                                    )}
+                                    {teacherScope.assigned_subjects && teacherScope.assigned_subjects.length > 0 && (
+                                        <span>
+                                            • Assigned Subjects:{' '}
+                                            <span className="text-emerald-800 font-bold bg-emerald-100/80 px-2 py-0.5 rounded-lg">
+                                                {teacherScope.assigned_subjects.join(', ')}
+                                            </span>
                                         </span>
                                     )}
                                 </div>
@@ -471,9 +505,9 @@ export default function Result360Analytics() {
                     <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3.5 shadow-sm">
                         <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                         <div>
-                            <div className="text-sm font-bold text-amber-900">No Classes Assigned to Your Teacher Account</div>
+                            <div className="text-sm font-bold text-amber-900">No Classes or Subjects Assigned to Your Teacher Account</div>
                             <div className="text-xs text-amber-700 font-medium mt-1">
-                                Your teacher profile does not currently have any classes assigned. Please contact your school administrator to configure your assigned classes in the Staff Directory.
+                                Your teacher profile does not currently have any classes or subjects assigned. Please contact your school administrator to configure your assigned classes and subjects in the Staff Directory.
                             </div>
                         </div>
                     </div>
@@ -861,134 +895,259 @@ export default function Result360Analytics() {
                         <div>
                             <h3 className="text-base font-bold text-slate-900">Student Academic Rank Ledger</h3>
                             <p className="text-xs text-slate-500 font-medium mt-0.5">
-                                Click <strong className="text-blue-600">"360° Analytics"</strong> to view comprehensive student mastery, weak topics, and academic dossier.
+                                Showing teacher assigned scope: <strong className="text-slate-800">{uniqueStudentRanks.length} unique students</strong> ({students.length} evaluated subject papers). Click <strong className="text-blue-600">"360° Profile"</strong> for academic dossier.
                             </p>
                         </div>
-                        <button
-                            onClick={exportToCSV}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 shadow-sm"
-                        >
-                            <Download className="w-3.5 h-3.5 text-blue-600" /> Export CSV
-                        </button>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <div className="flex items-center bg-slate-200/70 p-1 rounded-xl text-xs font-bold">
+                                <button
+                                    onClick={() => setLedgerView('students')}
+                                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                                        ledgerView === 'students'
+                                            ? 'bg-white text-blue-700 shadow-xs'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                    }`}
+                                >
+                                    Unique Students ({uniqueStudentRanks.length})
+                                </button>
+                                <button
+                                    onClick={() => setLedgerView('submissions')}
+                                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                                        ledgerView === 'submissions'
+                                            ? 'bg-white text-blue-700 shadow-xs'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                    }`}
+                                >
+                                    Exam Papers ({students.length})
+                                </button>
+                            </div>
+                            <button
+                                onClick={exportToCSV}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 shadow-sm"
+                            >
+                                <Download className="w-3.5 h-3.5 text-blue-600" /> Export CSV
+                            </button>
+                        </div>
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                                <tr>
-                                    <th className="py-3.5 px-5">Rank</th>
-                                    <th className="py-3.5 px-5">Student Information</th>
-                                    <th className="py-3.5 px-5">Class</th>
-                                    <th className="py-3.5 px-5">Subjects Evaluated</th>
-                                    <th className="py-3.5 px-5">Overall Avg</th>
-                                    <th className="py-3.5 px-5">Grade</th>
-                                    <th className="py-3.5 px-5">Exams</th>
-                                    <th className="py-3.5 px-5 text-right">360° Analytics</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {uniqueStudentRanks.length === 0 ? (
+                        {ledgerView === 'students' ? (
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
                                     <tr>
-                                        <td colSpan={8} className="py-12 text-center text-slate-400 text-xs">
-                                            No student records found matching the current filter criteria.
-                                        </td>
+                                        <th className="py-3.5 px-5">Rank</th>
+                                        <th className="py-3.5 px-5">Student Information</th>
+                                        <th className="py-3.5 px-5">Class</th>
+                                        <th className="py-3.5 px-5">Assigned Subjects Evaluated</th>
+                                        <th className="py-3.5 px-5">Overall Avg</th>
+                                        <th className="py-3.5 px-5">Grade</th>
+                                        <th className="py-3.5 px-5">Exams</th>
+                                        <th className="py-3.5 px-5 text-right">360° Analytics</th>
                                     </tr>
-                                ) : (
-                                    uniqueStudentRanks.map((st) => (
-                                        <tr
-                                            key={st.student_id}
-                                            onClick={() => setSelectedStudentFor360(st)}
-                                            className="hover:bg-blue-50/40 transition-colors cursor-pointer group"
-                                        >
-                                            <td className="py-4 px-5">
-                                                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black ${
-                                                    st.rank === 1
-                                                        ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                                                        : st.rank === 2
-                                                            ? 'bg-slate-200 text-slate-700 border border-slate-300'
-                                                            : st.rank === 3
-                                                                ? 'bg-amber-50 text-amber-900 border border-amber-200'
-                                                                : 'bg-slate-100 text-slate-600'
-                                                }`}>
-                                                    #{st.rank}
-                                                </span>
-                                            </td>
-                                            <td className="py-4 px-5">
-                                                <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                                                    {st.student_name}
-                                                </div>
-                                                <div className="text-xs text-slate-400 font-medium">
-                                                    Roll: {st.roll_number || 'N/A'}
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-5 text-xs font-semibold text-slate-700">
-                                                {st.class_name}
-                                            </td>
-                                            {/* Subject breakdown — one badge per subject */}
-                                            <td className="py-4 px-5">
-                                                <div className="flex flex-wrap gap-1.5">
-                                                    {st.subject_mastery.map((sub, si) => (
-                                                        <span
-                                                            key={si}
-                                                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                                                sub.score >= 75
-                                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                                                    : sub.score >= 40
-                                                                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                                                        : 'bg-rose-50 text-rose-700 border border-rose-200'
-                                                            }`}
-                                                            title={`${sub.subject_name}: ${sub.score}%`}
-                                                        >
-                                                            {sub.subject_name} {sub.score}%
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-5">
-                                                <div className="font-black text-slate-900">{st.overall_average}%</div>
-                                                <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                                                    <div
-                                                        className={`h-full rounded-full ${
-                                                            st.overall_average >= 75
-                                                                ? 'bg-emerald-500'
-                                                                : st.overall_average >= 40
-                                                                    ? 'bg-blue-500'
-                                                                    : 'bg-rose-500'
-                                                        }`}
-                                                        style={{ width: `${Math.min(st.overall_average, 100)}%` }}
-                                                    />
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-5">
-                                                <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-black ${
-                                                    st.overall_grade === 'A+' || st.overall_grade === 'A'
-                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                                        : st.overall_grade === 'B' || st.overall_grade === 'C'
-                                                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                                            : 'bg-amber-50 text-amber-700 border border-amber-200'
-                                                }`}>
-                                                    Grade {st.overall_grade}
-                                                </span>
-                                            </td>
-                                            <td className="py-4 px-5 text-xs font-bold text-slate-600">
-                                                {st.total_exams} paper{st.total_exams !== 1 ? 's' : ''}
-                                            </td>
-                                            <td className="py-4 px-5 text-right">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        setSelectedStudentFor360(st)
-                                                    }}
-                                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition-all shadow-xs"
-                                                >
-                                                    <Sparkles className="w-3.5 h-3.5 text-blue-600" /> 360° Profile
-                                                </button>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {uniqueStudentRanks.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={8} className="py-12 text-center text-slate-400 text-xs">
+                                                No student records found matching the current filter criteria.
                                             </td>
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                    ) : (
+                                        uniqueStudentRanks.map((st) => (
+                                            <tr
+                                                key={st.student_id}
+                                                onClick={() => setSelectedStudentFor360(st)}
+                                                className="hover:bg-blue-50/40 transition-colors cursor-pointer group"
+                                            >
+                                                <td className="py-4 px-5">
+                                                    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black ${
+                                                        st.rank === 1
+                                                            ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                                            : st.rank === 2
+                                                                ? 'bg-slate-200 text-slate-700 border border-slate-300'
+                                                                : st.rank === 3
+                                                                    ? 'bg-amber-50 text-amber-900 border border-amber-200'
+                                                                    : 'bg-slate-100 text-slate-600'
+                                                    }`}>
+                                                        #{st.rank}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-5">
+                                                    <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                                                        {st.student_name}
+                                                    </div>
+                                                    <div className="text-xs text-slate-400 font-medium">
+                                                        Roll: {st.roll_number || 'N/A'}
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-5 text-xs font-semibold text-slate-700">
+                                                    {st.class_name}
+                                                </td>
+                                                <td className="py-4 px-5">
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {st.subject_mastery.map((sub, si) => (
+                                                            <span
+                                                                key={si}
+                                                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                                                    sub.score >= 75
+                                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                                        : sub.score >= 40
+                                                                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                                                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                                                }`}
+                                                                title={`${sub.subject_name}: ${sub.score}%`}
+                                                            >
+                                                                {sub.subject_name} {sub.score}%
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-5">
+                                                    <div className="font-black text-slate-900">{st.overall_average}%</div>
+                                                    <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                                                        <div
+                                                            className={`h-full rounded-full ${
+                                                                st.overall_average >= 75
+                                                                    ? 'bg-emerald-500'
+                                                                    : st.overall_average >= 40
+                                                                        ? 'bg-blue-500'
+                                                                        : 'bg-rose-500'
+                                                            }`}
+                                                            style={{ width: `${Math.min(st.overall_average, 100)}%` }}
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-5">
+                                                    <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-black ${
+                                                        st.overall_grade === 'A+' || st.overall_grade === 'A'
+                                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                            : st.overall_grade === 'B' || st.overall_grade === 'C'
+                                                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                    }`}>
+                                                        Grade {st.overall_grade}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-5 text-xs font-bold text-slate-600">
+                                                    {st.total_exams} paper{st.total_exams !== 1 ? 's' : ''}
+                                                </td>
+                                                <td className="py-4 px-5 text-right">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            setSelectedStudentFor360(st)
+                                                        }}
+                                                        className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition-all shadow-xs"
+                                                    >
+                                                        <Sparkles className="w-3.5 h-3.5 text-blue-600" /> 360° Profile
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                                    <tr>
+                                        <th className="py-3.5 px-5">Rank</th>
+                                        <th className="py-3.5 px-5">Student Information</th>
+                                        <th className="py-3.5 px-5">Class</th>
+                                        <th className="py-3.5 px-5">Subject Evaluated</th>
+                                        <th className="py-3.5 px-5">Marks Awarded</th>
+                                        <th className="py-3.5 px-5">Score %</th>
+                                        <th className="py-3.5 px-5">Grade</th>
+                                        <th className="py-3.5 px-5 text-right">360° Analytics</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {students.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={8} className="py-12 text-center text-slate-400 text-xs">
+                                                No submission records found matching the current filter criteria.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        students.map((st) => (
+                                            <tr
+                                                key={st.id}
+                                                onClick={() => open360ModalForStudent(st.student_id, st)}
+                                                className="hover:bg-blue-50/40 transition-colors cursor-pointer group"
+                                            >
+                                                <td className="py-4 px-5">
+                                                    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black ${
+                                                        st.rank === 1
+                                                            ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                                            : st.rank === 2
+                                                                ? 'bg-slate-200 text-slate-700 border border-slate-300'
+                                                                : st.rank === 3
+                                                                    ? 'bg-amber-50 text-amber-900 border border-amber-200'
+                                                                    : 'bg-slate-100 text-slate-600'
+                                                    }`}>
+                                                        #{st.rank}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-5">
+                                                    <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                                                        {st.student_name}
+                                                    </div>
+                                                    <div className="text-xs text-slate-400 font-medium">
+                                                        Roll: {st.roll_number || 'N/A'}
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-5 text-xs font-semibold text-slate-700">
+                                                    {st.class_name}
+                                                </td>
+                                                <td className="py-4 px-5 text-xs font-semibold text-slate-700">
+                                                    {st.subject_name}
+                                                </td>
+                                                <td className="py-4 px-5 font-bold text-slate-900">
+                                                    {st.awarded_marks} <span className="text-xs text-slate-400 font-normal">/ {st.max_marks}</span>
+                                                </td>
+                                                <td className="py-4 px-5">
+                                                    <div className="font-black text-slate-900">{st.percentage}%</div>
+                                                    <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                                                        <div
+                                                            className={`h-full rounded-full ${
+                                                                Number(st.percentage) >= 75
+                                                                    ? 'bg-emerald-500'
+                                                                    : Number(st.percentage) >= 40
+                                                                        ? 'bg-blue-500'
+                                                                        : 'bg-rose-500'
+                                                            }`}
+                                                            style={{ width: `${Math.min(Number(st.percentage), 100)}%` }}
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-5">
+                                                    <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-black ${
+                                                        st.grade_badge === 'A+' || st.grade_badge === 'A'
+                                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                            : st.grade_badge === 'B' || st.grade_badge === 'C'
+                                                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                    }`}>
+                                                        Grade {st.grade_badge}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-5 text-right">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            open360ModalForStudent(st.student_id, st)
+                                                        }}
+                                                        className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition-all shadow-xs"
+                                                    >
+                                                        <Sparkles className="w-3.5 h-3.5 text-blue-600" /> 360° Profile
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
                 </div>
             )}

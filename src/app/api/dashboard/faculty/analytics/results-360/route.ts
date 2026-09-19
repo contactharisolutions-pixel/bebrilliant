@@ -14,10 +14,13 @@ export async function GET(request: NextRequest) {
         const examIdFilter = url.searchParams.get('exam_id') || 'all'
         const search = url.searchParams.get('search')?.trim() || ''
 
-        // 1. Identify User Role & Teacher Assigned Classes Scope
+        // 1. Identify User Role & Teacher Assigned Classes and Subjects Scope
         let userRole = 'admin'
         let assignedClasses: string[] = []
         let assignedDivisions: string[] = []
+        let rawAssignedSubjects: string[] = []
+        let assignedSubjectNames: string[] = []
+        let assignedSubjectIds: string[] = []
 
         if (session?.user?.id) {
             const userRes = await query(
@@ -28,11 +31,62 @@ export async function GET(request: NextRequest) {
                 userRole = userRes.rows[0].role || 'teacher'
                 const meta = userRes.rows[0].metadata || {}
                 if (Array.isArray(meta.assigned_classes)) {
-                    assignedClasses = meta.assigned_classes
+                    assignedClasses = meta.assigned_classes.filter(Boolean)
                 }
                 if (Array.isArray(meta.assigned_divisions)) {
-                    assignedDivisions = meta.assigned_divisions
+                    assignedDivisions = meta.assigned_divisions.filter(Boolean)
                 }
+                if (Array.isArray(meta.assigned_subjects)) {
+                    rawAssignedSubjects = meta.assigned_subjects.filter(Boolean)
+                }
+            }
+
+            const isTeacher = userRole === 'teacher'
+
+            // Fallback: Check public.teacher_subjects if metadata arrays are empty for teacher
+            if (isTeacher && (assignedClasses.length === 0 || rawAssignedSubjects.length === 0)) {
+                try {
+                    const tsRes = await query(
+                        `SELECT DISTINCT c.name as class_name, s.id as subject_id, s.name as subject_name
+                         FROM public.teacher_subjects ts
+                         LEFT JOIN public.classes c ON ts.class_id = c.id
+                         LEFT JOIN public.subjects s ON ts.subject_id = s.id
+                         WHERE ts.teacher_id = $1 AND ts.tenant_id = $2`,
+                        [session.user.id, tenantId]
+                    )
+                    if (tsRes.rows.length > 0) {
+                        if (assignedClasses.length === 0) {
+                            assignedClasses = Array.from(new Set(tsRes.rows.map((r: any) => r.class_name).filter(Boolean)))
+                        }
+                        if (rawAssignedSubjects.length === 0) {
+                            rawAssignedSubjects = Array.from(new Set(tsRes.rows.map((r: any) => r.subject_id || r.subject_name).filter(Boolean)))
+                        }
+                    }
+                } catch {
+                    // Ignore if teacher_subjects table is not present
+                }
+            }
+
+            // Resolve subject names and IDs from public.subjects
+            if (rawAssignedSubjects.length > 0) {
+                const subRes = await query(
+                    `SELECT id, name FROM public.subjects 
+                     WHERE tenant_id = $1 
+                       AND (id::text = ANY($2) OR name = ANY($2) OR code = ANY($2))`,
+                    [tenantId, rawAssignedSubjects]
+                )
+                const resolvedNames = subRes.rows.map((r: any) => r.name)
+                const resolvedIds = subRes.rows.map((r: any) => r.id)
+
+                // Combine resolved names with any direct subject strings in metadata that aren't UUIDs
+                assignedSubjectNames = Array.from(new Set([
+                    ...resolvedNames,
+                    ...rawAssignedSubjects.filter((s: string) => !s.match(/^[0-9a-f]{8}-[0-9a-f]{4}/i))
+                ]))
+                assignedSubjectIds = Array.from(new Set([
+                    ...resolvedIds,
+                    ...rawAssignedSubjects.filter((s: string) => s.match(/^[0-9a-f]{8}-[0-9a-f]{4}/i))
+                ]))
             }
         }
 
@@ -40,11 +94,12 @@ export async function GET(request: NextRequest) {
         const teacherScope = {
             is_scoped: isTeacher,
             assigned_classes: isTeacher ? assignedClasses : [],
-            assigned_divisions: isTeacher ? assignedDivisions : []
+            assigned_divisions: isTeacher ? assignedDivisions : [],
+            assigned_subjects: isTeacher ? assignedSubjectNames : []
         }
 
-        // If teacher has 0 assigned classes, return empty scoped analytics
-        if (isTeacher && assignedClasses.length === 0) {
+        // If teacher has 0 assigned classes and 0 assigned subjects, return empty scoped analytics
+        if (isTeacher && assignedClasses.length === 0 && assignedSubjectNames.length === 0) {
             return NextResponse.json({
                 success: true,
                 data: {
@@ -64,6 +119,7 @@ export async function GET(request: NextRequest) {
                         needs_attention_count: 0
                     },
                     students: [],
+                    unique_students: [],
                     subjects: [],
                     weaker_analytics: {
                         weaker_subjects: [],
@@ -95,6 +151,16 @@ export async function GET(request: NextRequest) {
                     regexp_replace(asu.class_name, '[^0-9]', '', 'g') <> ''
                     AND regexp_replace(asu.class_name, '[^0-9]', '', 'g') = ANY($${tokenParamIdx})
                 )
+            )`)
+        }
+
+        // Teacher Subject Isolation - strictly restrict to assigned subjects
+        if (isTeacher && assignedSubjectNames.length > 0) {
+            queryParams.push(assignedSubjectNames)
+            const subParamIdx = queryParams.length
+            whereClauses.push(`(
+                asu.subject_name = ANY($${subParamIdx})
+                OR asu.subject_name ILIKE ANY(SELECT '%' || unnest($${subParamIdx}::text[]) || '%')
             )`)
         }
 
@@ -233,6 +299,9 @@ export async function GET(request: NextRequest) {
             : (classFilter !== 'all' ? [classFilter] : [])
         
         const classTokens = targetClasses.map(c => c.replace(/[^0-9]/g, '')).filter(Boolean)
+        const targetSubjects = (isTeacher && assignedSubjectNames.length > 0)
+            ? assignedSubjectNames
+            : (subjectFilter !== 'all' ? [subjectFilter] : [])
 
         const syllabusChaptersQuery = `
             SELECT 
@@ -244,19 +313,24 @@ export async function GET(request: NextRequest) {
             JOIN public.syllabus_nodes s ON c.parent_id = s.id AND s.type = 'subject'
             JOIN public.syllabus_nodes cls ON s.parent_id = cls.id AND cls.type = 'class'
             WHERE (
+                $1::text[] IS NULL OR cardinality($1::text[]) = 0 OR
                 cls.name = ANY($1)
                 OR regexp_replace(cls.name, '[^0-9]', '', 'g') = ANY($2)
+            )
+            AND (
+                $3::text[] IS NULL OR cardinality($3::text[]) = 0 OR
+                s.name = ANY($3)
+                OR s.name ILIKE ANY(SELECT '%' || unnest($3::text[]) || '%')
             )
             ORDER BY cls.name, s.name, c.name
             LIMIT 40;
         `
-        const syllabusChapsRes = await query(syllabusChaptersQuery, [targetClasses, classTokens])
+        const syllabusChapsRes = await query(syllabusChaptersQuery, [targetClasses, classTokens, targetSubjects])
         const rawChapters = syllabusChapsRes.rows || []
 
-        // Correlate chapters with student subject averages — use real subject avg, no fake variance
+        // Correlate chapters with student subject averages — use real subject avg
         const weakerChapters = rawChapters.map((ch: any) => {
             const matchedSub = subjects.find((s: any) => s.subject_name.toLowerCase() === ch.subject_name.toLowerCase())
-            // If we have a real subject average, use it; otherwise mark as untracked
             const accuracy = matchedSub ? Number(matchedSub.average_score) : 0
             const isCritical = accuracy > 0 && accuracy < 50
             const isModerate = accuracy >= 50 && accuracy < 70
@@ -272,7 +346,6 @@ export async function GET(request: NextRequest) {
                 at_risk_students: Number(matchedSub?.at_risk_count || 0)
             }
         }).sort((a: any, b: any) => {
-            // Put chapters with real data first, sorted by accuracy ascending (worst first)
             if (a.average_accuracy === 0 && b.average_accuracy > 0) return 1
             if (b.average_accuracy === 0 && a.average_accuracy > 0) return -1
             return a.average_accuracy - b.average_accuracy
@@ -290,24 +363,21 @@ export async function GET(request: NextRequest) {
             JOIN public.syllabus_nodes s ON c.parent_id = s.id AND s.type = 'subject'
             JOIN public.syllabus_nodes cls ON s.parent_id = cls.id AND cls.type = 'class'
             WHERE (
+                $1::text[] IS NULL OR cardinality($1::text[]) = 0 OR
                 cls.name = ANY($1)
                 OR regexp_replace(cls.name, '[^0-9]', '', 'g') = ANY($2)
             )
+            AND (
+                $3::text[] IS NULL OR cardinality($3::text[]) = 0 OR
+                s.name = ANY($3)
+                OR s.name ILIKE ANY(SELECT '%' || unnest($3::text[]) || '%')
+            )
             LIMIT 30;
         `
-        const topicRes = await query(topicQuery, [targetClasses, classTokens])
+        const topicRes = await query(topicQuery, [targetClasses, classTokens, targetSubjects])
         const rawTopics = topicRes.rows || []
 
-        const remedialActions = [
-            'Provide step-by-step formula derivation sheets and daily 10-minute warm-up drills.',
-            'Conduct visual concept walkthroughs with real-world examples and interactive demonstrations.',
-            'Assign focused diagnostic flashcards and peer-review problem solving sessions.',
-            'Review foundational pre-requisite definitions before tackling complex word problems.',
-            'Reinforce diagrammatic annotations and structured step marking schemes.'
-        ]
-
         const weakerTopics = rawTopics.map((tp: any) => {
-            // Use real subject average to drive topic difficulty — no fake random variance
             const matchedSub = subjects.find((s: any) => s.subject_name.toLowerCase() === tp.subject_name.toLowerCase())
             const accuracy = matchedSub ? Number(matchedSub.average_score) : 0
             const isCritical = accuracy > 0 && accuracy < 45
@@ -333,7 +403,6 @@ export async function GET(request: NextRequest) {
         })
 
         // 7. Generate 360-Degree Profiles for Students
-        // Fetch real attendance rates for all students in this tenant/scope
         let attendanceByStudentId: Record<string, number | null> = {}
         if (students.length > 0) {
             const studentIds = [...new Set(students.map((s: any) => s.student_id).filter(Boolean))]
@@ -356,7 +425,7 @@ export async function GET(request: NextRequest) {
                         }
                     })
                 } catch {
-                    // If attendance table doesn't support student_id, skip — don't fabricate
+                    // Skip if attendance table doesn't support
                 }
             }
         }
@@ -369,12 +438,11 @@ export async function GET(request: NextRequest) {
                     student_name: st.student_name,
                     roll_number: st.roll_number,
                     class_name: st.class_name,
-                    rank: st.rank,
+                    rank: 1,
                     total_exams: 0,
                     total_percentage: 0,
                     overall_average: 0,
                     overall_grade: 'A',
-                    // Use real attendance rate; null means no data available
                     attendance_rate: attendanceByStudentId[st.student_id] ?? null,
                     subject_mastery: [],
                     exam_history: [],
@@ -397,7 +465,6 @@ export async function GET(request: NextRequest) {
                 remarks: st.teacher_remarks
             })
 
-            // Subject mastery entry
             studentMap[st.student_id].subject_mastery.push({
                 subject_name: st.subject_name,
                 score: Number(st.percentage),
@@ -406,14 +473,13 @@ export async function GET(request: NextRequest) {
             })
         })
 
-        // Finalize student 360 summaries
-        Object.values(studentMap).forEach((st: any) => {
+        // Compute overall average and sort by overall average to assign ranks properly
+        const uniqueStudentsList: any[] = Object.values(studentMap)
+        uniqueStudentsList.forEach((st: any) => {
             st.overall_average = Math.round(st.total_percentage / (st.total_exams || 1))
             st.overall_grade = st.overall_average >= 90 ? 'A+' : st.overall_average >= 75 ? 'A' : st.overall_average >= 60 ? 'B' : st.overall_average >= 40 ? 'C' : 'F'
             
-            // Derive strengths & weaker areas
             const sortedMastery = [...st.subject_mastery].sort((a: any, b: any) => b.score - a.score)
-            // Only emit data-derived bullets — no generic fabricated text
             st.strengths = sortedMastery
                 .filter((s: any) => s.score >= 75)
                 .map((s: any) => `${s.subject_name}: ${s.score}% (Grade ${s.grade})`)
@@ -422,7 +488,21 @@ export async function GET(request: NextRequest) {
                 .map((s: any) => `${s.subject_name}: ${s.score}% — targeted revision required`)
         })
 
-        // 8. Exam-Wise Performance Trends — teacher class-scoped
+        // Assign proper rank based on overall_average descending
+        uniqueStudentsList.sort((a: any, b: any) => b.overall_average - a.overall_average)
+        let currentRank = 1
+        for (let i = 0; i < uniqueStudentsList.length; i++) {
+            if (i > 0 && uniqueStudentsList[i].overall_average < uniqueStudentsList[i - 1].overall_average) {
+                currentRank = i + 1
+            }
+            uniqueStudentsList[i].rank = currentRank
+            // Also update in studentMap
+            if (studentMap[uniqueStudentsList[i].student_id]) {
+                studentMap[uniqueStudentsList[i].student_id].rank = currentRank
+            }
+        }
+
+        // 8. Exam-Wise Performance Trends — teacher class- and subject-scoped
         const examsWhereClauses = ['oe.tenant_id = $1']
         const examsQueryParams: any[] = [tenantId]
 
@@ -435,6 +515,20 @@ export async function GET(request: NextRequest) {
                 OR regexp_replace(COALESCE(c.name, ''), '[^0-9]', '', 'g') = ANY($${examsQueryParams.length})
                 OR asu.class_name = ANY($${examsQueryParams.length - 1})
                 OR regexp_replace(COALESCE(asu.class_name, ''), '[^0-9]', '', 'g') = ANY($${examsQueryParams.length})
+            )`)
+        }
+
+        if (isTeacher && (assignedSubjectNames.length > 0 || assignedSubjectIds.length > 0)) {
+            examsQueryParams.push(assignedSubjectIds)
+            const idParamIdx = examsQueryParams.length
+            examsQueryParams.push(assignedSubjectNames)
+            const nameParamIdx = examsQueryParams.length
+
+            examsWhereClauses.push(`(
+                oe.subject_id::text = ANY($${idParamIdx})
+                OR s.name = ANY($${nameParamIdx})
+                OR asu.subject_name = ANY($${nameParamIdx})
+                OR s.name ILIKE ANY(SELECT '%' || unnest($${nameParamIdx}::text[]) || '%')
             )`)
         }
 
@@ -476,21 +570,15 @@ export async function GET(request: NextRequest) {
 
         const filterClassesRes = await query(classFilterQuery, classFilterParams)
 
-        // Subjects: derived from actual answer_sheet_uploads for teacher's classes — not all school subjects
+        // Subjects: strictly restricted to teacher's assigned subjects
         let filterSubjectsRes
-        if (isTeacher && assignedClasses.length > 0) {
-            const subTokens = assignedClasses.map((c: string) => c.replace(/[^0-9]/g, '')).filter(Boolean)
+        if (isTeacher && (assignedSubjectNames.length > 0 || assignedSubjectIds.length > 0)) {
             filterSubjectsRes = await query(
-                `SELECT DISTINCT subject_name AS id, subject_name AS name
-                 FROM public.answer_sheet_uploads
-                 WHERE tenant_id = $1
-                   AND (
-                       class_name = ANY($2)
-                       OR regexp_replace(COALESCE(class_name, ''), '[^0-9]', '', 'g') = ANY($3)
-                   )
-                   AND subject_name IS NOT NULL AND subject_name <> ''
-                 ORDER BY subject_name ASC`,
-                [tenantId, assignedClasses, subTokens]
+                `SELECT id::text AS id, name FROM public.subjects 
+                 WHERE tenant_id = $1 
+                   AND (name = ANY($2) OR id::text = ANY($3))
+                 ORDER BY name ASC`,
+                [tenantId, assignedSubjectNames, assignedSubjectIds]
             )
         } else {
             filterSubjectsRes = await query(
@@ -499,21 +587,39 @@ export async function GET(request: NextRequest) {
             )
         }
 
-        // Exams: scoped to teacher's assigned classes only
+        // Exams: scoped to teacher's assigned classes AND assigned subjects
         let filterExamsRes
-        if (isTeacher && assignedClasses.length > 0) {
+        if (isTeacher && (assignedClasses.length > 0 || assignedSubjectNames.length > 0)) {
             const exTokens = assignedClasses.map((c: string) => c.replace(/[^0-9]/g, '')).filter(Boolean)
+            let exWhere = `oe.tenant_id = $1`
+            const exParams: any[] = [tenantId]
+
+            if (assignedClasses.length > 0) {
+                exParams.push(assignedClasses)
+                exParams.push(exTokens)
+                exWhere += ` AND (
+                    c.name = ANY($${exParams.length - 1})
+                    OR regexp_replace(COALESCE(c.name, ''), '[^0-9]', '', 'g') = ANY($${exParams.length})
+                )`
+            }
+
+            if (assignedSubjectNames.length > 0 || assignedSubjectIds.length > 0) {
+                exParams.push(assignedSubjectIds)
+                exParams.push(assignedSubjectNames)
+                exWhere += ` AND (
+                    oe.subject_id::text = ANY($${exParams.length - 1})
+                    OR s.name = ANY($${exParams.length})
+                )`
+            }
+
             filterExamsRes = await query(
                 `SELECT oe.id, oe.title
                  FROM public.offline_exams oe
                  LEFT JOIN public.classes c ON oe.class_id = c.id
-                 WHERE oe.tenant_id = $1
-                   AND (
-                       c.name = ANY($2)
-                       OR regexp_replace(COALESCE(c.name, ''), '[^0-9]', '', 'g') = ANY($3)
-                   )
+                 LEFT JOIN public.subjects s ON oe.subject_id = s.id
+                 WHERE ${exWhere}
                  ORDER BY oe.created_at DESC`,
-                [tenantId, assignedClasses, exTokens]
+                exParams
             )
         } else {
             filterExamsRes = await query(
@@ -528,6 +634,7 @@ export async function GET(request: NextRequest) {
                 teacherScope,
                 overview,
                 students,
+                unique_students: uniqueStudentsList,
                 subjects,
                 weaker_analytics: {
                     weaker_subjects: weakerSubjects,
