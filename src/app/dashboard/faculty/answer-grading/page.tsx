@@ -52,13 +52,13 @@ export default function AnswerGradingHub() {
     // Data
     const [submissions, setSubmissions] = useState<AnswerSheetSubmission[]>([])
     const [metrics, setMetrics] = useState({
-        totalSubmissions: 5,
-        pendingCount: 2,
-        inReviewCount: 1,
-        completedCount: 2,
-        checkedTodayCount: 2,
-        avgPercentage: 90.6,
-        distinctionCount: 2,
+        totalSubmissions: 0,
+        pendingCount: 0,
+        inReviewCount: 0,
+        completedCount: 0,
+        checkedTodayCount: 0,
+        avgPercentage: 0,
+        distinctionCount: 0,
         firstClassCount: 0,
         secondClassCount: 0,
         needsAttentionCount: 0
@@ -83,15 +83,10 @@ export default function AnswerGradingHub() {
 
     const [gradingForm, setGradingForm] = useState({
         awarded_marks: 0,
-        max_marks: 50,
+        max_marks: 0,
         teacher_remarks: '',
-        evaluated_by: 'Senior Faculty Examiner',
-        qMarks: [
-            { qNo: 1, question: 'Section A: Fundamental Definitions & Core Concepts', marks: 10, max: 10, note: 'Accurate terminology' },
-            { qNo: 2, question: 'Section B: Short Analytical Explanations', marks: 12, max: 15, note: 'Good derivation steps' },
-            { qNo: 3, question: 'Section C: Extended Numerical / Case Study Problem', marks: 14, max: 15, note: 'Clear working steps' },
-            { qNo: 4, question: 'Section D: Diagrammatic Illustration & Labelling', marks: 8, max: 10, note: 'Labels could be sharper' }
-        ]
+        evaluated_by: '',
+        qMarks: [] as { qNo: number; question: string; marks: number; max: number; note: string }[]
     })
 
     // Manual Upload Form
@@ -144,17 +139,18 @@ export default function AnswerGradingHub() {
 
     // ── OPEN GRADING MODAL ────────────────────────────────────────────
     const handleOpenGrading = (sub: AnswerSheetSubmission) => {
-        const defaultTotal = sub.awarded_marks || Math.round(sub.max_marks * 0.8)
+        const existingMarks = Number(sub.awarded_marks) || 0
+        const maxMarks = Number(sub.max_marks) || 100
         setGradingForm({
-            awarded_marks: defaultTotal,
-            max_marks: sub.max_marks || 50,
-            teacher_remarks: sub.teacher_remarks || 'Good attempt. Check working steps in Section C.',
-            evaluated_by: sub.evaluated_by || 'Senior Faculty Examiner',
+            awarded_marks: existingMarks,
+            max_marks: maxMarks,
+            teacher_remarks: sub.teacher_remarks || '',
+            evaluated_by: sub.evaluated_by || '',
             qMarks: [
-                { qNo: 1, question: 'Section A: Core Concepts & Principles', marks: Math.round(defaultTotal * 0.25), max: Math.round(sub.max_marks * 0.25), note: 'Thorough answers' },
-                { qNo: 2, question: 'Section B: Short Analytical Questions', marks: Math.round(defaultTotal * 0.3), max: Math.round(sub.max_marks * 0.3), note: 'Good explanation' },
-                { qNo: 3, question: 'Section C: Numerical & Application Problem', marks: Math.round(defaultTotal * 0.3), max: Math.round(sub.max_marks * 0.3), note: 'Clear derivation' },
-                { qNo: 4, question: 'Section D: Diagrams & Presentation', marks: Math.round(defaultTotal * 0.15), max: Math.round(sub.max_marks * 0.15), note: 'Clean presentation' }
+                { qNo: 1, question: 'Section A: Core Concepts & Principles', marks: Math.round(existingMarks * 0.25), max: Math.round(maxMarks * 0.25), note: '' },
+                { qNo: 2, question: 'Section B: Short Analytical Questions', marks: Math.round(existingMarks * 0.3), max: Math.round(maxMarks * 0.3), note: '' },
+                { qNo: 3, question: 'Section C: Numerical & Application Problem', marks: Math.round(existingMarks * 0.3), max: Math.round(maxMarks * 0.3), note: '' },
+                { qNo: 4, question: 'Section D: Diagrams & Presentation', marks: Math.round(existingMarks * 0.15), max: Math.round(maxMarks * 0.15), note: '' }
             ]
         })
         setGradingModal({ open: true, submission: sub })

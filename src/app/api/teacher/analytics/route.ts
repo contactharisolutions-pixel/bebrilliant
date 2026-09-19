@@ -23,19 +23,48 @@ export async function GET(request: NextRequest) {
 
         const tenantId = decoded.tenant_id
 
-        // 1. Fetch performance stats for the last 5 exams in this tenant
-        const { rows: examPerf } = await query(
-            `SELECT e.id, e.name, 
-                    COALESCE(AVG(ea.total_score), 0)::float as avg_score, 
-                    COALESCE(COUNT(CASE WHEN ea.total_score >= 40 THEN 1 END)::float / NULLIF(COUNT(ea.id), 0) * 100, 0)::float as pass_rate
-             FROM public.exams e
-             LEFT JOIN public.exam_attempts ea ON ea.exam_id = e.id AND ea.status IN ('submitted', 'evaluated')
-             WHERE e.tenant_id = $1
-             GROUP BY e.id, e.name, e.created_at
-             ORDER BY e.created_at DESC
-             LIMIT 5`,
-            [tenantId]
-        )
+        // Resolve teacher's assigned classes for scoping
+        let assignedClasses: string[] = []
+        if (decoded.role === 'teacher') {
+            const profileRes = await query(
+                `SELECT metadata FROM public.user_profiles WHERE id = $1`,
+                [decoded.id]
+            )
+            if (profileRes.rows[0]?.metadata?.assigned_classes) {
+                assignedClasses = profileRes.rows[0].metadata.assigned_classes
+            }
+        }
+
+        // 1. Fetch performance stats for the last 5 exams using online_exams (active table)
+        let examPerfQuery = `
+            SELECT oe.id, oe.title AS name,
+                    COALESCE(AVG(COALESCE(oea.marks_obtained, oea.score, 0)), 0)::float as avg_score,
+                    COALESCE(
+                        COUNT(CASE WHEN COALESCE(oea.marks_obtained, oea.score, 0) >= (COALESCE(oe.total_marks, 100) * 0.4) THEN 1 END)::float
+                        / NULLIF(COUNT(oea.id), 0) * 100, 0
+                    )::float as pass_rate
+             FROM public.online_exams oe
+             LEFT JOIN public.online_exam_attempts oea ON oea.exam_id = oe.id 
+                 AND oea.status IN ('submitted', 'completed', 'evaluated')
+             WHERE oe.tenant_id = $1`
+        const examPerfParams: any[] = [tenantId]
+
+        if (assignedClasses.length > 0) {
+            const tokens = assignedClasses.map(c => c.replace(/[^0-9]/g, '')).filter(Boolean)
+            examPerfParams.push(assignedClasses)
+            examPerfParams.push(tokens)
+            examPerfQuery += ` AND (
+                oe.class_name = ANY($${examPerfParams.length - 1})
+                OR regexp_replace(COALESCE(oe.class_name, ''), '[^0-9]', '', 'g') = ANY($${examPerfParams.length})
+            )`
+        }
+
+        examPerfQuery += `
+             GROUP BY oe.id, oe.title, oe.created_at
+             ORDER BY oe.created_at DESC
+             LIMIT 5`
+
+        const { rows: examPerf } = await query(examPerfQuery, examPerfParams)
 
         // 2. Fetch daily attendance trend for the last 7 days
         const { rows: attendanceTrend } = await query(

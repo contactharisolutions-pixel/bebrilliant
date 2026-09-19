@@ -326,7 +326,7 @@ export default function Result360Analytics() {
                 total_exams: 1,
                 overall_average: Number(fallbackRecord.percentage),
                 overall_grade: fallbackRecord.grade_badge,
-                attendance_rate: 98,
+                attendance_rate: null,
                 subject_mastery: [
                     {
                         subject_name: fallbackRecord.subject_name,

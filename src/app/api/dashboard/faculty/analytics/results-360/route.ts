@@ -5,7 +5,9 @@ import { verifyTenantStaff } from '@/lib/auth-server'
 export async function GET(request: NextRequest) {
     try {
         const session = await verifyTenantStaff()
-        const tenantId = session?.tenant_id || '5cccb9be-5b4a-4143-8725-bc6061e337fa'
+        if (!session) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 })
+        const tenantId = session?.tenant_id
+        if (!tenantId) return NextResponse.json({ success: false, error: 'Tenant context missing' }, { status: 403 })
         const url = request.nextUrl
         const classFilter = url.searchParams.get('class_name') || 'all'
         const subjectFilter = url.searchParams.get('subject_name') || 'all'
@@ -228,7 +230,7 @@ export async function GET(request: NextRequest) {
         // Fetch chapters corresponding to evaluated subjects & active classes
         const targetClasses = (isTeacher && assignedClasses.length > 0) 
             ? assignedClasses 
-            : (classFilter !== 'all' ? [classFilter] : ['Class 7', 'Class 8', 'Grade 10'])
+            : (classFilter !== 'all' ? [classFilter] : [])
         
         const classTokens = targetClasses.map(c => c.replace(/[^0-9]/g, '')).filter(Boolean)
 
@@ -251,15 +253,12 @@ export async function GET(request: NextRequest) {
         const syllabusChapsRes = await query(syllabusChaptersQuery, [targetClasses, classTokens])
         const rawChapters = syllabusChapsRes.rows || []
 
-        // Correlate chapters with student subject averages and mock accurate difficulty
-        const weakerChapters = rawChapters.map((ch: any, idx: number) => {
-            // Match corresponding subject score if available
+        // Correlate chapters with student subject averages — use real subject avg, no fake variance
+        const weakerChapters = rawChapters.map((ch: any) => {
             const matchedSub = subjects.find((s: any) => s.subject_name.toLowerCase() === ch.subject_name.toLowerCase())
-            const baseAvg = matchedSub ? Number(matchedSub.average_score) : 70
-            // Slight variance per chapter to reflect realistic curriculum difficulty
-            const variance = ((idx * 7) % 25) - 12
-            const accuracy = Math.max(32, Math.min(94, Math.round(baseAvg + variance)))
-            const isCritical = accuracy < 50
+            // If we have a real subject average, use it; otherwise mark as untracked
+            const accuracy = matchedSub ? Number(matchedSub.average_score) : 0
+            const isCritical = accuracy > 0 && accuracy < 50
             const isModerate = accuracy >= 50 && accuracy < 70
 
             return {
@@ -268,11 +267,16 @@ export async function GET(request: NextRequest) {
                 subject_name: ch.subject_name,
                 class_name: ch.class_name,
                 average_accuracy: accuracy,
-                risk_severity: isCritical ? 'Critical' : isModerate ? 'Moderate' : 'Proficient',
+                risk_severity: accuracy === 0 ? 'Proficient' : isCritical ? 'Critical' : isModerate ? 'Moderate' : 'Proficient',
                 remedial_priority: isCritical ? 'High' : isModerate ? 'Medium' : 'Low',
-                at_risk_students: isCritical ? 3 : isModerate ? 1 : 0
+                at_risk_students: Number(matchedSub?.at_risk_count || 0)
             }
-        }).sort((a: any, b: any) => a.average_accuracy - b.average_accuracy)
+        }).sort((a: any, b: any) => {
+            // Put chapters with real data first, sorted by accuracy ascending (worst first)
+            if (a.average_accuracy === 0 && b.average_accuracy > 0) return 1
+            if (b.average_accuracy === 0 && a.average_accuracy > 0) return -1
+            return a.average_accuracy - b.average_accuracy
+        })
 
         // C. Weaker Micro-Topics with Remedial Recommendations
         const topicQuery = `
@@ -302,10 +306,11 @@ export async function GET(request: NextRequest) {
             'Reinforce diagrammatic annotations and structured step marking schemes.'
         ]
 
-        const weakerTopics = rawTopics.map((tp: any, idx: number) => {
-            const variance = ((idx * 11) % 35) - 18
-            const accuracy = Math.max(28, Math.min(88, Math.round(65 + variance)))
-            const isCritical = accuracy < 45
+        const weakerTopics = rawTopics.map((tp: any) => {
+            // Use real subject average to drive topic difficulty — no fake random variance
+            const matchedSub = subjects.find((s: any) => s.subject_name.toLowerCase() === tp.subject_name.toLowerCase())
+            const accuracy = matchedSub ? Number(matchedSub.average_score) : 0
+            const isCritical = accuracy > 0 && accuracy < 45
             const isModerate = accuracy >= 45 && accuracy < 65
 
             return {
@@ -314,12 +319,48 @@ export async function GET(request: NextRequest) {
                 chapter_name: tp.chapter_name,
                 subject_name: tp.subject_name,
                 accuracy_rate: accuracy,
-                risk_level: isCritical ? 'Critical' : isModerate ? 'Moderate' : 'Proficient',
-                remedial_action: remedialActions[idx % remedialActions.length]
+                risk_level: accuracy === 0 ? 'Proficient' : isCritical ? 'Critical' : isModerate ? 'Moderate' : 'Proficient',
+                remedial_action: isCritical
+                    ? 'Schedule focused remedial session; assign targeted problem sets and formula drills.'
+                    : isModerate
+                    ? 'Assign supplementary practice worksheets and peer-review exercises.'
+                    : 'Continue with current pacing; monitor for regression.'
             }
-        }).sort((a: any, b: any) => a.accuracy_rate - b.accuracy_rate)
+        }).sort((a: any, b: any) => {
+            if (a.accuracy_rate === 0 && b.accuracy_rate > 0) return 1
+            if (b.accuracy_rate === 0 && a.accuracy_rate > 0) return -1
+            return a.accuracy_rate - b.accuracy_rate
+        })
 
         // 7. Generate 360-Degree Profiles for Students
+        // Fetch real attendance rates for all students in this tenant/scope
+        let attendanceByStudentId: Record<string, number | null> = {}
+        if (students.length > 0) {
+            const studentIds = [...new Set(students.map((s: any) => s.student_id).filter(Boolean))]
+            if (studentIds.length > 0) {
+                try {
+                    const attRes = await query(
+                        `SELECT student_id,
+                                COUNT(*)::int as total_days,
+                                COUNT(*) FILTER (WHERE status = 'present')::int as present_days
+                         FROM public.attendance_logs
+                         WHERE tenant_id = $1 AND student_id = ANY($2::uuid[])
+                         GROUP BY student_id`,
+                        [tenantId, studentIds]
+                    )
+                    attRes.rows.forEach((row: any) => {
+                        if (row.total_days > 0) {
+                            attendanceByStudentId[row.student_id] = Math.round((row.present_days / row.total_days) * 100)
+                        } else {
+                            attendanceByStudentId[row.student_id] = null
+                        }
+                    })
+                } catch {
+                    // If attendance table doesn't support student_id, skip — don't fabricate
+                }
+            }
+        }
+
         const studentMap: Record<string, any> = {}
         students.forEach((st: any) => {
             if (!studentMap[st.student_id]) {
@@ -333,12 +374,13 @@ export async function GET(request: NextRequest) {
                     total_percentage: 0,
                     overall_average: 0,
                     overall_grade: 'A',
-                    attendance_rate: 96,
+                    // Use real attendance rate; null means no data available
+                    attendance_rate: attendanceByStudentId[st.student_id] ?? null,
                     subject_mastery: [],
                     exam_history: [],
                     strengths: [],
                     weaker_areas: [],
-                    teacher_recommendation: st.teacher_remarks || 'Consistently attentive and active in class curriculum.'
+                    teacher_recommendation: st.teacher_remarks || ''
                 }
             }
 

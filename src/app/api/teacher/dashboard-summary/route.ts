@@ -24,21 +24,51 @@ export async function GET(request: NextRequest) {
 
         const tenantId = decoded.tenant_id
 
-        // 1. Total Students
-        const { rows: studentRows } = await query(
-            `SELECT COUNT(*)::int as count FROM public.user_profiles 
-             WHERE tenant_id = $1 AND role = 'student' AND is_active = true`,
-            [tenantId]
-        )
-        const studentsCount = studentRows[0]?.count || 0
+        // Resolve teacher's assigned classes for student isolation
+        let assignedClasses: string[] = []
+        if (decoded.role === 'teacher') {
+            const profileRes = await query(
+                `SELECT metadata FROM public.user_profiles WHERE id = $1`,
+                [decoded.id]
+            )
+            if (profileRes.rows[0]?.metadata?.assigned_classes) {
+                assignedClasses = profileRes.rows[0].metadata.assigned_classes
+            }
+        }
 
-        // 2. Total Exams
-        const { rows: examRows } = await query(
-            `SELECT COUNT(*)::int as count FROM public.exams 
-             WHERE tenant_id = $1`,
+        // 1. Total Students — scoped to teacher's assigned classes
+        let studentsCount = 0
+        if (assignedClasses.length > 0) {
+            // Count students matching assigned classes via metadata
+            const { rows: studentRows } = await query(
+                `SELECT COUNT(*)::int as count FROM public.user_profiles 
+                 WHERE tenant_id = $1 AND role = 'student' AND is_active = true
+                 AND (
+                     metadata->>'school_class' = ANY($2)
+                     OR metadata->>'class' = ANY($2)
+                 )`,
+                [tenantId, assignedClasses]
+            )
+            studentsCount = studentRows[0]?.count || 0
+        } else {
+            const { rows: studentRows } = await query(
+                `SELECT COUNT(*)::int as count FROM public.user_profiles 
+                 WHERE tenant_id = $1 AND role = 'student' AND is_active = true`,
+                [tenantId]
+            )
+            studentsCount = studentRows[0]?.count || 0
+        }
+
+        // 2. Total Exams — combine online + offline exams (public.exams is legacy/empty)
+        const { rows: onlineExamRows } = await query(
+            `SELECT COUNT(*)::int as count FROM public.online_exams WHERE tenant_id = $1`,
             [tenantId]
         )
-        const examsCount = examRows[0]?.count || 0
+        const { rows: offlineExamRows } = await query(
+            `SELECT COUNT(*)::int as count FROM public.offline_exams WHERE tenant_id = $1`,
+            [tenantId]
+        )
+        const examsCount = (onlineExamRows[0]?.count || 0) + (offlineExamRows[0]?.count || 0)
 
         // 3. Live classes scheduled for today
         const { rows: liveRows } = await query(
@@ -48,11 +78,11 @@ export async function GET(request: NextRequest) {
         )
         const liveCount = liveRows[0]?.count || 0
 
-        // 4. Pending submissions needing grading
+        // 4. Pending submissions needing grading (from online_exam_attempts)
         const { rows: attemptRows } = await query(
-            `SELECT COUNT(*)::int as count FROM public.exam_attempts ea
-             JOIN public.exams e ON ea.exam_id = e.id
-             WHERE e.tenant_id = $1 AND ea.status = 'submitted'`,
+            `SELECT COUNT(*)::int as count FROM public.online_exam_attempts oea
+             JOIN public.online_exams oe ON oea.exam_id = oe.id
+             WHERE oe.tenant_id = $1 AND oea.status IN ('submitted', 'pending_evaluation')`,
             [tenantId]
         )
         const pendingCount = attemptRows[0]?.count || 0

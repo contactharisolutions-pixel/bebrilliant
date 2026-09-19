@@ -7,7 +7,8 @@ export async function GET(request: NextRequest) {
         const session = await verifyTenantStaff()
         if (!session) return NextResponse.json({ error: 'Unauthorized Access' }, { status: 403 })
 
-        const tenantId = session.tenant_id || '5cccb9be-5b4a-4143-8725-bc6061e337fa'
+        const tenantId = session.tenant_id
+        if (!tenantId) return NextResponse.json({ error: 'Tenant context missing' }, { status: 403 })
         const url = request.nextUrl
         const statusFilter = url.searchParams.get('status') || 'all'
         const search = url.searchParams.get('search')?.trim() || ''
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
                 json_build_object(
                     'exams', COALESCE((
                         SELECT json_agg(t) FROM (
-                            SELECT id, title, 50 AS total_marks 
+                            SELECT id, title, COALESCE(total_questions * 2, 100) AS total_marks 
                             FROM public.offline_exams 
                             WHERE tenant_id = $1 
                             ORDER BY created_at DESC
@@ -187,7 +188,8 @@ export async function POST(request: NextRequest) {
         const session = await verifyTenantStaff()
         if (!session) return NextResponse.json({ error: 'Unauthorized Action' }, { status: 403 })
 
-        const tenantId = session.tenant_id || '5cccb9be-5b4a-4143-8725-bc6061e337fa'
+        const tenantId = session.tenant_id
+        if (!tenantId) return NextResponse.json({ error: 'Tenant context missing' }, { status: 403 })
         const body = await request.json()
         const { action, payload } = body
 

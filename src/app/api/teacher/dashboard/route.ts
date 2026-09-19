@@ -18,9 +18,8 @@ export async function GET(request: NextRequest) {
 
         // 1. Resolve Teacher Metadata & Assigned Classes
         const meta = (metadata as any) || {}
-        const rawAssignedClasses: string[] = Array.isArray(meta.assigned_classes) && meta.assigned_classes.length > 0 
-            ? meta.assigned_classes 
-            : ['Class 6', 'Class 7', 'Class 8']
+        // Use ONLY actual assigned classes from metadata - never fabricate defaults
+        const rawAssignedClasses: string[] = Array.isArray(meta.assigned_classes) ? meta.assigned_classes : []
         const assignedSubjects: string[] = Array.isArray(meta.assigned_subjects) ? meta.assigned_subjects : []
 
         // Extract class numbers/tokens for flexible matching (e.g. "Class 8" -> "8")
@@ -36,10 +35,10 @@ export async function GET(request: NextRequest) {
 
         // 2. Fetch Tenant & Teacher Profile Info
         let tenantInfo = {
-            name: 'Silver Bells School (Mansarovar)',
+            name: '',
             logo_url: '/logo.png',
-            academic_year: 'AY 2026-27',
-            affiliation: 'CBSE / State Board'
+            academic_year: '',
+            affiliation: ''
         }
         try {
             const { rows: tenantRows } = await query(
@@ -146,18 +145,20 @@ export async function GET(request: NextRequest) {
             // Also check offline_exams to provide comprehensive assessment visibility
             const { rows: offlineExamRows } = await query(
                 `SELECT 
-                    id,
-                    title,
-                    'General' as subject,
-                    'Class 8' as class_name,
-                    COALESCE(total_questions * 2, 100) as total_marks,
-                    COALESCE(duration, 60) as duration_minutes,
-                    created_at as exam_date,
-                    status,
-                    created_at
-                 FROM public.offline_exams
-                 WHERE tenant_id = $1
-                 ORDER BY created_at DESC
+                    oe.id,
+                    oe.title,
+                    COALESCE(s.name, oe.subject_name, 'General') as subject,
+                    COALESCE(c.name, oe.class_name, '') as class_name,
+                    COALESCE(oe.total_questions * 2, 100) as total_marks,
+                    COALESCE(oe.duration, 60) as duration_minutes,
+                    oe.created_at as exam_date,
+                    oe.status,
+                    oe.created_at
+                 FROM public.offline_exams oe
+                 LEFT JOIN public.classes c ON oe.class_id = c.id
+                 LEFT JOIN public.subjects s ON oe.subject_id = s.id
+                 WHERE oe.tenant_id = $1
+                 ORDER BY oe.created_at DESC
                  LIMIT 4`,
                 [tenant_id]
             )
@@ -218,8 +219,8 @@ export async function GET(request: NextRequest) {
         }
 
         // 6. Performance Mastery & Pass Rate for Teacher's Classes
-        let classAverageMastery = 78
-        let passRate = 86
+        let classAverageMastery = 0
+        let passRate = 0
 
         try {
             const { rows: scoreRows } = await query(
@@ -271,38 +272,7 @@ export async function GET(request: NextRequest) {
             upcomingExams: upcomingExams
         })
     } catch (error: any) {
-        console.error('Teacher Dashboard API Fallback Error:', error)
-        // Fault-tolerant fallback: Never crash the dashboard with a 500 error
-        return NextResponse.json({
-            teacher: {
-                id: 'faculty',
-                fullName: 'Faculty Member',
-                email: '',
-                designation: 'Faculty Member',
-                employeeId: 'FACULTY',
-                assignedClasses: ['Class 6', 'Class 7', 'Class 8'],
-                assignedSubjects: []
-            },
-            institution: {
-                name: 'Silver Bells School (Mansarovar)',
-                logoUrl: '/logo.png',
-                academicYear: 'AY 2026-27',
-                affiliation: 'CBSE / State Board'
-            },
-            kpi: {
-                assignedStudentsCount: 2,
-                activeExamsCount: 1,
-                pendingGradingCount: 0,
-                classAverageMastery: 78,
-                passRate: 86
-            },
-            classesOverview: [
-                { className: 'Class 6', studentCount: 0 },
-                { className: 'Class 7', studentCount: 1 },
-                { className: 'Class 8', studentCount: 1 }
-            ],
-            pendingGradingQueue: [],
-            upcomingExams: []
-        }, { status: 200 })
+        console.error('Teacher Dashboard API Error:', error)
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
