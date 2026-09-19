@@ -303,18 +303,51 @@ class SupabaseQueryBuilder {
 
             if (this.orCondition) {
                 const parts = this.orCondition.split(',')
-                const parsedParts = parts.map(p => {
+                const parsedParts = parts.map(rawPart => {
+                    const p = rawPart.trim()
+                    if (p.includes('.not.is.null') || p.includes('.is.not.null')) {
+                        let col = p.split('.')[0]
+                        if (leftJoinStr && !col.includes('.')) col = `${tableAlias}.${col}`
+                        return `${col} IS NOT NULL`
+                    }
                     if (p.includes('.is.null')) {
                         let col = p.split('.')[0]
                         if (leftJoinStr && !col.includes('.')) col = `${tableAlias}.${col}`
                         return `${col} IS NULL`
                     }
+                    if (p.includes('.ilike.')) {
+                        const idx = p.indexOf('.ilike.')
+                        let col = p.substring(0, idx)
+                        const val = p.substring(idx + 7)
+                        if (leftJoinStr && !col.includes('.')) col = `${tableAlias}.${col}`
+                        params.push(val)
+                        return `${col} ILIKE $${paramIdx++}`
+                    }
+                    if (p.includes('.like.')) {
+                        const idx = p.indexOf('.like.')
+                        let col = p.substring(0, idx)
+                        const val = p.substring(idx + 6)
+                        if (leftJoinStr && !col.includes('.')) col = `${tableAlias}.${col}`
+                        params.push(val)
+                        return `${col} LIKE $${paramIdx++}`
+                    }
                     if (p.includes('.eq.')) {
-                        let [col, _, val] = p.split('.')
+                        const idx = p.indexOf('.eq.')
+                        let col = p.substring(0, idx)
+                        const val = p.substring(idx + 4)
                         if (leftJoinStr && !col.includes('.')) col = `${tableAlias}.${col}`
                         if (val === 'null') return `${col} IS NULL`
                         params.push(val)
                         return `${col} = $${paramIdx++}`
+                    }
+                    if (p.includes('.neq.')) {
+                        const idx = p.indexOf('.neq.')
+                        let col = p.substring(0, idx)
+                        const val = p.substring(idx + 5)
+                        if (leftJoinStr && !col.includes('.')) col = `${tableAlias}.${col}`
+                        if (val === 'null') return `${col} IS NOT NULL`
+                        params.push(val)
+                        return `${col} <> $${paramIdx++}`
                     }
                     return ''
                 }).filter(Boolean)

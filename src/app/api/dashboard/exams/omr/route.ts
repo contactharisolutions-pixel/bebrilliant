@@ -196,7 +196,6 @@ export async function GET(request: NextRequest) {
                     omr_templates:omr_template_id(id, name, total_questions, layout_config)
                 `)
                 .eq('tenant_id', tenantId)
-                .or('omr_template_id.not.is.null,title.ilike.%omr%')
                 .order('created_at', { ascending: false }),
 
             supabaseAdmin
@@ -252,7 +251,7 @@ export async function GET(request: NextRequest) {
             ...e,
             classes: e.classes || classes.find((c: any) => c.id === e.class_id) || null,
             subjects: e.subjects || subjects.find((s: any) => s.id === e.subject_id) || null,
-            omr_templates: e.omr_templates || templates.find((t: any) => t.id === e.omr_template_id) || null
+            omr_templates: e.omr_templates || templates.find((t: any) => t.id === e.omr_template_id) || templates[0] || null
         }))
         const recentUploads = uploadsRes.data || []
         const sheetsCount = sheetsRes.data?.length || 0

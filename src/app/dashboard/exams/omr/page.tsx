@@ -279,14 +279,11 @@ export default function OMRExamManager() {
         fetchData()
     }, [fetchData])
 
-    // Filtered Exams (Strictly OMR Evaluation Exams)
+    // Filtered Exams
     const filteredExams = useMemo(() => {
         return exams.filter(ex => {
-            // Strictly require OMR template or OMR exam identity
-            const isOmr = Boolean(ex.omr_template_id || ex.title?.toLowerCase().includes('omr'))
-            if (!isOmr) return false
-
-            const matchesSearch = ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            const matchesSearch = !searchQuery.trim() ||
+                ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 ex.subjects?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 ex.classes?.name?.toLowerCase().includes(searchQuery.toLowerCase())
             const matchesClass = selectedClassFilter === 'ALL' || ex.class_id === selectedClassFilter
