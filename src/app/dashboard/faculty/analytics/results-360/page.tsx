@@ -271,10 +271,22 @@ export default function Result360Analytics() {
         fetchAnalytics()
     }, [fetchAnalytics])
 
-    // Top 3 ranked students for podium
+    // Unique students ranked by overall average — one entry per student
+    const uniqueStudentRanks = useMemo(() => {
+        const entries = Object.values(student360Map) as Student360Profile[]
+        // Sort by overall_average descending, then student name
+        const sorted = [...entries].sort((a, b) => {
+            if (b.overall_average !== a.overall_average) return b.overall_average - a.overall_average
+            return a.student_name.localeCompare(b.student_name)
+        })
+        // Assign a clean sequential rank
+        return sorted.map((st, idx) => ({ ...st, rank: idx + 1 }))
+    }, [student360Map])
+
+    // Top 3 ranked students for podium (from unique student list)
     const topAchievers = useMemo(() => {
-        return students.slice(0, 3)
-    }, [students])
+        return uniqueStudentRanks.slice(0, 3)
+    }, [uniqueStudentRanks])
 
     // Filtered weaker topics
     const filteredTopics = useMemo(() => {
@@ -629,7 +641,7 @@ export default function Result360Analytics() {
                     }`}
                 >
                     <Trophy className="w-4 h-4" />
-                    Student Rank Ledger & 360° ({students.length})
+                    Student Rank Ledger & 360° ({uniqueStudentRanks.length})
                 </button>
                 <button
                     onClick={() => setActiveTab('subjects')}
@@ -747,8 +759,8 @@ export default function Result360Analytics() {
                                 <div className="space-y-3">
                                     {topAchievers.map((student, idx) => (
                                         <div
-                                            key={student.id}
-                                            onClick={() => open360ModalForStudent(student.student_id, student)}
+                                            key={student.student_id}
+                                            onClick={() => setSelectedStudentFor360(student)}
                                             className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-100/70 hover:border-slate-300 transition-all cursor-pointer flex items-center justify-between group"
                                         >
                                             <div className="flex items-center gap-3">
@@ -772,10 +784,10 @@ export default function Result360Analytics() {
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-sm font-black text-emerald-600">
-                                                    {student.percentage}%
+                                                    {student.overall_average}%
                                                 </div>
                                                 <div className="text-[10px] font-bold text-slate-400 uppercase">
-                                                    Grade {student.grade_badge}
+                                                    Grade {student.overall_grade}
                                                 </div>
                                             </div>
                                         </div>
@@ -867,25 +879,25 @@ export default function Result360Analytics() {
                                     <th className="py-3.5 px-5">Rank</th>
                                     <th className="py-3.5 px-5">Student Information</th>
                                     <th className="py-3.5 px-5">Class</th>
-                                    <th className="py-3.5 px-5">Subject Evaluated</th>
-                                    <th className="py-3.5 px-5">Marks</th>
-                                    <th className="py-3.5 px-5">Score %</th>
+                                    <th className="py-3.5 px-5">Subjects Evaluated</th>
+                                    <th className="py-3.5 px-5">Overall Avg</th>
                                     <th className="py-3.5 px-5">Grade</th>
+                                    <th className="py-3.5 px-5">Exams</th>
                                     <th className="py-3.5 px-5 text-right">360° Analytics</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {students.length === 0 ? (
+                                {uniqueStudentRanks.length === 0 ? (
                                     <tr>
                                         <td colSpan={8} className="py-12 text-center text-slate-400 text-xs">
                                             No student records found matching the current filter criteria.
                                         </td>
                                     </tr>
                                 ) : (
-                                    students.map((st) => (
+                                    uniqueStudentRanks.map((st) => (
                                         <tr
-                                            key={st.id}
-                                            onClick={() => open360ModalForStudent(st.student_id, st)}
+                                            key={st.student_id}
+                                            onClick={() => setSelectedStudentFor360(st)}
                                             className="hover:bg-blue-50/40 transition-colors cursor-pointer group"
                                         >
                                             <td className="py-4 px-5">
@@ -912,43 +924,60 @@ export default function Result360Analytics() {
                                             <td className="py-4 px-5 text-xs font-semibold text-slate-700">
                                                 {st.class_name}
                                             </td>
-                                            <td className="py-4 px-5 text-xs font-semibold text-slate-700">
-                                                {st.subject_name}
-                                            </td>
-                                            <td className="py-4 px-5 font-bold text-slate-900">
-                                                {st.awarded_marks} <span className="text-xs text-slate-400 font-normal">/ {st.max_marks}</span>
+                                            {/* Subject breakdown — one badge per subject */}
+                                            <td className="py-4 px-5">
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {st.subject_mastery.map((sub, si) => (
+                                                        <span
+                                                            key={si}
+                                                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                                                sub.score >= 75
+                                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                                    : sub.score >= 40
+                                                                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                                                        : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                                            }`}
+                                                            title={`${sub.subject_name}: ${sub.score}%`}
+                                                        >
+                                                            {sub.subject_name} {sub.score}%
+                                                        </span>
+                                                    ))}
+                                                </div>
                                             </td>
                                             <td className="py-4 px-5">
-                                                <div className="font-black text-slate-900">{st.percentage}%</div>
+                                                <div className="font-black text-slate-900">{st.overall_average}%</div>
                                                 <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
                                                     <div
                                                         className={`h-full rounded-full ${
-                                                            Number(st.percentage) >= 75
+                                                            st.overall_average >= 75
                                                                 ? 'bg-emerald-500'
-                                                                : Number(st.percentage) >= 40
+                                                                : st.overall_average >= 40
                                                                     ? 'bg-blue-500'
                                                                     : 'bg-rose-500'
                                                         }`}
-                                                        style={{ width: `${Math.min(Number(st.percentage), 100)}%` }}
+                                                        style={{ width: `${Math.min(st.overall_average, 100)}%` }}
                                                     />
                                                 </div>
                                             </td>
                                             <td className="py-4 px-5">
                                                 <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-black ${
-                                                    st.grade_badge === 'A+' || st.grade_badge === 'A'
+                                                    st.overall_grade === 'A+' || st.overall_grade === 'A'
                                                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                                        : st.grade_badge === 'B' || st.grade_badge === 'C'
+                                                        : st.overall_grade === 'B' || st.overall_grade === 'C'
                                                             ? 'bg-blue-50 text-blue-700 border border-blue-200'
                                                             : 'bg-amber-50 text-amber-700 border border-amber-200'
                                                 }`}>
-                                                    Grade {st.grade_badge}
+                                                    Grade {st.overall_grade}
                                                 </span>
+                                            </td>
+                                            <td className="py-4 px-5 text-xs font-bold text-slate-600">
+                                                {st.total_exams} paper{st.total_exams !== 1 ? 's' : ''}
                                             </td>
                                             <td className="py-4 px-5 text-right">
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation()
-                                                        open360ModalForStudent(st.student_id, st)
+                                                        setSelectedStudentFor360(st)
                                                     }}
                                                     className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition-all shadow-xs"
                                                 >
