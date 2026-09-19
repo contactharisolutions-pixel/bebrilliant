@@ -81,13 +81,12 @@ const CURRICULUM_POOLS = {
 
 function generateCurriculumOMRQuestions(
     subject: string,
-    classLevel: string,
     topic: string,
     count: number,
-    difficulty: 'easy' | 'medium' | 'hard'
+    difficulty: 'easy' | 'medium' | 'hard' = 'medium'
 ) {
-    const sub = (subject || '').toLowerCase()
-    const cleanTopic = (topic || '').trim() || 'Core Curriculum'
+    const sub = String(subject || '').toLowerCase()
+    const cleanTopic = (typeof topic === 'string' ? topic : (topic ? String(topic) : '')).trim() || 'Core Curriculum'
     
     let basePool = CURRICULUM_POOLS.general
     if (sub.includes('math') || sub.includes('algebra') || sub.includes('geom') || sub.includes('calc')) {
