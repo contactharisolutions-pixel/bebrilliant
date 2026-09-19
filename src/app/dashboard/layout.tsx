@@ -332,6 +332,21 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     identityLocal?.tenant?.name || (identityLocal ? "Hub" : "Loading...");
   const userName =
     identityLocal?.fullName || (identityLocal ? "Member" : "Loading...");
+  const userRole = (identityLocal?.role || role || "admin").toLowerCase();
+  const roleBadgeConfig: Record<string, { label: string; bg: string; color: string; border: string }> = {
+    teacher: { label: "TEACHER", bg: "#ECFDF5", color: "#059669", border: "#A7F3D0" },
+    student: { label: "STUDENT", bg: "#FFFBEB", color: "#D97706", border: "#FDE68A" },
+    parent: { label: "PARENT", bg: "#F0FDFA", color: "#0D9488", border: "#99F6E4" },
+    owner: { label: "OWNER", bg: "#EEF2FF", color: "#4F46E5", border: "#E0E7FF" },
+    tenant_admin: { label: "ADMIN", bg: "#EFF6FF", color: "#2563EB", border: "#DBEAFE" },
+    admin: { label: "ADMIN", bg: "#EFF6FF", color: "#2563EB", border: "#DBEAFE" },
+  };
+  const currentBadge = roleBadgeConfig[userRole] || {
+    label: userRole.toUpperCase(),
+    bg: "#EFF6FF",
+    color: "#2563EB",
+    border: "#DBEAFE",
+  };
   return (
     <div
       style={{
@@ -424,12 +439,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                     fontWeight: 800,
                     padding: "1px 6px",
                     borderRadius: 4,
-                    background: "#EFF6FF",
-                    color: "#2563EB",
-                    border: "1px solid #DBEAFE",
+                    background: currentBadge.bg,
+                    color: currentBadge.color,
+                    border: `1px solid ${currentBadge.border}`,
                   }}
                 >
-                  ADMIN
+                  {currentBadge.label}
                 </span>
               </div>
             </div>

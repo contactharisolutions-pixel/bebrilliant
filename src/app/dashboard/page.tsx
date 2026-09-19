@@ -7,7 +7,8 @@ import {
     TrendingUp, Shield, Activity, Sparkles, ArrowUpRight, Globe, Loader2,
     UploadCloud, Bell, ChevronRight, UsersRound, Building2, Percent,
     FileText, Send, ScanLine, Printer, CheckCircle2, AlertTriangle, Info,
-    Copy, Check, ExternalLink, Server, HardDrive, ArrowRight, RefreshCw, Play, Cpu, ShieldCheck
+    Copy, Check, ExternalLink, Server, HardDrive, ArrowRight, RefreshCw, Play, Cpu, ShieldCheck,
+    Edit3, SlidersHorizontal
 } from 'lucide-react'
 import {
     AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -1602,6 +1603,738 @@ function ParentDashboardView({ data }: { data: any }) {
     )
 }
 
+// ── TEACHER DASHBOARD VIEW (Faculty Academic Workspace) ────────────────────────
+function TeacherDashboardView({ data, identity }: { data: any; identity: any }) {
+    const [liveTime, setLiveTime] = useState(new Date())
+
+    useEffect(() => {
+        const t = setInterval(() => setLiveTime(new Date()), 60000)
+        return () => clearInterval(t)
+    }, [])
+
+    const teacher = data?.teacher || {}
+    const institution = data?.institution || {}
+    const kpi = data?.kpi || {}
+    const classesOverview = data?.classesOverview || []
+    const pendingGradingQueue = data?.pendingGradingQueue || []
+    const upcomingExams = data?.upcomingExams || []
+
+    const teacherName = teacher.fullName || identity?.fullName || 'Faculty Member'
+    const firstName = teacherName.split(' ')[0] || 'Teacher'
+    const assignedClasses: string[] = teacher.assignedClasses || ['Class 6', 'Class 7', 'Class 8']
+    const tenantName = institution.name || identity?.tenant?.name || 'Silver Bells School (Mansarovar)'
+    const academicYear = institution.academicYear || 'AY 2026-27'
+    const affiliation = institution.affiliation || 'CBSE / State Board'
+
+    const greet = liveTime.getHours() < 12 ? 'Good morning' : liveTime.getHours() < 17 ? 'Good afternoon' : 'Good evening'
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 32, animation: 'float 0.4s ease-out' }}>
+            {/* ── 1. HERO BANNER: TEACHER ACADEMIC WORKSPACE ─────────────────── */}
+            <div style={{
+                background: 'linear-gradient(135deg, #1E3A8A 0%, #172554 100%)',
+                borderRadius: 24,
+                padding: '36px 40px',
+                color: '#fff',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 20px 40px rgba(30, 58, 138, 0.25)',
+                border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+                {/* Background ambient accents */}
+                <div style={{ position: 'absolute', top: -40, right: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(12, 163, 92, 0.25) 0%, transparent 70%)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', bottom: -50, right: 200, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37, 99, 235, 0.35) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+                <div style={{ position: 'relative', zIndex: 2 }}>
+                    {/* Status Badges */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+                        <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 7,
+                            padding: '6px 14px', borderRadius: 100,
+                            background: 'rgba(12, 163, 92, 0.25)',
+                            border: '1px solid rgba(12, 163, 92, 0.5)',
+                            fontSize: 11, fontWeight: 800, color: '#4ADE80',
+                            letterSpacing: '0.04em', textTransform: 'uppercase'
+                        }}>
+                            <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ADE80', animation: 'livepin 2s infinite' }} />
+                            Live Faculty Workspace
+                        </div>
+
+                        <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '6px 14px', borderRadius: 100,
+                            background: 'rgba(255, 255, 255, 0.12)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            fontSize: 11, fontWeight: 700, color: '#E0E7FF'
+                        }}>
+                            <Building2 size={13} />
+                            {tenantName}
+                        </div>
+
+                        <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '6px 14px', borderRadius: 100,
+                            background: 'rgba(255, 255, 255, 0.12)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            fontSize: 11, fontWeight: 700, color: '#E0E7FF'
+                        }}>
+                            <GraduationCap size={13} />
+                            Classes: {assignedClasses.join(', ')}
+                        </div>
+
+                        <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '6px 14px', borderRadius: 100,
+                            background: 'rgba(245, 158, 11, 0.2)',
+                            border: '1px solid rgba(245, 158, 11, 0.4)',
+                            fontSize: 11, fontWeight: 700, color: '#FCD34D'
+                        }}>
+                            ★ Faculty Portal
+                        </div>
+                    </div>
+
+                    {/* Greeting & Subtitle */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 24 }}>
+                        <div>
+                            <h1 style={{ margin: 0, fontSize: 36, fontWeight: 900, letterSpacing: '-0.03em', color: '#fff', lineHeight: 1.2 }}>
+                                {greet}, {firstName}! 👋
+                            </h1>
+                            <p style={{ margin: '8px 0 0', fontSize: 14, color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
+                                {liveTime.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} • Faculty Academic Workspace • {academicYear} ({affiliation})
+                            </p>
+                        </div>
+
+                        {/* Top Action Buttons */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                            <Link href="/dashboard/exams/online" style={{ textDecoration: 'none' }}>
+                                <button style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                                    padding: '11px 18px', borderRadius: 12,
+                                    background: '#fff', color: T.blueDark,
+                                    border: 'none', fontSize: 12, fontWeight: 800,
+                                    cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                    transition: 'transform 0.15s ease'
+                                }}>
+                                    <Zap size={15} color={T.blue} />
+                                    Quick CBT Exam
+                                </button>
+                            </Link>
+
+                            <Link href="/dashboard/exams/offline" style={{ textDecoration: 'none' }}>
+                                <button style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                                    padding: '11px 18px', borderRadius: 12,
+                                    background: 'rgba(255,255,255,0.15)', color: '#fff',
+                                    border: '1px solid rgba(255,255,255,0.3)',
+                                    fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                    backdropFilter: 'blur(8px)', transition: 'background 0.15s ease'
+                                }}>
+                                    <Printer size={15} />
+                                    Offline Paper
+                                </button>
+                            </Link>
+
+                            <Link href="/dashboard/faculty/answer-grading" style={{ textDecoration: 'none' }}>
+                                <button style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                                    padding: '11px 18px', borderRadius: 12,
+                                    background: 'rgba(255,255,255,0.15)', color: '#fff',
+                                    border: '1px solid rgba(255,255,255,0.3)',
+                                    fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                    backdropFilter: 'blur(8px)'
+                                }}>
+                                    <Edit3 size={15} />
+                                    Grade Sheets
+                                </button>
+                            </Link>
+
+                            <Link href="/dashboard/students" style={{ textDecoration: 'none' }}>
+                                <button style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                                    padding: '11px 18px', borderRadius: 12,
+                                    background: 'rgba(255,255,255,0.15)', color: '#fff',
+                                    border: '1px solid rgba(255,255,255,0.3)',
+                                    fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                    backdropFilter: 'blur(8px)'
+                                }}>
+                                    <Users size={15} />
+                                    My Students
+                                </button>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── 2. AI FACULTY CO-PILOT BANNER ───────────────────────────────── */}
+            <div style={{
+                background: 'linear-gradient(90deg, #F5F3FF 0%, #EFF6FF 100%)',
+                borderRadius: 18,
+                padding: '18px 24px',
+                border: '1px solid #DDD6FE',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 16
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{
+                        width: 44, height: 44, borderRadius: 14,
+                        background: 'linear-gradient(135deg, #7C3AED, #6D28D9)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff', flexShrink: 0, boxShadow: '0 4px 12px rgba(124, 58, 237, 0.3)'
+                    }}>
+                        <BrainCircuit size={22} />
+                    </div>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 14, fontWeight: 800, color: '#1E1B4B' }}>AI Faculty Co-Pilot</span>
+                            <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 6, background: '#EDE9FE', color: '#7C3AED', border: '1px solid #DDD6FE' }}>
+                                GPT-4o ENGINE
+                            </span>
+                        </div>
+                        <p style={{ margin: '2px 0 0', fontSize: 12, color: '#4B5563', fontWeight: 500 }}>
+                            Instant assessment authoring, question generation, and curriculum diagnostics for {tenantName}.
+                        </p>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <Link href="/dashboard/exams/online" style={{ textDecoration: 'none' }}>
+                        <button style={{
+                            padding: '7px 14px', borderRadius: 8,
+                            background: '#fff', border: '1px solid #C7D2FE',
+                            color: '#4338CA', fontSize: 11, fontWeight: 700,
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+                        }}>
+                            <Sparkles size={12} color="#6366F1" />
+                            Draft CBSE MCQs
+                        </button>
+                    </Link>
+
+                    <Link href="/dashboard/exams/offline" style={{ textDecoration: 'none' }}>
+                        <button style={{
+                            padding: '7px 14px', borderRadius: 8,
+                            background: '#fff', border: '1px solid #C7D2FE',
+                            color: '#4338CA', fontSize: 11, fontWeight: 700,
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+                        }}>
+                            <FileText size={12} color="#6366F1" />
+                            Draft Chapter Test
+                        </button>
+                    </Link>
+
+                    <Link href="/dashboard/faculty/analytics/results-360" style={{ textDecoration: 'none' }}>
+                        <button style={{
+                            padding: '7px 14px', borderRadius: 8,
+                            background: '#fff', border: '1px solid #A7F3D0',
+                            color: '#065F46', fontSize: 11, fontWeight: 700,
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+                        }}>
+                            <Target size={12} color="#059669" />
+                            Weaker Topics Radar
+                        </button>
+                    </Link>
+                </div>
+            </div>
+
+            {/* ── 3. TEACHER CORE KPI GRID ────────────────────────────────────── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+                {/* Metric 1: Assigned Students */}
+                <div style={{
+                    background: T.white, borderRadius: 20, border: `1px solid ${T.border}`,
+                    padding: '24px 26px', boxShadow: T.shadow, position: 'relative', overflow: 'hidden'
+                }} className="enterprise-card">
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${T.blue}, ${T.blue}00)` }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: T.slate500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                Assigned Students
+                            </div>
+                            <div style={{ fontSize: 32, fontWeight: 900, color: T.slate900, marginTop: 8, letterSpacing: '-0.02em' }}>
+                                {kpi.assignedStudentsCount || 0}
+                            </div>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: T.green, marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <CheckCircle2 size={13} /> Active in your classes
+                            </div>
+                        </div>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: T.blueLight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Users size={20} color={T.blue} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Metric 2: Active Exams */}
+                <div style={{
+                    background: T.white, borderRadius: 20, border: `1px solid ${T.border}`,
+                    padding: '24px 26px', boxShadow: T.shadow, position: 'relative', overflow: 'hidden'
+                }} className="enterprise-card">
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${T.purple}, ${T.purple}00)` }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: T.slate500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                Class Assessments
+                            </div>
+                            <div style={{ fontSize: 32, fontWeight: 900, color: T.slate900, marginTop: 8, letterSpacing: '-0.02em' }}>
+                                {kpi.activeExamsCount || 0}
+                            </div>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: T.purple, marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <ClipboardList size={13} /> Scheduled & Active
+                            </div>
+                        </div>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: T.purpleLight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Target size={20} color={T.purple} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Metric 3: Pending Answer Sheets */}
+                <div style={{
+                    background: T.white, borderRadius: 20, border: `1px solid ${T.border}`,
+                    padding: '24px 26px', boxShadow: T.shadow, position: 'relative', overflow: 'hidden'
+                }} className="enterprise-card">
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${T.amber}, ${T.amber}00)` }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: T.slate500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                Grading Queue
+                            </div>
+                            <div style={{ fontSize: 32, fontWeight: 900, color: (kpi.pendingGradingCount || 0) > 0 ? T.amber : T.slate900, marginTop: 8, letterSpacing: '-0.02em' }}>
+                                {kpi.pendingGradingCount || 0}
+                            </div>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: (kpi.pendingGradingCount || 0) > 0 ? T.amber : T.green, marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                {(kpi.pendingGradingCount || 0) > 0 ? <AlertTriangle size={13} /> : <CheckCircle2 size={13} />}
+                                {(kpi.pendingGradingCount || 0) > 0 ? 'Sheets awaiting review' : 'All caught up'}
+                            </div>
+                        </div>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: T.amberLight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Edit3 size={20} color={T.amber} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Metric 4: Average Mastery */}
+                <div style={{
+                    background: T.white, borderRadius: 20, border: `1px solid ${T.border}`,
+                    padding: '24px 26px', boxShadow: T.shadow, position: 'relative', overflow: 'hidden'
+                }} className="enterprise-card">
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${T.green}, ${T.green}00)` }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: T.slate500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                Class Performance
+                            </div>
+                            <div style={{ fontSize: 32, fontWeight: 900, color: T.slate900, marginTop: 8, letterSpacing: '-0.02em' }}>
+                                {kpi.classAverageMastery || 78}%
+                            </div>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: T.green, marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Award size={13} /> {kpi.passRate || 86}% student pass rate
+                            </div>
+                        </div>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: T.greenLight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <TrendingUp size={20} color={T.green} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── 4. MAIN WORKSPACE SPLIT (2 COLUMNS) ─────────────────────────── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 28, alignItems: 'start' }}>
+                {/* LEFT COLUMN: CLASSES & GRADING QUEUE */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+                    {/* Assigned Classes Roster Card */}
+                    <div style={{ background: T.white, borderRadius: 20, border: `1px solid ${T.border}`, padding: '26px 28px', boxShadow: T.shadow }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: T.slate900 }}>
+                                    My Assigned Classes & Academic Roster
+                                </h3>
+                                <p style={{ margin: '4px 0 0', fontSize: 12, color: T.slate500 }}>
+                                    Classes assigned to your faculty profile in {tenantName}
+                                </p>
+                            </div>
+                            <Link href="/dashboard/students" style={{ textDecoration: 'none' }}>
+                                <button style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                    padding: '7px 14px', borderRadius: 10,
+                                    background: T.slate50, border: `1px solid ${T.border}`,
+                                    fontSize: 12, fontWeight: 700, color: T.slate700, cursor: 'pointer'
+                                }}>
+                                    <Users size={13} /> View Full Roster
+                                </button>
+                            </Link>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 14 }}>
+                            {classesOverview.length > 0 ? (
+                                classesOverview.map((c: any, idx: number) => (
+                                    <div key={idx} style={{
+                                        padding: '16px 18px', borderRadius: 14,
+                                        background: T.slate50, border: `1px solid ${T.border}`,
+                                        display: 'flex', flexDirection: 'column', gap: 12,
+                                        transition: 'all 0.2s'
+                                    }} className="enterprise-row">
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{
+                                                fontSize: 12, fontWeight: 800, padding: '3px 8px',
+                                                borderRadius: 6, background: '#EFF6FF', color: T.blue,
+                                                border: '1px solid #DBEAFE'
+                                            }}>
+                                                {c.className}
+                                            </span>
+                                            <span style={{ fontSize: 11, fontWeight: 700, color: T.slate500 }}>
+                                                {c.studentCount} Students
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 6 }}>
+                                            <Link href={`/dashboard/students`} style={{ flex: 1, textDecoration: 'none' }}>
+                                                <button style={{
+                                                    width: '100%', padding: '6px 10px', borderRadius: 8,
+                                                    background: '#fff', border: `1px solid ${T.border}`,
+                                                    fontSize: 11, fontWeight: 700, color: T.slate700, cursor: 'pointer'
+                                                }}>
+                                                    Students
+                                                </button>
+                                            </Link>
+                                            <Link href={`/dashboard/exams/online`} style={{ flex: 1, textDecoration: 'none' }}>
+                                                <button style={{
+                                                    width: '100%', padding: '6px 10px', borderRadius: 8,
+                                                    background: T.blue, border: 'none',
+                                                    fontSize: 11, fontWeight: 800, color: '#fff', cursor: 'pointer'
+                                                }}>
+                                                    Exam
+                                                </button>
+                                            </Link>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                assignedClasses.map((clsName, idx) => (
+                                    <div key={idx} style={{
+                                        padding: '16px 18px', borderRadius: 14,
+                                        background: T.slate50, border: `1px solid ${T.border}`,
+                                        display: 'flex', flexDirection: 'column', gap: 10
+                                    }}>
+                                        <span style={{
+                                            fontSize: 12, fontWeight: 800, padding: '3px 8px',
+                                            borderRadius: 6, background: '#EFF6FF', color: T.blue,
+                                            border: '1px solid #DBEAFE', width: 'fit-content'
+                                        }}>
+                                            {clsName}
+                                        </span>
+                                        <span style={{ fontSize: 11, color: T.slate500 }}>Assigned Academic Class</span>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Pending Answer Sheets Grading Queue */}
+                    <div style={{ background: T.white, borderRadius: 20, border: `1px solid ${T.border}`, padding: '26px 28px', boxShadow: T.shadow }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: T.slate900 }}>
+                                        Answer Sheet Grading Queue
+                                    </h3>
+                                    {(kpi.pendingGradingCount || 0) > 0 && (
+                                        <span style={{
+                                            fontSize: 10, fontWeight: 800, padding: '2px 8px',
+                                            borderRadius: 100, background: '#FEF3C7', color: '#B45309',
+                                            border: '1px solid #FDE68A'
+                                        }}>
+                                            {kpi.pendingGradingCount} Pending
+                                        </span>
+                                    )}
+                                </div>
+                                <p style={{ margin: '4px 0 0', fontSize: 12, color: T.slate500 }}>
+                                    Recent student attempts requiring faculty evaluation
+                                </p>
+                            </div>
+                            <Link href="/dashboard/faculty/answer-grading" style={{ textDecoration: 'none' }}>
+                                <button style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                    padding: '7px 14px', borderRadius: 10,
+                                    background: T.blueLight, border: `1px solid #BFDBFE`,
+                                    fontSize: 12, fontWeight: 800, color: T.blue, cursor: 'pointer'
+                                }}>
+                                    <Edit3 size={13} /> Open Grading Hub
+                                </button>
+                            </Link>
+                        </div>
+
+                        {pendingGradingQueue.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {pendingGradingQueue.map((item: any, idx: number) => (
+                                    <div key={idx} style={{
+                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                        padding: '12px 16px', borderRadius: 12, background: T.slate50,
+                                        border: `1px solid ${T.border}`
+                                    }} className="enterprise-row">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                            <div style={{
+                                                width: 36, height: 36, borderRadius: 10,
+                                                background: '#FEF3C7', color: '#D97706',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                                            }}>
+                                                <FileText size={16} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: 13, fontWeight: 700, color: T.slate900 }}>
+                                                    {item.student_name}
+                                                </div>
+                                                <div style={{ fontSize: 11, color: T.slate500, marginTop: 2 }}>
+                                                    {item.exam_title} • {item.class_name || 'Class'}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                            <span style={{ fontSize: 11, color: T.slate500 }}>
+                                                {item.submitted_at ? new Date(item.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Submitted'}
+                                            </span>
+                                            <Link href={`/dashboard/faculty/answer-grading?examId=${item.exam_id}&attemptId=${item.attempt_id}`} style={{ textDecoration: 'none' }}>
+                                                <button style={{
+                                                    padding: '6px 12px', borderRadius: 8,
+                                                    background: T.blue, border: 'none',
+                                                    fontSize: 11, fontWeight: 800, color: '#fff', cursor: 'pointer'
+                                                }}>
+                                                    Grade Sheet
+                                                </button>
+                                            </Link>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{
+                                padding: '32px 20px', textAlign: 'center',
+                                borderRadius: 14, background: T.slate50, border: `1px dashed ${T.border}`
+                            }}>
+                                <CheckCircle2 size={32} color={T.green} style={{ margin: '0 auto 10px' }} />
+                                <div style={{ fontSize: 14, fontWeight: 800, color: T.slate900 }}>Grading Queue Clear</div>
+                                <p style={{ margin: '4px auto 0', fontSize: 12, color: T.slate500, maxWidth: 300 }}>
+                                    All student assessments for your assigned classes have been graded and published.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Upcoming Exams Table */}
+                    <div style={{ background: T.white, borderRadius: 20, border: `1px solid ${T.border}`, padding: '26px 28px', boxShadow: T.shadow }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: T.slate900 }}>
+                                    Active & Scheduled Exams
+                                </h3>
+                                <p style={{ margin: '4px 0 0', fontSize: 12, color: T.slate500 }}>
+                                    Exams created for your assigned classes
+                                </p>
+                            </div>
+                            <Link href="/dashboard/exams/online" style={{ textDecoration: 'none' }}>
+                                <button style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                    padding: '7px 14px', borderRadius: 10,
+                                    background: T.slate50, border: `1px solid ${T.border}`,
+                                    fontSize: 12, fontWeight: 700, color: T.slate700, cursor: 'pointer'
+                                }}>
+                                    View All <ChevronRight size={13} />
+                                </button>
+                            </Link>
+                        </div>
+
+                        {upcomingExams.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {upcomingExams.map((ex: any, idx: number) => (
+                                    <div key={idx} style={{
+                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                        padding: '12px 16px', borderRadius: 12, background: T.slate50,
+                                        border: `1px solid ${T.border}`
+                                    }} className="enterprise-row">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                            <div style={{
+                                                width: 36, height: 36, borderRadius: 10,
+                                                background: T.blueLight, color: T.blue,
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                                            }}>
+                                                <ClipboardList size={16} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: 13, fontWeight: 700, color: T.slate900 }}>
+                                                    {ex.title}
+                                                </div>
+                                                <div style={{ fontSize: 11, color: T.slate500, marginTop: 2 }}>
+                                                    {ex.class_name || 'Class'} • {ex.subject || 'General'} • {ex.total_marks || 100} Marks
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <span style={{
+                                                fontSize: 10, fontWeight: 800, padding: '3px 8px',
+                                                borderRadius: 6, background: '#DCFCE7', color: '#166534',
+                                                border: '1px solid #BBF7D0'
+                                            }}>
+                                                {ex.status ? ex.status.toUpperCase() : 'ACTIVE'}
+                                            </span>
+                                            <Link href={`/dashboard/exams/online`} style={{ textDecoration: 'none' }}>
+                                                <button style={{
+                                                    padding: '5px 10px', borderRadius: 6,
+                                                    background: '#fff', border: `1px solid ${T.border}`,
+                                                    fontSize: 11, fontWeight: 700, color: T.slate700, cursor: 'pointer'
+                                                }}>
+                                                    Open
+                                                </button>
+                                            </Link>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{
+                                padding: '28px 20px', textAlign: 'center',
+                                borderRadius: 14, background: T.slate50, border: `1px dashed ${T.border}`
+                            }}>
+                                <ClipboardList size={30} color={T.slate500} style={{ margin: '0 auto 8px' }} />
+                                <div style={{ fontSize: 13, fontWeight: 700, color: T.slate900 }}>No active exams scheduled</div>
+                                <p style={{ margin: '3px auto 14px', fontSize: 11, color: T.slate500 }}>
+                                    Create a new online CBT assessment or generate an offline paper for your classes.
+                                </p>
+                                <Link href="/dashboard/exams/online" style={{ textDecoration: 'none' }}>
+                                    <button style={{
+                                        padding: '7px 16px', borderRadius: 8,
+                                        background: T.blue, color: '#fff', border: 'none',
+                                        fontSize: 11, fontWeight: 800, cursor: 'pointer'
+                                    }}>
+                                        + Create CBT Exam
+                                    </button>
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* RIGHT COLUMN: ANALYTICS SHORTCUTS & LAUNCHPAD */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                    {/* Weaker Areas & 360 Diagnostic Card */}
+                    <div style={{
+                        background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+                        borderRadius: 20, padding: '24px 26px', color: '#fff',
+                        boxShadow: '0 12px 24px rgba(15, 23, 42, 0.25)',
+                        border: '1px solid rgba(255,255,255,0.1)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                            <div style={{
+                                width: 36, height: 36, borderRadius: 10,
+                                background: 'rgba(12, 163, 92, 0.25)',
+                                color: '#4ADE80', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                                <BarChart3 size={18} />
+                            </div>
+                            <div>
+                                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#fff' }}>
+                                    Student 360° Result Analytics
+                                </h4>
+                                <span style={{ fontSize: 11, color: '#94A3B8' }}>Pedagogical & Diagnostic Engine</span>
+                            </div>
+                        </div>
+
+                        <p style={{ fontSize: 12, color: '#CBD5E1', lineHeight: 1.6, margin: '0 0 16px' }}>
+                            Diagnose weaker chapters and micro-topics across your assigned classes ({assignedClasses.join(', ')}). View individual student growth trajectories.
+                        </p>
+
+                        <Link href="/dashboard/faculty/analytics/results-360" style={{ textDecoration: 'none' }}>
+                            <button style={{
+                                width: '100%', padding: '10px 16px', borderRadius: 12,
+                                background: `linear-gradient(135deg, ${T.green}, #059669)`,
+                                color: '#fff', border: 'none', fontSize: 12, fontWeight: 800,
+                                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                                boxShadow: '0 4px 14px rgba(12, 163, 92, 0.3)'
+                            }}>
+                                Open 360° Analytics <ArrowRight size={14} />
+                            </button>
+                        </Link>
+                    </div>
+
+                    {/* Course Syllabus Reference Card */}
+                    <div style={{ background: T.white, borderRadius: 20, border: `1px solid ${T.border}`, padding: '22px 24px', boxShadow: T.shadow }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 10, background: T.blueLight, color: T.blue, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <BookOpen size={18} />
+                            </div>
+                            <div>
+                                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: T.slate900 }}>
+                                    Approved Course Syllabus
+                                </h4>
+                                <span style={{ fontSize: 11, color: T.slate500 }}>Read-only reference</span>
+                            </div>
+                        </div>
+                        <p style={{ fontSize: 12, color: T.slate500, margin: '0 0 14px', lineHeight: 1.5 }}>
+                            Access published syllabus chapters and topics for {assignedClasses.join(', ')} to align your lessons and question papers.
+                        </p>
+                        <Link href="/dashboard/syllabus" style={{ textDecoration: 'none' }}>
+                            <button style={{
+                                width: '100%', padding: '9px 14px', borderRadius: 10,
+                                background: T.slate50, border: `1px solid ${T.border}`,
+                                fontSize: 12, fontWeight: 700, color: T.slate700, cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+                            }}>
+                                Browse Board Syllabus <ExternalLink size={13} />
+                            </button>
+                        </Link>
+                    </div>
+
+                    {/* Operational Quick Launchpad for Faculty */}
+                    <div style={{ background: T.white, borderRadius: 20, border: `1px solid ${T.border}`, padding: '22px 24px', boxShadow: T.shadow }}>
+                        <h4 style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 800, color: T.slate900, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            Faculty Quick Launchpad
+                        </h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                            <Link href="/dashboard/exams/online" style={{ textDecoration: 'none' }}>
+                                <div style={{ padding: '12px 10px', borderRadius: 12, background: T.slate50, border: `1px solid ${T.border}`, textAlign: 'center', transition: 'all 0.15s' }} className="enterprise-row">
+                                    <Zap size={18} color={T.blue} style={{ margin: '0 auto 4px' }} />
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: T.slate900 }}>Online CBT</div>
+                                </div>
+                            </Link>
+                            <Link href="/dashboard/exams/offline" style={{ textDecoration: 'none' }}>
+                                <div style={{ padding: '12px 10px', borderRadius: 12, background: T.slate50, border: `1px solid ${T.border}`, textAlign: 'center', transition: 'all 0.15s' }} className="enterprise-row">
+                                    <Printer size={18} color={T.purple} style={{ margin: '0 auto 4px' }} />
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: T.slate900 }}>Paper Engine</div>
+                                </div>
+                            </Link>
+                            <Link href="/dashboard/exams/templates" style={{ textDecoration: 'none' }}>
+                                <div style={{ padding: '12px 10px', borderRadius: 12, background: T.slate50, border: `1px solid ${T.border}`, textAlign: 'center', transition: 'all 0.15s' }} className="enterprise-row">
+                                    <SlidersHorizontal size={18} color={T.green} style={{ margin: '0 auto 4px' }} />
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: T.slate900 }}>Exam Formats</div>
+                                </div>
+                            </Link>
+                            <Link href="/dashboard/faculty/answer-grading" style={{ textDecoration: 'none' }}>
+                                <div style={{ padding: '12px 10px', borderRadius: 12, background: T.slate50, border: `1px solid ${T.border}`, textAlign: 'center', transition: 'all 0.15s' }} className="enterprise-row">
+                                    <Edit3 size={18} color={T.amber} style={{ margin: '0 auto 4px' }} />
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: T.slate900 }}>Grade Sheets</div>
+                                </div>
+                            </Link>
+                            <Link href="/dashboard/students" style={{ textDecoration: 'none' }}>
+                                <div style={{ padding: '12px 10px', borderRadius: 12, background: T.slate50, border: `1px solid ${T.border}`, textAlign: 'center', transition: 'all 0.15s' }} className="enterprise-row">
+                                    <Users size={18} color={T.blue} style={{ margin: '0 auto 4px' }} />
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: T.slate900 }}>Students</div>
+                                </div>
+                            </Link>
+                            <Link href="/dashboard/material" style={{ textDecoration: 'none' }}>
+                                <div style={{ padding: '12px 10px', borderRadius: 12, background: T.slate50, border: `1px solid ${T.border}`, textAlign: 'center', transition: 'all 0.15s' }} className="enterprise-row">
+                                    <BookOpen size={18} color={T.purple} style={{ margin: '0 auto 4px' }} />
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: T.slate900 }}>Homework</div>
+                                </div>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 // ── MAIN EXPORT ───────────────────────────────────────────────────────────────
 export default function PortalDashboard() {
     const [data, setData] = useState<any>(null)
@@ -1612,9 +2345,12 @@ export default function PortalDashboard() {
 
     useEffect(() => {
         const fetchDashboard = async (resolvedRole: string) => {
-            const dashboardUrl = (resolvedRole === 'student' || resolvedRole === 'parent')
-                ? '/api/student/dashboard'
-                : '/api/admin/dashboard'
+            let dashboardUrl = '/api/admin/dashboard'
+            if (resolvedRole === 'teacher') {
+                dashboardUrl = '/api/teacher/dashboard'
+            } else if (resolvedRole === 'student' || resolvedRole === 'parent') {
+                dashboardUrl = '/api/student/dashboard'
+            }
             const dbRes = await fetch(dashboardUrl, { cache: 'no-store' })
             if (!dbRes.ok) {
                 let errMessage = 'Dashboard load failed'
@@ -1713,10 +2449,11 @@ export default function PortalDashboard() {
 
     if (!data || !role) return null
 
-    const isAdmin = !['student', 'parent'].includes(role)
+    const isTeacher = role === 'teacher'
+    const isAdmin = !['student', 'parent', 'teacher'].includes(role)
     const isStudent = role === 'student'
-    const headerTitle = role === 'parent' ? 'Parent Dashboard' : 'Admin Dashboard'
-    const headerDesc = role === 'parent' ? "Monitor your child's academic progress." : 'Manage your school administration and overview.'
+    const headerTitle = role === 'parent' ? 'Parent Dashboard' : isTeacher ? 'Teacher Dashboard' : 'Admin Dashboard'
+    const headerDesc = role === 'parent' ? "Monitor your child's academic progress." : isTeacher ? 'Manage your classes, exams, and student assessments.' : 'Manage your school administration and overview.'
 
     return (
         <>
@@ -1730,9 +2467,9 @@ export default function PortalDashboard() {
                 .enterprise-row:hover { background: #EEF4FF !important; border-color: #004B93 !important; }
                 .enterprise-action:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; }
             `}</style>
-            <div style={{ padding: isAdmin ? '40px 48px' : '40px 48px', background: T.slate50, minHeight: '100vh', fontFamily: "'Inter', system-ui, sans-serif", animation: 'float 0.4s ease-out' }}>
-                {/* Non-student, non-admin: show generic header (parent) */}
-                {!isAdmin && !isStudent && (
+            <div style={{ padding: (isAdmin || isTeacher) ? '40px 48px' : '40px 48px', background: T.slate50, minHeight: '100vh', fontFamily: "'Inter', system-ui, sans-serif", animation: 'float 0.4s ease-out' }}>
+                {/* Non-student, non-admin, non-teacher: show generic header (parent) */}
+                {!isAdmin && !isStudent && !isTeacher && (
                     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 48 }}>
                         <div>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '8px 16px', background: `${T.blue}10`, color: T.blue, borderRadius: 100, fontSize: 11, fontWeight: 800, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -1750,6 +2487,8 @@ export default function PortalDashboard() {
                     ? <ParentDashboardView data={data} />
                     : role === 'student'
                     ? <StudentDashboardView data={data} identity={ctxIdentity} />
+                    : role === 'teacher'
+                    ? <TeacherDashboardView data={data} identity={ctxIdentity} />
                     : <AdminDashboardView data={data} role={role} identity={ctxIdentity} />
                 }
             </div>
