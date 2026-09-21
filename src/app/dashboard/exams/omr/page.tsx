@@ -1931,7 +1931,7 @@ export default function OMRExamManager() {
                                         </div>
                                     </div>
 
-                                    {/* Master Unified Syllabus & Exam Pattern Picker */}
+                                    {/* Master Unified Syllabus Picker (Pattern picker hidden for OMR) */}
                                     <ExamSyllabusPatternPicker
                                         context={blueprintContext}
                                         loadingContext={contextLoading}
@@ -1942,6 +1942,7 @@ export default function OMRExamManager() {
                                         selectedChapterIds={selectedChapterIds}
                                         selectedTopicIds={selectedTopicIds}
                                         selectedPatternId={selectedPatternId}
+                                        hidePatternPicker={true}
                                         onSelectBoard={bId => {
                                             setSelectedBoardId(bId)
                                             setSelectedClassId('')
