@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { verifyTenantStaff } from '@/lib/auth-server'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function computeScheduleStatus(
     exam: any
@@ -316,8 +319,15 @@ export async function GET(request: NextRequest) {
         // Paper patterns
         const { data: templates } = await supabaseAdmin
             .from('paper_templates')
-            .select('id, name, category, exam_type, total_marks, duration_minutes, is_active')
+            .select(`
+                id, name, category, exam_type, total_marks, duration_minutes, is_active, is_global, tenant_id, instructions, description,
+                sections:template_sections(
+                    id, section_name, section_type, optional_flag, instructions, order_index,
+                    rules:section_question_rules(id, question_type, num_questions, marks_per_question, negative_marks, difficulty_easy_pct, difficulty_medium_pct, difficulty_hard_pct, internal_choice)
+                )
+            `)
             .eq('is_active', true)
+            .or(`tenant_id.eq.${tenant_id},is_global.eq.true`)
             .order('name', { ascending: true })
 
         // Recent attempts for live monitor

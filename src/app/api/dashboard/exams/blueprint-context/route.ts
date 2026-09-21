@@ -3,6 +3,9 @@ import { query } from '@/lib/db'
 import { verifyTenantStaff } from '@/lib/auth-server'
 import { syncSyllabusToTenantAcademy } from '@/lib/syllabus-sync'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export async function GET(request: NextRequest) {
     try {
         const session = await verifyTenantStaff()
@@ -137,8 +140,15 @@ export async function GET(request: NextRequest) {
                 pt.is_global,
                 pt.is_active,
                 pt.created_by,
+                pt.tenant_id,
                 pt.created_at,
-                (pt.is_global = true AND (pt.created_by IS NULL OR pt.created_by != $1)) AS is_owner_pattern,
+                (CASE 
+                    WHEN pt.tenant_id IS NOT NULL AND pt.tenant_id = $1 THEN false
+                    WHEN pt.created_by = $1 THEN false
+                    WHEN pt.created_by IN (SELECT id FROM public.user_profiles WHERE tenant_id = $1) THEN false
+                    WHEN pt.is_global = true THEN true
+                    ELSE false
+                END) AS is_owner_pattern,
                 COALESCE(
                     (
                         SELECT json_agg(
@@ -178,13 +188,15 @@ export async function GET(request: NextRequest) {
             FROM public.paper_templates pt
             WHERE pt.is_active = true AND (
                 pt.is_global = true 
+                OR pt.tenant_id = $1 
                 OR pt.created_by = $1 
+                OR pt.created_by IN (SELECT id FROM public.user_profiles WHERE tenant_id = $1)
                 OR pt.id IN (
                     SELECT template_id FROM public.offline_exams WHERE tenant_id = $1 AND template_id IS NOT NULL
                 )
             )
             ORDER BY 
-                (CASE WHEN pt.created_by = $1 THEN 0 ELSE 1 END),
+                (CASE WHEN pt.tenant_id = $1 OR pt.created_by = $1 THEN 0 ELSE 1 END),
                 pt.category ASC, pt.name ASC;
         `
         const patternsRes = await query(patternsQuery, [tenantId])
@@ -478,8 +490,8 @@ export async function POST(request: NextRequest) {
             const cleanName = name.trim()
             const { rows: newPattern } = await query(
                 `INSERT INTO public.paper_templates (
-                    name, category, exam_type, duration_minutes, total_marks, instructions, description, is_global, is_active, created_by, version
-                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, $8, 1) RETURNING id`,
+                    name, category, exam_type, duration_minutes, total_marks, instructions, description, is_global, is_active, created_by, tenant_id, version
+                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, $8, $8, 1) RETURNING id`,
                 [
                     cleanName,
                     category,
@@ -500,7 +512,7 @@ export async function POST(request: NextRequest) {
                     const { rows: newSec } = await query(
                         `INSERT INTO public.template_sections (
                             template_id, section_name, section_type, optional_flag, instructions, order_index
-                         ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+                          ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
                         [
                             templateId,
                             sec.section_name || `Section ${String.fromCharCode(65 + si)}`,
@@ -555,7 +567,7 @@ export async function POST(request: NextRequest) {
                 `UPDATE public.paper_templates
                  SET name = $1, category = $2, exam_type = $3, duration_minutes = $4, total_marks = $5,
                      instructions = $6, description = $7, version = COALESCE(version, 1) + 1, updated_at = NOW()
-                 WHERE id = $8 AND (created_by = $9 OR is_global = false)
+                 WHERE id = $8 AND (tenant_id = $9 OR created_by = $9 OR is_global = false)
                  RETURNING id`,
                 [
                     cleanName,
@@ -638,8 +650,8 @@ export async function POST(request: NextRequest) {
             const { rows: cloneRows } = await query(
                 `INSERT INTO public.paper_templates (
                     name, category, exam_type, duration_minutes, total_marks, instructions, description,
-                    is_global, is_active, created_by, version, cloned_from
-                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, $8, 1, $9) RETURNING id`,
+                    is_global, is_active, created_by, tenant_id, version, cloned_from
+                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, $8, $8, 1, $9) RETURNING id`,
                 [
                     cloneName,
                     src.category,
@@ -700,7 +712,7 @@ export async function POST(request: NextRequest) {
             await query(
                 `UPDATE public.paper_templates
                  SET is_active = false, updated_at = NOW()
-                 WHERE id = $1 AND (created_by = $2 OR is_global = false)`,
+                 WHERE id = $1 AND (tenant_id = $2 OR created_by = $2 OR is_global = false)`,
                 [id, tenantId]
             )
 

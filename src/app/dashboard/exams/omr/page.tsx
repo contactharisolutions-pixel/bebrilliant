@@ -156,7 +156,7 @@ export default function OMRExamManager() {
     const fetchBlueprintContext = useCallback(async () => {
         setContextLoading(true)
         try {
-            const res = await fetch('/api/dashboard/exams/blueprint-context')
+            const res = await fetch('/api/dashboard/exams/blueprint-context', { cache: 'no-store' })
             if (res.ok) {
                 const data: BlueprintContextData = await res.json()
                 setBlueprintContext(data)
@@ -561,7 +561,7 @@ export default function OMRExamManager() {
         if (!ctx) {
             setContextLoading(true)
             try {
-                const res = await fetch('/api/dashboard/exams/blueprint-context')
+                const res = await fetch('/api/dashboard/exams/blueprint-context', { cache: 'no-store' })
                 if (res.ok) {
                     ctx = await res.json()
                     setBlueprintContext(ctx)

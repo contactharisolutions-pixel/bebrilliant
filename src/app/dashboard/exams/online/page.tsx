@@ -354,7 +354,7 @@ export default function OnlineExamsPage() {
     const fetchBlueprintContext = useCallback(async () => {
         setContextLoading(true)
         try {
-            const res = await fetch('/api/dashboard/exams/blueprint-context')
+            const res = await fetch('/api/dashboard/exams/blueprint-context', { cache: 'no-store' })
             if (res.ok) {
                 const data: BlueprintContextData = await res.json()
                 setBlueprintContext(data)
@@ -374,7 +374,7 @@ export default function OnlineExamsPage() {
         setLoading(true)
         try {
             const [mainRes] = await Promise.all([
-                fetch('/api/dashboard/exams/online').then(r => r.json()),
+                fetch('/api/dashboard/exams/online', { cache: 'no-store' }).then(r => r.json()),
                 fetchBlueprintContext()
             ])
             if (mainRes?.metrics) setMetrics(mainRes.metrics)

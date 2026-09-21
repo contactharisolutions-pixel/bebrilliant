@@ -7,6 +7,9 @@ import { query } from '@/lib/db'
 import { verifyTenantStaff } from '@/lib/auth-server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // Comprehensive curriculum bank for OMR MCQs (NCERT/CBSE aligned)
 const CURRICULUM_POOLS = {
     science: [
@@ -365,6 +368,7 @@ export async function GET(request: NextRequest) {
                 .from('paper_templates')
                 .select('id, name, category, exam_type, total_marks, duration_minutes, is_active')
                 .eq('is_active', true)
+                .or(`tenant_id.eq.${tenantId},is_global.eq.true`)
                 .order('name', { ascending: true }),
 
             supabaseAdmin
