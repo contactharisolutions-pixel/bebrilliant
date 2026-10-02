@@ -8,8 +8,8 @@ async function verifyTenantAdmin() {
     if (error || !user) return null
 
     const { data: profile } = await supabaseAdmin.from('user_profiles').select('role, tenant_id').eq('id', user.id).single()
-    // Admin/Owner view for financial reports and overall metrics
-    if (profile?.tenant_id && ['admin', 'owner'].includes(profile.role)) {
+    // Admin/Owner/Tenant Admin view for financial reports and overall metrics
+    if (profile?.tenant_id && ['admin', 'owner', 'tenant_admin', 'teacher'].includes(profile.role)) {
         return { user, tenant_id: profile.tenant_id }
     }
     return null

@@ -43,18 +43,18 @@ export function SovereignStatsStrip() {
     return (
         <section
             aria-label="Institutional Scale Telemetry"
-            className="w-full bg-[#00142A] border-y border-white/10 py-12 px-6 sm:px-8 lg:px-12 relative overflow-hidden"
+            className="w-full bg-white border-y border-gray-200 py-12 px-6 sm:px-8 lg:px-12 relative overflow-hidden"
         >
             {/* Subtle ambient gradient mesh */}
             <div
-                className="absolute inset-0 pointer-events-none opacity-40"
+                className="absolute inset-0 pointer-events-none opacity-0"
                 style={{
-                    background: 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(30, 58, 138, 0.35), transparent)'
+                    background: 'transparent'
                 }}
             />
 
-            <div className="max-w-7xl mx-auto relative z-10">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-y md:divide-y-0 md:divide-x divide-white/10">
+            <div className="w-full mx-auto relative z-10">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-y md:divide-y-0 md:divide-x divide-gray-200">
                     {STATS.map(({ end, suffix, label, status }, idx) => (
                         <div
                             key={label}
@@ -63,17 +63,17 @@ export function SovereignStatsStrip() {
                             }`}
                         >
                             <div className="flex items-center gap-2 mb-3">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                <span className="text-[10px] font-mono tracking-wider uppercase text-slate-400 font-semibold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                <span className="text-[10px] font-mono tracking-wider uppercase text-gray-500 font-semibold">
                                     {status}
                                 </span>
                             </div>
 
-                            <div className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight font-manrope">
+                            <div className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight font-manrope">
                                 <CountUp end={end} suffix={suffix} />
                             </div>
 
-                            <div className="text-xs font-bold text-slate-300 uppercase tracking-widest mt-2 font-worksans">
+                            <div className="text-xs font-bold text-gray-700 uppercase tracking-widest mt-2 font-worksans">
                                 {label}
                             </div>
                         </div>

@@ -4,52 +4,90 @@ import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-    LayoutDashboard, Users, UsersRound, ClipboardList, BookOpen, BrainCircuit,
-    Headset, Wallet, CreditCard, Share2, Globe, BellRing, BarChart2, Settings2,
-    Zap, LogOut, GraduationCap, School, Layers, Activity, Calendar, ScanLine, Printer,
-    Home, ShieldCheck, ChevronRight, FileText, UploadCloud
+    LayoutDashboard, Users, UsersRound, GraduationCap,
+    Zap, ScanLine, Printer, BookOpen, Layers,
+    BarChart3, PieChart, Activity,
+    Wallet, CreditCard, School, Settings2,
+    BellRing, Calendar, SlidersHorizontal, Edit3, ChevronRight, ChevronDown, LogOut
 } from 'lucide-react'
 
+/**
+ * NAV_GROUPS — tenant admin sidebar navigation.
+ *
+ * Ordered as requested:
+ *   1. Admin Dashboard
+ *   2. Create Exams
+ *   3. Exam Master
+ *   4. Student Zone
+ *   5. Teacher Zone
+ *   6. Communication
+ *   7. Revenue and Payments
+ *   8. Reports & Analytics
+ *   9. School/Institute Setup
+ */
 const NAV_GROUPS = [
     {
-        title: 'Overview',
+        title: '',
         items: [
             { label: 'Admin Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-            { label: 'Analytics & Reports', icon: Activity, href: '/dashboard/faculty/analytics/results-360' },
         ]
     },
     {
-        title: 'Academic Operations',
+        title: 'Create Exams',
         items: [
-            { label: 'Academic Structure', icon: Calendar, href: '/dashboard/tenant/academic-year' },
-            { label: 'Course Syllabus', icon: Layers, href: '/dashboard/syllabus' },
-            { label: 'Study Materials', icon: BookOpen, href: '/dashboard/material' },
+            { label: 'Create Offline Exams', icon: Printer, href: '/dashboard/exams/offline' },
+            { label: 'Create OMR Sheets', icon: ScanLine, href: '/dashboard/exams/omr' },
+            { label: 'Create Online Exams', icon: Zap, href: '/dashboard/exams/online' },
+        ]
+    },
+    {
+        title: 'Exam Master',
+        items: [
+            { label: 'Exam Patterns', icon: SlidersHorizontal, href: '/dashboard/exams/templates' },
+            { label: 'Course Syllabus', icon: BookOpen, href: '/dashboard/syllabus' },
+        ]
+    },
+    {
+        title: 'Student Zone',
+        items: [
+            { label: 'Student List', icon: Users, href: '/dashboard/students' },
+            { label: 'Student Migration', icon: Calendar, href: '/dashboard/tenant/academic-year' },
+        ]
+    },
+    {
+        title: 'Teacher Zone',
+        items: [
+            { label: 'Teacher List', icon: UsersRound, href: '/dashboard/teachers' },
+            { label: 'Notes & Homework', icon: BookOpen, href: '/dashboard/material' },
+            { label: 'Grade Answer Sheets', icon: Edit3, href: '/dashboard/faculty/answer-grading' },
+        ]
+    },
+    {
+        title: 'Communication',
+        items: [
             { label: 'Notice Board', icon: BellRing, href: '/dashboard/messages' },
         ]
     },
     {
-        title: 'Exam Management',
+        title: 'Revenue and Payments',
         items: [
-            { label: 'All Exams', icon: ClipboardList, href: '/dashboard/exams' },
-            { label: 'Online Exam Portal', icon: Zap, href: '/dashboard/exams/online' },
-            { label: 'Exams & OMR Sheets', icon: ScanLine, href: '/dashboard/exams/omr' },
-            { label: 'Offline Paper Engine', icon: Printer, href: '/dashboard/exams/offline' },
-            { label: 'Grade Answer Sheets', icon: FileText, href: '/dashboard/faculty/answer-grading' },
+            { label: 'Payments & Fees', icon: Wallet, href: '/dashboard/wallet' },
         ]
     },
     {
-        title: 'People',
+        title: 'Reports & Analytics',
         items: [
-            { label: 'Student Directory', icon: GraduationCap, href: '/dashboard/students' },
-            { label: 'Teacher Directory', icon: UsersRound, href: '/dashboard/teachers' },
-            { label: 'Staff Directory', icon: Users, href: '/dashboard/staff' },
+            { label: 'Results Analytics', icon: BarChart3, href: '/dashboard/faculty/analytics/results-360' },
+            { label: 'Student Report', icon: GraduationCap, href: '/dashboard/reports?type=students' },
+            { label: 'Teacher Report', icon: UsersRound, href: '/dashboard/reports?type=teachers' },
+            { label: 'Class & Subject Report', icon: Layers, href: '/dashboard/reports?type=class' },
+            { label: 'School Report', icon: Activity, href: '/dashboard/reports?type=performance' },
         ]
     },
     {
-        title: 'Administration',
+        title: 'School/Institute Setup',
         items: [
             { label: 'Academy Setup', icon: School, href: '/dashboard/academy' },
-            { label: 'Payments & Fees', icon: Wallet, href: '/dashboard/wallet' },
             { label: 'Subscription', icon: CreditCard, href: '/dashboard/subscription' },
             { label: 'Institute Settings', icon: Settings2, href: '/dashboard/settings' },
         ]
@@ -60,15 +98,35 @@ export function AdminSidebar() {
     const pathname = usePathname()
     const [identity, setIdentity] = React.useState<any>(null)
     const [collapsed, setCollapsed] = React.useState(false)
+    const [searchQuery, setSearchQuery] = React.useState('')
+    const [expandedGroup, setExpandedGroup] = React.useState<string | null>(null)
 
     React.useEffect(() => {
         fetch('/api/auth/me').then(res => res.json()).then(data => setIdentity(data))
     }, [])
 
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setSearchQuery(window.location.search)
+            const onPop = () => setSearchQuery(window.location.search)
+            window.addEventListener('popstate', onPop)
+            return () => window.removeEventListener('popstate', onPop)
+        }
+    }, [pathname])
+
     const logoUrl = identity?.tenant?.logo_url || '/logo.png'
     const instituteName = identity?.tenant?.name || (identity ? 'BeBrilliant Platform' : 'Synchronizing...')
     const userName = identity?.fullName || (identity ? 'Authorized Staff' : 'Verifying...')
     const initials = userName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+
+    function isActive(href: string) {
+        if (href === '/dashboard') return pathname === '/dashboard'
+        const [base, query] = href.split('?')
+        if (query) {
+            return pathname === base && searchQuery === `?${query}`
+        }
+        return pathname === base || (base !== '/dashboard' && pathname?.startsWith(base + '/'))
+    }
 
     return (
         <aside style={{
@@ -128,7 +186,6 @@ export function AdminSidebar() {
                         border: '1px solid #D1E3FF',
                         display: 'flex', alignItems: 'center', gap: 10
                     }}>
-                        {/* Avatar initials */}
                         <div style={{
                             width: 32, height: 32, borderRadius: 10,
                             background: 'linear-gradient(135deg, #004B93 0%, #0066CC 100%)',
@@ -161,78 +218,116 @@ export function AdminSidebar() {
 
             {/* ── NAV ITEMS ── */}
             <nav style={{ flex: 1, overflowY: 'auto', padding: collapsed ? '16px 10px' : '16px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {NAV_GROUPS.map((group, groupIdx) => (
-                    <div key={groupIdx} style={{ marginBottom: 8 }}>
-                        {!collapsed && (
-                            <div style={{
-                                fontSize: 10, fontWeight: 700, color: '#94A3B8',
-                                textTransform: 'uppercase', letterSpacing: '0.1em',
-                                padding: '6px 12px', marginBottom: 4
-                            }}>
-                                {group.title}
-                            </div>
-                        )}
-                        {collapsed && groupIdx > 0 && (
-                            <div style={{ height: 1, background: '#F1F5F9', margin: '8px 4px 12px' }} />
-                        )}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            {group.items.map(item => {
-                                const active = item.href === '/dashboard'
-                                    ? pathname === '/dashboard'
-                                    : item.href === '/dashboard/exams'
-                                    ? pathname === '/dashboard/exams'
-                                    : (pathname === item.href || pathname?.startsWith(item.href + '/'))
+                {NAV_GROUPS.map((group, groupIdx) => {
+                    const hasGroupTitle = Boolean(group.title && group.title.trim().length > 0)
+                    const isExpanded = collapsed || !hasGroupTitle || expandedGroup === group.title
 
-                                return (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        title={collapsed ? item.label : undefined}
+                    return (
+                        <div key={groupIdx} style={{ marginBottom: hasGroupTitle ? 8 : 4 }}>
+                            {!collapsed && hasGroupTitle && (
+                                <button
+                                    type="button"
+                                    onClick={() => setExpandedGroup(expandedGroup === group.title ? null : group.title)}
+                                    style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '8px 12px',
+                                        background: isExpanded ? 'rgba(0, 51, 100, 0.05)' : 'transparent',
+                                        border: 'none',
+                                        borderRadius: 8,
+                                        cursor: 'pointer',
+                                        fontSize: 10,
+                                        fontWeight: 800,
+                                        color: '#003364',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.1em',
+                                        marginBottom: 4,
+                                        transition: 'all 0.15s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!isExpanded) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0, 51, 100, 0.03)'
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!isExpanded) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+                                    }}
+                                >
+                                    <span style={{ color: '#003364' }}>{group.title}</span>
+                                    <ChevronDown
+                                        size={14}
                                         style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: collapsed ? 0 : 10,
-                                            padding: collapsed ? '10px' : '9px 12px',
-                                            borderRadius: 10,
-                                            textDecoration: 'none',
-                                            background: active
-                                                ? 'linear-gradient(135deg, #004B93 0%, #0055AA 100%)'
-                                                : 'transparent',
-                                            color: active ? '#FFFFFF' : '#475569',
-                                            fontWeight: active ? 700 : 500,
-                                            fontSize: 13,
-                                            transition: 'all 0.18s cubic-bezier(0.4,0,0.2,1)',
-                                            boxShadow: active ? '0 4px 12px rgba(0,75,147,0.25)' : 'none',
-                                            justifyContent: collapsed ? 'center' : 'flex-start',
-                                            position: 'relative',
-                                            overflow: 'hidden'
+                                            color: '#003364',
+                                            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                            transition: 'transform 0.2s ease',
+                                            flexShrink: 0
                                         }}
-                                        className="admin-nav-item"
-                                    >
-                                        {/* Active left accent bar */}
-                                        {active && !collapsed && (
-                                            <div style={{
-                                                position: 'absolute', left: 0, top: '15%', bottom: '15%',
-                                                width: 3, background: '#F0A026', borderRadius: '0 3px 3px 0'
-                                            }} />
-                                        )}
-                                        <item.icon
-                                            size={17}
-                                            color={active ? '#FFFFFF' : '#94A3B8'}
-                                            strokeWidth={active ? 2.5 : 2}
-                                            style={{ flexShrink: 0 }}
-                                        />
-                                        {!collapsed && (
-                                            <span style={{ whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
-                                                {item.label}
-                                            </span>
-                                        )}
-                                    </Link>
-                                )
-                            })}
+                                    />
+                                </button>
+                            )}
+                            {collapsed && groupIdx > 0 && (
+                                <div style={{ height: 1, background: '#F1F5F9', margin: '8px 4px 12px' }} />
+                            )}
+                            {isExpanded && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingLeft: (!collapsed && hasGroupTitle) ? 4 : 0 }}>
+                                    {group.items.map(item => {
+                                        const active = isActive(item.href)
+                                        return (
+                                            <Link
+                                                key={item.href}
+                                                href={item.href}
+                                                onClick={() => {
+                                                    const [, q] = item.href.split('?')
+                                                    setSearchQuery(q ? `?${q}` : '')
+                                                }}
+                                                title={collapsed ? item.label : undefined}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: collapsed ? 0 : 10,
+                                                    padding: collapsed ? '10px' : '9px 12px',
+                                                    borderRadius: 10,
+                                                    textDecoration: 'none',
+                                                    background: active
+                                                        ? 'linear-gradient(135deg, #004B93 0%, #0055AA 100%)'
+                                                        : 'transparent',
+                                                    color: active ? '#FFFFFF' : '#475569',
+                                                    fontWeight: active ? 700 : 500,
+                                                    fontSize: 13,
+                                                    transition: 'all 0.18s cubic-bezier(0.4,0,0.2,1)',
+                                                    boxShadow: active ? '0 4px 12px rgba(0,75,147,0.25)' : 'none',
+                                                    justifyContent: collapsed ? 'center' : 'flex-start',
+                                                    position: 'relative',
+                                                    overflow: 'hidden'
+                                                }}
+                                                className="admin-nav-item"
+                                            >
+                                                {/* Active left accent bar */}
+                                                {active && !collapsed && (
+                                                    <div style={{
+                                                        position: 'absolute', left: 0, top: '15%', bottom: '15%',
+                                                        width: 3, background: '#F0A026', borderRadius: '0 3px 3px 0'
+                                                    }} />
+                                                )}
+                                                <item.icon
+                                                    size={17}
+                                                    color={active ? '#FFFFFF' : '#94A3B8'}
+                                                    strokeWidth={active ? 2.5 : 2}
+                                                    style={{ flexShrink: 0 }}
+                                                />
+                                                {!collapsed && (
+                                                    <span style={{ whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
+                                                        {item.label}
+                                                    </span>
+                                                )}
+                                            </Link>
+                                        )
+                                    })}
+                                </div>
+                            )}
                         </div>
-                    </div>
-                ))}
+                    )
+                })}
             </nav>
 
             {/* ── FOOTER ── */}

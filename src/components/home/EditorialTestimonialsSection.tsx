@@ -67,51 +67,51 @@ export function EditorialTestimonialsSection() {
     return (
         <section
             aria-label="Institutional Reviews & Proof"
-            className="w-full bg-[#FFFFFF] py-20 lg:py-28 px-6 sm:px-8 lg:px-12 border-b border-slate-200"
+            className="w-full bg-white py-20 lg:py-28 px-6 sm:px-8 lg:px-12 border-b border-gray-200"
         >
             <div className="max-w-7xl mx-auto">
                 {/* 1. Header */}
                 <div className="max-w-3xl mb-14">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#001D3D]/5 border border-[#001D3D]/10 text-[#001D3D] text-xs font-bold uppercase tracking-widest mb-4">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-800 text-xs font-bold uppercase tracking-widest mb-4">
                         <ShieldCheck size={13} />
                         <span>Verified Institutional Reputation</span>
                     </div>
 
-                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#0F172A] tracking-tight font-manrope leading-[1.15] mb-4">
+                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight font-manrope leading-[1.15] mb-4">
                         Educators and directors on institutional scale, precision, and trust.
                     </h2>
 
-                    <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed font-worksans">
+                    <p className="text-base sm:text-lg text-gray-600 font-normal leading-relaxed font-worksans">
                         Read how leading coaching networks and schools have replaced manual administrative overhead with sovereign examination infrastructure.
                     </p>
                 </div>
 
                 {/* 2. Featured Lead Case Study (Asymmetric Hero Block) */}
-                <div className="bg-[#00142A] text-white rounded-3xl p-8 sm:p-12 mb-12 relative overflow-hidden">
+                <div className="bg-gray-900 text-white rounded-3xl p-8 sm:p-12 mb-12 relative overflow-hidden">
                     <div className="max-w-3xl relative z-10">
                         <div className="flex items-center gap-3 mb-6">
-                            <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#38BDF8]">
+                            <span className="text-xs font-mono font-bold uppercase tracking-widest text-blue-400">
                                 Lead Institutional Case Study
                             </span>
-                            <span className="text-slate-500">·</span>
-                            <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded font-semibold">
+                            <span className="text-gray-500">·</span>
+                            <span className="text-xs font-mono text-green-400 bg-green-900/20 border border-green-800/40 px-2 py-0.5 rounded font-semibold">
                                 {featured.metric}
                             </span>
                         </div>
 
-                        <blockquote className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-manrope leading-snug mb-8 text-slate-100">
+                        <blockquote className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-manrope leading-snug mb-8 text-white">
                             "{featured.quote}"
                         </blockquote>
 
-                        <div className="flex items-center gap-4 pt-6 border-t border-white/10">
-                            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center font-bold text-lg font-manrope text-[#38BDF8]">
+                        <div className="flex items-center gap-4 pt-6 border-t border-gray-700">
+                            <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center font-bold text-lg font-manrope text-blue-400">
                                 {featured.name[0]}
                             </div>
                             <div>
                                 <div className="text-base font-extrabold text-white font-manrope">
                                     {featured.name}
                                 </div>
-                                <div className="text-xs text-slate-400 font-worksans">
+                                <div className="text-xs text-gray-400 font-worksans">
                                     {featured.role} · {featured.org}, {featured.location}
                                 </div>
                             </div>
@@ -124,29 +124,29 @@ export function EditorialTestimonialsSection() {
                     {others.map((t, idx) => (
                         <div
                             key={idx}
-                            className="flex flex-col justify-between p-6 rounded-2xl bg-slate-50 border border-slate-200/80 hover:border-slate-300 transition-colors"
+                            className="flex flex-col justify-between p-6 rounded-2xl bg-gray-50 border border-gray-200 hover:border-gray-300 transition-colors"
                         >
                             <div>
                                 <div className="flex items-center justify-between mb-4">
-                                    <span className="text-xs font-mono font-bold text-[#004B93] bg-[#004B93]/5 px-2.5 py-1 rounded">
+                                    <span className="text-xs font-mono font-bold text-blue-600 bg-blue-100 px-2.5 py-1 rounded">
                                         {t.metric}
                                     </span>
                                 </div>
 
-                                <p className="text-sm text-slate-700 leading-relaxed font-worksans mb-6">
+                                <p className="text-sm text-gray-700 leading-relaxed font-worksans mb-6">
                                     "{t.quote}"
                                 </p>
                             </div>
 
-                            <div className="pt-4 border-t border-slate-200/60 flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center font-bold text-xs font-manrope text-slate-700 shrink-0">
+                            <div className="pt-4 border-t border-gray-200 flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center font-bold text-xs font-manrope text-gray-700 shrink-0">
                                     {t.name[0]}
                                 </div>
                                 <div className="min-w-0">
-                                    <div className="text-xs font-bold text-[#0F172A] font-manrope truncate">
+                                    <div className="text-xs font-bold text-gray-900 font-manrope truncate">
                                         {t.name}
                                     </div>
-                                    <div className="text-[11px] text-slate-500 font-worksans truncate">
+                                    <div className="text-[11px] text-gray-500 font-worksans truncate">
                                         {t.role} · {t.org}
                                     </div>
                                 </div>

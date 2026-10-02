@@ -49,7 +49,7 @@ export function ExperimentalHero() {
             />
 
             {/* 3. High-Contrast Typographic Staging (Left 55% Content-Safe Zone) */}
-            <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-20 lg:py-28">
+            <div className="relative z-10 w-full mx-auto px-6 sm:px-8 lg:px-12 py-20 lg:py-28">
                 <div className="max-w-2xl text-left">
                     
                     {/* Eyebrow / Overline */}

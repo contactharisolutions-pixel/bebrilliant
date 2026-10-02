@@ -11,7 +11,8 @@ import {
     ChevronRight, ArrowLeft, Loader2, CheckSquare, Layers, Target,
     Sliders, Lock, FileText, HelpCircle, X, Download, BarChart2,
     TrendingUp, Monitor, AlertCircle, Calendar, BookOpen, Zap,
-    Globe, Filter, ChevronDown, Award, GraduationCap
+    Globe, Filter, ChevronDown, ChevronUp, Award, GraduationCap,
+    LockKeyhole, CheckCircle, Radio
 } from 'lucide-react'
 
 // ── TYPES ────────────────────────────────────────────────────────────────────
@@ -51,6 +52,8 @@ interface PatternTemplate {
     total_marks: number
     is_active: boolean
     sections?: any[]
+    instructions?: string | string[]
+    description?: string
 }
 
 interface CandidateAttempt {
@@ -105,10 +108,25 @@ interface AnalyticsData {
     }
 }
 
+interface ScheduleSlot {
+    id: string
+    start: string
+    end: string
+    max_attempts: number
+    class_name?: string
+    section_name?: string
+}
+
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 function fmtDate(dt: string | null | undefined) {
     if (!dt) return null
-    return new Date(dt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    return new Date(dt).toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    })
 }
 
 function SchedulePill({ start, end, schedStatus }: { start?: string | null; end?: string | null; schedStatus: string }) {
@@ -134,7 +152,6 @@ function SchedulePill({ start, end, schedStatus }: { start?: string | null; end?
     )
 }
 
-// ── TOAST ────────────────────────────────────────────────────────────────────
 function Toast({ msg, ok, onClose }: { msg: string; ok: boolean; onClose: () => void }) {
     useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t) }, [onClose])
     return (
@@ -165,16 +182,27 @@ const DEFAULT_SECURITY = {
     instantResultDisclosure: true
 }
 
-// ── MAIN PAGE ────────────────────────────────────────────────────────────────
+const STANDARD_SECTIONS = ['All Sections', 'Section A', 'Section B', 'Section C', 'Section D', 'Section E']
+
+// ── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function OnlineExamsPage() {
-    const [activeTab, setActiveTab] = useState<'roster' | 'studio' | 'patterns' | 'monitor' | 'results'>('roster')
+    // 5-Step Model State
+    const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4 | 5>(1)
+    const [isRosterOpen, setIsRosterOpen] = useState(false)
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
     const [copiedId, setCopiedId] = useState<string | null>(null)
 
     // Core data
-    const [metrics, setMetrics] = useState<Metrics>({ total_questions: 0, live_sessions: 0, exam_revenue: 0, integrity_score: 100, total_exams: 0, total_attempts: 0 })
+    const [metrics, setMetrics] = useState<Metrics>({
+        total_questions: 0,
+        live_sessions: 0,
+        exam_revenue: 0,
+        integrity_score: 100,
+        total_exams: 0,
+        total_attempts: 0
+    })
     const [exams, setExams] = useState<ExamItem[]>([])
     const [patterns, setPatterns] = useState<PatternTemplate[]>([])
     const [recentAttempts, setRecentAttempts] = useState<CandidateAttempt[]>([])
@@ -190,36 +218,23 @@ export default function OnlineExamsPage() {
     const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([])
     const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([])
     const [selectedPatternId, setSelectedPatternId] = useState('')
+    const [selectedPatternObj, setSelectedPatternObj] = useState<PatternTemplate | null>(null)
 
-    // Filters
+    // Filters & Modals
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'upcoming' | 'draft' | 'closed'>('all')
-
-    // Modals
     const [showShareModal, setShowShareModal] = useState<ExamItem | null>(null)
     const [showSecurityDrawer, setShowSecurityDrawer] = useState(false)
     const [showScheduleModal, setShowScheduleModal] = useState<ExamItem | null>(null)
     const [showQBankModal, setShowQBankModal] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<ExamItem | null>(null)
+    const [showPatternsModal, setShowPatternsModal] = useState(false)
 
-    // Security settings (global default; stored in state, applied to blueprint)
+    // Security settings
     const [security, setSecurity] = useState(DEFAULT_SECURITY)
 
-    // Studio wizard state
-    const [studioStep, setStudioStep] = useState(1)
+    // Exam editor state
     const [editExamId, setEditExamId] = useState<string | null>(null)
-    const [aiGenModalOpen, setAiGenModalOpen] = useState(false)
-    const [aiGenProgress, setAiGenProgress] = useState(0)
-    const [aiGenStatus, setAiGenStatus] = useState('')
-    const [aiGenDetail, setAiGenDetail] = useState('')
-    const [aiGenError, setAiGenError] = useState<string | null>(null)
-    const [aiSectionStats, setAiSectionStats] = useState<Array<{
-        name: string
-        target: number
-        completed: number
-        status: 'pending' | 'generating' | 'completed' | 'error'
-    }>>([])
-    const [studioFilterSection, setStudioFilterSection] = useState<string>('all')
     const [s1, setS1] = useState({
         name: '',
         targetClass: '',
@@ -232,19 +247,51 @@ export default function OnlineExamsPage() {
         instructions: '1. All questions are compulsory.\n2. Do not close or refresh the browser during the exam.\n3. The exam will auto-submit when time runs out.'
     })
 
-    // ── Multi-slot schedule state ─────────────────────────────────────────────
-    interface ScheduleSlot {
-        id: string
-        start: string
-        end: string
-        max_attempts: number
-        class_name?: string
-        section_name?: string
-    }
+    const [s2, setS2] = useState<{
+        sections: Array<{ name: string; qCount: number; mark: number; negMark: number; rules?: any[] }>
+    }>({ sections: [] })
+
+    const [studioQuestions, setStudioQuestions] = useState<any[]>([])
+    const [approvedQs, setApprovedQs] = useState<Set<number>>(new Set())
+    const [studioFilterSection, setStudioFilterSection] = useState<string>('all')
+
+    // AI Generation progress modal state
+    const [aiGenModalOpen, setAiGenModalOpen] = useState(false)
+    const [aiGenProgress, setAiGenProgress] = useState(0)
+    const [aiGenStatus, setAiGenStatus] = useState('')
+    const [aiGenDetail, setAiGenDetail] = useState('')
+    const [aiGenError, setAiGenError] = useState<string | null>(null)
+    const [aiSectionStats, setAiSectionStats] = useState<Array<{
+        name: string
+        target: number
+        completed: number
+        status: 'pending' | 'generating' | 'completed' | 'error'
+    }>>([])
+
+    // Multi-slot schedule state
     const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlot[]>([])
+    const [modalScheduleSlots, setModalScheduleSlots] = useState<ScheduleSlot[]>([])
 
-    const STANDARD_SECTIONS = ['All Sections', 'Section A', 'Section B', 'Section C', 'Section D', 'Section E']
+    // Question Bank picker state
+    const [qbankExamId, setQbankExamId] = useState<string | null>(null)
+    const [qbankQuestions, setQbankQuestions] = useState<any[]>([])
+    const [qbankLoading, setQbankLoading] = useState(false)
+    const [selectedQBankIds, setSelectedQBankIds] = useState<Set<string>>(new Set())
+    const [qbankSection, setQbankSection] = useState('Section A')
 
+    const showToast = (msg: string, ok = true) => setToast({ msg, ok })
+
+    // ── Helper: Calculate slot end ───────────────────────────────────────────
+    const makeSlotEnd = (start: string, durationMins: number): string => {
+        if (!start) return ''
+        const d = new Date(start)
+        if (isNaN(d.getTime())) return ''
+        d.setMinutes(d.getMinutes() + Number(durationMins || 0))
+        const pad = (n: number) => String(n).padStart(2, '0')
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+    }
+
+    // ── Available classes ────────────────────────────────────────────────────
     const availableClasses = useMemo(() => {
         const set = new Set<string>()
         if (s1.targetClass) set.add(s1.targetClass)
@@ -264,16 +311,7 @@ export default function OnlineExamsPage() {
         return Array.from(set)
     }, [s1.targetClass, blueprintContext])
 
-    const makeSlotEnd = (start: string, durationMins: number): string => {
-        if (!start) return ''
-        const d = new Date(start)
-        if (isNaN(d.getTime())) return ''
-        d.setMinutes(d.getMinutes() + Number(durationMins || 0))
-        // datetime-local format: YYYY-MM-DDTHH:mm
-        const pad = (n: number) => String(n).padStart(2, '0')
-        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-    }
-
+    // ── Slot handlers ────────────────────────────────────────────────────────
     const addSlot = () => {
         setScheduleSlots(prev => [
             ...prev,
@@ -300,21 +338,6 @@ export default function OnlineExamsPage() {
             return updated
         }))
     }
-    const [s2, setS2] = useState<{
-        sections: Array<{ name: string; qCount: number; mark: number; negMark: number; rules?: any[] }>
-    }>({ sections: [] })
-    const [studioQuestions, setStudioQuestions] = useState<any[]>([])
-    const [approvedQs, setApprovedQs] = useState<Set<number>>(new Set())
-
-    // Question Bank picker state
-    const [qbankExamId, setQbankExamId] = useState<string | null>(null)
-    const [qbankQuestions, setQbankQuestions] = useState<any[]>([])
-    const [qbankLoading, setQbankLoading] = useState(false)
-    const [selectedQBankIds, setSelectedQBankIds] = useState<Set<string>>(new Set())
-    const [qbankSection, setQbankSection] = useState('Section A')
-
-    // Schedule modal state (multi-slot)
-    const [modalScheduleSlots, setModalScheduleSlots] = useState<ScheduleSlot[]>([])
 
     const addModalSlot = () => {
         const dur = showScheduleModal?.duration || 60
@@ -347,8 +370,6 @@ export default function OnlineExamsPage() {
             return updated
         }))
     }
-
-    const showToast = (msg: string, ok = true) => setToast({ msg, ok })
 
     // ── Fetch blueprint context ───────────────────────────────────────────────
     const fetchBlueprintContext = useCallback(async () => {
@@ -406,17 +427,19 @@ export default function OnlineExamsPage() {
 
     useEffect(() => { fetchData() }, [fetchData])
     useEffect(() => {
-        if (activeTab === 'results' && !analytics) fetchAnalytics()
-    }, [activeTab, analytics, fetchAnalytics])
+        if (activeStep === 5 && !analytics) fetchAnalytics()
+    }, [activeStep, analytics, fetchAnalytics])
 
-    // ── Pattern selected → populate studio ───────────────────────────────────
+    // ── Pattern selected → populate locked values ─────────────────────────────
     const handlePatternSelected = (tmpl: any) => {
         if (!tmpl) return
         setSelectedPatternId(tmpl.id)
+        setSelectedPatternObj(tmpl)
         let instrText = ''
         if (typeof tmpl.instructions === 'string') instrText = tmpl.instructions
         else if (Array.isArray(tmpl.instructions)) instrText = tmpl.instructions.filter(Boolean).join('\n')
         else instrText = tmpl.description || ''
+
         setS1(prev => ({
             ...prev,
             name: prev.name ? prev.name : `${tmpl.name}`,
@@ -424,6 +447,7 @@ export default function OnlineExamsPage() {
             total_marks: tmpl.total_marks || 100,
             instructions: instrText || prev.instructions
         }))
+
         if (Array.isArray(tmpl.sections) && tmpl.sections.length > 0) {
             const compiled = tmpl.sections.map((sec: any) => {
                 const totalQ = sec.rules?.reduce((acc: number, r: any) => acc + Number(r.num_questions || 0), 0) || 10
@@ -438,12 +462,12 @@ export default function OnlineExamsPage() {
             })
             setS2({ sections: compiled })
         }
-        setActiveTab('studio')
-        showToast(`Pattern "${tmpl.name}" applied to exam studio.`, true)
+        setShowPatternsModal(false)
+        showToast(`Pattern "${tmpl.name}" locked into blueprint!`, true)
     }
 
     // ── Edit existing exam ────────────────────────────────────────────────────
-    const handleEditExam = (exam: ExamItem) => {
+    const handleEditExam = async (exam: ExamItem) => {
         setEditExamId(exam.id)
         setS1({
             name: exam.title,
@@ -456,7 +480,13 @@ export default function OnlineExamsPage() {
             passing_marks: exam.passing_marks || 40,
             instructions: Array.isArray(exam.instructions) ? exam.instructions.join('\n') : (exam.instructions || '')
         })
-        // Restore schedule slots from blueprint (or build one from legacy dates)
+
+        // Restore security if saved in blueprint
+        if (exam.blueprint?.security) {
+            setSecurity({ ...DEFAULT_SECURITY, ...exam.blueprint.security })
+        }
+
+        // Restore schedule slots
         const defaultClass = exam.class_name || exam.blueprint?.target_class || 'All Classes'
         const savedSlots: ScheduleSlot[] = Array.isArray(exam.blueprint?.schedule_slots)
             ? exam.blueprint.schedule_slots.map((s: any) => ({
@@ -478,6 +508,7 @@ export default function OnlineExamsPage() {
                 }]
                 : []
         setScheduleSlots(savedSlots)
+
         if (Array.isArray(exam.blueprint?.sections)) {
             setS2({ sections: exam.blueprint.sections.map((sec: any) => ({
                 name: sec.name || 'Section A',
@@ -489,25 +520,61 @@ export default function OnlineExamsPage() {
         } else {
             setS2({ sections: [] })
         }
-        setStudioStep(1)
+
+        // Fetch exam questions if available
+        try {
+            const qRes = await fetch(`/api/dashboard/exams/online?action=GET_QUESTIONS&id=${exam.id}`)
+            if (qRes.ok) {
+                const qData = await qRes.json()
+                if (Array.isArray(qData.questions)) {
+                    setStudioQuestions(qData.questions)
+                    setApprovedQs(new Set(qData.questions.map((_: any, idx: number) => idx)))
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load existing questions for exam:', e)
+        }
+
+        setIsRosterOpen(false)
+        setActiveStep(1)
+        showToast(`Editing "${exam.title}"`, true)
+    }
+
+    // ── Reset to new exam ─────────────────────────────────────────────────────
+    const handleNewExam = () => {
+        setEditExamId(null)
+        setS1({
+            name: '',
+            targetClass: '',
+            subject: '',
+            pricing_type: 'free',
+            price: 0,
+            duration: 60,
+            total_marks: 100,
+            passing_marks: 40,
+            instructions: '1. All questions are compulsory.\n2. Do not close or refresh the browser during the exam.\n3. The exam will auto-submit when time runs out.'
+        })
+        setS2({ sections: [] })
         setStudioQuestions([])
         setApprovedQs(new Set())
-        setActiveTab('studio')
+        setScheduleSlots([])
+        setSelectedPatternId('')
+        setSelectedPatternObj(null)
+        setIsRosterOpen(false)
+        setActiveStep(1)
     }
 
     // ── Generate AI questions with Progress Modal & Section Batching ──────────
     const handleGenerateAI = async () => {
         const subjectName = (s1.subject || blueprintContext?.syllabusTree?.subjects?.find(s => s.id === selectedSubjectId)?.name || '').trim()
-        if (!subjectName) return showToast('Please select a subject first.', false)
-        if (s2.sections.length === 0) return showToast('Please add at least one section in Step 2.', false)
+        if (!subjectName) return showToast('Please select a subject in Step 1 first.', false)
+        if (s2.sections.length === 0) return showToast('Please configure at least one section in Step 2.', false)
 
         const totalRequired = s2.sections.reduce((acc, s) => acc + Number(s.qCount || 0), 0)
         if (totalRequired <= 0) return showToast('Please specify a positive question count for sections.', false)
 
-        // Resolve names from IDs and Blueprint Context
         const boardObj = blueprintContext?.activeBoards?.find(b => b.id === selectedBoardId)
         const boardName = boardObj?.name || 'Gujarat Board (English Medium)'
-
         const classObj = blueprintContext?.syllabusTree?.classes?.find(c => c.id === selectedClassId)
         const className = s1.targetClass || classObj?.name || 'Class 10'
 
@@ -519,7 +586,7 @@ export default function OnlineExamsPage() {
             .map(id => blueprintContext?.syllabusTree?.topics?.find(t => t.id === id)?.name)
             .filter(Boolean) as string[]
 
-        const patternObj = blueprintContext?.examPatterns?.find(p => p.id === selectedPatternId)
+        const patternObj = blueprintContext?.examPatterns?.find(p => p.id === selectedPatternId) || selectedPatternObj
         const patternName = patternObj?.name || ''
 
         // Open progress modal
@@ -542,7 +609,6 @@ export default function OnlineExamsPage() {
         let totalGeneratedSoFar = 0
 
         try {
-            // Process section by section
             for (let sIdx = 0; sIdx < s2.sections.length; sIdx++) {
                 const sec = s2.sections[sIdx]
                 const secName = sec.name || `Section ${String.fromCharCode(65 + sIdx)}`
@@ -550,10 +616,8 @@ export default function OnlineExamsPage() {
                 const secMark = Number(sec.mark || 1)
                 const secNegMark = Number(sec.negMark || 0)
 
-                // Mark section as generating
                 setAiSectionStats(prev => prev.map((item, idx) => idx === sIdx ? { ...item, status: 'generating' } : item))
 
-                // Determine batches for this section based on template rules if present
                 interface BatchPlanItem {
                     count: number
                     sub_type: string
@@ -645,7 +709,6 @@ export default function OnlineExamsPage() {
                         throw new Error(`AI generated 0 questions for ${secName}. Please verify syllabus settings.`)
                     }
 
-                    // Normalize and tag questions with section metadata and unique IDs
                     const taggedQs = returnedQs.map((q: any, qIdx: number) => {
                         const randomSalt = Math.random().toString(36).substring(2, 7)
                         const secSlug = secName.toLowerCase().replace(/[^a-z0-9]/g, '_')
@@ -677,12 +740,9 @@ export default function OnlineExamsPage() {
 
                     const currentProgress = Math.min(Math.round((totalGeneratedSoFar / totalRequired) * 95), 98)
                     setAiGenProgress(currentProgress)
-
-                    // Update section stats
                     setAiSectionStats(prev => prev.map((item, idx) => idx === sIdx ? { ...item, completed: secCompletedCount } : item))
                 }
 
-                // Section finished
                 setAiSectionStats(prev => prev.map((item, idx) => idx === sIdx ? { ...item, status: 'completed', completed: secCompletedCount } : item))
             }
 
@@ -694,7 +754,6 @@ export default function OnlineExamsPage() {
                 setApprovedQs(new Set(allGeneratedQuestions.map((_, i) => i)))
                 setStudioFilterSection('all')
                 setAiGenModalOpen(false)
-                setStudioStep(3)
                 showToast(`Generated ${allGeneratedQuestions.length} questions for ${subjectName}!`, true)
             }, 700)
 
@@ -708,15 +767,21 @@ export default function OnlineExamsPage() {
     }
 
     // ── Save / Publish exam ───────────────────────────────────────────────────
-    const handleSaveExam = async () => {
+    const handleSaveExam = async (targetNextStep?: 1 | 2 | 3 | 4 | 5) => {
+        if (!s1.name.trim()) {
+            showToast('Please enter an exam name.', false)
+            setActiveStep(1)
+            return null
+        }
+
         setSaving(true)
         try {
             const selectedQuestions = studioQuestions.filter((_, i) => approvedQs.has(i))
             const totalMarks = s2.sections.reduce((acc, s) => acc + (Number(s.qCount) * Number(s.mark)), 0) || s1.total_marks
-            // Derive first-slot and last-slot dates for the DB columns
             const validSlots = scheduleSlots.filter(sl => sl.start)
             const firstSlotStart = validSlots[0]?.start ? new Date(validSlots[0].start).toISOString() : null
             const lastSlotEnd   = validSlots[validSlots.length - 1]?.end ? new Date(validSlots[validSlots.length - 1].end).toISOString() : null
+
             const payload = {
                 id: editExamId,
                 title: s1.name || 'Online Exam',
@@ -747,26 +812,32 @@ export default function OnlineExamsPage() {
                 },
                 questions: selectedQuestions
             }
+
             const res = await fetch('/api/dashboard/exams/online', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: editExamId ? 'UPDATE_EXAM' : 'CREATE_EXAM', payload })
             })
+
             if (!res.ok) {
                 const err = await res.json()
                 throw new Error(err.details || err.error || 'Failed to save exam')
             }
-            showToast(editExamId ? 'Exam updated successfully!' : 'Exam created and published!', true)
-            setActiveTab('roster')
-            setStudioStep(1)
-            setEditExamId(null)
-            setStudioQuestions([])
-            setScheduleSlots([])
-            setS1({ name: '', targetClass: '', subject: '', pricing_type: 'free', price: 0, duration: 60, total_marks: 100, passing_marks: 40, instructions: '1. All questions are compulsory.\n2. Do not close or refresh the browser during the exam.\n3. The exam will auto-submit when time runs out.' })
-            setS2({ sections: [] })
+
+            const savedData = await res.json()
+            const newId = savedData?.exam?.id || editExamId
+            if (newId) setEditExamId(newId)
+
+            showToast(editExamId ? 'Exam saved successfully!' : 'Exam created and published!', true)
             fetchData()
+
+            if (targetNextStep) {
+                setActiveStep(targetNextStep)
+            }
+            return newId
         } catch (e: any) {
             showToast(e.message || 'Could not save exam.', false)
+            return null
         } finally {
             setSaving(false)
         }
@@ -808,7 +879,7 @@ export default function OnlineExamsPage() {
         } catch { showToast('Could not delete exam.', false) }
     }
 
-    // ── Schedule exam ─────────────────────────────────────────────────────────
+    // ── Schedule exam via modal ───────────────────────────────────────────────
     const handleSchedule = async () => {
         if (!showScheduleModal) return
         const validSlots = modalScheduleSlots.filter(s => s.start)
@@ -842,14 +913,14 @@ export default function OnlineExamsPage() {
         }
     }
 
-    // ── Open Question Bank Picker ─────────────────────────────────────────────
-    const openQBankPicker = async (examId: string) => {
-        setQbankExamId(examId)
+    // ── Question Bank Pickers ─────────────────────────────────────────────────
+    const openQBankPicker = async (examId?: string) => {
+        const targetId = examId || editExamId
+        setQbankExamId(targetId || null)
         setShowQBankModal(true)
         setQbankLoading(true)
         setSelectedQBankIds(new Set())
         try {
-            // Fetch questions from tenant's question bank
             const res = await fetch(`/api/dashboard/exams/question-bank?action=GET_QUESTIONS&subject_id=${selectedSubjectId || ''}&limit=100`)
             if (res.ok) {
                 const data = await res.json()
@@ -859,9 +930,39 @@ export default function OnlineExamsPage() {
         setQbankLoading(false)
     }
 
-    // ── Add selected questions from bank ──────────────────────────────────────
     const handleAddFromBank = async () => {
-        if (!qbankExamId || selectedQBankIds.size === 0) return showToast('Please select at least one question.', false)
+        if (selectedQBankIds.size === 0) return showToast('Please select at least one question.', false)
+        
+        // If we're inside step 2 directly without a persisted exam ID yet, inject into studioQuestions
+        if (!qbankExamId) {
+            const chosen = qbankQuestions.filter(q => selectedQBankIds.has(q.id)).map((q, idx) => ({
+                id: q.id,
+                section: qbankSection,
+                subject: s1.subject || 'Subject',
+                chapter: q.topic || 'Curriculum',
+                topic: q.topic || 'General',
+                type: q.type || 'objective',
+                sub_type: q.sub_type || 'mcq',
+                difficulty: q.difficulty || 'medium',
+                marks: 1,
+                negative_marks: 0,
+                text: q.question_text?.en || (typeof q.question_text === 'string' ? q.question_text : 'Question'),
+                options: Array.isArray(q.options) ? q.options : ['Option A', 'Option B', 'Option C', 'Option D'],
+                correct_answer: q.correct_answer || '',
+                explanation: q.explanation?.en || (typeof q.explanation === 'string' ? q.explanation : '')
+            }))
+            setStudioQuestions(prev => [...prev, ...chosen])
+            setApprovedQs(prev => {
+                const updated = new Set(prev)
+                const startIdx = studioQuestions.length
+                chosen.forEach((_, i) => updated.add(startIdx + i))
+                return updated
+            })
+            showToast(`${chosen.length} question(s) added to ${qbankSection}!`, true)
+            setShowQBankModal(false)
+            return
+        }
+
         try {
             const questions = Array.from(selectedQBankIds).map(qid => ({
                 question_id: qid,
@@ -903,7 +1004,7 @@ export default function OnlineExamsPage() {
         const csv = `data:text/csv;charset=utf-8,${header}\n${rows}`
         const link = document.createElement('a')
         link.setAttribute('href', encodeURI(csv))
-        link.setAttribute('download', 'Exam_Results.csv')
+        link.setAttribute('download', 'Online_Exam_Results.csv')
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
@@ -921,12 +1022,16 @@ export default function OnlineExamsPage() {
         })
     }, [exams, searchQuery, statusFilter])
 
-    // ── Loading state ─────────────────────────────────────────────────────────
+    // Current test URL for active exam
+    const activeTestUrl = editExamId && typeof window !== 'undefined'
+        ? `${window.location.origin}/dashboard/exams/online/${editExamId}/play`
+        : editExamId ? `/dashboard/exams/online/${editExamId}/play` : ''
+
     if (loading) {
         return (
             <div className="w-full min-h-screen bg-[#F7F8FA] flex flex-col items-center justify-center gap-4">
                 <Loader2 className="w-12 h-12 text-[#004B93] animate-spin" />
-                <div className="text-sm font-bold tracking-widest text-[#004B93] uppercase">Loading Online Exams...</div>
+                <div className="text-sm font-bold tracking-widest text-[#004B93] uppercase">Loading Online Exam Studio...</div>
             </div>
         )
     }
@@ -935,7 +1040,7 @@ export default function OnlineExamsPage() {
         <div className="w-full min-h-screen bg-[#F7F8FA] text-[#0F172A] px-4 sm:px-8 py-6 space-y-6 font-sans">
             {toast && <Toast msg={toast.msg} ok={toast.ok} onClose={() => setToast(null)} />}
 
-            {/* ── HERO BANNER ─────────────────────────────────────────────── */}
+            {/* ── 1. HERO BANNER ───────────────────────────────────────────── */}
             <div className="relative w-full rounded-3xl overflow-hidden shadow-xl border border-slate-800 bg-[#0A101D] text-white">
                 <div className="relative h-56 sm:h-64 w-full">
                     <Image
@@ -950,51 +1055,63 @@ export default function OnlineExamsPage() {
                     <div className="absolute inset-0 p-6 sm:p-10 flex flex-col justify-between z-10">
                         <div className="flex flex-wrap items-center gap-2">
                             <span className="px-3.5 py-1 rounded-full text-xs font-black bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center gap-1.5">
-                                <Monitor size={13} /> ONLINE EXAM PORTAL
+                                <Monitor size={13} /> ONLINE EXAM STUDIO
                             </span>
                             <span className="px-3.5 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1.5">
                                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                                 LIVE MONITORING ON
                             </span>
                             <span className="px-3.5 py-1 rounded-full text-xs font-semibold bg-white/10 text-slate-200 border border-white/10">
-                                Auto Grading Active
+                                5-Step Unified Workspace
                             </span>
                         </div>
-                        <div className="space-y-2 max-w-2xl">
+                        <div className="space-y-1.5 max-w-2xl">
                             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">Online Exam Portal</h1>
-                            <p className="text-sm text-slate-300 font-medium">Create and publish online tests for students with scheduling, anti-cheat controls, and live monitoring.</p>
+                            <p className="text-xs sm:text-sm text-slate-300 font-medium">
+                                Design, schedule, and proctor online examinations with AI curriculum generation, multi-slot batch scheduling, and live anti-cheat telemetry.
+                            </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-3">
                             <button
-                                onClick={() => { setActiveTab('studio'); setStudioStep(1); setEditExamId(null) }}
+                                onClick={handleNewExam}
                                 className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[#004B93] hover:bg-blue-700 text-white shadow-lg transition-all flex items-center gap-2 cursor-pointer"
                             >
                                 <Plus size={16} /> Create New Exam
                             </button>
                             <button
-                                onClick={() => setActiveTab('patterns')}
-                                className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white/15 hover:bg-white/25 text-white border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
+                                onClick={() => setIsRosterOpen(prev => !prev)}
+                                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer border ${
+                                    isRosterOpen ? 'bg-white text-slate-900 border-white shadow-md' : 'bg-white/15 hover:bg-white/25 text-white border-white/20'
+                                }`}
                             >
-                                <Globe size={16} /> Exam Patterns
+                                <FileText size={15} />
+                                {isRosterOpen ? 'Hide Exam Roster' : `All Exams (${exams.length})`}
+                                {isRosterOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            </button>
+                            <button
+                                onClick={() => setShowPatternsModal(true)}
+                                className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white/10 hover:bg-white/20 text-slate-200 border border-white/10 transition-all flex items-center gap-2 cursor-pointer"
+                            >
+                                <Globe size={15} /> Exam Patterns ({patterns.length})
                             </button>
                             <button
                                 onClick={() => setShowSecurityDrawer(true)}
                                 className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white/10 hover:bg-white/20 text-slate-200 border border-white/10 transition-all flex items-center gap-2 cursor-pointer ml-auto"
                             >
-                                <Shield size={16} className="text-emerald-400" /> Security Rules
+                                <Shield size={15} className="text-emerald-400" /> Security Suite
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* ── KPI CARDS ────────────────────────────────────────────────── */}
+            {/* ── 2. KPI METRICS ───────────────────────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: 'Total Exams', value: metrics.total_exams, sub: `${metrics.total_questions} questions total`, icon: FileText, iconBg: 'bg-blue-50 text-[#004B93]' },
-                    { label: 'Students Taking Exam Now', value: metrics.live_sessions, sub: 'Live active sessions', icon: Users, iconBg: 'bg-emerald-50 text-emerald-600', pulse: true },
-                    { label: 'Exam Fee Income', value: `₹${metrics.exam_revenue.toLocaleString('en-IN')}`, sub: 'From paid exams', icon: DollarSign, iconBg: 'bg-amber-50 text-amber-600' },
-                    { label: 'Security Score', value: `${metrics.integrity_score}%`, sub: 'Anti-cheat rating', icon: Shield, iconBg: 'bg-purple-50 text-purple-600' }
+                    { label: 'Total Exams', value: metrics.total_exams, sub: `${metrics.total_questions} questions active`, icon: FileText, iconBg: 'bg-blue-50 text-[#004B93]' },
+                    { label: 'Students Taking Exam Now', value: metrics.live_sessions, sub: 'Active live sessions', icon: Users, iconBg: 'bg-emerald-50 text-emerald-600', pulse: true },
+                    { label: 'Exam Fee Income', value: `₹${metrics.exam_revenue.toLocaleString('en-IN')}`, sub: 'From paid tests', icon: DollarSign, iconBg: 'bg-amber-50 text-amber-600' },
+                    { label: 'Security Score', value: `${metrics.integrity_score}%`, sub: 'Anti-cheat integrity rating', icon: Shield, iconBg: 'bg-purple-50 text-purple-600' }
                 ].map(card => (
                     <div key={card.label} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
                         <div className="flex items-center justify-between">
@@ -1014,117 +1131,122 @@ export default function OnlineExamsPage() {
                 ))}
             </div>
 
-            {/* ── TABS ─────────────────────────────────────────────────────── */}
-            <div className="bg-white rounded-2xl p-1.5 shadow-sm border border-slate-200 flex flex-wrap gap-1.5">
-                {[
-                    { id: 'roster', label: 'All Exams', count: exams.length, icon: Layers },
-                    { id: 'studio', label: editExamId ? 'Edit Exam' : 'Create Exam', icon: Sparkles },
-                    { id: 'patterns', label: 'Exam Patterns', count: patterns.length, icon: Globe },
-                    { id: 'monitor', label: 'Live Monitor', count: metrics.live_sessions, icon: Monitor },
-                    { id: 'results', label: 'Results & Scores', icon: BarChart2 }
-                ].map(tab => {
-                    const Icon = tab.icon
-                    const isActive = activeTab === tab.id as any
-                    return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${isActive ? 'bg-[#004B93] text-white shadow-md' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
-                        >
-                            <Icon size={15} />
-                            {tab.label}
-                            {tab.count !== undefined && (
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
-                                    {tab.count}
+            {/* ── 3. PERSISTENT COLLAPSIBLE ROSTER BAR ─────────────────────── */}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden transition-all">
+                <div
+                    onClick={() => setIsRosterOpen(prev => !prev)}
+                    className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/70 border-b border-slate-100"
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#004B93] flex items-center justify-center font-bold">
+                            <Layers size={18} />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-base font-extrabold text-slate-900">Online Exams Repository</h3>
+                                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-100 text-[#004B93]">
+                                    {exams.length}
                                 </span>
-                            )}
-                        </button>
-                    )
-                })}
-            </div>
-
-            {/* ══════════════════════════════════════════════════════════════ */}
-            {/* TAB 1 — ALL EXAMS                                             */}
-            {/* ══════════════════════════════════════════════════════════════ */}
-            {activeTab === 'roster' && (
-                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                    {/* Filter bar */}
-                    <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row items-center gap-3">
-                        <div className="relative w-full sm:w-80">
-                            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                placeholder="Search by exam name, class, or subject..."
-                                className="w-full pl-10 pr-4 py-2.5 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
-                            />
+                            </div>
+                            <p className="text-xs text-slate-500">
+                                {editExamId ? `Currently working on: "${s1.name || 'Untitled Exam'}"` : 'Manage, test, edit, and duplicate published online exams'}
+                            </p>
                         </div>
-                        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-bold overflow-x-auto">
-                            {(['all', 'open', 'upcoming', 'draft', 'closed'] as const).map(st => (
-                                <button
-                                    key={st}
-                                    onClick={() => setStatusFilter(st)}
-                                    className={`px-3 py-1.5 rounded-lg capitalize cursor-pointer transition-all whitespace-nowrap ${statusFilter === st ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                >
-                                    {st === 'all' ? 'All' : st === 'open' ? '🟢 Open' : st === 'upcoming' ? '🔵 Upcoming' : st === 'draft' ? '🟡 Draft' : '⚫ Closed'}
-                                </button>
-                            ))}
-                        </div>
-                        <button onClick={fetchData} className="p-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-all cursor-pointer ml-auto" title="Refresh">
-                            <RefreshCw size={15} />
-                        </button>
                     </div>
 
-                    {/* Table */}
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                                    <th className="py-3 px-4">Exam Name & Details</th>
-                                    <th className="py-3 px-4">Schedule</th>
-                                    <th className="py-3 px-4">Structure</th>
-                                    <th className="py-3 px-4">Exam Fee</th>
-                                    <th className="py-3 px-4">Student Activity</th>
-                                    <th className="py-3 px-4">Status</th>
-                                    <th className="py-3 px-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 text-sm">
-                                {filteredExams.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={7} className="py-14 text-center">
-                                            <div className="flex flex-col items-center gap-2 text-slate-400">
-                                                <FileText size={36} className="opacity-30" />
-                                                <div className="font-bold text-sm">No exams found</div>
-                                                <div className="text-xs">Create your first exam using the "Create New Exam" button above.</div>
-                                            </div>
-                                        </td>
+                    <div className="flex items-center gap-2 self-stretch sm:self-auto">
+                        <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleNewExam() }}
+                            className="px-4 py-2 rounded-xl text-xs font-bold bg-[#004B93] text-white hover:bg-blue-700 flex items-center gap-1.5 shadow-sm"
+                        >
+                            <Plus size={14} /> New Exam
+                        </button>
+                        <div className="p-2 rounded-xl border border-slate-200 text-slate-500">
+                            {isRosterOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Expanded Roster Content */}
+                {isRosterOpen && (
+                    <div className="p-5 space-y-4 bg-slate-50/40">
+                        {/* Filters */}
+                        <div className="flex flex-col sm:flex-row items-center gap-3">
+                            <div className="relative w-full sm:w-80">
+                                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    placeholder="Search by exam name, class, subject..."
+                                    className="w-full pl-9 pr-4 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                />
+                            </div>
+                            <div className="flex items-center gap-1.5 bg-slate-200/70 p-1 rounded-xl text-xs font-bold overflow-x-auto">
+                                {(['all', 'open', 'upcoming', 'draft', 'closed'] as const).map(st => (
+                                    <button
+                                        key={st}
+                                        onClick={() => setStatusFilter(st)}
+                                        className={`px-3 py-1 rounded-lg capitalize cursor-pointer transition-all whitespace-nowrap ${statusFilter === st ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                                    >
+                                        {st === 'all' ? 'All' : st === 'open' ? '🟢 Open' : st === 'upcoming' ? '🔵 Upcoming' : st === 'draft' ? '🟡 Draft' : '⚫ Closed'}
+                                    </button>
+                                ))}
+                            </div>
+                            <button onClick={fetchData} className="p-2 border border-slate-200 bg-white rounded-xl hover:bg-slate-50 text-slate-600 transition-all cursor-pointer ml-auto" title="Refresh">
+                                <RefreshCw size={14} />
+                            </button>
+                        </div>
+
+                        {/* Roster Table */}
+                        <div className="overflow-x-auto bg-white rounded-2xl border border-slate-200">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                                        <th className="py-3 px-4">Exam Name & Details</th>
+                                        <th className="py-3 px-4">Schedule</th>
+                                        <th className="py-3 px-4">Structure</th>
+                                        <th className="py-3 px-4">Exam Fee</th>
+                                        <th className="py-3 px-4">Student Activity</th>
+                                        <th className="py-3 px-4">Status</th>
+                                        <th className="py-3 px-4 text-right">Actions</th>
                                     </tr>
-                                ) : (
-                                    filteredExams.map(ex => {
-                                        const testUrl = typeof window !== 'undefined'
-                                            ? `${window.location.origin}/dashboard/exams/online/${ex.id}/play`
-                                            : `/dashboard/exams/online/${ex.id}/play`
-                                        return (
-                                            <tr key={ex.id} className="hover:bg-slate-50/70 transition-all">
-                                                <td className="py-4 px-4">
-                                                    <div className="font-extrabold text-slate-900 text-sm leading-tight">{ex.title}</div>
-                                                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                                        {ex.class_name && (
-                                                            <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-100">{ex.class_name}</span>
-                                                        )}
-                                                        {ex.subject_name && (
-                                                            <span className="text-[10px] font-semibold text-slate-500">{ex.subject_name}</span>
-                                                        )}
-                                                        <span className="text-[10px] text-slate-400">Created {new Date(ex.created_at).toLocaleDateString('en-IN')}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="py-4 px-4">
-                                                    <SchedulePill start={ex.scheduled_start} end={ex.scheduled_end} schedStatus={ex.schedule_status} />
-                                                    {Array.isArray(ex.blueprint?.schedule_slots) && ex.blueprint.schedule_slots.length > 1 ? (
-                                                        <div className="mt-1 space-y-1">
-                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-sm">
+                                    {filteredExams.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={7} className="py-12 text-center">
+                                                <div className="flex flex-col items-center gap-2 text-slate-400">
+                                                    <FileText size={32} className="opacity-30" />
+                                                    <div className="font-bold text-sm">No exams found</div>
+                                                    <div className="text-xs">Create your first exam using the "New Exam" button above.</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        filteredExams.map(ex => {
+                                            const testUrl = typeof window !== 'undefined'
+                                                ? `${window.location.origin}/dashboard/exams/online/${ex.id}/play`
+                                                : `/dashboard/exams/online/${ex.id}/play`
+                                            return (
+                                                <tr key={ex.id} className={`hover:bg-slate-50 transition-all ${editExamId === ex.id ? 'bg-blue-50/50' : ''}`}>
+                                                    <td className="py-3.5 px-4">
+                                                        <div className="font-extrabold text-slate-900 text-sm leading-tight">{ex.title}</div>
+                                                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                                            {ex.class_name && (
+                                                                <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-100">{ex.class_name}</span>
+                                                            )}
+                                                            {ex.subject_name && (
+                                                                <span className="text-[10px] font-semibold text-slate-500">{ex.subject_name}</span>
+                                                            )}
+                                                            <span className="text-[10px] text-slate-400">Created {new Date(ex.created_at).toLocaleDateString('en-IN')}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-3.5 px-4">
+                                                        <SchedulePill start={ex.scheduled_start} end={ex.scheduled_end} schedStatus={ex.schedule_status} />
+                                                        {Array.isArray(ex.blueprint?.schedule_slots) && ex.blueprint.schedule_slots.length > 1 ? (
+                                                            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                                                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-[#004B93]">
                                                                     {ex.blueprint.schedule_slots.length} Slots
                                                                 </span>
@@ -1132,515 +1254,638 @@ export default function OnlineExamsPage() {
                                                                     {ex.blueprint.schedule_slots.reduce((sum: number, sl: any) => sum + (Number(sl.max_attempts) || 0), 0)} seats
                                                                 </span>
                                                             </div>
-                                                            <div className="text-[10px] text-slate-500 font-medium flex items-center gap-1 flex-wrap">
-                                                                {Array.from(new Set(ex.blueprint.schedule_slots.map((s: any) => s.section_name || 'All Sec'))).join(', ')}
+                                                        ) : ex.scheduled_start ? (
+                                                            <div className="text-[10px] text-slate-400 mt-1">
+                                                                {fmtDate(ex.scheduled_start)} → {fmtDate(ex.scheduled_end)}
                                                             </div>
+                                                        ) : null}
+                                                    </td>
+                                                    <td className="py-3.5 px-4">
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 flex items-center gap-1">
+                                                                <Clock size={10} /> {ex.duration}m
+                                                            </span>
+                                                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#004B93] border border-blue-100">
+                                                                {ex.question_count} Qs
+                                                            </span>
+                                                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600">
+                                                                {ex.total_marks}M
+                                                            </span>
                                                         </div>
-                                                    ) : ex.scheduled_start ? (
-                                                        <div className="text-[10px] text-slate-400 mt-1">
-                                                            {fmtDate(ex.scheduled_start)} → {fmtDate(ex.scheduled_end)}
-                                                        </div>
-                                                    ) : null}
-                                                </td>
-                                                <td className="py-4 px-4">
-                                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                                        <span className="px-2 py-1 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 flex items-center gap-1">
-                                                            <Clock size={11} /> {ex.duration} mins
-                                                        </span>
-                                                        <span className="px-2 py-1 rounded-md text-[10px] font-bold bg-blue-50 text-[#004B93] border border-blue-100">
-                                                            {ex.question_count} Qs
-                                                        </span>
-                                                        <span className="px-2 py-1 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600">
-                                                            {ex.total_marks} marks
-                                                        </span>
-                                                    </div>
-                                                    {ex.passing_marks > 0 && (
-                                                        <div className="text-[10px] text-slate-400 mt-1">Pass: {ex.passing_marks} marks</div>
-                                                    )}
-                                                </td>
-                                                <td className="py-4 px-4">
-                                                    {ex.pricing_type === 'paid' && ex.price > 0 ? (
-                                                        <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1">
-                                                            <DollarSign size={11} /> ₹{Number(ex.price).toFixed(0)}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                            Free
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="py-4 px-4">
-                                                    <div className="text-xs font-bold text-slate-800">{ex.attempt_count} attempts</div>
-                                                    <div className="text-[10px] text-slate-500">Avg: {ex.avg_score} / {ex.total_marks}</div>
-                                                    <div className="text-[10px] text-slate-500">Pass rate: {ex.pass_rate}</div>
-                                                    {ex.live_sessions > 0 && (
-                                                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-800 animate-pulse mt-1 inline-block">
-                                                            {ex.live_sessions} live
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="py-4 px-4">
-                                                    <button
-                                                        onClick={() => handleToggleStatus(ex)}
-                                                        className={`px-2.5 py-1 rounded-full text-[10px] font-black capitalize transition-all cursor-pointer inline-flex items-center gap-1.5 border ${ex.status === 'published' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 'bg-amber-50 text-amber-700 border-amber-300'}`}
-                                                        title="Click to toggle"
-                                                    >
-                                                        <span className={`w-1.5 h-1.5 rounded-full ${ex.status === 'published' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                                                        {ex.status}
-                                                    </button>
-                                                </td>
-                                                <td className="py-4 px-4 text-right">
-                                                    <div className="flex items-center justify-end gap-1.5">
-                                                        <Link href={`/dashboard/exams/online/${ex.id}/play`} target="_blank"
-                                                            className="p-2 rounded-xl bg-blue-50 text-[#004B93] hover:bg-blue-100 transition-all text-xs flex items-center gap-1 font-bold"
-                                                            title="Preview exam">
-                                                            <Play size={13} /> Test
-                                                        </Link>
-                                                        <button onClick={() => handleEditExam(ex)}
-                                                            className="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer" title="Edit exam">
-                                                            <Edit3 size={13} />
-                                                        </button>
+                                                    </td>
+                                                    <td className="py-3.5 px-4">
+                                                        {ex.pricing_type === 'paid' && ex.price > 0 ? (
+                                                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1">
+                                                                <DollarSign size={10} /> ₹{Number(ex.price).toFixed(0)}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                                Free
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3.5 px-4">
+                                                        <div className="text-xs font-bold text-slate-800">{ex.attempt_count} attempts</div>
+                                                        <div className="text-[10px] text-slate-500">Avg: {ex.avg_score} / {ex.total_marks} · {ex.pass_rate} pass</div>
+                                                        {ex.live_sessions > 0 && (
+                                                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-800 animate-pulse mt-0.5 inline-block">
+                                                                {ex.live_sessions} live now
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3.5 px-4">
                                                         <button
-                                                            onClick={() => {
-                                                                setShowScheduleModal(ex)
-                                                                const dur = ex.duration || 60
-                                                                const defaultClass = ex.class_name || ex.blueprint?.target_class || 'All Classes'
-                                                                const existingSlots: ScheduleSlot[] = Array.isArray(ex.blueprint?.schedule_slots) && ex.blueprint.schedule_slots.length > 0
-                                                                    ? ex.blueprint.schedule_slots.map((s: any) => ({
-                                                                        id: s.id || crypto.randomUUID(),
-                                                                        start: s.start || '',
-                                                                        end: s.end || '',
-                                                                        max_attempts: s.max_attempts || 60,
-                                                                        class_name: s.class_name || defaultClass,
-                                                                        section_name: s.section_name || 'All Sections'
-                                                                    }))
-                                                                    : ex.scheduled_start
-                                                                        ? [{
-                                                                            id: crypto.randomUUID(),
-                                                                            start: ex.scheduled_start.slice(0, 16),
-                                                                            end: ex.scheduled_end ? ex.scheduled_end.slice(0, 16) : makeSlotEnd(ex.scheduled_start.slice(0, 16), dur),
-                                                                            max_attempts: ex.blueprint?.slot_max_attempts || 60,
-                                                                            class_name: defaultClass,
-                                                                            section_name: 'All Sections'
-                                                                        }]
-                                                                        : [{
-                                                                            id: crypto.randomUUID(),
-                                                                            start: '',
-                                                                            end: '',
-                                                                            max_attempts: 60,
-                                                                            class_name: defaultClass,
-                                                                            section_name: 'All Sections'
-                                                                        }]
-                                                                setModalScheduleSlots(existingSlots)
-                                                            }}
-                                                            className="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer"
-                                                            title="Set Exam Schedule Slots"
+                                                            onClick={() => handleToggleStatus(ex)}
+                                                            className={`px-2 py-0.5 rounded-full text-[10px] font-black capitalize transition-all cursor-pointer inline-flex items-center gap-1.5 border ${ex.status === 'published' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 'bg-amber-50 text-amber-700 border-amber-300'}`}
+                                                            title="Click to toggle status"
                                                         >
-                                                            <Calendar size={13} />
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${ex.status === 'published' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                                            {ex.status}
                                                         </button>
-                                                        <button onClick={() => openQBankPicker(ex.id)}
-                                                            className="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer" title="Add questions from Question Bank">
-                                                            <BookOpen size={13} />
-                                                        </button>
-                                                        <button onClick={() => setShowShareModal(ex)}
-                                                            className="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer" title="Share link">
-                                                            <Share2 size={13} />
-                                                        </button>
-                                                        <button onClick={() => copyLink(testUrl, ex.id)}
-                                                            className="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer" title="Copy link">
-                                                            {copiedId === ex.id ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-                                                        </button>
-                                                        <button onClick={() => handleDuplicate(ex.id)}
-                                                            className="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer" title="Copy exam">
-                                                            <Layers size={13} />
-                                                        </button>
-                                                        <button onClick={() => setShowDeleteConfirm(ex)}
-                                                            className="p-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 cursor-pointer" title="Delete">
-                                                            <Trash2 size={13} />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )
-                                    })
-                                )}
-                            </tbody>
-                        </table>
+                                                    </td>
+                                                    <td className="py-3.5 px-4 text-right">
+                                                        <div className="flex items-center justify-end gap-1">
+                                                            <Link href={`/dashboard/exams/online/${ex.id}/play`} target="_blank"
+                                                                className="p-1.5 rounded-lg bg-blue-50 text-[#004B93] hover:bg-blue-100 text-xs font-bold flex items-center gap-1"
+                                                                title="Test exam as student">
+                                                                <Play size={12} /> Test
+                                                            </Link>
+                                                            <button onClick={() => handleEditExam(ex)}
+                                                                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer" title="Edit in step model">
+                                                                <Edit3 size={12} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setShowScheduleModal(ex)
+                                                                    const dur = ex.duration || 60
+                                                                    const defaultClass = ex.class_name || ex.blueprint?.target_class || 'All Classes'
+                                                                    const existingSlots: ScheduleSlot[] = Array.isArray(ex.blueprint?.schedule_slots) && ex.blueprint.schedule_slots.length > 0
+                                                                        ? ex.blueprint.schedule_slots.map((s: any) => ({
+                                                                            id: s.id || crypto.randomUUID(),
+                                                                            start: s.start || '',
+                                                                            end: s.end || '',
+                                                                            max_attempts: s.max_attempts || 60,
+                                                                            class_name: s.class_name || defaultClass,
+                                                                            section_name: s.section_name || 'All Sections'
+                                                                        }))
+                                                                        : ex.scheduled_start
+                                                                            ? [{
+                                                                                id: crypto.randomUUID(),
+                                                                                start: ex.scheduled_start.slice(0, 16),
+                                                                                end: ex.scheduled_end ? ex.scheduled_end.slice(0, 16) : makeSlotEnd(ex.scheduled_start.slice(0, 16), dur),
+                                                                                max_attempts: ex.blueprint?.slot_max_attempts || 60,
+                                                                                class_name: defaultClass,
+                                                                                section_name: 'All Sections'
+                                                                            }]
+                                                                            : [{
+                                                                                id: crypto.randomUUID(),
+                                                                                start: '',
+                                                                                end: '',
+                                                                                max_attempts: 60,
+                                                                                class_name: defaultClass,
+                                                                                section_name: 'All Sections'
+                                                                            }]
+                                                                    setModalScheduleSlots(existingSlots)
+                                                                }}
+                                                                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer"
+                                                                title="Set Schedule Slots"
+                                                            >
+                                                                <Calendar size={12} />
+                                                            </button>
+                                                            <button onClick={() => openQBankPicker(ex.id)}
+                                                                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer" title="Add questions from Question Bank">
+                                                                <BookOpen size={12} />
+                                                            </button>
+                                                            <button onClick={() => setShowShareModal(ex)}
+                                                                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer" title="Share link">
+                                                                <Share2 size={12} />
+                                                            </button>
+                                                            <button onClick={() => copyLink(testUrl, ex.id)}
+                                                                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer" title="Copy test link">
+                                                                {copiedId === ex.id ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                                                            </button>
+                                                            <button onClick={() => handleDuplicate(ex.id)}
+                                                                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer" title="Copy exam">
+                                                                <Layers size={12} />
+                                                            </button>
+                                                            <button onClick={() => setShowDeleteConfirm(ex)}
+                                                                className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 cursor-pointer" title="Delete">
+                                                                <Trash2 size={12} />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* ── 4. FULL WORKSPACE STEP MODEL NAVIGATION ──────────────────── */}
+            <div className="bg-white rounded-3xl p-3 shadow-sm border border-slate-200">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                    {[
+                        { step: 1 as const, label: 'Blueprint & Security', desc: 'Syllabus, Pattern & Rules', icon: Shield },
+                        { step: 2 as const, label: 'Questions Engine', desc: 'Sections, AI & Bank', icon: Sparkles },
+                        { step: 3 as const, label: 'Multi-Slot Schedule', desc: 'Class Allocation & Links', icon: Calendar },
+                        { step: 4 as const, label: 'Live Proctor & Monitor', desc: 'Active Sessions & Alerts', icon: Monitor },
+                        { step: 5 as const, label: 'Results & Analytics', desc: 'Scorecards & Pass Rates', icon: BarChart2 }
+                    ].map(st => {
+                        const Icon = st.icon
+                        const isActive = activeStep === st.step
+                        const isDone = activeStep > st.step
+                        return (
+                            <button
+                                key={st.step}
+                                onClick={() => setActiveStep(st.step)}
+                                className={`flex items-center gap-3 p-3.5 rounded-2xl text-left transition-all cursor-pointer border ${
+                                    isActive
+                                        ? 'bg-[#004B93] text-white border-[#004B93] shadow-md ring-2 ring-[#004B93]/20'
+                                        : isDone
+                                            ? 'bg-emerald-50/80 text-emerald-900 border-emerald-200 hover:bg-emerald-100/60'
+                                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100/80'
+                                }`}
+                            >
+                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
+                                    isActive ? 'bg-white/20 text-white' : isDone ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'
+                                }`}>
+                                    {isDone ? <Check size={14} /> : `0${st.step}`}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <div className={`text-xs font-black truncate ${isActive ? 'text-white' : 'text-slate-900'}`}>
+                                        {st.label}
+                                    </div>
+                                    <div className={`text-[10px] truncate font-medium ${isActive ? 'text-blue-100' : isDone ? 'text-emerald-700' : 'text-slate-400'}`}>
+                                        {st.desc}
+                                    </div>
+                                </div>
+                            </button>
+                        )
+                    })}
+                </div>
+            </div>
+
+            {/* ══════════════════════════════════════════════════════════════ */}
+            {/* STEP 1: BLUEPRINT & ANTI-CHEAT SECURITY                       */}
+            {/* ══════════════════════════════════════════════════════════════ */}
+            {activeStep === 1 && (
+                <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-8 animate-in fade-in duration-200">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#004B93]">Step 1 of 5</span>
+                                <h2 className="text-xl font-black text-slate-900">Exam Blueprint & Anti-Cheat Suite</h2>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-1">
+                                Configure the curriculum syllabus, select an exam pattern to lock duration & marks, configure pricing, and calibrate proctoring rules.
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowPatternsModal(true)}
+                                className="px-4 py-2 rounded-xl text-xs font-bold border border-[#004B93] text-[#004B93] hover:bg-blue-50 transition-all flex items-center gap-1.5"
+                            >
+                                <Globe size={13} /> Patterns Gallery
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Syllabus Picker */}
+                    <div className="space-y-4">
+                        <div className="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                            <BookOpen size={14} className="text-[#004B93]" />
+                            Institutional Curriculum Selection
+                        </div>
+                        <ExamSyllabusPatternPicker
+                            context={blueprintContext}
+                            loadingContext={contextLoading}
+                            onRefreshContext={fetchBlueprintContext}
+                            selectedBoardId={selectedBoardId}
+                            selectedClassId={selectedClassId}
+                            selectedSubjectId={selectedSubjectId}
+                            selectedChapterIds={selectedChapterIds}
+                            selectedTopicIds={selectedTopicIds}
+                            selectedPatternId={selectedPatternId}
+                            onSelectBoard={bId => { setSelectedBoardId(bId); setSelectedClassId(''); setSelectedSubjectId(''); setSelectedChapterIds([]); setSelectedTopicIds([]) }}
+                            onSelectClass={cNode => { setSelectedClassId(cNode.id); setS1(prev => ({ ...prev, targetClass: cNode.name })); setSelectedSubjectId(''); setSelectedChapterIds([]); setSelectedTopicIds([]) }}
+                            onSelectSubject={sNode => { setSelectedSubjectId(sNode.id); setS1(prev => ({ ...prev, subject: sNode.name })); setSelectedChapterIds([]); setSelectedTopicIds([]) }}
+                            onSelectChapters={chIds => setSelectedChapterIds(chIds)}
+                            onSelectTopics={tpIds => setSelectedTopicIds(tpIds)}
+                            onSelectPattern={handlePatternSelected}
+                        />
+                    </div>
+
+                    {/* Locked Pattern Banner if selected */}
+                    {selectedPatternObj && (
+                        <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-[#004B93] text-white flex items-center justify-center">
+                                    <LockKeyhole size={18} />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-black text-blue-900">Pattern Locked:</span>
+                                        <span className="text-xs font-extrabold text-[#004B93] underline">{selectedPatternObj.name}</span>
+                                    </div>
+                                    <p className="text-[11px] text-blue-700">
+                                        Duration and Marks are automatically synchronized with this pattern template.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="px-3 py-1 rounded-xl text-xs font-black bg-white text-blue-900 border border-blue-200">
+                                    ⏱ {selectedPatternObj.duration_minutes} Mins
+                                </span>
+                                <span className="px-3 py-1 rounded-xl text-xs font-black bg-white text-blue-900 border border-blue-200">
+                                    🎯 {selectedPatternObj.total_marks} Marks
+                                </span>
+                                <button
+                                    onClick={() => { setSelectedPatternId(''); setSelectedPatternObj(null) }}
+                                    className="p-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50"
+                                    title="Unlock pattern"
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Exam Core Details Form */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
+                        <div className="lg:col-span-2 space-y-5">
+                            {/* Exam Name */}
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Exam Title *</label>
+                                <input
+                                    type="text"
+                                    value={s1.name}
+                                    onChange={e => setS1({ ...s1, name: e.target.value })}
+                                    placeholder="e.g. Class 10 Mathematics — Term 1 Grand Mock"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-sm font-semibold outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                />
+                            </div>
+
+                            {/* Details Grid */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Class</label>
+                                    <input
+                                        type="text"
+                                        readOnly
+                                        value={s1.targetClass || 'Selected above'}
+                                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-xs font-bold text-slate-600 outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Subject</label>
+                                    <input
+                                        type="text"
+                                        readOnly
+                                        value={s1.subject || 'Selected above'}
+                                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-xs font-bold text-slate-600 outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-2 flex items-center justify-between">
+                                        <span>Duration (mins)</span>
+                                        {selectedPatternObj && <Lock size={10} className="text-[#004B93]" />}
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        value={s1.duration}
+                                        readOnly={!!selectedPatternObj}
+                                        onChange={e => {
+                                            const dur = parseInt(e.target.value) || 60
+                                            setS1(prev => ({ ...prev, duration: dur }))
+                                            setScheduleSlots(prev => prev.map(sl => ({ ...sl, end: sl.start ? makeSlotEnd(sl.start, dur) : '' })))
+                                        }}
+                                        className={`w-full px-3 py-2.5 rounded-xl border text-xs font-bold outline-none ${
+                                            selectedPatternObj ? 'bg-slate-100 border-slate-200 text-slate-600 cursor-not-allowed' : 'bg-slate-50 border-slate-200'
+                                        }`}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-2 flex items-center justify-between">
+                                        <span>Total Marks</span>
+                                        {selectedPatternObj && <Lock size={10} className="text-[#004B93]" />}
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={s1.total_marks}
+                                        readOnly={!!selectedPatternObj}
+                                        onChange={e => setS1({ ...s1, total_marks: parseInt(e.target.value) || 100 })}
+                                        className={`w-full px-3 py-2.5 rounded-xl border text-xs font-bold outline-none ${
+                                            selectedPatternObj ? 'bg-slate-100 border-slate-200 text-slate-600 cursor-not-allowed' : 'bg-slate-50 border-slate-200'
+                                        }`}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Passing marks and fee */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Passing Marks</label>
+                                    <input
+                                        type="number"
+                                        value={s1.passing_marks}
+                                        onChange={e => setS1({ ...s1, passing_marks: parseInt(e.target.value) || 0 })}
+                                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Exam Pricing Type</label>
+                                    <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+                                        <button
+                                            type="button"
+                                            onClick={() => setS1({ ...s1, pricing_type: 'free', price: 0 })}
+                                            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                                                s1.pricing_type === 'free' ? 'bg-[#004B93] text-white shadow-sm' : 'text-slate-600'
+                                            }`}
+                                        >
+                                            Free Access
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setS1({ ...s1, pricing_type: 'paid', price: 199 })}
+                                            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                                                s1.pricing_type === 'paid' ? 'bg-[#004B93] text-white shadow-sm' : 'text-slate-600'
+                                            }`}
+                                        >
+                                            Paid Exam
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {s1.pricing_type === 'paid' && (
+                                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between">
+                                    <div>
+                                        <div className="text-xs font-bold text-amber-900 uppercase">Exam Enrollment Fee (₹)</div>
+                                        <div className="text-[11px] text-amber-700">Students must complete online checkout before attempting the exam.</div>
+                                    </div>
+                                    <div className="w-36">
+                                        <input
+                                            type="number"
+                                            value={s1.price}
+                                            onChange={e => setS1({ ...s1, price: parseFloat(e.target.value) || 0 })}
+                                            className="w-full px-3 py-2 rounded-xl border border-amber-300 bg-white text-sm font-black text-amber-900 outline-none"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Instructions */}
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Exam Instructions</label>
+                                <textarea
+                                    rows={3}
+                                    value={s1.instructions}
+                                    onChange={e => setS1({ ...s1, instructions: e.target.value })}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-medium outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Security Rules Card (Full-Featured Inline Suite) */}
+                        <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-4">
+                            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                                <div className="flex items-center gap-2">
+                                    <Shield size={16} className="text-[#004B93]" />
+                                    <h4 className="text-xs font-black uppercase text-slate-900 tracking-wide">Anti-Cheat Controls</h4>
+                                </div>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
+                                    Active
+                                </span>
+                            </div>
+
+                            <div className="space-y-3">
+                                {[
+                                    { key: 'strictFullscreen', label: 'Enforce Full-Screen', desc: 'Auto-flags or locks if student exits full-screen mode' },
+                                    { key: 'shuffleQuestions', label: 'Shuffle Question Order', desc: 'Randomizes question order for each student' },
+                                    { key: 'shuffleOptions', label: 'Shuffle Options', desc: 'Shuffles A/B/C/D order per attempt' },
+                                    { key: 'allowScientificCalc', label: 'On-Screen Calculator', desc: 'Provides scientific calculator widget in test player' },
+                                    { key: 'instantResultDisclosure', label: 'Instant Result Disclosure', desc: 'Shows score and analysis immediately after submit' }
+                                ].map(rule => (
+                                    <label key={rule.key} className="flex items-start justify-between p-3 rounded-xl bg-white border border-slate-200 hover:border-blue-200 transition-all cursor-pointer">
+                                        <div className="pr-2">
+                                            <div className="text-xs font-bold text-slate-800">{rule.label}</div>
+                                            <div className="text-[10px] text-slate-400 leading-tight mt-0.5">{rule.desc}</div>
+                                        </div>
+                                        <input
+                                            type="checkbox"
+                                            checked={(security as any)[rule.key]}
+                                            onChange={e => setSecurity({ ...security, [rule.key]: e.target.checked })}
+                                            className="mt-0.5 w-4 h-4 text-[#004B93] rounded"
+                                        />
+                                    </label>
+                                ))}
+
+                                <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-1.5">
+                                    <div className="text-xs font-bold text-slate-800">Max Allowed Tab Switches</div>
+                                    <div className="text-[10px] text-slate-400">Auto-submits test when violations exceed threshold</div>
+                                    <select
+                                        value={security.maxTabSwitches}
+                                        onChange={e => setSecurity({ ...security, maxTabSwitches: parseInt(e.target.value) })}
+                                        className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-xs font-bold text-slate-800 outline-none"
+                                    >
+                                        <option value={1}>1 (Strict Lockdown)</option>
+                                        <option value={3}>3 (Standard Institutional)</option>
+                                        <option value={5}>5 (Relaxed)</option>
+                                        <option value={999}>No Limit (Practice Mode)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Bottom Nav */}
+                    <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+                        <button
+                            type="button"
+                            onClick={() => setIsRosterOpen(true)}
+                            className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50"
+                        >
+                            📋 View Roster
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveStep(2)}
+                            className="px-8 py-3 rounded-xl bg-[#004B93] hover:bg-blue-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                        >
+                            Next: Questions Engine <ArrowRight size={15} />
+                        </button>
                     </div>
                 </div>
             )}
 
             {/* ══════════════════════════════════════════════════════════════ */}
-            {/* TAB 2 — CREATE / EDIT EXAM                                    */}
+            {/* STEP 2: QUESTIONS & SECTIONS ENGINE                           */}
             {/* ══════════════════════════════════════════════════════════════ */}
-            {activeTab === 'studio' && (
-                <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-8">
-                    {/* Header */}
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-5">
+            {activeStep === 2 && (
+                <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-8 animate-in fade-in duration-200">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                         <div>
-                            <h2 className="text-xl font-black text-slate-900">{editExamId ? 'Edit Exam' : 'Create New Exam'}</h2>
+                            <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#004B93]">Step 2 of 5</span>
+                                <h2 className="text-xl font-black text-slate-900">Questions Engine & Section Architecture</h2>
+                            </div>
                             <p className="text-xs text-slate-500 mt-1">
-                                Step {studioStep} of 3 — {studioStep === 1 ? 'Exam Details & Schedule' : studioStep === 2 ? 'Exam Sections & Questions' : 'Review Questions & Publish'}
+                                Configure exam sections, generate syllabus-aligned questions with AI, or import directly from the institutional Question Bank.
                             </p>
                         </div>
                         <div className="flex items-center gap-2">
-                            {[1, 2, 3].map(st => (
-                                <div key={st} className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs transition-all ${studioStep === st ? 'bg-[#004B93] text-white shadow-md' : studioStep > st ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                                    {studioStep > st ? <Check size={15} /> : st}
-                                </div>
-                            ))}
+                            <button
+                                type="button"
+                                onClick={() => openQBankPicker()}
+                                className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-1.5"
+                            >
+                                <BookOpen size={13} className="text-[#004B93]" /> Import from Question Bank
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleGenerateAI}
+                                disabled={saving}
+                                className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[#004B93] to-blue-700 hover:to-blue-800 text-white shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                            >
+                                {saving ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                                Generate Questions with AI
+                            </button>
                         </div>
                     </div>
 
-                    {/* ── STEP 1: Exam Details ──────────────────────────────────── */}
-                    {studioStep === 1 && (
-                        <div className="space-y-6">
-                            <ExamSyllabusPatternPicker
-                                context={blueprintContext}
-                                loadingContext={contextLoading}
-                                onRefreshContext={fetchBlueprintContext}
-                                selectedBoardId={selectedBoardId}
-                                selectedClassId={selectedClassId}
-                                selectedSubjectId={selectedSubjectId}
-                                selectedChapterIds={selectedChapterIds}
-                                selectedTopicIds={selectedTopicIds}
-                                selectedPatternId={selectedPatternId}
-                                onSelectBoard={bId => { setSelectedBoardId(bId); setSelectedClassId(''); setSelectedSubjectId(''); setSelectedChapterIds([]); setSelectedTopicIds([]) }}
-                                onSelectClass={cNode => { setSelectedClassId(cNode.id); setS1(prev => ({ ...prev, targetClass: cNode.name })); setSelectedSubjectId(''); setSelectedChapterIds([]); setSelectedTopicIds([]) }}
-                                onSelectSubject={sNode => { setSelectedSubjectId(sNode.id); setS1(prev => ({ ...prev, subject: sNode.name })); setSelectedChapterIds([]); setSelectedTopicIds([]) }}
-                                onSelectChapters={chIds => setSelectedChapterIds(chIds)}
-                                onSelectTopics={tpIds => setSelectedTopicIds(tpIds)}
-                                onSelectPattern={handlePatternSelected}
-                            />
-
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                <div className="lg:col-span-2 space-y-5">
-                                    {/* Exam name */}
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Exam Name *</label>
-                                        <input type="text" value={s1.name} onChange={e => setS1({ ...s1, name: e.target.value })}
-                                            placeholder="e.g. Class 10 Maths — Term 1 Exam"
-                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-sm font-semibold outline-none focus:ring-2 focus:ring-[#004B93]/20" />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Class</label>
-                                            <input type="text" readOnly value={s1.targetClass || 'Pick above'}
-                                                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-xs font-bold text-slate-600 outline-none" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Subject</label>
-                                            <input type="text" readOnly value={s1.subject || 'Pick above'}
-                                                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-xs font-bold text-slate-600 outline-none" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Time (mins)</label>
-                                            <input type="number" min={1} value={s1.duration} onChange={e => {
-                                                const dur = parseInt(e.target.value) || 60
-                                                setS1(prev => ({ ...prev, duration: dur }))
-                                                setScheduleSlots(prev => prev.map(sl => ({
-                                                    ...sl,
-                                                    end: sl.start ? makeSlotEnd(sl.start, dur) : ''
-                                                })))
-                                            }}
-                                                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold outline-none" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Total Marks</label>
-                                            <input type="number" value={s1.total_marks} onChange={e => setS1({ ...s1, total_marks: parseInt(e.target.value) || 100 })}
-                                                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold outline-none" />
-                                        </div>
-                                    </div>
-
-                                    {/* Passing marks */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Passing Marks</label>
-                                            <input type="number" value={s1.passing_marks} onChange={e => setS1({ ...s1, passing_marks: parseInt(e.target.value) || 0 })}
-                                                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold outline-none" />
-                                        </div>
-                                    </div>
-
-                                    {/* Free / Paid */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Is this exam free or paid?</label>
-                                            <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
-                                                <button type="button" onClick={() => setS1({ ...s1, pricing_type: 'free', price: 0 })}
-                                                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${s1.pricing_type === 'free' ? 'bg-[#004B93] text-white shadow-sm' : 'text-slate-600'}`}>
-                                                    Free
-                                                </button>
-                                                <button type="button" onClick={() => setS1({ ...s1, pricing_type: 'paid', price: 199 })}
-                                                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${s1.pricing_type === 'paid' ? 'bg-[#004B93] text-white shadow-sm' : 'text-slate-600'}`}>
-                                                    Paid
-                                                </button>
-                                            </div>
-                                        </div>
-                                        {s1.pricing_type === 'paid' && (
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Exam Fee (₹)</label>
-                                                <input type="number" value={s1.price} onChange={e => setS1({ ...s1, price: parseFloat(e.target.value) || 0 })}
-                                                    className="w-full px-4 py-2.5 rounded-xl border border-amber-300 bg-amber-50 text-sm font-black text-amber-900 outline-none" />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Multi-Slot Schedule */}
-                                    <div>
-                                        <div className="flex items-center justify-between mb-3">
-                                            <label className="text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
-                                                <Calendar size={13} />Exam Schedule Slots <span className="text-slate-400 font-medium normal-case">(Optional)</span>
-                                            </label>
-                                            <button type="button" onClick={addSlot}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#004B93] text-[#004B93] text-[10px] font-black hover:bg-blue-50 transition-all cursor-pointer">
-                                                <Plus size={12} /> Add Slot
-                                            </button>
-                                        </div>
-
-                                        {scheduleSlots.length === 0 && (
-                                            <div className="py-5 rounded-xl border-2 border-dashed border-slate-200 text-center text-slate-400 text-xs">
-                                                No slots yet. Click <span className="font-black text-slate-500">"+ Add Slot"</span> to set when this exam is available.
-                                            </div>
-                                        )}
-
-                                        <div className="space-y-3">
-                                            {scheduleSlots.map((slot, idx) => (
-                                                <div key={slot.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                                                    {/* Slot header */}
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-[10px] font-black text-[#004B93] uppercase tracking-wide">Slot {idx + 1}</span>
-                                                        <button type="button" onClick={() => removeSlot(slot.id)}
-                                                            className="p-1 rounded-lg text-red-400 hover:bg-red-50 cursor-pointer">
-                                                            <X size={13} />
-                                                        </button>
-                                                    </div>
-
-                                                    {/* Row 1: Target Class and Section */}
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-slate-200/60">
-                                                        <div>
-                                                            <label className="block text-[10px] text-slate-600 font-bold uppercase mb-1 flex items-center gap-1">
-                                                                <GraduationCap size={12} className="text-[#004B93]" /> Assigned Class
-                                                            </label>
-                                                            <select
-                                                                value={slot.class_name || s1.targetClass || 'All Classes'}
-                                                                onChange={e => updateSlot(slot.id, 'class_name', e.target.value)}
-                                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#004B93]/20"
-                                                            >
-                                                                <option value="All Classes">All Classes</option>
-                                                                {availableClasses.map(cls => (
-                                                                    <option key={cls} value={cls}>{cls}</option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
-                                                        <div>
-                                                            <label className="block text-[10px] text-slate-600 font-bold uppercase mb-1 flex items-center gap-1">
-                                                                <Users size={12} className="text-[#004B93]" /> Assigned Section
-                                                            </label>
-                                                            <select
-                                                                value={slot.section_name || 'All Sections'}
-                                                                onChange={e => updateSlot(slot.id, 'section_name', e.target.value)}
-                                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#004B93]/20"
-                                                            >
-                                                                {STANDARD_SECTIONS.map(sec => (
-                                                                    <option key={sec} value={sec}>{sec}</option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                                        {/* Start */}
-                                                        <div>
-                                                            <label className="block text-[10px] text-slate-500 font-bold uppercase mb-1">Start Date & Time</label>
-                                                            <input
-                                                                type="datetime-local"
-                                                                value={slot.start}
-                                                                onChange={e => updateSlot(slot.id, 'start', e.target.value)}
-                                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold outline-none focus:ring-2 focus:ring-[#004B93]/20" />
-                                                        </div>
-
-                                                        {/* End — read-only, auto-calculated */}
-                                                        <div>
-                                                            <label className="block text-[10px] text-slate-500 font-bold uppercase mb-1">
-                                                                End Date & Time <span className="normal-case text-emerald-600 font-black">(auto)</span>
-                                                            </label>
-                                                            <input
-                                                                type="datetime-local"
-                                                                value={slot.end}
-                                                                readOnly
-                                                                title="Auto-calculated from Start + Exam Duration"
-                                                                className="w-full px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-xs font-semibold text-emerald-800 outline-none cursor-not-allowed" />
-                                                        </div>
-
-                                                        {/* Max attempts */}
-                                                        <div>
-                                                            <label className="block text-[10px] text-slate-500 font-bold uppercase mb-1">Max Students Allowed</label>
-                                                            <input
-                                                                type="number"
-                                                                min={1}
-                                                                value={slot.max_attempts}
-                                                                onChange={e => updateSlot(slot.id, 'max_attempts', parseInt(e.target.value) || 1)}
-                                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold outline-none" />
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Slot summary */}
-                                                    {slot.start && slot.end && (
-                                                        <div className="flex items-center gap-2 text-[10px] text-slate-600 font-semibold bg-white rounded-lg px-3 py-2 border border-slate-100 flex-wrap">
-                                                            <Clock size={11} className="text-[#004B93]" />
-                                                            <span>{new Date(slot.start).toLocaleString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</span>
-                                                            <span className="text-slate-400">→</span>
-                                                            <span>{new Date(slot.end).toLocaleString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</span>
-                                                            <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-blue-50 text-[#004B93] border border-blue-100">
-                                                                {slot.class_name || 'All Classes'} · {slot.section_name || 'All Sections'}
-                                                            </span>
-                                                            <span className="ml-auto flex items-center gap-1 text-slate-500"><Users size={11} /> {slot.max_attempts} seats</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        {scheduleSlots.length > 0 && (
-                                            <p className="text-[10px] text-slate-400 mt-2">
-                                                End time is auto-calculated as <span className="font-bold text-slate-600">Start + {s1.duration} mins</span>. Change exam duration above to update all slots.
-                                            </p>
-                                        )}
-                                        {scheduleSlots.length === 0 && (
-                                            <p className="text-[10px] text-slate-400 mt-1.5">Leave empty to publish without a fixed time window.</p>
-                                        )}
-                                    </div>
-
-                                    {/* Instructions */}
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Instructions for Students</label>
-                                        <textarea rows={3} value={s1.instructions} onChange={e => setS1({ ...s1, instructions: e.target.value })}
-                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium outline-none leading-relaxed" />
-                                    </div>
-
-                                    <div className="pt-4 flex justify-end">
-                                        <button onClick={() => { if (!s1.name) return showToast('Please enter an exam name.', false); setStudioStep(2) }}
-                                            className="px-6 py-3 rounded-xl bg-[#004B93] text-white font-bold text-sm shadow-md hover:bg-blue-800 transition-all flex items-center gap-2 cursor-pointer">
-                                            Next: Add Sections <ArrowRight size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Sidebar info */}
-                                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-4 h-fit">
-                                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-[#004B93] flex items-center justify-center">
-                                        <Shield size={20} />
-                                    </div>
-                                    <h3 className="font-black text-sm text-slate-900">Exam Security</h3>
-                                    <p className="text-xs text-slate-600 leading-relaxed">
-                                        Online exams run in a secure browser mode. Tab switches, copy-pasting, and multiple windows are detected and logged.
-                                    </p>
-                                    <div className="space-y-2 pt-2 border-t border-slate-200">
-                                        {['Full-screen mode enforced', 'Auto-submit on time up', 'Instant result after submission'].map(item => (
-                                            <div key={item} className="flex items-center gap-2 text-xs font-semibold text-emerald-700">
-                                                <CheckCircle2 size={13} /> {item}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
+                    {/* Section Setup Cards */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-xs font-black uppercase text-slate-700 tracking-wide flex items-center gap-1.5">
+                                <Target size={14} className="text-[#004B93]" /> Exam Sections Breakdown
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setS2({
+                                    ...s2,
+                                    sections: [
+                                        ...s2.sections,
+                                        { name: `Section ${String.fromCharCode(65 + s2.sections.length)}`, qCount: 10, mark: 1, negMark: 0 }
+                                    ]
+                                })}
+                                className="px-3 py-1.5 rounded-lg border border-[#004B93] text-[#004B93] font-bold text-xs hover:bg-blue-50 transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                                <Plus size={13} /> Add Section
+                            </button>
                         </div>
-                    )}
 
-                    {/* ── STEP 2: Sections ───────────────────────────────────────── */}
-                    {studioStep === 2 && (
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="text-base font-extrabold text-slate-900">Exam Sections</h3>
-                                    <p className="text-xs text-slate-500">Add one or more sections. Set how many questions and marks for each.</p>
-                                </div>
-                                <button
-                                    onClick={() => setS2({ ...s2, sections: [...s2.sections, { name: `Section ${String.fromCharCode(65 + s2.sections.length)}`, qCount: 10, mark: 1, negMark: 0 }] })}
-                                    className="px-3.5 py-2 rounded-xl border border-[#004B93] text-[#004B93] font-bold text-xs hover:bg-blue-50 transition-all flex items-center gap-1.5 cursor-pointer"
-                                >
-                                    <Plus size={14} /> Add Section
-                                </button>
+                        {s2.sections.length === 0 ? (
+                            <div className="py-8 rounded-2xl border-2 border-dashed border-slate-200 text-center text-slate-400 space-y-2">
+                                <BookOpen size={28} className="mx-auto opacity-30" />
+                                <div className="text-sm font-bold">No sections configured</div>
+                                <div className="text-xs">Click "Add Section" or select a ready-made pattern from Step 1 to auto-generate sections.</div>
                             </div>
-
-                            {s2.sections.length === 0 && (
-                                <div className="py-8 rounded-2xl border-2 border-dashed border-slate-200 text-center text-slate-400">
-                                    <BookOpen size={28} className="mx-auto mb-2 opacity-30" />
-                                    <div className="text-sm font-bold">No sections yet</div>
-                                    <div className="text-xs">Click "Add Section" to get started, or use an Exam Pattern from Tab 3.</div>
-                                </div>
-                            )}
-
+                        ) : (
                             <div className="space-y-3">
                                 {s2.sections.map((sec, idx) => (
-                                    <div key={idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-2 sm:grid-cols-5 gap-4 items-center">
+                                    <div key={idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-2 sm:grid-cols-5 gap-3 items-center">
                                         <div className="col-span-2 sm:col-span-2">
                                             <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Section Name</label>
-                                            <input type="text" value={sec.name} onChange={e => { const ns = [...s2.sections]; ns[idx].name = e.target.value; setS2({ ...s2, sections: ns }) }}
-                                                className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold outline-none" />
+                                            <input
+                                                type="text"
+                                                value={sec.name}
+                                                onChange={e => {
+                                                    const ns = [...s2.sections]
+                                                    ns[idx].name = e.target.value
+                                                    setS2({ ...s2, sections: ns })
+                                                }}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold outline-none"
+                                            />
                                         </div>
                                         <div>
                                             <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">No. of Questions</label>
-                                            <input type="number" value={sec.qCount} onChange={e => { const ns = [...s2.sections]; ns[idx].qCount = parseInt(e.target.value) || 0; setS2({ ...s2, sections: ns }) }}
-                                                className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold outline-none" />
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                value={sec.qCount}
+                                                onChange={e => {
+                                                    const ns = [...s2.sections]
+                                                    ns[idx].qCount = parseInt(e.target.value) || 0
+                                                    setS2({ ...s2, sections: ns })
+                                                }}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold outline-none"
+                                            />
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Marks per Question</label>
-                                            <input type="number" value={sec.mark} onChange={e => { const ns = [...s2.sections]; ns[idx].mark = parseFloat(e.target.value) || 1; setS2({ ...s2, sections: ns }) }}
-                                                className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold outline-none" />
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Marks / Question</label>
+                                            <input
+                                                type="number"
+                                                value={sec.mark}
+                                                onChange={e => {
+                                                    const ns = [...s2.sections]
+                                                    ns[idx].mark = parseFloat(e.target.value) || 1
+                                                    setS2({ ...s2, sections: ns })
+                                                }}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold outline-none"
+                                            />
                                         </div>
                                         <div className="flex items-end gap-2">
                                             <div className="flex-1">
                                                 <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Negative Marks</label>
-                                                <input type="number" value={sec.negMark} onChange={e => { const ns = [...s2.sections]; ns[idx].negMark = parseFloat(e.target.value) || 0; setS2({ ...s2, sections: ns }) }}
-                                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold outline-none" />
+                                                <input
+                                                    type="number"
+                                                    value={sec.negMark}
+                                                    onChange={e => {
+                                                        const ns = [...s2.sections]
+                                                        ns[idx].negMark = parseFloat(e.target.value) || 0
+                                                        setS2({ ...s2, sections: ns })
+                                                    }}
+                                                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold outline-none"
+                                                />
                                             </div>
-                                            <button onClick={() => setS2({ ...s2, sections: s2.sections.filter((_, i) => i !== idx) })}
-                                                className="mb-0.5 p-2 rounded-lg text-red-500 hover:bg-red-50 cursor-pointer">
+                                            <button
+                                                type="button"
+                                                onClick={() => setS2({ ...s2, sections: s2.sections.filter((_, i) => i !== idx) })}
+                                                className="mb-0.5 p-2 rounded-xl text-red-500 hover:bg-red-50 cursor-pointer"
+                                                title="Delete section"
+                                            >
                                                 <Trash2 size={14} />
                                             </button>
                                         </div>
                                     </div>
                                 ))}
                             </div>
+                        )}
 
-                            {s2.sections.length > 0 && (
-                                <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 text-xs font-semibold text-blue-800 flex items-center gap-3">
-                                    <Target size={16} />
-                                    Total: {s2.sections.reduce((a, s) => a + s.qCount, 0)} questions ·{' '}
-                                    {s2.sections.reduce((a, s) => a + (s.qCount * s.mark), 0)} marks
+                        {s2.sections.length > 0 && (
+                            <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200 text-xs font-bold text-blue-900 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Target size={15} className="text-[#004B93]" />
+                                    <span>Blueprint Target: {s2.sections.reduce((a, s) => a + Number(s.qCount || 0), 0)} Questions · {s2.sections.reduce((a, s) => a + (Number(s.qCount || 0) * Number(s.mark || 1)), 0)} Total Marks</span>
                                 </div>
-                            )}
-
-                            <div className="pt-4 flex justify-between border-t border-slate-100">
-                                <button onClick={() => setStudioStep(1)} className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 cursor-pointer">
-                                    ← Back
-                                </button>
-                                <button onClick={handleGenerateAI} disabled={saving}
-                                    className="px-6 py-3 rounded-xl bg-[#004B93] text-white font-bold text-sm shadow-md hover:bg-blue-800 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50">
-                                    {saving ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-                                    Generate Questions with AI →
-                                </button>
+                                <span className="text-[11px] font-semibold text-blue-700">
+                                    {studioQuestions.length} Questions Ready in Pool ({approvedQs.size} selected)
+                                </span>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
 
-                    {/* ── STEP 3: Review & Publish ────────────────────────────────── */}
-                    {studioStep === 3 && (
-                        <div className="space-y-6">
-                            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                <div className="flex items-center gap-3">
-                                    <CheckCircle2 size={24} className="text-emerald-600 shrink-0" />
-                                    <div>
-                                        <div className="text-sm font-extrabold text-emerald-900">
-                                            {studioQuestions.length} questions generated and ready for review
-                                        </div>
-                                        <div className="text-xs text-emerald-700">
-                                            {approvedQs.size} of {studioQuestions.length} questions selected for this exam.
-                                        </div>
+                    {/* Question Review Studio */}
+                    <div className="space-y-4 pt-2">
+                        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <CheckCircle2 size={24} className="text-emerald-600 shrink-0" />
+                                <div>
+                                    <div className="text-sm font-extrabold text-emerald-900">
+                                        {studioQuestions.length > 0 ? `${studioQuestions.length} questions available in exam pool` : 'No questions generated yet'}
+                                    </div>
+                                    <div className="text-xs text-emerald-700">
+                                        {approvedQs.size} of {studioQuestions.length} questions selected for student delivery.
                                     </div>
                                 </div>
+                            </div>
+                            {studioQuestions.length > 0 && (
                                 <div className="flex items-center gap-3 self-end sm:self-auto">
                                     <button
                                         type="button"
@@ -1658,52 +1903,62 @@ export default function OnlineExamsPage() {
                                         Deselect All
                                     </button>
                                 </div>
-                            </div>
+                            )}
+                        </div>
 
-                            {/* Section Filter Tabs */}
-                            {(() => {
-                                const distinctSections = Array.from(new Set(studioQuestions.map(q => q.section || 'General')))
-                                if (distinctSections.length <= 1) return null
+                        {/* Section Filter Tabs */}
+                        {(() => {
+                            const distinctSections = Array.from(new Set(studioQuestions.map(q => q.section || q.section_name || 'General')))
+                            if (distinctSections.length <= 1) return null
+                            return (
+                                <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3">
+                                    <span className="text-xs font-bold text-slate-400 uppercase mr-1">Section:</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setStudioFilterSection('all')}
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                            studioFilterSection === 'all'
+                                                ? 'bg-[#004B93] text-white shadow-sm'
+                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                        }`}
+                                    >
+                                        All ({studioQuestions.length})
+                                    </button>
+                                    {distinctSections.map(secName => {
+                                        const secCount = studioQuestions.filter(q => (q.section || q.section_name || 'General') === secName).length
+                                        return (
+                                            <button
+                                                key={secName}
+                                                type="button"
+                                                onClick={() => setStudioFilterSection(secName)}
+                                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                                    studioFilterSection === secName
+                                                        ? 'bg-[#004B93] text-white shadow-sm'
+                                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                }`}
+                                            >
+                                                {secName} ({secCount})
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            )
+                        })()}
 
-                                return (
-                                    <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3">
-                                        <span className="text-xs font-bold text-slate-400 uppercase mr-1">Filter Section:</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => setStudioFilterSection('all')}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                                                studioFilterSection === 'all'
-                                                    ? 'bg-[#004B93] text-white shadow-sm'
-                                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                            }`}
-                                        >
-                                            All ({studioQuestions.length})
-                                        </button>
-                                        {distinctSections.map(secName => {
-                                            const secCount = studioQuestions.filter(q => (q.section || 'General') === secName).length
-                                            return (
-                                                <button
-                                                    key={secName}
-                                                    type="button"
-                                                    onClick={() => setStudioFilterSection(secName)}
-                                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                                                        studioFilterSection === secName
-                                                            ? 'bg-[#004B93] text-white shadow-sm'
-                                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                                    }`}
-                                                >
-                                                    {secName} ({secCount})
-                                                </button>
-                                            )
-                                        })}
+                        {/* Questions List */}
+                        <div className="space-y-3 max-h-[580px] overflow-y-auto pr-2">
+                            {studioQuestions.length === 0 ? (
+                                <div className="py-12 text-center text-slate-400 space-y-2 border-2 border-dashed border-slate-200 rounded-2xl">
+                                    <Sparkles size={32} className="mx-auto opacity-30 text-[#004B93]" />
+                                    <div className="font-bold text-sm text-slate-700">Question Pool is Empty</div>
+                                    <div className="text-xs max-w-md mx-auto">
+                                        Use the buttons at the top right to generate high-quality questions using AI or pull existing questions from your Question Bank.
                                     </div>
-                                )
-                            })()}
-
-                            <div className="space-y-3 max-h-[580px] overflow-y-auto pr-2">
-                                {studioQuestions
+                                </div>
+                            ) : (
+                                studioQuestions
                                     .map((q, idx) => ({ q, originalIndex: idx }))
-                                    .filter(({ q }) => studioFilterSection === 'all' || (q.section || 'General') === studioFilterSection)
+                                    .filter(({ q }) => studioFilterSection === 'all' || (q.section || q.section_name || 'General') === studioFilterSection)
                                     .map(({ q, originalIndex: idx }) => (
                                         <div
                                             key={`studio_q_${idx}_${q.id || 'item'}`}
@@ -1725,10 +1980,10 @@ export default function OnlineExamsPage() {
                                                     className="mt-1 w-4 h-4 text-[#004B93] rounded cursor-pointer"
                                                 />
                                                 <div className="space-y-2.5 flex-1">
-                                                    {/* Badges row */}
+                                                    {/* Badges */}
                                                     <div className="flex flex-wrap items-center gap-2">
                                                         <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-50 text-[#004B93] border border-blue-200">
-                                                            {q.section || 'Section A'}
+                                                            {q.section || q.section_name || 'Section A'}
                                                         </span>
                                                         <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600">
                                                             {q.marks || 1} Mark{q.marks > 1 ? 's' : ''}
@@ -1747,6 +2002,7 @@ export default function OnlineExamsPage() {
                                                         Q{idx + 1}. {q.text || q.question_text}
                                                     </div>
 
+                                                    {/* Options */}
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                         {(q.options || []).map((opt: string, oi: number) => {
                                                             const isCorrect = opt === q.correct_answer || (typeof opt === 'string' && q.correct_answer && opt.trim() === String(q.correct_answer).trim())
@@ -1782,108 +2038,330 @@ export default function OnlineExamsPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
-                            </div>
-
-                            <div className="pt-4 flex justify-between border-t border-slate-100">
-                                <button onClick={() => setStudioStep(2)} className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 cursor-pointer">
-                                    ← Back
-                                </button>
-                                <button onClick={handleSaveExam} disabled={saving}
-                                    className="px-8 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50">
-                                    {saving ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
-                                    {editExamId ? 'Save Changes' : 'Save & Publish Exam'}
-                                </button>
-                            </div>
+                                    ))
+                            )}
                         </div>
-                    )}
+                    </div>
+
+                    {/* Bottom Nav */}
+                    <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+                        <button
+                            type="button"
+                            onClick={() => setActiveStep(1)}
+                            className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 cursor-pointer"
+                        >
+                            ← Back to Blueprint
+                        </button>
+                        <div className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => handleSaveExam()}
+                                disabled={saving}
+                                className="px-5 py-2.5 rounded-xl border border-[#004B93] text-[#004B93] font-bold text-xs hover:bg-blue-50 transition-all cursor-pointer"
+                            >
+                                Save Changes
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleSaveExam(3)}
+                                disabled={saving}
+                                className="px-8 py-3 rounded-xl bg-[#004B93] hover:bg-blue-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                            >
+                                Save & Proceed to Schedule <ArrowRight size={15} />
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
             {/* ══════════════════════════════════════════════════════════════ */}
-            {/* TAB 3 — EXAM PATTERNS                                         */}
+            {/* STEP 3: MULTI-SLOT SCHEDULING & AUDIENCE SCOPING              */}
             {/* ══════════════════════════════════════════════════════════════ */}
-            {activeTab === 'patterns' && (
-                <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
-                    <div>
-                        <h2 className="text-xl font-black text-slate-900">Ready-Made Exam Patterns</h2>
-                        <p className="text-xs text-slate-500 mt-1">Pick a standard pattern to quickly set up an exam. You can customise it further in the studio.</p>
-                    </div>
-                    {patterns.length === 0 ? (
-                        <div className="py-12 text-center text-slate-400">
-                            <Globe size={36} className="mx-auto mb-2 opacity-30" />
-                            <div className="font-bold text-sm">No patterns available</div>
-                            <div className="text-xs">Ask your admin to add exam patterns.</div>
+            {activeStep === 3 && (
+                <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-8 animate-in fade-in duration-200">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#004B93]">Step 3 of 5</span>
+                                <h2 className="text-xl font-black text-slate-900">Multi-Slot Scheduling & Audience Distribution</h2>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-1">
+                                Create time slots for assigned classes and sections. End time is automatically calculated from duration ({s1.duration} mins).
+                            </p>
                         </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {patterns.map(tmpl => (
-                                <div key={tmpl.id} className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-[#004B93] hover:shadow-lg transition-all flex flex-col justify-between space-y-4">
-                                    <div className="space-y-2">
-                                        <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase bg-blue-50 text-[#004B93] border border-blue-100">
-                                            {tmpl.category || 'Standard Pattern'}
-                                        </span>
-                                        <h3 className="font-extrabold text-sm text-slate-900">{tmpl.name}</h3>
-                                    </div>
-                                    <div className="space-y-3 pt-3 border-t border-slate-100">
-                                        <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
-                                            <span className="flex items-center gap-1.5"><Clock size={13} /> {tmpl.duration_minutes} mins</span>
-                                            <span className="flex items-center gap-1.5"><Target size={13} /> {tmpl.total_marks} marks</span>
+                        <button
+                            type="button"
+                            onClick={addSlot}
+                            className="px-4 py-2 rounded-xl text-xs font-bold bg-[#004B93] text-white hover:bg-blue-700 shadow-sm flex items-center gap-1.5 cursor-pointer"
+                        >
+                            <Plus size={14} /> Add Schedule Slot
+                        </button>
+                    </div>
+
+                    {/* Schedule Slots Manager */}
+                    <div className="space-y-4">
+                        {scheduleSlots.length === 0 ? (
+                            <div className="py-10 rounded-2xl border-2 border-dashed border-slate-200 text-center text-slate-400 space-y-2">
+                                <Calendar size={32} className="mx-auto opacity-30 text-[#004B93]" />
+                                <div className="text-sm font-bold text-slate-700">No Schedule Slots Configured</div>
+                                <div className="text-xs max-w-sm mx-auto">
+                                    Click <span className="font-bold text-[#004B93]">"+ Add Schedule Slot"</span> to define when this exam will be open for student attempts.
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {scheduleSlots.map((slot, idx) => (
+                                    <div key={slot.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-6 h-6 rounded-full bg-[#004B93] text-white text-[11px] font-black flex items-center justify-center">
+                                                    {idx + 1}
+                                                </span>
+                                                <span className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                                                    Slot #{idx + 1}
+                                                </span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeSlot(slot.id)}
+                                                className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                                                title="Remove slot"
+                                            >
+                                                <X size={14} />
+                                            </button>
                                         </div>
-                                        <button onClick={() => handlePatternSelected(tmpl)}
-                                            className="w-full py-2.5 rounded-xl bg-[#004B93] hover:bg-blue-800 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm">
-                                            Use This Pattern →
+
+                                        {/* Class & Section Selection */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-3 border-b border-slate-200/60">
+                                            <div>
+                                                <label className="block text-[10px] text-slate-600 font-bold uppercase mb-1 flex items-center gap-1">
+                                                    <GraduationCap size={13} className="text-[#004B93]" /> Assigned Class
+                                                </label>
+                                                <select
+                                                    value={slot.class_name || s1.targetClass || 'All Classes'}
+                                                    onChange={e => updateSlot(slot.id, 'class_name', e.target.value)}
+                                                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                                >
+                                                    <option value="All Classes">All Classes</option>
+                                                    {availableClasses.map(cls => (
+                                                        <option key={cls} value={cls}>{cls}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] text-slate-600 font-bold uppercase mb-1 flex items-center gap-1">
+                                                    <Users size={13} className="text-[#004B93]" /> Assigned Section
+                                                </label>
+                                                <select
+                                                    value={slot.section_name || 'All Sections'}
+                                                    onChange={e => updateSlot(slot.id, 'section_name', e.target.value)}
+                                                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                                >
+                                                    {STANDARD_SECTIONS.map(sec => (
+                                                        <option key={sec} value={sec}>{sec}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        {/* Date/Time Row */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                            <div>
+                                                <label className="block text-[10px] text-slate-600 font-bold uppercase mb-1">
+                                                    Start Date & Time
+                                                </label>
+                                                <input
+                                                    type="datetime-local"
+                                                    value={slot.start}
+                                                    onChange={e => updateSlot(slot.id, 'start', e.target.value)}
+                                                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] text-slate-600 font-bold uppercase mb-1">
+                                                    End Date & Time <span className="text-emerald-600 font-black">(Auto-computed)</span>
+                                                </label>
+                                                <input
+                                                    type="datetime-local"
+                                                    value={slot.end}
+                                                    readOnly
+                                                    title={`Auto-calculated: Start + ${s1.duration} mins`}
+                                                    className="w-full px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-xs font-semibold text-emerald-800 outline-none cursor-not-allowed"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] text-slate-600 font-bold uppercase mb-1">
+                                                    Seat Limit / Max Attempts
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    value={slot.max_attempts}
+                                                    onChange={e => updateSlot(slot.id, 'max_attempts', parseInt(e.target.value) || 1)}
+                                                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold outline-none"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Preview Banner */}
+                                        {slot.start && slot.end && (
+                                            <div className="flex items-center gap-2 text-[11px] text-slate-600 font-semibold bg-white rounded-xl px-3.5 py-2 border border-slate-100 flex-wrap">
+                                                <Clock size={12} className="text-[#004B93]" />
+                                                <span>{new Date(slot.start).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                                                <span className="text-slate-400">→</span>
+                                                <span>{new Date(slot.end).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-[#004B93] border border-blue-100">
+                                                    {slot.class_name || 'All Classes'} · {slot.section_name || 'All Sections'}
+                                                </span>
+                                                <span className="ml-auto text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                                                    <Users size={11} /> {slot.max_attempts} seats
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Student Distribution & Test Hub */}
+                    <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Share2 size={16} className="text-[#004B93]" />
+                                <h4 className="text-xs font-black uppercase text-slate-900 tracking-wide">Student Test Access Hub</h4>
+                            </div>
+                            {editExamId && (
+                                <Link
+                                    href={`/dashboard/exams/online/${editExamId}/play`}
+                                    target="_blank"
+                                    className="px-3.5 py-1.5 rounded-xl bg-blue-50 text-[#004B93] hover:bg-blue-100 font-bold text-xs flex items-center gap-1.5 transition-all"
+                                >
+                                    <Play size={13} /> Test Exam Player
+                                </Link>
+                            )}
+                        </div>
+
+                        {editExamId ? (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="md:col-span-2 space-y-1.5">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase">Student Test URL</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            readOnly
+                                            value={activeTestUrl}
+                                            className="flex-1 px-3.5 py-2.5 text-xs font-mono bg-white rounded-xl border border-slate-200 select-all outline-none"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => copyLink(activeTestUrl, editExamId)}
+                                            className="px-4 py-2.5 rounded-xl bg-[#004B93] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                        >
+                                            <Copy size={13} /> Copy Link
                                         </button>
                                     </div>
                                 </div>
-                            ))}
+                                <div className="p-3.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between">
+                                    <div>
+                                        <div className="text-[10px] font-bold text-slate-500 uppercase">Exam Access Code</div>
+                                        <div className="text-xl font-black font-mono text-[#004B93] tracking-widest mt-0.5">
+                                            {editExamId.slice(0, 6).toUpperCase()}
+                                        </div>
+                                    </div>
+                                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                                        Active
+                                    </span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-xs text-slate-500">
+                                Save the exam to generate live student test URLs and access codes.
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Bottom Nav */}
+                    <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+                        <button
+                            type="button"
+                            onClick={() => setActiveStep(2)}
+                            className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 cursor-pointer"
+                        >
+                            ← Back to Questions
+                        </button>
+                        <div className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => handleSaveExam()}
+                                disabled={saving}
+                                className="px-5 py-2.5 rounded-xl border border-[#004B93] text-[#004B93] font-bold text-xs hover:bg-blue-50 transition-all cursor-pointer"
+                            >
+                                Save Schedule
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleSaveExam(4)}
+                                disabled={saving}
+                                className="px-8 py-3 rounded-xl bg-[#004B93] hover:bg-blue-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                            >
+                                Save & Proceed to Live Monitor <ArrowRight size={15} />
+                            </button>
                         </div>
-                    )}
+                    </div>
                 </div>
             )}
 
             {/* ══════════════════════════════════════════════════════════════ */}
-            {/* TAB 4 — LIVE MONITOR                                          */}
+            {/* STEP 4: LIVE PROCTOR & MONITOR                                */}
             {/* ══════════════════════════════════════════════════════════════ */}
-            {activeTab === 'monitor' && (
-                <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
-                    <div className="flex items-center justify-between">
+            {activeStep === 4 && (
+                <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-8 animate-in fade-in duration-200">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                         <div>
-                            <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                                <Monitor size={20} className="text-[#004B93]" /> Live Student Monitor
-                            </h2>
-                            <p className="text-xs text-slate-500 mt-1">Students currently taking exams, tab violations, and security events.</p>
+                            <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#004B93]">Step 4 of 5</span>
+                                <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                                    <Monitor size={20} className="text-[#004B93]" /> Live Student Proctor & Telemetry
+                                </h2>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-1">
+                                Real-time monitoring of students currently attempting exams, browser tab violations, and anti-cheat event logs.
+                            </p>
                         </div>
                         <div className="flex items-center gap-2">
                             <span className="flex items-center gap-2 text-xs font-black text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" /> Live Monitoring On
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" /> Live Telemetry Feed
                             </span>
-                            <button onClick={fetchData} className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer" title="Refresh">
+                            <button onClick={fetchData} className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer" title="Refresh Feed">
                                 <RefreshCw size={14} />
                             </button>
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    {/* Active Candidate Telemetry Table */}
+                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                                    <th className="py-3 px-4">Student</th>
+                                    <th className="py-3 px-4">Student & Attempt ID</th>
                                     <th className="py-3 px-4">Exam</th>
                                     <th className="py-3 px-4">Device / IP</th>
                                     <th className="py-3 px-4">Tab Violations</th>
                                     <th className="py-3 px-4">Status / Score</th>
-                                    <th className="py-3 px-4 text-right">Action</th>
+                                    <th className="py-3 px-4 text-right">Proctor Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 text-xs font-medium">
                                 {recentAttempts.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="py-12 text-center">
+                                        <td colSpan={6} className="py-14 text-center">
                                             <div className="flex flex-col items-center gap-2 text-slate-400">
-                                                <Monitor size={32} className="opacity-30" />
-                                                <div className="font-bold text-sm">No active exam sessions</div>
-                                                <div className="text-xs">When students start an exam, they will appear here.</div>
+                                                <Monitor size={36} className="opacity-30" />
+                                                <div className="font-bold text-sm">No Active Exam Sessions</div>
+                                                <div className="text-xs max-w-sm">
+                                                    When students launch tests via their student test link, real-time proctoring data will appear here.
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
@@ -1895,13 +2373,13 @@ export default function OnlineExamsPage() {
                                                 <div className="text-[10px] text-slate-400 font-mono">Attempt: {att.id?.slice(0, 8)}</div>
                                             </td>
                                             <td className="py-3.5 px-4">
-                                                <div className="font-semibold text-slate-800">{att.exam?.title || 'Unknown Exam'}</div>
+                                                <div className="font-semibold text-slate-800">{att.exam?.title || 'Online Exam'}</div>
                                                 <div className="text-[10px] text-slate-400">
                                                     Started {new Date(att.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </div>
                                             </td>
                                             <td className="py-3.5 px-4 text-slate-600">
-                                                <div>{att.device_info || 'Browser'}</div>
+                                                <div>{att.device_info || 'Browser (Web)'}</div>
                                                 <div className="text-[10px] font-mono text-slate-400">{att.ip_address || '—'}</div>
                                             </td>
                                             <td className="py-3.5 px-4">
@@ -1911,19 +2389,22 @@ export default function OnlineExamsPage() {
                                                     </span>
                                                 ) : (
                                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700">
-                                                        ✓ Clean
+                                                        ✓ Clean Session
                                                     </span>
                                                 )}
                                             </td>
                                             <td className="py-3.5 px-4">
-                                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${att.status === 'in_progress' ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
+                                                    att.status === 'in_progress' ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700'
+                                                }`}>
                                                     {att.status === 'in_progress' ? 'In Progress' : att.status} ({att.score || att.marks_obtained || 0} pts)
                                                 </span>
                                             </td>
                                             <td className="py-3.5 px-4 text-right">
                                                 <button
-                                                    onClick={() => showToast(`Warning sent to Student #${att.student_id?.slice(0, 8)}`, true)}
-                                                    className="px-2.5 py-1 rounded-lg border border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100 font-bold text-[10px] cursor-pointer">
+                                                    onClick={() => showToast(`Warning alert broadcast to Student #${att.student_id?.slice(0, 8)}`, true)}
+                                                    className="px-3 py-1 rounded-lg border border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100 font-bold text-[10px] cursor-pointer"
+                                                >
                                                     Warn Student
                                                 </button>
                                             </td>
@@ -1933,71 +2414,102 @@ export default function OnlineExamsPage() {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Bottom Nav */}
+                    <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+                        <button
+                            type="button"
+                            onClick={() => setActiveStep(3)}
+                            className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 cursor-pointer"
+                        >
+                            ← Back to Schedule
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveStep(5)}
+                            className="px-8 py-3 rounded-xl bg-[#004B93] hover:bg-blue-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                        >
+                            Next: Results & Analytics <ArrowRight size={15} />
+                        </button>
+                    </div>
                 </div>
             )}
 
             {/* ══════════════════════════════════════════════════════════════ */}
-            {/* TAB 5 — RESULTS & SCORES                                      */}
+            {/* STEP 5: RESULTS & SCORECARD ANALYTICS                         */}
             {/* ══════════════════════════════════════════════════════════════ */}
-            {activeTab === 'results' && (
-                <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-8">
-                    <div className="flex items-center justify-between">
+            {activeStep === 5 && (
+                <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-8 animate-in fade-in duration-200">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                         <div>
-                            <h2 className="text-xl font-black text-slate-900">Results & Scores</h2>
-                            <p className="text-xs text-slate-500 mt-1">Real exam results from the database. Pass rates, averages, and top students.</p>
+                            <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#004B93]">Step 5 of 5</span>
+                                <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                                    <BarChart2 size={20} className="text-[#004B93]" /> Exam Results & Performance Analytics
+                                </h2>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-1">
+                                Comprehensive grading analytics from real database attempts: pass rates, average scores, and top performers.
+                            </p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button onClick={fetchAnalytics} className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer" title="Refresh">
+                            <button onClick={fetchAnalytics} className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer" title="Refresh Analytics">
                                 <RefreshCw size={14} />
                             </button>
                             {analytics && analytics.topPerformers.length > 0 && (
-                                <button onClick={exportCSV}
-                                    className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs flex items-center gap-2 hover:bg-slate-800 transition-all cursor-pointer">
-                                    <Download size={13} /> Export CSV
+                                <button
+                                    onClick={exportCSV}
+                                    className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs flex items-center gap-2 hover:bg-slate-800 transition-all cursor-pointer shadow-sm"
+                                >
+                                    <Download size={13} /> Export Results (CSV)
                                 </button>
                             )}
                         </div>
                     </div>
 
                     {analyticsLoading ? (
-                        <div className="py-10 text-center text-slate-400 flex flex-col items-center gap-2">
-                            <Loader2 size={28} className="animate-spin" />
-                            <div className="text-sm font-semibold">Loading results...</div>
+                        <div className="py-14 text-center text-slate-400 flex flex-col items-center gap-2">
+                            <Loader2 size={28} className="animate-spin text-[#004B93]" />
+                            <div className="text-sm font-semibold">Compiling real performance metrics...</div>
                         </div>
                     ) : !analytics || analytics.summary.totalAttempts === 0 ? (
                         <div className="py-16 text-center">
                             <div className="flex flex-col items-center gap-3 text-slate-400">
-                                <BarChart2 size={40} className="opacity-30" />
-                                <div className="font-bold text-sm">No exam results yet</div>
-                                <div className="text-xs max-w-sm">Results will appear here once students start taking and completing exams.</div>
+                                <BarChart2 size={44} className="opacity-30" />
+                                <div className="font-bold text-sm text-slate-700">No Exam Submissions Recorded Yet</div>
+                                <div className="text-xs max-w-sm">
+                                    Results and analytics will automatically populate once students submit exams.
+                                </div>
                             </div>
                         </div>
                     ) : (
-                        <>
-                            {/* Summary cards */}
+                        <div className="space-y-6">
+                            {/* Summary Cards */}
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div className="p-5 rounded-2xl bg-blue-50/60 border border-blue-100">
+                                <div className="p-5 rounded-2xl bg-blue-50/70 border border-blue-200">
                                     <div className="text-xs font-bold text-blue-700 uppercase">Average Score</div>
                                     <div className="text-3xl font-black text-[#004B93] mt-2">{analytics.summary.avgScore}</div>
-                                    <div className="text-xs text-blue-600 mt-1 font-semibold">Across all exams</div>
+                                    <div className="text-xs text-blue-600 mt-1 font-semibold">Across all student submissions</div>
                                 </div>
-                                <div className="p-5 rounded-2xl bg-emerald-50/60 border border-emerald-100">
-                                    <div className="text-xs font-bold text-emerald-700 uppercase">Pass Rate</div>
+                                <div className="p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+                                    <div className="text-xs font-bold text-emerald-700 uppercase">Overall Pass Rate</div>
                                     <div className="text-3xl font-black text-emerald-700 mt-2">{analytics.summary.passRate}%</div>
-                                    <div className="text-xs text-emerald-600 mt-1 font-semibold">{analytics.summary.totalPassed} of {analytics.summary.totalAttempts} students passed</div>
+                                    <div className="text-xs text-emerald-600 mt-1 font-semibold">
+                                        {analytics.summary.totalPassed} of {analytics.summary.totalAttempts} students qualified
+                                    </div>
                                 </div>
-                                <div className="p-5 rounded-2xl bg-purple-50/60 border border-purple-100">
-                                    <div className="text-xs font-bold text-purple-700 uppercase">Total Attempts</div>
+                                <div className="p-5 rounded-2xl bg-purple-50/70 border border-purple-200">
+                                    <div className="text-xs font-bold text-purple-700 uppercase">Total Submissions</div>
                                     <div className="text-3xl font-black text-purple-700 mt-2">{analytics.summary.totalAttempts}</div>
-                                    <div className="text-xs text-purple-600 mt-1 font-semibold">Total exam attempts recorded</div>
+                                    <div className="text-xs text-purple-600 mt-1 font-semibold">Recorded attempts in database</div>
                                 </div>
                             </div>
 
                             {/* Per-exam breakdown */}
                             {analytics.perExam.length > 0 && (
-                                <div>
-                                    <h3 className="font-extrabold text-sm text-slate-900 mb-3">Results by Exam</h3>
-                                    <div className="overflow-x-auto">
+                                <div className="space-y-3">
+                                    <h3 className="font-extrabold text-sm text-slate-900">Breakdown by Exam</h3>
+                                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
                                                 <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-black text-slate-500 uppercase">
@@ -2014,7 +2526,9 @@ export default function OnlineExamsPage() {
                                                         <td className="py-3 px-4 text-slate-700">{ex.attempts}</td>
                                                         <td className="py-3 px-4 text-slate-700">{ex.avg_score} / {ex.total_marks}</td>
                                                         <td className="py-3 px-4">
-                                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-50 text-blue-700">{ex.pass_rate}</span>
+                                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-50 text-blue-700">
+                                                                {ex.pass_rate}
+                                                            </span>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -2024,11 +2538,13 @@ export default function OnlineExamsPage() {
                                 </div>
                             )}
 
-                            {/* Top performers */}
+                            {/* Top performers leaderboard */}
                             {analytics.topPerformers.length > 0 && (
-                                <div>
-                                    <h3 className="font-extrabold text-sm text-slate-900 mb-3">Top Students</h3>
-                                    <div className="overflow-x-auto">
+                                <div className="space-y-3">
+                                    <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
+                                        <Award size={16} className="text-amber-500" /> Top Students Leaderboard
+                                    </h3>
+                                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
                                                 <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-black text-slate-500 uppercase">
@@ -2036,6 +2552,7 @@ export default function OnlineExamsPage() {
                                                     <th className="py-3 px-4">Student</th>
                                                     <th className="py-3 px-4">Exam</th>
                                                     <th className="py-3 px-4">Score</th>
+                                                    <th className="py-3 px-4">Percentile</th>
                                                     <th className="py-3 px-4">Status</th>
                                                 </tr>
                                             </thead>
@@ -2043,13 +2560,16 @@ export default function OnlineExamsPage() {
                                                 {analytics.topPerformers.map((p, i) => (
                                                     <tr key={i} className="hover:bg-slate-50">
                                                         <td className="py-3 px-4 font-black text-amber-500">
-                                                            {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`}
+                                                            {p.rank === 1 ? '🥇 1st' : p.rank === 2 ? '🥈 2nd' : p.rank === 3 ? '🥉 3rd' : `#${p.rank}`}
                                                         </td>
                                                         <td className="py-3 px-4 font-bold text-slate-900">Student #{p.student_id?.slice(0, 8)}</td>
                                                         <td className="py-3 px-4 text-slate-700">{p.exam_title}</td>
                                                         <td className="py-3 px-4 text-emerald-700 font-black">{p.score} / {p.total_marks}</td>
+                                                        <td className="py-3 px-4 text-blue-700 font-bold">{p.percentile ? `${p.percentile}%` : '—'}</td>
                                                         <td className="py-3 px-4">
-                                                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] capitalize">{p.status}</span>
+                                                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] capitalize">
+                                                                {p.status}
+                                                            </span>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -2058,8 +2578,85 @@ export default function OnlineExamsPage() {
                                     </div>
                                 </div>
                             )}
-                        </>
+                        </div>
                     )}
+
+                    {/* Bottom Nav */}
+                    <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+                        <button
+                            type="button"
+                            onClick={() => setActiveStep(4)}
+                            className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 cursor-pointer"
+                        >
+                            ← Back to Live Monitor
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleNewExam}
+                            className="px-8 py-3 rounded-xl bg-[#004B93] hover:bg-blue-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                        >
+                            <Plus size={15} /> Create Another Exam
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ══════════════════════════════════════════════════════════════ */}
+            {/* MODAL: Exam Patterns Gallery                                   */}
+            {/* ══════════════════════════════════════════════════════════════ */}
+            {showPatternsModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#004B93] flex items-center justify-center">
+                                    <Globe size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-extrabold text-base text-slate-900">Ready-Made Exam Patterns</h3>
+                                    <p className="text-xs text-slate-500">Select a pattern to automatically lock marks, duration, and section structures into Step 1.</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowPatternsModal(false)} className="p-1 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer">
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto pr-1">
+                            {patterns.length === 0 ? (
+                                <div className="py-12 text-center text-slate-400">
+                                    <Globe size={36} className="mx-auto mb-2 opacity-30" />
+                                    <div className="font-bold text-sm">No patterns available</div>
+                                    <div className="text-xs">Ask your administrator to add institutional exam patterns.</div>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {patterns.map(tmpl => (
+                                        <div key={tmpl.id} className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-[#004B93] hover:shadow-md transition-all flex flex-col justify-between space-y-3">
+                                            <div className="space-y-1.5">
+                                                <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-blue-50 text-[#004B93] border border-blue-100">
+                                                    {tmpl.category || 'Standard Pattern'}
+                                                </span>
+                                                <h4 className="font-extrabold text-sm text-slate-900 leading-snug">{tmpl.name}</h4>
+                                            </div>
+                                            <div className="space-y-2.5 pt-2 border-t border-slate-100">
+                                                <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+                                                    <span className="flex items-center gap-1"><Clock size={12} /> {tmpl.duration_minutes} mins</span>
+                                                    <span className="flex items-center gap-1"><Target size={12} /> {tmpl.total_marks} marks</span>
+                                                </div>
+                                                <button
+                                                    onClick={() => handlePatternSelected(tmpl)}
+                                                    className="w-full py-2 rounded-xl bg-[#004B93] hover:bg-blue-800 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                                                >
+                                                    Use This Pattern →
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -2082,12 +2679,16 @@ export default function OnlineExamsPage() {
                         <div>
                             <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Student Test Link</label>
                             <div className="flex gap-2">
-                                <input type="text" readOnly
+                                <input
+                                    type="text"
+                                    readOnly
                                     value={`${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard/exams/online/${showShareModal.id}/play`}
-                                    className="flex-1 px-3 py-2 text-xs font-mono bg-slate-50 rounded-xl border border-slate-200 select-all" />
+                                    className="flex-1 px-3 py-2 text-xs font-mono bg-slate-50 rounded-xl border border-slate-200 select-all"
+                                />
                                 <button
                                     onClick={() => copyLink(`${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard/exams/online/${showShareModal.id}/play`, showShareModal.id)}
-                                    className="px-4 py-2 rounded-xl bg-[#004B93] text-white font-bold text-xs flex items-center gap-1 cursor-pointer">
+                                    className="px-4 py-2 rounded-xl bg-[#004B93] text-white font-bold text-xs flex items-center gap-1 cursor-pointer"
+                                >
                                     <Copy size={13} /> Copy
                                 </button>
                             </div>
@@ -2112,7 +2713,6 @@ export default function OnlineExamsPage() {
             {showScheduleModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col">
-                        {/* Header */}
                         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div className="flex items-center gap-2.5">
                                 <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#004B93] flex items-center justify-center">
@@ -2142,7 +2742,6 @@ export default function OnlineExamsPage() {
                             </div>
                         </div>
 
-                        {/* Slots List */}
                         <div className="flex-1 overflow-y-auto space-y-3 pr-1">
                             <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center gap-2">
                                 <Clock size={14} className="text-[#004B93] shrink-0" />
@@ -2178,7 +2777,6 @@ export default function OnlineExamsPage() {
                                         </button>
                                     </div>
 
-                                    {/* Row 1: Target Class and Section */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-slate-200/60">
                                         <div>
                                             <label className="block text-[10px] text-slate-600 font-bold uppercase mb-1 flex items-center gap-1">
@@ -2187,7 +2785,7 @@ export default function OnlineExamsPage() {
                                             <select
                                                 value={slot.class_name || showScheduleModal?.class_name || 'All Classes'}
                                                 onChange={e => updateModalSlot(slot.id, 'class_name', e.target.value)}
-                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 outline-none"
                                             >
                                                 <option value="All Classes">All Classes</option>
                                                 {availableClasses.map(cls => (
@@ -2202,7 +2800,7 @@ export default function OnlineExamsPage() {
                                             <select
                                                 value={slot.section_name || 'All Sections'}
                                                 onChange={e => updateModalSlot(slot.id, 'section_name', e.target.value)}
-                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 outline-none"
                                             >
                                                 {STANDARD_SECTIONS.map(sec => (
                                                     <option key={sec} value={sec}>{sec}</option>
@@ -2212,7 +2810,6 @@ export default function OnlineExamsPage() {
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                        {/* Start */}
                                         <div>
                                             <label className="block text-[10px] text-slate-600 font-bold uppercase mb-1">
                                                 Start Date & Time
@@ -2221,11 +2818,9 @@ export default function OnlineExamsPage() {
                                                 type="datetime-local"
                                                 value={slot.start}
                                                 onChange={e => updateModalSlot(slot.id, 'start', e.target.value)}
-                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold outline-none"
                                             />
                                         </div>
-
-                                        {/* End (auto-calculated) */}
                                         <div>
                                             <label className="block text-[10px] text-slate-600 font-bold uppercase mb-1">
                                                 End Date & Time <span className="normal-case text-emerald-600 font-black">(auto)</span>
@@ -2234,12 +2829,9 @@ export default function OnlineExamsPage() {
                                                 type="datetime-local"
                                                 value={slot.end}
                                                 readOnly
-                                                title={`Auto-calculated: Start + ${showScheduleModal.duration} mins`}
                                                 className="w-full px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-xs font-semibold text-emerald-800 outline-none cursor-not-allowed"
                                             />
                                         </div>
-
-                                        {/* Allowed students */}
                                         <div>
                                             <label className="block text-[10px] text-slate-600 font-bold uppercase mb-1">
                                                 Allowed Students
@@ -2249,35 +2841,14 @@ export default function OnlineExamsPage() {
                                                 min={1}
                                                 value={slot.max_attempts}
                                                 onChange={e => updateModalSlot(slot.id, 'max_attempts', parseInt(e.target.value) || 1)}
-                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold outline-none"
                                             />
                                         </div>
                                     </div>
-
-                                    {/* Preview chip */}
-                                    {slot.start && slot.end && (
-                                        <div className="flex items-center gap-2 text-[11px] text-slate-600 font-semibold bg-white rounded-xl px-3 py-2 border border-slate-100 flex-wrap">
-                                            <Clock size={12} className="text-[#004B93]" />
-                                            <span>
-                                                {new Date(slot.start).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                            <span className="text-slate-400 font-normal">→</span>
-                                            <span>
-                                                {new Date(slot.end).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-[#004B93] border border-blue-100">
-                                                {slot.class_name || 'All Classes'} · {slot.section_name || 'All Sections'}
-                                            </span>
-                                            <span className="ml-auto text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                                                <Users size={11} /> {slot.max_attempts} seats
-                                            </span>
-                                        </div>
-                                    )}
                                 </div>
                             ))}
                         </div>
 
-                        {/* Footer */}
                         <div className="flex gap-3 pt-3 border-t border-slate-100">
                             <button
                                 type="button"
@@ -2317,9 +2888,13 @@ export default function OnlineExamsPage() {
 
                         <div className="flex items-center gap-3">
                             <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Add to Section</label>
-                                <input type="text" value={qbankSection} onChange={e => setQbankSection(e.target.value)}
-                                    className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold outline-none" />
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Target Section</label>
+                                <input
+                                    type="text"
+                                    value={qbankSection}
+                                    onChange={e => setQbankSection(e.target.value)}
+                                    className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold outline-none"
+                                />
                             </div>
                             <div className="ml-auto text-xs text-slate-500">
                                 {qbankQuestions.length} questions available
@@ -2329,29 +2904,39 @@ export default function OnlineExamsPage() {
                         <div className="flex-1 overflow-y-auto space-y-2 pr-1">
                             {qbankLoading ? (
                                 <div className="py-8 text-center text-slate-400">
-                                    <Loader2 size={24} className="animate-spin mx-auto mb-2" />
+                                    <Loader2 size={24} className="animate-spin mx-auto mb-2 text-[#004B93]" />
                                     <div className="text-sm">Loading questions...</div>
                                 </div>
                             ) : qbankQuestions.length === 0 ? (
                                 <div className="py-8 text-center text-slate-400">
                                     <BookOpen size={28} className="mx-auto mb-2 opacity-30" />
                                     <div className="text-sm font-bold">No questions found</div>
-                                    <div className="text-xs">Add questions to your Question Bank first, or select a subject above.</div>
+                                    <div className="text-xs">Add questions to your Question Bank first, or select a subject in Step 1.</div>
                                 </div>
                             ) : (
                                 qbankQuestions.map((q: any) => {
                                     const qText = q.question_text?.en || (typeof q.question_text === 'string' ? q.question_text : 'Question')
                                     const isSelected = selectedQBankIds.has(q.id)
                                     return (
-                                        <div key={q.id}
-                                            onClick={() => { const s = new Set(selectedQBankIds); s.has(q.id) ? s.delete(q.id) : s.add(q.id); setSelectedQBankIds(s) }}
-                                            className={`p-3.5 rounded-xl border cursor-pointer transition-all ${isSelected ? 'bg-blue-50 border-blue-300 shadow-sm' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`}>
+                                        <div
+                                            key={q.id}
+                                            onClick={() => {
+                                                const s = new Set(selectedQBankIds)
+                                                s.has(q.id) ? s.delete(q.id) : s.add(q.id)
+                                                setSelectedQBankIds(s)
+                                            }}
+                                            className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                                                isSelected ? 'bg-blue-50 border-blue-300 shadow-sm' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                                            }`}
+                                        >
                                             <div className="flex items-start gap-3">
                                                 <input type="checkbox" checked={isSelected} onChange={() => {}} className="mt-0.5 w-4 h-4 text-[#004B93] rounded" />
                                                 <div className="flex-1">
                                                     <div className="text-xs font-bold text-slate-900 leading-snug">{qText}</div>
                                                     <div className="flex items-center gap-2 mt-1">
-                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${q.difficulty === 'easy' ? 'bg-emerald-50 text-emerald-700' : q.difficulty === 'hard' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>
+                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                                                            q.difficulty === 'easy' ? 'bg-emerald-50 text-emerald-700' : q.difficulty === 'hard' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
+                                                        }`}>
                                                             {q.difficulty || 'medium'}
                                                         </span>
                                                         <span className="text-[10px] text-slate-400">{q.type || 'objective'}</span>
@@ -2366,9 +2951,12 @@ export default function OnlineExamsPage() {
 
                         <div className="flex gap-3 pt-3 border-t border-slate-100">
                             <button onClick={() => setShowQBankModal(false)} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs cursor-pointer">Cancel</button>
-                            <button onClick={handleAddFromBank} disabled={selectedQBankIds.size === 0}
-                                className="flex-1 py-2.5 rounded-xl bg-[#004B93] text-white font-bold text-xs cursor-pointer disabled:opacity-40 shadow-sm">
-                                Add {selectedQBankIds.size > 0 ? `${selectedQBankIds.size} ` : ''}Questions to Exam
+                            <button
+                                onClick={handleAddFromBank}
+                                disabled={selectedQBankIds.size === 0}
+                                className="flex-1 py-2.5 rounded-xl bg-[#004B93] text-white font-bold text-xs cursor-pointer disabled:opacity-40 shadow-sm"
+                            >
+                                Add {selectedQBankIds.size > 0 ? `${selectedQBankIds.size} ` : ''}Questions
                             </button>
                         </div>
                     </div>
@@ -2386,8 +2974,8 @@ export default function OnlineExamsPage() {
                                 <div className="flex items-center gap-2.5">
                                     <Shield size={20} className="text-[#004B93]" />
                                     <div>
-                                        <h3 className="font-extrabold text-sm text-slate-900">Exam Security Rules</h3>
-                                        <p className="text-xs text-slate-500">Default settings applied to new exams</p>
+                                        <h3 className="font-extrabold text-sm text-slate-900">Exam Security Suite</h3>
+                                        <p className="text-xs text-slate-500">Global proctoring rules applied to online exams</p>
                                     </div>
                                 </div>
                                 <button onClick={() => setShowSecurityDrawer(false)} className="p-1 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"><X size={18} /></button>
@@ -2410,17 +2998,20 @@ export default function OnlineExamsPage() {
                                             type="checkbox"
                                             checked={(security as any)[setting.key]}
                                             onChange={e => setSecurity({ ...security, [setting.key]: e.target.checked })}
-                                            className="w-5 h-5 text-[#004B93] rounded" />
+                                            className="w-5 h-5 text-[#004B93] rounded"
+                                        />
                                     </div>
                                 ))}
 
                                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                                     <div className="font-bold text-slate-900 text-sm">Max Tab Switches Allowed</div>
                                     <div className="text-slate-500 text-[11px]">Exam auto-submits after this many tab switches</div>
-                                    <select value={security.maxTabSwitches}
+                                    <select
+                                        value={security.maxTabSwitches}
                                         onChange={e => setSecurity({ ...security, maxTabSwitches: parseInt(e.target.value) })}
-                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-bold text-xs cursor-pointer outline-none">
-                                        <option value={1}>1 (Very Strict)</option>
+                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-bold text-xs cursor-pointer outline-none"
+                                    >
+                                        <option value={1}>1 (Strict Lockdown)</option>
                                         <option value={3}>3 (Standard)</option>
                                         <option value={5}>5 (Relaxed)</option>
                                         <option value={999}>No Limit (Practice Mode)</option>
@@ -2430,8 +3021,10 @@ export default function OnlineExamsPage() {
                         </div>
 
                         <div className="pt-6 border-t border-slate-100">
-                            <button onClick={() => { setShowSecurityDrawer(false); showToast('Security rules saved!', true) }}
-                                className="w-full py-3 rounded-xl bg-[#004B93] text-white font-bold text-xs cursor-pointer shadow-md">
+                            <button
+                                onClick={() => { setShowSecurityDrawer(false); showToast('Security rules saved!', true) }}
+                                className="w-full py-3 rounded-xl bg-[#004B93] text-white font-bold text-xs cursor-pointer shadow-md"
+                            >
                                 Save Security Rules
                             </button>
                         </div>
@@ -2453,7 +3046,7 @@ export default function OnlineExamsPage() {
                             </div>
                         </div>
                         <p className="text-xs text-slate-600 bg-red-50 p-3 rounded-xl border border-red-100">
-                            You are about to permanently delete <span className="font-bold text-slate-900">"{showDeleteConfirm.title}"</span>. All student attempts and questions linked to this exam will also be removed.
+                            You are about to permanently delete <span className="font-bold text-slate-900">"{showDeleteConfirm.title}"</span>. All student attempts and question mappings will be removed.
                         </p>
                         <div className="flex gap-3">
                             <button onClick={() => setShowDeleteConfirm(null)} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs cursor-pointer">Cancel</button>
@@ -2469,15 +3062,14 @@ export default function OnlineExamsPage() {
             {aiGenModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
                     <div className="bg-white rounded-3xl max-w-lg w-full p-7 space-y-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200">
-                        {/* Header */}
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#004B93]">
                                     <Sparkles size={24} className={aiGenError ? '' : 'animate-pulse text-[#004B93]'} />
                                 </div>
                                 <div>
-                                    <h3 className="font-extrabold text-base text-slate-900">AI Question Preparation Engine</h3>
-                                    <p className="text-xs text-slate-500">{aiGenDetail || 'Indian Curriculum Standard Agent'}</p>
+                                    <h3 className="font-extrabold text-base text-slate-900">AI Curriculum Question Engine</h3>
+                                    <p className="text-xs text-slate-500">{aiGenDetail || 'Indian Curriculum Standard Generator'}</p>
                                 </div>
                             </div>
                             {aiGenError && (
@@ -2495,7 +3087,9 @@ export default function OnlineExamsPage() {
                             </div>
                             <div className="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden p-0.5 border border-slate-200">
                                 <div
-                                    className={`h-full rounded-full transition-all duration-500 ${aiGenError ? 'bg-red-500' : 'bg-gradient-to-r from-[#004B93] via-blue-600 to-emerald-500'}`}
+                                    className={`h-full rounded-full transition-all duration-500 ${
+                                        aiGenError ? 'bg-red-500' : 'bg-gradient-to-r from-[#004B93] via-blue-600 to-emerald-500'
+                                    }`}
                                     style={{ width: `${aiGenProgress}%` }}
                                 />
                             </div>
@@ -2537,7 +3131,7 @@ export default function OnlineExamsPage() {
                             </div>
                         </div>
 
-                        {/* Error Alert if any */}
+                        {/* Error Alert */}
                         {aiGenError && (
                             <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5">
                                 <AlertCircle size={18} className="shrink-0 text-red-600 mt-0.5" />
@@ -2561,7 +3155,7 @@ export default function OnlineExamsPage() {
                         ) : (
                             <div className="flex items-center justify-center gap-2 text-xs text-slate-400 font-medium pt-1">
                                 <Loader2 size={13} className="animate-spin text-[#004B93]" />
-                                <span>Generating syllabus-aligned questions in simple, clean English...</span>
+                                <span>Generating syllabus-aligned questions in clean, natural English...</span>
                             </div>
                         )}
                     </div>

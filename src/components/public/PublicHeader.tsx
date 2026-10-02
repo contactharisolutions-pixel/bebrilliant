@@ -80,11 +80,9 @@ export const PublicHeader = () => {
         position: 'sticky',
         top: 0,
         zIndex: 1000,
-        background: 'rgba(255, 255, 255, 0.94)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: scrolled ? '1px solid #E2E8F0' : '1px solid transparent',
-        boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.06)' : 'none',
+        background: 'rgb(255, 255, 255)',
+        borderBottom: scrolled ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid transparent',
+        boxShadow: scrolled ? '0 4px 16px rgba(0, 0, 0, 0.04)' : 'none',
         transition: 'all 0.25s ease',
     }
 

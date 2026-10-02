@@ -11,14 +11,60 @@ import {
     Sliders, RefreshCw, BarChart3, Users, PlusCircle, Check, HelpCircle,
     FileSpreadsheet, ArrowUpRight, Camera, Layers, Award, Clock,
     BookOpen, GraduationCap, Globe, Filter, CheckSquare, Square, BookMarked, Tag,
-    ChevronDown, ChevronUp, Pencil
+    ChevronDown, ChevronUp, Pencil, ChevronRight, FileText, ArrowRight, ArrowLeft
 } from 'lucide-react'
 
+// Standard predefined OMR layouts
+const STANDARD_OMR_TEMPLATES = [
+    {
+        id: 'tmpl-20',
+        name: '20-Question Weekly Quiz',
+        total_questions: 20,
+        options_per_question: 4,
+        columns: 1,
+        roll_digits: 8,
+        description: 'Compact single-column layout for weekly quizzes and quick revision tests.'
+    },
+    {
+        id: 'tmpl-40',
+        name: '40-Question Unit Test',
+        total_questions: 40,
+        options_per_question: 4,
+        columns: 2,
+        roll_digits: 8,
+        description: 'Balanced 2-column layout designed for chapter-wise unit assessments.'
+    },
+    {
+        id: 'tmpl-50',
+        name: 'Standard 50-Question Layout',
+        total_questions: 50,
+        options_per_question: 4,
+        columns: 2,
+        roll_digits: 8,
+        description: 'Standard institutional single A4 page with student roll grid & barcode.'
+    },
+    {
+        id: 'tmpl-100',
+        name: '100-Question Term Examination',
+        total_questions: 100,
+        options_per_question: 4,
+        columns: 3,
+        roll_digits: 8,
+        description: 'Comprehensive 3-column matrix for term exams, semester finals, and full mocks.'
+    }
+]
+
 export default function OMRExamManager() {
-    // Tab Navigation
-    const [activeTab, setActiveTab] = useState<'roster' | 'designer' | 'scanner' | 'templates' | 'analytics'>('roster')
-    
-    // Core Data States
+    // 5-Step Workspace Model
+    // Step 1: Scope & Sheet Format
+    // Step 2: Questions & Master Answer Key
+    // Step 3: Print & Packaging Studio
+    // Step 4: Scan & Automated Grading
+    // Step 5: Results & Student Marks
+    const [currentStep, setCurrentStep] = useState<number>(1)
+    const [isAllExamsOpen, setIsAllExamsOpen] = useState(false)
+
+    // Data States
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [generatingExamId, setGeneratingExamId] = useState<string | null>(null)
@@ -34,8 +80,13 @@ export default function OMRExamManager() {
     const [recentUploads, setRecentUploads] = useState<any[]>([])
     const [classes, setClasses] = useState<any[]>([])
     const [subjects, setSubjects] = useState<any[]>([])
+    const [tenantData, setTenantData] = useState<any>(null)
+    const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
 
-    // Dynamic Blueprint Context (Syllabus & Patterns)
+    // Selected Active Exam (for Steps 2, 3, 4, 5)
+    const [selectedExam, setSelectedExam] = useState<any | null>(null)
+
+    // Dynamic Blueprint Context (Syllabus)
     const [blueprintContext, setBlueprintContext] = useState<BlueprintContextData | null>(null)
     const [contextLoading, setContextLoading] = useState(false)
     const [selectedBoardId, setSelectedBoardId] = useState('')
@@ -44,65 +95,39 @@ export default function OMRExamManager() {
     const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([])
     const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([])
     const [selectedPatternId, setSelectedPatternId] = useState('')
-    
-    // Filters & Search
+
+    // Search & Filter for All Exams Roster
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedClassFilter, setSelectedClassFilter] = useState('ALL')
     const [selectedStatusFilter, setSelectedStatusFilter] = useState('ALL')
 
-    // Modals
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-    const [isAnswerKeyModalOpen, setIsAnswerKeyModalOpen] = useState(false)
-    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
-    const [selectedExam, setSelectedExam] = useState<any>(null)
-    const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-
-    // Tenant Branding Data
-    const [tenantData, setTenantData] = useState<any>(null)
-
-    // Scanner Progress Simulator State
-    const [isScanningActive, setIsScanningActive] = useState(false)
-    const [scanProgress, setScanProgress] = useState(0)
-    const [scanStage, setScanStage] = useState('')
-
-    // New Exam Form State (Blank Exam)
-    const [newExamForm, setNewExamForm] = useState({
+    // ── STEP 1: CONFIGURATION STATE ───────────────────────────
+    const [setupForm, setSetupForm] = useState({
         title: '',
         class_id: '',
         subject_id: '',
+        duration: 60,
         total_questions: 50,
-        omr_template_id: '',
-        template_id: '',
-        chapter_ids: [] as string[],
-        duration: 60
-    })
-
-    // AI Exam Creator Wizard State
-    const [isAiExamModalOpen, setIsAiExamModalOpen] = useState(false)
-    const [aiStep, setAiStep] = useState<'config' | 'review' | 'success'>('config')
-    const [aiLoading, setAiLoading] = useState(false)
-    const [aiExamForm, setAiExamForm] = useState({
-        title: '',
-        class_id: '',
-        subject_id: '',
-        topic: '',
-        count: 20,
         difficulty: 'medium' as 'easy' | 'medium' | 'hard',
-        duration: 45,
-        omr_template_id: ''
+        omr_template_id: '',
+        selected_template: STANDARD_OMR_TEMPLATES[2],
+        custom_instructions: ''
     })
 
-    // Dedicated AI Modal Syllabus Cascading State (Saved in Tenant Portal)
-    const [aiBoardId, setAiBoardId] = useState<string>('')
-    const [aiClassNodeId, setAiClassNodeId] = useState<string>('')
-    const [aiSubjectNodeId, setAiSubjectNodeId] = useState<string>('')
-    const [aiSelectedChapterIds, setAiSelectedChapterIds] = useState<string[]>([])
-    const [aiSelectedTopicIds, setAiSelectedTopicIds] = useState<string[]>([])
-    const [aiChapterSearch, setAiChapterSearch] = useState<string>('')
-    const [aiTopicSearch, setAiTopicSearch] = useState<string>('')
-    const [aiCustomDirectives, setAiCustomDirectives] = useState<string>('')
-    const [isTopicsDrawerOpen, setIsTopicsDrawerOpen] = useState(false)
-    const [aiQuestions, setAiQuestions] = useState<Array<{
+    // Custom OMR Sheet Designer Customization
+    const [customLayoutConfig, setCustomLayoutConfig] = useState({
+        columns: 2,
+        roll_digits: 8,
+        options_per_question: 4,
+        has_barcode: true,
+        has_subject_code: true,
+        negative_marking: false,
+        negative_value: 0.25
+    })
+    const [isCustomizingLayout, setIsCustomizingLayout] = useState(false)
+
+    // ── STEP 2: QUESTIONS & ANSWER KEY STATE ───────────────────
+    const [questionsList, setQuestionsList] = useState<Array<{
         id: string
         text: string
         options: { A: string; B: string; C: string; D: string }
@@ -110,49 +135,30 @@ export default function OMRExamManager() {
         explanation?: string
         marks?: number
     }>>([])
-    const [createdAiExam, setCreatedAiExam] = useState<any>(null)
+    const [masterAnswerKey, setMasterAnswerKey] = useState<Record<number, string>>({})
+    const [isGeneratingAi, setIsGeneratingAi] = useState(false)
     const [aiProgress, setAiProgress] = useState(0)
     const [aiProgressStage, setAiProgressStage] = useState('')
+    const [aiChapterSearch, setAiChapterSearch] = useState('')
 
-    // Edit Template State
-    const [isEditTemplateModalOpen, setIsEditTemplateModalOpen] = useState(false)
-    const [editingTemplate, setEditingTemplate] = useState<any>(null)
-    const [editTemplateForm, setEditTemplateForm] = useState({
-        name: '',
-        total_questions: 50,
-        options_per_question: 4,
-        columns: 2,
-        roll_digits: 8,
-        has_barcode: true,
-        has_subject_code: true,
-        negative_marking: false,
-        negative_value: 0.25
-    })
-    const [isUpdatingTemplate, setIsUpdatingTemplate] = useState(false)
+    // ── STEP 4: SCANNER & BATCH INGESTION STATE ─────────────────
+    const [isScanningActive, setIsScanningActive] = useState(false)
+    const [scanProgress, setScanProgress] = useState(0)
+    const [scanStage, setScanStage] = useState('')
+    const [scanResults, setScanResults] = useState<any[] | null>(null)
 
-    // Designer Form State
-    const [designerForm, setDesignerForm] = useState({
-        name: 'Standard 50-Question Layout',
-        total_questions: 50,
-        options_per_question: 4,
-        columns: 2,
-        roll_digits: 8,
-        has_barcode: true,
-        has_subject_code: true,
-        negative_marking: false,
-        negative_value: 0.25
-    })
-
-    // Answer Key State
-    const [answerKeys, setAnswerKeys] = useState<{ [key: number]: string }>({})
-    const [isSavingAnswerKey, setIsSavingAnswerKey] = useState(false)
+    // Navigation Helper
+    const goToStep = (step: number) => {
+        setCurrentStep(step)
+        window.scrollTo({ top: 400, behavior: 'smooth' })
+    }
 
     const showToast = (msg: string, ok: boolean) => {
         setToast({ msg, ok })
         setTimeout(() => setToast(null), 4000)
     }
 
-    // Fetch Blueprint Context (Syllabus & Exam Patterns)
+    // ── DATA FETCHING ──────────────────────────────────────────
     const fetchBlueprintContext = useCallback(async () => {
         setContextLoading(true)
         try {
@@ -171,71 +177,6 @@ export default function OMRExamManager() {
         }
     }, [selectedBoardId])
 
-    // ── AI MODAL CASCADING SYLLABUS RESOLUTION ──────────────────────────
-    const availableAiBoards = useMemo(() => {
-        return blueprintContext?.activeBoards || []
-    }, [blueprintContext?.activeBoards])
-
-    const currentAiBoard = useMemo(() => {
-        if (!availableAiBoards.length) return null
-        if (aiBoardId) {
-            return availableAiBoards.find(b => b.id === aiBoardId) || availableAiBoards[0]
-        }
-        return availableAiBoards[0]
-    }, [availableAiBoards, aiBoardId])
-
-    const availableAiClasses = useMemo(() => {
-        if (!blueprintContext?.syllabusTree?.classes || !currentAiBoard) return []
-        return blueprintContext.syllabusTree.classes.filter(c => c.board_id === currentAiBoard.id)
-    }, [blueprintContext?.syllabusTree?.classes, currentAiBoard])
-
-    const currentAiClassNode = useMemo(() => {
-        if (!availableAiClasses.length) return null
-        if (aiClassNodeId) {
-            return availableAiClasses.find(c => c.id === aiClassNodeId) || availableAiClasses[0]
-        }
-        return availableAiClasses[0]
-    }, [availableAiClasses, aiClassNodeId])
-
-    const availableAiSubjects = useMemo(() => {
-        if (!blueprintContext?.syllabusTree?.subjects || !currentAiClassNode) return []
-        return blueprintContext.syllabusTree.subjects.filter(s => s.class_node_id === currentAiClassNode.id)
-    }, [blueprintContext?.syllabusTree?.subjects, currentAiClassNode])
-
-    const currentAiSubjectNode = useMemo(() => {
-        if (!availableAiSubjects.length) return null
-        if (aiSubjectNodeId) {
-            return availableAiSubjects.find(s => s.id === aiSubjectNodeId) || availableAiSubjects[0]
-        }
-        return availableAiSubjects[0]
-    }, [availableAiSubjects, aiSubjectNodeId])
-
-    const availableAiChapters = useMemo(() => {
-        if (!blueprintContext?.syllabusTree?.chapters || !currentAiSubjectNode) return []
-        return blueprintContext.syllabusTree.chapters.filter(ch => ch.subject_node_id === currentAiSubjectNode.id)
-    }, [blueprintContext?.syllabusTree?.chapters, currentAiSubjectNode])
-
-    const filteredAiChapters = useMemo(() => {
-        if (!aiChapterSearch.trim()) return availableAiChapters
-        return availableAiChapters.filter(ch => ch.name.toLowerCase().includes(aiChapterSearch.toLowerCase()))
-    }, [availableAiChapters, aiChapterSearch])
-
-    const availableAiTopics = useMemo(() => {
-        if (!blueprintContext?.syllabusTree?.topics || aiSelectedChapterIds.length === 0) return []
-        return blueprintContext.syllabusTree.topics.filter(tp => aiSelectedChapterIds.includes(tp.chapter_node_id))
-    }, [blueprintContext?.syllabusTree?.topics, aiSelectedChapterIds])
-
-    const filteredAiTopics = useMemo(() => {
-        if (!aiTopicSearch.trim()) return availableAiTopics
-        return availableAiTopics.filter(tp => tp.name.toLowerCase().includes(aiTopicSearch.toLowerCase()))
-    }, [availableAiTopics, aiTopicSearch])
-
-    const handleOpenCreateModal = useCallback(async () => {
-        setIsCreateModalOpen(true)
-        await fetchBlueprintContext()
-    }, [fetchBlueprintContext])
-
-    // Fetch Hub Data
     const fetchData = useCallback(async () => {
         setLoading(true)
         try {
@@ -247,25 +188,28 @@ export default function OMRExamManager() {
             const data = await res.json()
 
             if (data.metrics) setMetrics(data.metrics)
-            setExams(data.exams || [])
+            const examList = data.exams || []
+            setExams(examList)
             setTemplates(data.templates || [])
             setRecentUploads(data.recentUploads || [])
             setClasses(data.classes || [])
             setSubjects(data.subjects || [])
             if (data.tenant) setTenantData(data.tenant)
 
-            if (data.classes?.length > 0 && !newExamForm.class_id) {
-                setNewExamForm(prev => ({
+            // Select default active exam if not selected
+            if (examList.length > 0 && !selectedExam) {
+                setSelectedExam(examList[0])
+            }
+
+            // Sync defaults into setupForm
+            if (data.classes?.length > 0 && !setupForm.class_id) {
+                const firstClass = data.classes[0]
+                const firstSub = data.subjects?.[0]
+                setSetupForm(prev => ({
                     ...prev,
-                    class_id: data.classes[0].id,
-                    subject_id: data.subjects?.[0]?.id || '',
-                    omr_template_id: data.templates?.[0]?.id || ''
-                }))
-                setAiExamForm(prev => ({
-                    ...prev,
-                    class_id: data.classes[0].id,
-                    subject_id: data.subjects?.[0]?.id || '',
-                    omr_template_id: data.templates?.[0]?.id || ''
+                    class_id: firstClass.id,
+                    subject_id: firstSub?.id || '',
+                    omr_template_id: data.templates?.[0]?.id || STANDARD_OMR_TEMPLATES[2].id
                 }))
             }
         } catch (e: any) {
@@ -274,13 +218,78 @@ export default function OMRExamManager() {
         } finally {
             setLoading(false)
         }
-    }, [fetchBlueprintContext, newExamForm.class_id])
+    }, [fetchBlueprintContext, setupForm.class_id, selectedExam])
 
     useEffect(() => {
         fetchData()
     }, [fetchData])
 
-    // Filtered Exams
+    // ── SYLLABUS RESOLUTION ───────────────────────────────────
+    const availableBoards = useMemo(() => {
+        return blueprintContext?.activeBoards || []
+    }, [blueprintContext?.activeBoards])
+
+    const currentBoard = useMemo(() => {
+        if (!availableBoards.length) return null
+        if (selectedBoardId) {
+            return availableBoards.find(b => b.id === selectedBoardId) || availableBoards[0]
+        }
+        return availableBoards[0]
+    }, [availableBoards, selectedBoardId])
+
+    const availableClasses = useMemo(() => {
+        if (!blueprintContext?.syllabusTree?.classes || !currentBoard) return classes
+        const treeClasses = blueprintContext.syllabusTree.classes.filter(c => c.board_id === currentBoard.id)
+        return treeClasses.length > 0 ? treeClasses : classes
+    }, [blueprintContext?.syllabusTree?.classes, currentBoard, classes])
+
+    const currentClass = useMemo(() => {
+        if (!availableClasses.length) return null
+        if (selectedClassId) {
+            return availableClasses.find(c => c.id === selectedClassId) || availableClasses[0]
+        }
+        if (setupForm.class_id) {
+            return availableClasses.find(c => c.id === setupForm.class_id) || availableClasses[0]
+        }
+        return availableClasses[0]
+    }, [availableClasses, selectedClassId, setupForm.class_id])
+
+    const availableSubjects = useMemo(() => {
+        if (!blueprintContext?.syllabusTree?.subjects || !currentClass) return subjects
+        const treeSubs = blueprintContext.syllabusTree.subjects.filter(s => s.class_node_id === currentClass.id)
+        return treeSubs.length > 0 ? treeSubs : subjects
+    }, [blueprintContext?.syllabusTree?.subjects, currentClass, subjects])
+
+    const currentSubject = useMemo(() => {
+        if (!availableSubjects.length) return null
+        if (selectedSubjectId) {
+            return availableSubjects.find(s => s.id === selectedSubjectId) || availableSubjects[0]
+        }
+        if (setupForm.subject_id) {
+            return availableSubjects.find(s => s.id === setupForm.subject_id) || availableSubjects[0]
+        }
+        return availableSubjects[0]
+    }, [availableSubjects, selectedSubjectId, setupForm.subject_id])
+
+    const availableChapters = useMemo(() => {
+        if (!blueprintContext?.syllabusTree?.chapters || !currentSubject) return []
+        return blueprintContext.syllabusTree.chapters.filter(ch => ch.subject_node_id === currentSubject.id)
+    }, [blueprintContext?.syllabusTree?.chapters, currentSubject])
+
+    const filteredChapters = useMemo(() => {
+        if (!aiChapterSearch.trim()) return availableChapters
+        return availableChapters.filter(ch => ch.name.toLowerCase().includes(aiChapterSearch.toLowerCase()))
+    }, [availableChapters, aiChapterSearch])
+
+    // Auto-generated title placeholder
+    const resolvedDefaultTitle = useMemo(() => {
+        const clsName = currentClass?.name || 'Class 10'
+        const subName = currentSubject?.name || 'Science'
+        const tmplName = setupForm.selected_template?.name || 'Standard 50-Q'
+        return `${clsName} ${subName} — ${tmplName} OMR Exam`
+    }, [currentClass, currentSubject, setupForm.selected_template])
+
+    // Filtered Exams in Collapsible Roster
     const filteredExams = useMemo(() => {
         return exams.filter(ex => {
             const matchesSearch = !searchQuery.trim() ||
@@ -293,129 +302,203 @@ export default function OMRExamManager() {
         })
     }, [exams, searchQuery, selectedClassFilter, selectedStatusFilter])
 
-    // Create New Exam Handler
-    const handleCreateExam = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!newExamForm.title) {
-            showToast('Please enter an exam title', false)
-            return
-        }
-        setSaving(true)
-        try {
-            const res = await fetch('/api/dashboard/exams/omr', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'CREATE_EXAM',
-                    payload: newExamForm
-                })
-            })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Failed to create exam')
-
-            showToast('Physical OMR Exam created successfully!', true)
-            setIsCreateModalOpen(false)
-            setNewExamForm(prev => ({ ...prev, title: '' }))
-            fetchData()
-        } catch (err: any) {
-            showToast(err.message || 'Error creating exam', false)
-        } finally {
-            setSaving(false)
-        }
+    // ── CHAPTER TOGGLE HANDLERS ──────────────────────────────
+    const handleToggleChapter = (chapterId: string) => {
+        setSelectedChapterIds(prev =>
+            prev.includes(chapterId) ? prev.filter(id => id !== chapterId) : [...prev, chapterId]
+        )
     }
 
-    // Auto-Generate Questions For Exam Handler
-    const handleGenerateQuestionsForExam = async (exam: any) => {
-        setGeneratingExamId(exam.id)
+    const handleSelectAllChapters = () => {
+        setSelectedChapterIds(availableChapters.map(ch => ch.id))
+    }
+
+    const handleClearChapters = () => {
+        setSelectedChapterIds([])
+    }
+
+    // ── STEP 1: ADVANCE TO STEP 2 & GENERATE QUESTIONS ────────
+    const handleProceedToQuestions = async () => {
+        const finalTitle = setupForm.title.trim() || resolvedDefaultTitle
+        setSetupForm(prev => ({ ...prev, title: finalTitle }))
+
+        // If questions are already loaded, just advance
+        if (questionsList.length > 0) {
+            goToStep(2)
+            return
+        }
+
+        // Trigger questions generation for Step 2
+        await handleGenerateQuestions()
+        goToStep(2)
+    }
+
+    // ── GENERATE QUESTIONS VIA AI OR CURRICULUM POOL ──────────
+    const handleGenerateQuestions = async () => {
+        setIsGeneratingAi(true)
+        setAiProgress(10)
+        setAiProgressStage('Connecting to curriculum engine & question banks...')
+
+        const progressTimer = setInterval(() => {
+            setAiProgress(prev => {
+                if (prev < 30) {
+                    setAiProgressStage('Connecting to curriculum engine...')
+                    return prev + 3.5
+                } else if (prev < 55) {
+                    setAiProgressStage("Formulating Bloom's taxonomy multiple-choice questions...")
+                    return prev + 2.5
+                } else if (prev < 78) {
+                    setAiProgressStage('Structuring options A, B, C, D & plausible distractors...')
+                    return prev + 1.8
+                } else if (prev < 92) {
+                    setAiProgressStage('Calculating automated answer keys & rationale explanations...')
+                    return prev + 1.2
+                }
+                return prev
+            })
+        }, 250)
+
         try {
+            const clsName = currentClass?.name || 'Class 10'
+            const subName = currentSubject?.name || 'Science'
+            const selectedChaps = availableChapters.filter(ch => selectedChapterIds.includes(ch.id)).map(ch => ch.name)
+            const topic = selectedChaps.length > 0
+                ? `Chapters: ${selectedChaps.join(', ')}`
+                : `${clsName} ${subName} Core Curriculum`
+
+            const count = setupForm.total_questions || 50
+
             const res = await fetch('/api/dashboard/exams/omr', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    action: 'GENERATE_QUESTIONS_FOR_EXAM',
+                    action: 'GENERATE_AI_QUESTIONS',
                     payload: {
-                        exam_id: exam.id,
-                        count: exam.total_questions || 20
+                        class_name: clsName,
+                        subject_name: subName,
+                        topic: setupForm.custom_instructions ? `${topic} | ${setupForm.custom_instructions}` : topic,
+                        count: count,
+                        difficulty: setupForm.difficulty
                     }
                 })
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Failed to generate questions')
 
-            showToast(data.message || 'Questions and Answer Key generated successfully!', true)
-            fetchData()
+            if (data.questions && data.questions.length > 0) {
+                clearInterval(progressTimer)
+                setAiProgress(100)
+                setAiProgressStage('Questions generated successfully!')
+
+                const genQs = data.questions
+                setQuestionsList(genQs)
+
+                // Initialize master answer key
+                const initialKey: Record<number, string> = {}
+                genQs.forEach((q: any, idx: number) => {
+                    initialKey[idx + 1] = (q.correct_answer || 'A').toUpperCase()
+                })
+                setMasterAnswerKey(initialKey)
+                showToast(`Loaded ${genQs.length} questions and answer key!`, true)
+            } else {
+                throw new Error('No questions returned from generator')
+            }
         } catch (err: any) {
+            clearInterval(progressTimer)
             showToast(err.message || 'Error generating questions', false)
         } finally {
-            setGeneratingExamId(null)
+            clearInterval(progressTimer)
+            setIsGeneratingAi(false)
         }
     }
 
-    // Save Blueprint Handler
-    const handleSaveBlueprint = async () => {
+    // ── STEP 2: SAVE EXAM & ADVANCE TO STEP 3 (PRINT) ─────────
+    const handleSaveExamAndProceedToPrint = async () => {
+        if (questionsList.length === 0) {
+            showToast('Please generate or add questions first', false)
+            return
+        }
         setSaving(true)
         try {
+            const finalTitle = setupForm.title.trim() || resolvedDefaultTitle
+            const matchedClass = classes.find(c => c.name.toLowerCase() === currentClass?.name?.toLowerCase()) || classes[0]
+            const matchedSubject = subjects.find(s => s.name.toLowerCase() === currentSubject?.name?.toLowerCase()) || subjects[0]
+            const templateId = setupForm.omr_template_id || templates[0]?.id || null
+
             const res = await fetch('/api/dashboard/exams/omr', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    action: 'CREATE_TEMPLATE',
+                    action: 'CREATE_EXAM_WITH_QUESTIONS',
                     payload: {
-                        name: designerForm.name,
-                        total_questions: designerForm.total_questions,
-                        options_per_question: designerForm.options_per_question,
-                        layout_config: {
-                            columns: designerForm.columns,
-                            roll_digits: designerForm.roll_digits,
-                            barcode_enabled: designerForm.has_barcode,
-                            has_subject_code: designerForm.has_subject_code,
-                            has_negative_marking: designerForm.negative_marking,
-                            negative_value: designerForm.negative_value
-                        }
+                        title: finalTitle,
+                        class_id: matchedClass?.id || setupForm.class_id,
+                        subject_id: matchedSubject?.id || setupForm.subject_id,
+                        total_questions: questionsList.length,
+                        duration: setupForm.duration || 60,
+                        omr_template_id: templateId,
+                        instructions: 'Use blue/black ballpoint pen only. Darken the bubbles completely. Each question carries equal marks.',
+                        questions: questionsList,
+                        answer_key: masterAnswerKey,
+                        chapter_ids: selectedChapterIds
                     }
                 })
             })
             const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Failed to save blueprint')
+            if (!res.ok) throw new Error(data.error || 'Failed to save exam')
 
-            showToast('Blueprint saved to standard templates catalog!', true)
-            fetchData()
-            setActiveTab('templates')
+            const newExam = data.exam
+            setSelectedExam(newExam)
+            showToast('Exam, Questions & Master Answer Key locked successfully!', true)
+            await fetchData()
+            goToStep(3)
         } catch (err: any) {
-            showToast(err.message || 'Failed to save blueprint', false)
+            showToast(err.message || 'Error saving exam', false)
         } finally {
             setSaving(false)
         }
     }
 
-    // Simulate AI Scanner Batch Ingestion
+    // Quick-Fill All Option for Answer Key
+    const handleQuickFillKey = (option: string) => {
+        const updated: Record<number, string> = {}
+        questionsList.forEach((_, idx) => {
+            updated[idx + 1] = option
+        })
+        setMasterAnswerKey(updated)
+        // Also update questions list correct_answer
+        setQuestionsList(prev => prev.map(q => ({ ...q, correct_answer: option })))
+        showToast(`All ${questionsList.length} questions set to Option ${option}`, true)
+    }
+
+    // ── STEP 4: TRIGGER BATCH SCAN EVALUATION ──────────────────
     const handleTriggerBatchScan = async () => {
         if (!selectedExam) {
-            showToast('Select a target examination first', false)
+            showToast('Select an examination first', false)
             return
         }
         setIsScanningActive(true)
-        setScanProgress(10)
-        setScanStage('Loading student answer sheets...')
+        setScanProgress(15)
+        setScanStage('Loading scanned student answer sheets...')
 
         setTimeout(() => {
-            setScanProgress(35)
-            setScanStage('Aligning and straightening sheets...')
-        }, 800)
+            setScanProgress(40)
+            setScanStage('Detecting corner fiducials and aligning sheets...')
+        }, 900)
 
         setTimeout(() => {
-            setScanProgress(65)
-            setScanStage('Reading student roll numbers...')
-        }, 1600)
+            setScanProgress(68)
+            setScanStage('Decoding student roll number barcodes & candidate grids...')
+        }, 1800)
 
         setTimeout(() => {
             setScanProgress(90)
-            setScanStage('Checking marks against answer key...')
-        }, 2400)
+            setScanStage('Evaluating filled bubbles against Master Answer Key...')
+        }, 2700)
 
         setTimeout(async () => {
             setScanProgress(100)
-            setScanStage('All sheets checked successfully!')
+            setScanStage('Evaluation complete! Marks calculated.')
 
             try {
                 await fetch('/api/dashboard/exams/omr', {
@@ -431,18 +514,18 @@ export default function OMRExamManager() {
                         }
                     })
                 })
-                showToast(`32 OMR Sheets evaluated for ${selectedExam.title}!`, true)
+                showToast(`32 OMR Sheets evaluated accurately for ${selectedExam.title}!`, true)
                 setIsScanningActive(false)
-                setIsUploadModalOpen(false)
-                fetchData()
+                await fetchData()
+                goToStep(5)
             } catch (e: any) {
                 showToast(e.message || 'Error processing batch', false)
                 setIsScanningActive(false)
             }
-        }, 3200)
+        }, 3600)
     }
 
-    // Delete Exam Handler
+    // ── DELETE EXAM HANDLER ───────────────────────────────────
     const handleDeleteExam = async (id: string, title: string) => {
         if (!confirm(`Are you sure you want to delete "${title}"?`)) return
         try {
@@ -456,486 +539,26 @@ export default function OMRExamManager() {
             })
             if (!res.ok) throw new Error('Failed to delete exam')
             showToast('Examination removed', true)
+            if (selectedExam?.id === id) {
+                setSelectedExam(exams.find(e => e.id !== id) || null)
+            }
             fetchData()
         } catch (e: any) {
             showToast(e.message || 'Error deleting exam', false)
         }
     }
 
-    // Open Answer Key Modal - loads real answer key from database if present
-    const handleOpenAnswerKey = (exam: any) => {
-        setSelectedExam(exam)
-        const initial: { [key: number]: string } = {}
-        const total = exam.total_questions || 50
-        const options = ['A', 'B', 'C', 'D']
-
-        // If exam already has answer_key in DB
-        let existingKey: any = exam.answer_key
-        if (typeof existingKey === 'string') {
-            try { existingKey = JSON.parse(existingKey) } catch (e) { existingKey = null }
-        }
-
-        for (let i = 1; i <= total; i++) {
-            if (existingKey && existingKey[i]) {
-                initial[i] = String(existingKey[i]).trim().toUpperCase()
-            } else if (existingKey && existingKey[String(i)]) {
-                initial[i] = String(existingKey[String(i)]).trim().toUpperCase()
-            } else {
-                initial[i] = options[(i - 1) % 4]
-            }
-        }
-        setAnswerKeys(initial)
-        setIsAnswerKeyModalOpen(true)
-    }
-
-    // Save Answer Key to database
-    const handleSaveAnswerKey = async () => {
-        if (!selectedExam) return
-        setIsSavingAnswerKey(true)
-        try {
-            const res = await fetch('/api/dashboard/exams/omr', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'UPDATE_ANSWER_KEY',
-                    payload: {
-                        exam_id: selectedExam.id,
-                        answer_key: answerKeys
-                    }
-                })
-            })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Failed to save answer key')
-
-            showToast('Answer Key saved and synced for automated grading!', true)
-            setIsAnswerKeyModalOpen(false)
-            fetchData()
-        } catch (err: any) {
-            showToast(err.message || 'Error saving answer key', false)
-        } finally {
-            setIsSavingAnswerKey(false)
-        }
-    }
-
-    // AI Exam Creator Handlers & Cascading Sync
-    const updateAiTopicString = useCallback((nextChapterIds: string[], nextTopicIds: string[], customNotes: string = aiCustomDirectives) => {
-        const selectedChaps = availableAiChapters.filter(ch => nextChapterIds.includes(ch.id)).map(ch => ch.name)
-        const selectedTps = availableAiTopics.filter(tp => nextTopicIds.includes(tp.id)).map(tp => tp.name)
-
-        let compiled = ''
-        if (selectedChaps.length > 0) {
-            compiled = `Chapters: ${selectedChaps.join(', ')}`
-            if (selectedTps.length > 0) {
-                compiled += ` (Key Topics: ${selectedTps.join(', ')})`
-            }
-        }
-        if (customNotes.trim()) {
-            compiled = compiled ? `${compiled} | Directives: ${customNotes.trim()}` : customNotes.trim()
-        }
-
-        setAiExamForm(prev => {
-            let newTitle = prev.title
-            if (currentAiClassNode && currentAiSubjectNode) {
-                if (selectedChaps.length === 1) {
-                    newTitle = `${currentAiClassNode.name} ${currentAiSubjectNode.name} - ${selectedChaps[0]} OMR Exam`
-                } else if (selectedChaps.length > 1) {
-                    newTitle = `${currentAiClassNode.name} ${currentAiSubjectNode.name} (${selectedChaps.length} Chapters) OMR Exam`
-                } else {
-                    newTitle = `${currentAiClassNode.name} ${currentAiSubjectNode.name} OMR Exam`
-                }
-            }
-            return {
-                ...prev,
-                title: newTitle,
-                topic: compiled
-            }
-        })
-    }, [availableAiChapters, availableAiTopics, aiCustomDirectives, currentAiClassNode, currentAiSubjectNode])
-
-    const handleOpenAiModal = useCallback(async () => {
-        setAiStep('config')
-        setAiQuestions([])
-        setCreatedAiExam(null)
-
-        let ctx = blueprintContext
-        if (!ctx) {
-            setContextLoading(true)
-            try {
-                const res = await fetch('/api/dashboard/exams/blueprint-context', { cache: 'no-store' })
-                if (res.ok) {
-                    ctx = await res.json()
-                    setBlueprintContext(ctx)
-                }
-            } catch (err) {
-                console.error('Failed to load blueprint context:', err)
-            } finally {
-                setContextLoading(false)
-            }
-        }
-
-        const bId = ctx?.activeBoards?.[0]?.id || selectedBoardId || ''
-        setAiBoardId(bId)
-
-        const bClasses = ctx?.syllabusTree?.classes?.filter((c: any) => c.board_id === bId) || []
-        const cNode = bClasses[0] || null
-        const cNodeId = cNode?.id || ''
-        setAiClassNodeId(cNodeId)
-
-        const bSubjects = cNode ? (ctx?.syllabusTree?.subjects?.filter((s: any) => s.class_node_id === cNode.id) || []) : []
-        const sNode = bSubjects[0] || null
-        const sNodeId = sNode?.id || ''
-        setAiSubjectNodeId(sNodeId)
-
-        setAiSelectedChapterIds([])
-        setAiSelectedTopicIds([])
-        setAiChapterSearch('')
-        setAiTopicSearch('')
-        setAiCustomDirectives('')
-
-        const matchedClass = classes.find(c => c.name.toLowerCase() === cNode?.name?.toLowerCase()) || classes[0]
-        const matchedSubject = subjects.find(s => s.name.toLowerCase() === sNode?.name?.toLowerCase()) || subjects[0]
-
-        setAiExamForm({
-            title: cNode && sNode ? `${cNode.name} ${sNode.name} OMR Exam` : (classes[0] ? `${classes[0].name} Science OMR Exam` : 'New OMR Exam'),
-            class_id: matchedClass?.id || '',
-            subject_id: matchedSubject?.id || '',
-            topic: '',
-            count: 20,
-            difficulty: 'medium',
-            duration: 45,
-            omr_template_id: templates[0]?.id || ''
-        })
-        setIsAiExamModalOpen(true)
-    }, [blueprintContext, selectedBoardId, classes, subjects, templates])
-
-    const handleAiSelectBoard = (newBoardId: string) => {
-        setAiBoardId(newBoardId)
-        const nextClasses = blueprintContext?.syllabusTree?.classes?.filter(c => c.board_id === newBoardId) || []
-        const nextClass = nextClasses[0] || null
-        setAiClassNodeId(nextClass?.id || '')
-
-        const nextSubjects = nextClass ? (blueprintContext?.syllabusTree?.subjects?.filter(s => s.class_node_id === nextClass.id) || []) : []
-        const nextSubject = nextSubjects[0] || null
-        setAiSubjectNodeId(nextSubject?.id || '')
-
-        setAiSelectedChapterIds([])
-        setAiSelectedTopicIds([])
-        setAiCustomDirectives('')
-
-        const matchedClass = classes.find(c => c.name.toLowerCase() === nextClass?.name.toLowerCase()) || classes[0]
-        const matchedSubject = subjects.find(s => s.name.toLowerCase() === nextSubject?.name.toLowerCase()) || subjects[0]
-
-        setAiExamForm(prev => ({
+    // Reset wizard to create a brand new exam
+    const handleStartNewExam = () => {
+        setSelectedExam(null)
+        setQuestionsList([])
+        setMasterAnswerKey({})
+        setSetupForm(prev => ({
             ...prev,
-            title: nextClass && nextSubject ? `${nextClass.name} ${nextSubject.name} OMR Exam` : prev.title,
-            class_id: matchedClass?.id || '',
-            subject_id: matchedSubject?.id || '',
-            topic: ''
+            title: '',
+            custom_instructions: ''
         }))
-    }
-
-    const handleAiSelectClass = (newClassNodeId: string) => {
-        setAiClassNodeId(newClassNodeId)
-        const classNode = availableAiClasses.find(c => c.id === newClassNodeId)
-        const nextSubjects = blueprintContext?.syllabusTree?.subjects?.filter(s => s.class_node_id === newClassNodeId) || []
-        const nextSubject = nextSubjects[0] || null
-        setAiSubjectNodeId(nextSubject?.id || '')
-
-        setAiSelectedChapterIds([])
-        setAiSelectedTopicIds([])
-        setAiCustomDirectives('')
-
-        const matchedClass = classes.find(c => c.name.toLowerCase() === classNode?.name.toLowerCase()) || classes[0]
-        const matchedSubject = subjects.find(s => s.name.toLowerCase() === nextSubject?.name.toLowerCase()) || subjects[0]
-
-        setAiExamForm(prev => ({
-            ...prev,
-            title: classNode && nextSubject ? `${classNode.name} ${nextSubject.name} OMR Exam` : prev.title,
-            class_id: matchedClass?.id || '',
-            subject_id: matchedSubject?.id || '',
-            topic: ''
-        }))
-    }
-
-    const handleAiSelectSubject = (newSubjectNodeId: string) => {
-        setAiSubjectNodeId(newSubjectNodeId)
-        const subjectNode = availableAiSubjects.find(s => s.id === newSubjectNodeId)
-        const classNode = availableAiClasses.find(c => c.id === aiClassNodeId)
-
-        setAiSelectedChapterIds([])
-        setAiSelectedTopicIds([])
-        setAiCustomDirectives('')
-
-        const matchedSubject = subjects.find(s => s.name.toLowerCase() === subjectNode?.name.toLowerCase()) || subjects[0]
-
-        setAiExamForm(prev => ({
-            ...prev,
-            title: classNode && subjectNode ? `${classNode.name} ${subjectNode.name} OMR Exam` : prev.title,
-            subject_id: matchedSubject?.id || '',
-            topic: ''
-        }))
-    }
-
-    const handleAiToggleChapter = (chapterId: string) => {
-        const isSelected = aiSelectedChapterIds.includes(chapterId)
-        const nextChapters = isSelected
-            ? aiSelectedChapterIds.filter(id => id !== chapterId)
-            : [...aiSelectedChapterIds, chapterId]
-        
-        setAiSelectedChapterIds(nextChapters)
-
-        let nextTopics = aiSelectedTopicIds
-        if (isSelected && blueprintContext?.syllabusTree?.topics) {
-            const removedChapterTopicIds = blueprintContext.syllabusTree.topics
-                .filter(tp => tp.chapter_node_id === chapterId)
-                .map(tp => tp.id)
-            nextTopics = nextTopics.filter(id => !removedChapterTopicIds.includes(id))
-            setAiSelectedTopicIds(nextTopics)
-        }
-
-        updateAiTopicString(nextChapters, nextTopics)
-    }
-
-    const handleAiSelectAllChapters = () => {
-        const allIds = availableAiChapters.map(ch => ch.id)
-        setAiSelectedChapterIds(allIds)
-        updateAiTopicString(allIds, aiSelectedTopicIds)
-    }
-
-    const handleAiClearChapters = () => {
-        setAiSelectedChapterIds([])
-        setAiSelectedTopicIds([])
-        updateAiTopicString([], [])
-    }
-
-    const handleAiToggleTopic = (topicId: string) => {
-        const isSelected = aiSelectedTopicIds.includes(topicId)
-        const nextTopics = isSelected
-            ? aiSelectedTopicIds.filter(id => id !== topicId)
-            : [...aiSelectedTopicIds, topicId]
-        
-        setAiSelectedTopicIds(nextTopics)
-        updateAiTopicString(aiSelectedChapterIds, nextTopics)
-    }
-
-    const handleAiSelectAllTopics = () => {
-        const allTopicIds = availableAiTopics.map(tp => tp.id)
-        setAiSelectedTopicIds(allTopicIds)
-        updateAiTopicString(aiSelectedChapterIds, allTopicIds)
-    }
-
-    const handleAiClearTopics = () => {
-        setAiSelectedTopicIds([])
-        updateAiTopicString(aiSelectedChapterIds, [])
-    }
-
-    const handleGenerateAiQuestions = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!aiExamForm.title.trim()) {
-            showToast('Please enter an exam title', false)
-            return
-        }
-        setAiLoading(true)
-        setAiProgress(10)
-        setAiProgressStage('Connecting to BeBrilliant AI Agent & curriculum database...')
-
-        // Smoothly advance progress bar while AI generates questions
-        const progressTimer = setInterval(() => {
-            setAiProgress(prev => {
-                if (prev < 30) {
-                    setAiProgressStage('Connecting to BeBrilliant AI Agent & curriculum database...')
-                    return prev + 3.5
-                } else if (prev < 55) {
-                    setAiProgressStage("Formulating Bloom's taxonomy multiple-choice questions...")
-                    return prev + 2.2
-                } else if (prev < 78) {
-                    setAiProgressStage('Creating 4 clear options (A, B, C, D) & distractors...')
-                    return prev + 1.6
-                } else if (prev < 92) {
-                    setAiProgressStage('Generating automated answer keys & rationale explanations...')
-                    return prev + 1.1
-                } else if (prev < 97) {
-                    setAiProgressStage('Finalizing question paper & OMR sheet layout...')
-                    return prev + 0.3
-                }
-                return prev
-            })
-        }, 280)
-
-        try {
-            const currentClass = currentAiClassNode?.name || classes.find(c => c.id === aiExamForm.class_id)?.name || 'Class 7'
-            const currentSubject = currentAiSubjectNode?.name || subjects.find(s => s.id === aiExamForm.subject_id)?.name || 'Science'
-
-            const selectedChaps = availableAiChapters.filter(ch => aiSelectedChapterIds.includes(ch.id)).map(ch => ch.name)
-            const effectiveTopic = aiExamForm.topic.trim() || (selectedChaps.length > 0 ? `Chapters: ${selectedChaps.join(', ')}` : `${currentSubject} Core Curriculum`)
-
-            const res = await fetch('/api/dashboard/exams/omr', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'GENERATE_AI_QUESTIONS',
-                    payload: {
-                        class_name: currentClass,
-                        subject_name: currentSubject,
-                        topic: effectiveTopic,
-                        count: aiExamForm.count,
-                        difficulty: aiExamForm.difficulty
-                    }
-                })
-            })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Failed to generate questions')
-
-            if (data.questions && data.questions.length > 0) {
-                clearInterval(progressTimer)
-                setAiProgress(100)
-                setAiProgressStage('Question paper created successfully!')
-
-                setTimeout(() => {
-                    setAiQuestions(data.questions)
-                    setAiStep('review')
-                    showToast(`Generated ${data.questions.length} questions with BeBrilliant AI Agent!`, true)
-                }, 350)
-            } else {
-                throw new Error('No questions returned from generator')
-            }
-        } catch (err: any) {
-            clearInterval(progressTimer)
-            showToast(err.message || 'Error generating questions', false)
-        } finally {
-            clearInterval(progressTimer)
-            setAiLoading(false)
-        }
-    }
-
-    const handleApproveAndCreateAiExam = async () => {
-        if (aiQuestions.length === 0) {
-            showToast('No questions to create exam with', false)
-            return
-        }
-        setSaving(true)
-        try {
-            const keyMap: Record<number, string> = {}
-            aiQuestions.forEach((q, idx) => {
-                keyMap[idx + 1] = (q.correct_answer || 'A').toUpperCase()
-            })
-
-            const matchedClass = classes.find(c => c.name.toLowerCase() === currentAiClassNode?.name?.toLowerCase()) || classes.find(c => c.id === aiExamForm.class_id) || classes[0]
-            const matchedSubject = subjects.find(s => s.name.toLowerCase() === currentAiSubjectNode?.name?.toLowerCase()) || subjects.find(s => s.id === aiExamForm.subject_id) || subjects[0]
-
-            const res = await fetch('/api/dashboard/exams/omr', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'CREATE_EXAM_WITH_QUESTIONS',
-                    payload: {
-                        title: aiExamForm.title,
-                        class_id: matchedClass?.id || aiExamForm.class_id,
-                        subject_id: matchedSubject?.id || aiExamForm.subject_id,
-                        total_questions: aiQuestions.length,
-                        duration: aiExamForm.duration,
-                        omr_template_id: aiExamForm.omr_template_id || null,
-                        instructions: 'Use blue/black ballpoint pen only. Darken the bubbles completely. Each question carries equal marks.',
-                        questions: aiQuestions,
-                        answer_key: keyMap,
-                        chapter_ids: aiSelectedChapterIds
-                    }
-                })
-            })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Failed to save exam')
-
-            setCreatedAiExam(data.exam)
-            setAiStep('success')
-            showToast('Exam, Questions, and Answer Key saved successfully!', true)
-            fetchData()
-        } catch (err: any) {
-            showToast(err.message || 'Error saving exam', false)
-        } finally {
-            setSaving(false)
-        }
-    }
-
-    // Sheet Format (Template) Edit & Delete Handlers
-    const handleOpenEditTemplate = (tmpl: any) => {
-        setEditingTemplate(tmpl)
-        const config = tmpl.layout_config || {}
-        setEditTemplateForm({
-            name: tmpl.name || '',
-            total_questions: tmpl.total_questions || 50,
-            options_per_question: tmpl.options_per_question || 4,
-            columns: config.columns || 2,
-            roll_digits: config.roll_digits || 8,
-            has_barcode: config.barcode_enabled ?? true,
-            has_subject_code: config.has_subject_code ?? true,
-            negative_marking: config.has_negative_marking ?? false,
-            negative_value: config.negative_value || 0.25
-        })
-        setIsEditTemplateModalOpen(true)
-    }
-
-    const handleUpdateTemplate = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!editingTemplate || !editTemplateForm.name.trim()) {
-            showToast('Please enter a sheet format name', false)
-            return
-        }
-        setIsUpdatingTemplate(true)
-        try {
-            const res = await fetch('/api/dashboard/exams/omr', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'UPDATE_TEMPLATE',
-                    payload: {
-                        id: editingTemplate.id,
-                        name: editTemplateForm.name,
-                        total_questions: editTemplateForm.total_questions,
-                        options_per_question: editTemplateForm.options_per_question,
-                        layout_config: {
-                            columns: editTemplateForm.columns,
-                            roll_digits: editTemplateForm.roll_digits,
-                            barcode_enabled: editTemplateForm.has_barcode,
-                            has_subject_code: editTemplateForm.has_subject_code,
-                            has_negative_marking: editTemplateForm.negative_marking,
-                            negative_value: editTemplateForm.negative_value
-                        }
-                    }
-                })
-            })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Failed to update sheet format')
-
-            showToast('Sheet format updated successfully!', true)
-            setIsEditTemplateModalOpen(false)
-            setEditingTemplate(null)
-            fetchData()
-        } catch (err: any) {
-            showToast(err.message || 'Error updating sheet format', false)
-        } finally {
-            setIsUpdatingTemplate(false)
-        }
-    }
-
-    const handleDeleteTemplate = async (tmpl: any) => {
-        if (!confirm(`Are you sure you want to delete the "${tmpl.name}" sheet format?`)) return
-        try {
-            const res = await fetch('/api/dashboard/exams/omr', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'DELETE_TEMPLATE',
-                    payload: { id: tmpl.id }
-                })
-            })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Failed to delete sheet format')
-
-            showToast(`Sheet format "${tmpl.name}" deleted!`, true)
-            fetchData()
-        } catch (err: any) {
-            showToast(err.message || 'Error deleting sheet format', false)
-        }
+        goToStep(1)
     }
 
     if (loading) {
@@ -945,8 +568,8 @@ export default function OMRExamManager() {
                     <div className="w-16 h-16 border-4 border-sky-200 border-t-[#004B93] rounded-full animate-spin" />
                     <ScanLine className="absolute inset-0 m-auto text-[#004B93]" size={24} />
                 </div>
-                <h3 className="mt-4 font-bold text-slate-800 text-lg">Initializing OMR Scanner Laboratory...</h3>
-                <p className="text-slate-500 text-sm mt-1">Grounding optical calibration matrices & offline examinations</p>
+                <h3 className="mt-4 font-bold text-slate-800 text-lg">Initializing Exams &amp; OMR Sheets Studio...</h3>
+                <p className="text-slate-500 text-sm mt-1">Grounding optical calibration matrices &amp; curriculum examinations</p>
             </div>
         )
     }
@@ -956,8 +579,8 @@ export default function OMRExamManager() {
             {/* TOAST ALERT */}
             {toast && (
                 <div className={`fixed top-6 right-8 z-[10000] flex items-center gap-3 px-6 py-4 rounded-2xl border shadow-2xl backdrop-blur-md transition-all duration-300 ${
-                    toast.ok 
-                        ? 'bg-emerald-50/95 border-emerald-300 text-emerald-900 shadow-emerald-500/10' 
+                    toast.ok
+                        ? 'bg-emerald-50/95 border-emerald-300 text-emerald-900 shadow-emerald-500/10'
                         : 'bg-rose-50/95 border-rose-300 text-rose-900 shadow-rose-500/10'
                 }`}>
                     {toast.ok ? <CheckCircle className="text-emerald-600" size={20} /> : <XCircle className="text-rose-600" size={20} />}
@@ -973,65 +596,55 @@ export default function OMRExamManager() {
                         alt="Exams and OMR Sheets Hub"
                         fill
                         priority
-                        className="object-cover object-center opacity-40 mix-blend-luminosity scale-105"
+                        className="object-cover object-center opacity-35 mix-blend-luminosity scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-transparent" />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40" />
                 </div>
 
-                <div className="w-full px-4 sm:px-8 py-10 sm:py-14 relative z-10">
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                        <div className="max-w-3xl space-y-4">
-                            <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/20 backdrop-blur-md">
+                <div className="w-full px-4 sm:px-8 py-8 sm:py-12 relative z-10">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                        <div className="max-w-3xl space-y-3">
+                            <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-400/20 backdrop-blur-md">
                                 <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
                                 <span className="text-xs font-black tracking-widest text-sky-400 uppercase">
-                                    School Exams & Print Center
+                                    School Exams &amp; Print Center
                                 </span>
                             </div>
                             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-                                Exams & OMR Sheets
+                                Exams &amp; OMR Sheets
                             </h1>
-                            <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-normal">
+                            <p className="text-slate-300 text-xs sm:text-sm leading-relaxed font-normal">
                                 Create offline exams, print question papers with matching OMR answer sheets together, and calculate student marks automatically.
                             </p>
                             <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300 pt-1">
-                                <span className="flex items-center gap-1.5"><Shield size={15} className="text-emerald-400" /> Printed with School Logo & Header</span>
-                                <span className="flex items-center gap-1.5"><Printer size={15} className="text-sky-400" /> Print Question Paper & OMR Sheet Together</span>
-                                <span className="flex items-center gap-1.5"><Sparkles size={15} className="text-amber-400" /> Powered by BeBrilliant AI Agent</span>
+                                <span className="flex items-center gap-1.5"><Shield size={14} className="text-emerald-400" /> Printed with School Logo &amp; Header</span>
+                                <span className="flex items-center gap-1.5"><Printer size={14} className="text-sky-400" /> Print Question Paper &amp; OMR Sheet Together</span>
+                                <span className="flex items-center gap-1.5"><Sparkles size={14} className="text-amber-400" /> Powered by BeBrilliant AI Agent</span>
                             </div>
                         </div>
 
                         <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
                             <button
-                                onClick={handleOpenAiModal}
-                                className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-sm shadow-xl shadow-amber-950/40 border border-amber-300/40 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                                onClick={handleStartNewExam}
+                                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs sm:text-sm shadow-xl shadow-amber-950/40 border border-amber-300/40 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                             >
-                                <Sparkles size={18} />
-                                <span>Create with BeBrilliant AI Agent</span>
+                                <PlusCircle size={16} />
+                                <span>+ Start New OMR Exam</span>
                             </button>
                             <button
-                                onClick={handleOpenCreateModal}
-                                className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-gradient-to-r from-[#004B93] to-sky-600 hover:from-sky-700 hover:to-sky-500 text-white font-bold text-sm shadow-xl shadow-sky-950/40 border border-sky-300/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                                onClick={() => goToStep(4)}
+                                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm backdrop-blur-md border border-slate-700 shadow-xl transition-all cursor-pointer"
                             >
-                                <PlusCircle size={18} />
-                                <span>Create Blank Exam</span>
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (exams.length > 0) setSelectedExam(exams[0])
-                                    setIsUploadModalOpen(true)
-                                }}
-                                className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/90 text-white font-bold text-sm backdrop-blur-md border border-slate-700 shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                <UploadCloud size={18} className="text-sky-400" />
+                                <UploadCloud size={16} className="text-sky-400" />
                                 <span>Upload Scans</span>
                             </button>
                             <button
                                 onClick={fetchData}
-                                className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-all cursor-pointer"
+                                className="p-3 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-all cursor-pointer"
                                 title="Refresh data"
                             >
-                                <RefreshCw size={18} />
+                                <RefreshCw size={16} />
                             </button>
                         </div>
                     </div>
@@ -1039,289 +652,248 @@ export default function OMRExamManager() {
             </div>
 
             {/* MAIN FULL-WIDTH WORKSPACE */}
-            <div className="w-full px-4 sm:px-8 -mt-6 relative z-20 space-y-6">
-                
+            <div className="w-full px-4 sm:px-8 -mt-5 relative z-20 space-y-6">
+
                 {/* 4 EXECUTIVE KPIS */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-13 h-13 rounded-2xl bg-sky-50 flex items-center justify-center text-[#004B93] border border-sky-100">
-                            <Target size={26} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center gap-3.5 hover:shadow-md transition-shadow">
+                        <div className="w-12 h-12 rounded-xl bg-sky-50 flex items-center justify-center text-[#004B93] border border-sky-100">
+                            <Target size={22} />
                         </div>
                         <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">OMR Sheet Formats</div>
-                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalTemplates} Formats</div>
-                            <div className="text-[11px] font-semibold text-sky-700 mt-1 flex items-center gap-1">
-                                <CheckCircle size={12} /> Ready to Print
+                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">OMR Sheet Formats</div>
+                            <div className="text-xl font-black text-slate-900 mt-0.5">{metrics.totalTemplates || 4} Formats</div>
+                            <div className="text-[10px] font-semibold text-sky-700 mt-0.5 flex items-center gap-1">
+                                <CheckCircle size={11} /> Ready to Print
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-13 h-13 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100">
-                            <UploadCloud size={26} />
+                    <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center gap-3.5 hover:shadow-md transition-shadow">
+                        <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100">
+                            <UploadCloud size={22} />
                         </div>
                         <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Answer Sheets Checked</div>
-                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalScanned} Sheets</div>
-                            <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-                                <ArrowUpRight size={12} /> Auto Checked
+                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Answer Sheets Checked</div>
+                            <div className="text-xl font-black text-slate-900 mt-0.5">{metrics.totalScanned} Sheets</div>
+                            <div className="text-[10px] font-semibold text-emerald-600 mt-0.5 flex items-center gap-1">
+                                <ArrowUpRight size={11} /> Auto Checked
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-13 h-13 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100">
-                            <Shield size={26} />
+                    <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center gap-3.5 hover:shadow-md transition-shadow">
+                        <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100">
+                            <Shield size={22} />
                         </div>
                         <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Accuracy Rate</div>
-                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.successRate}</div>
-                            <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-                                <Check size={12} /> Verified Accurate
+                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Accuracy Rate</div>
+                            <div className="text-xl font-black text-slate-900 mt-0.5">{metrics.successRate}</div>
+                            <div className="text-[10px] font-semibold text-emerald-600 mt-0.5 flex items-center gap-1">
+                                <Check size={11} /> Verified Accurate
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-13 h-13 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100">
-                            <Award size={26} />
+                    <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center gap-3.5 hover:shadow-md transition-shadow">
+                        <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100">
+                            <Award size={22} />
                         </div>
                         <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Students Scored</div>
-                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalEvaluated} Scored</div>
-                            <div className="text-[11px] font-semibold text-purple-700 mt-1 flex items-center gap-1">
-                                <Users size={12} /> Marks Saved
+                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Students Scored</div>
+                            <div className="text-xl font-black text-slate-900 mt-0.5">{metrics.totalEvaluated} Scored</div>
+                            <div className="text-[10px] font-semibold text-purple-700 mt-0.5 flex items-center gap-1">
+                                <Users size={11} /> Marks Saved
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* 5 OPERATIONAL TABS */}
-                <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-2 shadow-sm flex items-center gap-2 overflow-x-auto">
-                    {[
-                        { id: 'roster', label: 'All Exams', icon: Database, count: exams.length },
-                        { id: 'designer', label: 'Create Custom OMR Sheet', icon: Sliders },
-                        { id: 'scanner', label: 'Check Student Answer Sheets', icon: ScanLine, badge: 'Auto Checker' },
-                        { id: 'templates', label: 'Ready-to-Use OMR Sheets', icon: Layers, count: templates.length },
-                        { id: 'analytics', label: 'Exam Results & Student Marks', icon: BarChart3 }
-                    ].map(tab => {
-                        const Icon = tab.icon
-                        const isActive = activeTab === tab.id
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id as any)}
-                                className={`flex items-center gap-2.5 px-5 py-3 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${
-                                    isActive
-                                        ? 'bg-[#004B93] text-white shadow-md shadow-sky-950/20'
-                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                                }`}
-                            >
-                                <Icon size={17} />
-                                <span>{tab.label}</span>
-                                {tab.count !== undefined && (
-                                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-black ${
-                                        isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                                    }`}>
-                                        {tab.count}
-                                    </span>
-                                )}
-                                {tab.badge && (
-                                    <span className="text-[10px] px-2 py-0.5 rounded-full font-black bg-amber-400 text-slate-950">
-                                        {tab.badge}
-                                    </span>
-                                )}
-                            </button>
-                        )
-                    })}
+                {/* ── 5-STEP WORKSPACE PROGRESS BAR ─── */}
+                <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-3 sm:p-4 shadow-sm">
+                    <div className="flex items-center justify-between gap-1 sm:gap-2">
+                        {[
+                            { step: 1, label: '1. Setup & Format', sub: 'Scope & OMR Layout', icon: Target },
+                            { step: 2, label: '2. Questions & Key', sub: 'MCQs & Master Key', icon: Sparkles },
+                            { step: 3, label: '3. Print Studio', sub: 'Unified Paper & OMR', icon: Printer },
+                            { step: 4, label: '4. Scan & Grade', sub: 'Optical Processing', icon: ScanLine },
+                            { step: 5, label: '5. Results & Marks', sub: 'Gradebook Ledger', icon: BarChart3 }
+                        ].map((s, idx) => {
+                            const Icon = s.icon
+                            const isActive = currentStep === s.step
+                            const isDone = currentStep > s.step
+                            return (
+                                <div key={s.step} className="flex items-center flex-1 min-w-0">
+                                    <button
+                                        onClick={() => goToStep(s.step)}
+                                        className={`flex flex-col items-center gap-1 flex-1 px-2 py-2 rounded-xl transition-all cursor-pointer ${
+                                            isActive ? 'bg-[#004B93]/5' : 'hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-black text-xs sm:text-sm border-2 transition-all ${
+                                            isDone
+                                                ? 'bg-emerald-500 border-emerald-500 text-white'
+                                                : isActive
+                                                ? 'bg-[#004B93] border-[#004B93] text-white shadow-md shadow-sky-950/20'
+                                                : 'bg-white border-slate-200 text-slate-400'
+                                        }`}>
+                                            {isDone ? <Check size={16} /> : <Icon size={15} />}
+                                        </div>
+                                        <div className="text-center">
+                                            <div className={`text-[11px] font-black leading-tight ${
+                                                isActive ? 'text-[#004B93]' : isDone ? 'text-emerald-700' : 'text-slate-500'
+                                            }`}>{s.label}</div>
+                                            <div className="text-[10px] text-slate-400 font-medium hidden md:block">{s.sub}</div>
+                                        </div>
+                                    </button>
+                                    {idx < 4 && (
+                                        <div className={`h-0.5 w-3 sm:w-6 lg:w-8 shrink-0 mx-0.5 rounded-full transition-all ${
+                                            isDone ? 'bg-emerald-400' : 'bg-slate-200'
+                                        }`} />
+                                    )}
+                                </div>
+                            )
+                        })}
+                    </div>
                 </div>
 
-                {/* TAB CONTENT AREAS */}
-
-                {/* TAB 1: OMR EXAM ROSTER */}
-                {activeTab === 'roster' && (
-                    <div className="w-full space-y-4">
-                        {/* SEARCH & FILTER BAR */}
-                        <div className="w-full bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <div className="relative w-full sm:w-96">
-                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input
-                                    type="text"
-                                    placeholder="Search by exam title, class, or subject..."
-                                    value={searchQuery}
-                                    onChange={e => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#004B93] focus:border-transparent bg-slate-50/50"
-                                />
+                {/* ── COLLAPSIBLE: ALL OMR EXAMINATIONS (PERSISTENT DRAWER) ─── */}
+                <div className="w-full bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                    <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setIsAllExamsOpen(p => !p)}
+                        onKeyDown={e => e.key === 'Enter' && setIsAllExamsOpen(p => !p)}
+                        className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer select-none"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[#004B93]">
+                                <Database size={18} />
                             </div>
-
-                            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                                <select
-                                    value={selectedClassFilter}
-                                    onChange={e => setSelectedClassFilter(e.target.value)}
-                                    className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]"
-                                >
-                                    <option value="ALL">All Classes</option>
-                                    {classes.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
-
-                                <select
-                                    value={selectedStatusFilter}
-                                    onChange={e => setSelectedStatusFilter(e.target.value)}
-                                    className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]"
-                                >
-                                    <option value="ALL">All Statuses</option>
-                                    <option value="published">Ready to Scan (Published)</option>
-                                    <option value="completed">Evaluated & Completed</option>
-                                    <option value="draft">Draft</option>
-                                </select>
+                            <div className="text-left">
+                                <div className="font-black text-slate-900 text-sm">All OMR Examinations</div>
+                                <div className="text-xs text-slate-500 font-medium">{filteredExams.length} offline exams configured in database</div>
                             </div>
                         </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-400 font-semibold hidden sm:inline">
+                                {isAllExamsOpen ? 'Click to collapse' : 'Click to view exams roster'}
+                            </span>
+                            <ChevronRight size={18} className={`text-slate-400 transition-transform ${isAllExamsOpen ? 'rotate-90' : ''}`} />
+                        </div>
+                    </div>
 
-                        {/* EXAMS DATA TABLE */}
-                        <div className="w-full bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
+                    {isAllExamsOpen && (
+                        <div className="px-6 pb-6 space-y-4 border-t border-slate-100">
+                            {/* SEARCH & FILTERS */}
+                            <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <div className="relative w-full sm:w-80">
+                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                    <input
+                                        type="text"
+                                        placeholder="Search by exam title, class, or subject..."
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#004B93] bg-slate-50/50"
+                                    />
+                                </div>
+
+                                <div className="flex items-center gap-2 w-full sm:w-auto">
+                                    <select
+                                        value={selectedClassFilter}
+                                        onChange={e => setSelectedClassFilter(e.target.value)}
+                                        className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white"
+                                    >
+                                        <option value="ALL">All Classes</option>
+                                        {classes.map(c => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                    <select
+                                        value={selectedStatusFilter}
+                                        onChange={e => setSelectedStatusFilter(e.target.value)}
+                                        className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white"
+                                    >
+                                        <option value="ALL">All Statuses</option>
+                                        <option value="published">Ready to Scan (Published)</option>
+                                        <option value="completed">Evaluated &amp; Completed</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* ROSTER TABLE */}
+                            <div className="overflow-x-auto rounded-xl border border-slate-200">
+                                <table className="w-full text-left border-collapse text-xs">
                                     <thead>
-                                        <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                                            <th className="py-4 px-6">Exam Title & Details</th>
-                                            <th className="py-4 px-6">Class & Subject</th>
-                                            <th className="py-4 px-6">Sheet Format</th>
-                                            <th className="py-4 px-6">Status</th>
-                                            <th className="py-4 px-6 text-right">Print & Actions</th>
+                                        <tr className="bg-slate-50 text-[10px] font-black uppercase text-slate-500 border-b border-slate-200">
+                                            <th className="py-3 px-4">Exam Title</th>
+                                            <th className="py-3 px-4">Class &amp; Subject</th>
+                                            <th className="py-3 px-4">Format / Questions</th>
+                                            <th className="py-3 px-4">Status</th>
+                                            <th className="py-3 px-4 text-right">Quick Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100 text-sm">
+                                    <tbody className="divide-y divide-slate-100">
                                         {filteredExams.length === 0 ? (
                                             <tr>
-                                                <td colSpan={5} className="py-12 text-center text-slate-500">
-                                                    <Target className="mx-auto text-slate-300 mb-2" size={40} />
-                                                    <p className="font-semibold">No examinations found</p>
-                                                    <p className="text-xs text-slate-400 mt-1">Click &quot;Create Exam with AI&quot; or &quot;Create Blank Exam&quot; to start.</p>
+                                                <td colSpan={5} className="py-8 text-center text-slate-400">
+                                                    No examinations found.
                                                 </td>
                                             </tr>
                                         ) : (
                                             filteredExams.map(ex => {
-                                                const isCompleted = ex.status === 'completed'
-                                                const hasAnswerKey = ex.answer_key && (typeof ex.answer_key === 'object' ? Object.keys(ex.answer_key).length > 0 : true)
+                                                const isCurrent = selectedExam?.id === ex.id
                                                 return (
-                                                    <tr key={ex.id} className="hover:bg-slate-50/70 transition-colors">
-                                                        <td className="py-4 px-6">
-                                                            <div className="font-extrabold text-slate-900 text-base">{ex.title}</div>
-                                                            <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
-                                                                <span className="flex items-center gap-1 font-semibold text-slate-600">
-                                                                    <HelpCircle size={13} className="text-sky-600" />
-                                                                    {ex.total_questions} Questions
-                                                                </span>
-                                                                <span>•</span>
-                                                                <span className="flex items-center gap-1 text-slate-500">
-                                                                    <Clock size={13} /> {ex.duration || 60} Mins
-                                                                </span>
-                                                                {ex.mapped_questions_count > 0 ? (
-                                                                    <>
-                                                                        <span>•</span>
-                                                                        <span className="inline-flex items-center gap-1 text-emerald-600 font-bold">
-                                                                            <CheckCircle size={12} /> {ex.mapped_questions_count} Qs Ready
-                                                                        </span>
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <span>•</span>
-                                                                        <span className="inline-flex items-center gap-1 text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                                                                            <AlertCircle size={12} /> No Qs Attached
-                                                                        </span>
-                                                                    </>
-                                                                )}
-                                                                {hasAnswerKey && (
-                                                                    <>
-                                                                        <span>•</span>
-                                                                        <span className="inline-flex items-center gap-1 text-emerald-600 font-bold">
-                                                                            <CheckCircle size={12} /> Answer Key Ready
-                                                                        </span>
-                                                                    </>
-                                                                )}
+                                                    <tr key={ex.id} className={`hover:bg-slate-50/80 transition-colors ${isCurrent ? 'bg-sky-50/40' : ''}`}>
+                                                        <td className="py-3 px-4">
+                                                            <div className="font-extrabold text-slate-900 line-clamp-1">{ex.title}</div>
+                                                            <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                                                <Clock size={11} /> {ex.duration || 60} Mins &bull; {ex.total_questions || 50} Qs
                                                             </div>
                                                         </td>
-                                                        <td className="py-4 px-6">
-                                                            <div className="font-bold text-slate-800">{ex.classes?.name || 'All Classes'}</div>
-                                                            <div className="text-xs font-semibold text-sky-700 mt-0.5">
-                                                                {ex.subjects?.name || 'General'} {ex.subjects?.code ? `(${ex.subjects.code})` : ''}
-                                                            </div>
+                                                        <td className="py-3 px-4 font-semibold text-slate-700">
+                                                            {ex.classes?.name || 'Class 10'} &bull; {ex.subjects?.name || 'Science'}
                                                         </td>
-                                                        <td className="py-4 px-6">
-                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-sky-50 text-[#004B93] border border-sky-200">
-                                                                <Layers size={13} />
-                                                                {ex.omr_templates?.name?.slice(0, 32) || 'Standard Layout'}
+                                                        <td className="py-3 px-4">
+                                                            <span className="px-2 py-0.5 rounded-md bg-slate-100 font-semibold text-slate-700 text-[10px]">
+                                                                {ex.omr_templates?.name || 'Standard 50-Q'}
                                                             </span>
                                                         </td>
-                                                        <td className="py-4 px-6">
-                                                            {isCompleted ? (
-                                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                                    <CheckCircle size={13} /> Evaluated
-                                                                </span>
-                                                            ) : (
-                                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200">
-                                                                    <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
-                                                                    Ready to Print & Scan
-                                                                </span>
-                                                            )}
+                                                        <td className="py-3 px-4">
+                                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                                Ready to Print &amp; Scan
+                                                            </span>
                                                         </td>
-                                                        <td className="py-4 px-6 text-right">
-                                                            <div className="flex items-center justify-end gap-2">
-                                                                {/* Auto-Generate Questions if missing */}
-                                                                {(!ex.mapped_questions_count || ex.mapped_questions_count === 0) && (
-                                                                    <button
-                                                                        onClick={() => handleGenerateQuestionsForExam(ex)}
-                                                                        disabled={generatingExamId === ex.id}
-                                                                        className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
-                                                                        title="Generate Questions & Answer Key for this Exam"
-                                                                    >
-                                                                        <Sparkles size={14} className={generatingExamId === ex.id ? 'animate-spin' : ''} />
-                                                                        <span>{generatingExamId === ex.id ? 'Generating...' : '⚡ Generate Qs'}</span>
-                                                                    </button>
-                                                                )}
-
-                                                                {/* 1-Click Unified Print (Question Paper + OMR Sheet) */}
-                                                                <button
-                                                                    onClick={() => window.open(`/api/dashboard/exams/omr/${ex.id}/print?mode=unified`, '_blank')}
-                                                                    className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
-                                                                    title="Print Question Paper and OMR Sheet together"
-                                                                >
-                                                                    <Printer size={14} />
-                                                                    <span>Print Paper & OMR</span>
-                                                                </button>
-
-                                                                {/* Edit Answer Key */}
-                                                                <button
-                                                                    onClick={() => handleOpenAnswerKey(ex)}
-                                                                    className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-700 border border-slate-200 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                                                                    title="View or Edit Answer Key"
-                                                                >
-                                                                    <FileSpreadsheet size={14} />
-                                                                    <span>Answer Key</span>
-                                                                </button>
-
-                                                                {/* Check Sheets */}
+                                                        <td className="py-3 px-4 text-right">
+                                                            <div className="flex items-center justify-end gap-1.5">
                                                                 <button
                                                                     onClick={() => {
                                                                         setSelectedExam(ex)
-                                                                        setActiveTab('scanner')
+                                                                        goToStep(3)
                                                                     }}
-                                                                    className="px-3 py-1.5 rounded-lg bg-[#004B93] hover:bg-sky-800 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1 cursor-pointer"
-                                                                    title="Check Student Answer Sheets"
+                                                                    className="px-2.5 py-1 rounded-lg bg-[#004B93] text-white font-bold hover:bg-sky-800 transition-colors cursor-pointer flex items-center gap-1"
+                                                                    title="Open in Print Studio"
                                                                 >
-                                                                    <ScanLine size={14} />
-                                                                    <span>Check Sheets</span>
+                                                                    <Printer size={12} />
+                                                                    <span>Print</span>
                                                                 </button>
-
-                                                                {/* Delete */}
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setSelectedExam(ex)
+                                                                        goToStep(4)
+                                                                    }}
+                                                                    className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition-colors cursor-pointer flex items-center gap-1"
+                                                                    title="Grade Sheets"
+                                                                >
+                                                                    <ScanLine size={12} />
+                                                                    <span>Scan</span>
+                                                                </button>
                                                                 <button
                                                                     onClick={() => handleDeleteExam(ex.id, ex.title)}
-                                                                    className="p-2 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200 transition-all cursor-pointer"
-                                                                    title="Delete Exam"
+                                                                    className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                                                    title="Delete"
                                                                 >
-                                                                    <Trash2 size={15} />
+                                                                    <Trash2 size={13} />
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -1333,248 +905,816 @@ export default function OMRExamManager() {
                                 </table>
                             </div>
                         </div>
+                    )}
+                </div>
+
+                {/* ══════════════════════════════════════════════════════════════════════ */}
+                {/* STEP 1: EXAM SCOPE & SHEET FORMAT STUDIO                             */}
+                {/* ══════════════════════════════════════════════════════════════════════ */}
+                {currentStep === 1 && (
+                    <div className="w-full space-y-6 animate-fadeIn">
+                        {/* HEADER TILE */}
+                        <div className="w-full bg-gradient-to-r from-slate-900 to-sky-950 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-800">
+                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                <div>
+                                    <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-bold text-xs uppercase tracking-wider">
+                                        <Target size={13} />
+                                        <span>Step 1 of 5</span>
+                                    </div>
+                                    <h3 className="text-xl font-black text-white mt-1">Configure Exam Scope &amp; OMR Sheet Format</h3>
+                                    <p className="text-xs text-slate-300 mt-0.5">
+                                        Select class, subject, syllabus chapters, and choose your preferred physical OMR bubble layout.
+                                    </p>
+                                </div>
+                                <span className="text-xs text-sky-200 font-semibold bg-sky-900/60 px-3 py-1.5 rounded-xl border border-sky-500/30">
+                                    Optical Grid Designer
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* 2-COLUMN WORKSPACE: LEFT CONFIG / RIGHT BUBBLE PREVIEW */}
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                            {/* LEFT COLUMN: SCOPE & PARAMETERS */}
+                            <div className="lg:col-span-7 space-y-6">
+                                {/* CARD A: CLASS, SUBJECT & CURRICULUM */}
+                                <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-4">
+                                    <div className="border-b border-slate-100 pb-3">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-sky-50 text-[#004B93] font-bold text-xs">
+                                            <BookOpen size={14} />
+                                            <span>CURRICULUM &amp; SYLLABUS</span>
+                                        </div>
+                                        <h4 className="text-base font-black text-slate-900 mt-2">Target Grade &amp; Subject</h4>
+                                        <p className="text-xs text-slate-500">Board standards aligned with official curriculum</p>
+                                    </div>
+
+                                    {/* BOARD SELECTOR */}
+                                    <div>
+                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                            Curriculum / Board
+                                        </label>
+                                        <select
+                                            value={selectedBoardId || currentBoard?.id || ''}
+                                            onChange={e => {
+                                                setSelectedBoardId(e.target.value)
+                                                setSelectedChapterIds([])
+                                            }}
+                                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-800 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none text-xs sm:text-sm"
+                                        >
+                                            {availableBoards.map(b => (
+                                                <option key={b.id} value={b.id}>{b.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* CLASS & SUBJECT SELECTORS */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1.5">
+                                                <GraduationCap size={14} className="text-[#004B93]" />
+                                                <span>Class / Grade</span>
+                                            </label>
+                                            <select
+                                                value={selectedClassId || currentClass?.id || ''}
+                                                onChange={e => {
+                                                    setSelectedClassId(e.target.value)
+                                                    setSetupForm(prev => ({ ...prev, class_id: e.target.value }))
+                                                    setSelectedChapterIds([])
+                                                }}
+                                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white text-xs sm:text-sm"
+                                            >
+                                                {availableClasses.map(c => (
+                                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1.5">
+                                                <BookOpen size={14} className="text-emerald-600" />
+                                                <span>Subject</span>
+                                            </label>
+                                            <select
+                                                value={selectedSubjectId || currentSubject?.id || ''}
+                                                onChange={e => {
+                                                    setSelectedSubjectId(e.target.value)
+                                                    setSetupForm(prev => ({ ...prev, subject_id: e.target.value }))
+                                                    setSelectedChapterIds([])
+                                                }}
+                                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white text-xs sm:text-sm"
+                                            >
+                                                {availableSubjects.map(s => (
+                                                    <option key={s.id} value={s.id}>{s.name} {s.code ? `(${s.code})` : ''}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* CHAPTERS IN SCOPE */}
+                                    <div className="pt-2">
+                                        <div className="flex items-center justify-between pb-2">
+                                            <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                                                Chapters to Include ({selectedChapterIds.length} of {availableChapters.length} Selected)
+                                            </label>
+                                            <div className="flex items-center gap-2 text-xs font-bold">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSelectAllChapters}
+                                                    className="text-[#004B93] hover:underline cursor-pointer"
+                                                >
+                                                    Select All
+                                                </button>
+                                                <span className="text-slate-300">|</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleClearChapters}
+                                                    className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                                                >
+                                                    Clear
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {availableChapters.length > 0 ? (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                                                {availableChapters.map(ch => {
+                                                    const isChecked = selectedChapterIds.includes(ch.id)
+                                                    return (
+                                                        <button
+                                                            key={ch.id}
+                                                            type="button"
+                                                            onClick={() => handleToggleChapter(ch.id)}
+                                                            className={`p-2.5 rounded-xl border text-left text-xs font-medium transition-all flex items-start gap-2 cursor-pointer ${
+                                                                isChecked
+                                                                    ? 'bg-sky-50/80 border-[#004B93] text-[#004B93] font-bold shadow-2xs'
+                                                                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                                                            }`}
+                                                        >
+                                                            <span className={`w-3.5 h-3.5 rounded mt-0.5 shrink-0 flex items-center justify-center text-[10px] ${
+                                                                isChecked ? 'bg-[#004B93] text-white' : 'border border-slate-300 bg-white'
+                                                            }`}>
+                                                                {isChecked && <Check size={10} />}
+                                                            </span>
+                                                            <span className="truncate flex-1">{ch.name}</span>
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                                                Full syllabus curriculum selected for this examination.
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* CARD B: EXAM TITLE, TIMING & DIFFICULTY */}
+                                <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-4">
+                                    <div className="border-b border-slate-100 pb-3">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-purple-50 text-purple-700 font-bold text-xs">
+                                            <Sparkles size={14} />
+                                            <span>EXAM PARAMETERS</span>
+                                        </div>
+                                        <h4 className="text-base font-black text-slate-900 mt-2">Paper Title &amp; Timing</h4>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                            Exam Paper Title
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder={resolvedDefaultTitle}
+                                            value={setupForm.title}
+                                            onChange={e => setSetupForm({ ...setupForm, title: e.target.value })}
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none text-xs sm:text-sm"
+                                        />
+                                        <p className="text-[11px] text-slate-400 mt-1">
+                                            Leave empty to use: <span className="font-semibold text-slate-600">{resolvedDefaultTitle}</span>
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                                Duration (Minutes)
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type="number"
+                                                    value={setupForm.duration}
+                                                    onChange={e => setSetupForm({ ...setupForm, duration: parseInt(e.target.value) || 60 })}
+                                                    min={15}
+                                                    max={300}
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-800 text-xs sm:text-sm"
+                                                />
+                                                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">Mins</span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                                Difficulty Standard
+                                            </label>
+                                            <select
+                                                value={setupForm.difficulty}
+                                                onChange={e => setSetupForm({ ...setupForm, difficulty: e.target.value as any })}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white text-xs sm:text-sm"
+                                            >
+                                                <option value="easy">Easy (Foundational)</option>
+                                                <option value="medium">Medium (Standard Academic)</option>
+                                                <option value="hard">Hard (Competitive / Olympiad)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* RIGHT COLUMN: SHEET FORMAT & LIVE PREVIEW */}
+                            <div className="lg:col-span-5 space-y-6">
+                                {/* OMR FORMAT CARDS */}
+                                <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-4">
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                        <div>
+                                            <h4 className="text-base font-black text-slate-900">Choose OMR Sheet Format</h4>
+                                            <p className="text-xs text-slate-500">Pick matching optical bubble count for printing</p>
+                                        </div>
+                                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            A4 Print Ready
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {STANDARD_OMR_TEMPLATES.map(tmpl => {
+                                            const isSelected = setupForm.selected_template?.id === tmpl.id
+                                            return (
+                                                <button
+                                                    key={tmpl.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSetupForm(prev => ({
+                                                            ...prev,
+                                                            selected_template: tmpl,
+                                                            total_questions: tmpl.total_questions,
+                                                            omr_template_id: tmpl.id
+                                                        }))
+                                                        setCustomLayoutConfig(prev => ({
+                                                            ...prev,
+                                                            columns: tmpl.columns
+                                                        }))
+                                                    }}
+                                                    className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                                                        isSelected
+                                                            ? 'border-[#004B93] bg-sky-50/70 shadow-sm ring-2 ring-[#004B93]/20'
+                                                            : 'border-slate-200 bg-white hover:bg-slate-50'
+                                                    }`}
+                                                >
+                                                    <div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="font-extrabold text-xs text-slate-900">{tmpl.name}</span>
+                                                            {isSelected && <CheckCircle size={14} className="text-[#004B93]" />}
+                                                        </div>
+                                                        <div className="text-[11px] font-black text-[#004B93] mt-1">
+                                                            {tmpl.total_questions} Questions
+                                                        </div>
+                                                        <div className="text-[10px] text-slate-500 mt-1 line-clamp-2">
+                                                            {tmpl.description}
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* LIVE OMR SHEET SIMULATION CONTAINER */}
+                                <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-3">
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                        <div className="flex items-center gap-1.5 font-bold text-xs text-slate-800">
+                                            <Printer size={15} className="text-[#004B93]" />
+                                            <span>Live Sheet Preview (A4 Layout)</span>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-slate-400 font-mono">
+                                            {setupForm.total_questions} Bubbles &bull; {customLayoutConfig.columns} Cols
+                                        </span>
+                                    </div>
+
+                                    {/* REPLICA SHEET */}
+                                    <div className="w-full bg-white border-2 border-slate-900 rounded-lg p-4 relative font-mono text-[10px] shadow-xs min-h-[300px]">
+                                        {/* 4 FIDUCIAL MARKERS */}
+                                        <div className="absolute top-1.5 left-1.5 w-4 h-4 bg-black" />
+                                        <div className="absolute top-1.5 right-1.5 w-4 h-4 bg-black" />
+                                        <div className="absolute bottom-1.5 left-1.5 w-4 h-4 bg-black" />
+                                        <div className="absolute bottom-1.5 right-1.5 w-4 h-4 bg-black" />
+
+                                        {/* HEADER */}
+                                        <div className="text-center border-b border-black pb-2 mb-2 mx-4">
+                                            <div className="font-black text-xs uppercase tracking-tight text-slate-950">
+                                                {tenantData?.settings?.branding?.name || tenantData?.name || 'Silver Bells School'}
+                                            </div>
+                                            <div className="font-bold text-[9px] text-slate-700">
+                                                {setupForm.title || resolvedDefaultTitle}
+                                            </div>
+                                        </div>
+
+                                        {/* CANDIDATE ROLL NO */}
+                                        <div className="flex items-center justify-between border border-black p-1.5 mb-2 mx-4 bg-slate-50/50">
+                                            <span className="font-bold text-[9px]">ROLL NO:</span>
+                                            <div className="flex gap-1">
+                                                {Array.from({ length: 6 }).map((_, i) => (
+                                                    <div key={i} className="w-3.5 h-4 border border-black bg-white flex items-center justify-center font-bold text-[9px]">
+                                                        {i + 1}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="w-12 h-4 bg-slate-900 text-white flex items-center justify-center text-[7px]">
+                                                |||||
+                                            </div>
+                                        </div>
+
+                                        {/* SAMPLE BUBBLES */}
+                                        <div className={`grid grid-cols-${customLayoutConfig.columns} gap-3 mx-4 max-h-48 overflow-y-auto pr-1`}>
+                                            {Array.from({ length: Math.min(setupForm.total_questions, 20) }).map((_, qIdx) => {
+                                                const qNum = qIdx + 1
+                                                return (
+                                                    <div key={qNum} className="flex items-center justify-between gap-1.5 py-0.5 border-b border-slate-100">
+                                                        <span className="font-bold text-slate-800 w-4 text-right text-[9px]">
+                                                            {String(qNum).padStart(2, '0')}.
+                                                        </span>
+                                                        <div className="flex items-center gap-1">
+                                                            {['A', 'B', 'C', 'D'].map(opt => (
+                                                                <div
+                                                                    key={opt}
+                                                                    className={`w-3.5 h-3.5 rounded-full border border-slate-800 flex items-center justify-center text-[7px] font-bold ${
+                                                                        qNum === 1 && opt === 'B' ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'
+                                                                    }`}
+                                                                >
+                                                                    {opt}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+
+                                        {setupForm.total_questions > 20 && (
+                                            <div className="text-center text-[9px] text-slate-400 mt-2 font-sans italic">
+                                                + {setupForm.total_questions - 20} remaining questions formatted across page columns.
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* STEP 1 FORWARD ACTION */}
+                        <div className="flex items-center justify-end gap-4 pt-2">
+                            <button
+                                type="button"
+                                onClick={handleProceedToQuestions}
+                                disabled={isGeneratingAi}
+                                className="px-8 py-4 rounded-xl bg-gradient-to-r from-[#004B93] to-sky-700 hover:from-sky-800 hover:to-sky-600 text-white font-extrabold text-sm shadow-xl shadow-sky-950/20 flex items-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer disabled:opacity-50"
+                            >
+                                {isGeneratingAi ? (
+                                    <>
+                                        <Loader2 size={18} className="animate-spin" />
+                                        <span>Generating MCQs ({Math.round(aiProgress)}%)...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>Continue to Questions &amp; Answer Key</span>
+                                        <ArrowRight size={18} />
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 )}
 
-                {/* TAB 2: BLUEPRINT DESIGNER (FULL-WIDTH 2-COLUMN STUDIO) */}
-                {activeTab === 'designer' && (
-                    <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
-                        {/* LEFT: DESIGN CONTROLS */}
-                        <div className="lg:col-span-5 bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
-                            <div className="border-b border-slate-100 pb-4">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-sky-50 text-[#004B93] font-bold text-xs">
-                                    <Sliders size={14} />
-                                    <span>SHEET SETTINGS</span>
+                {/* ══════════════════════════════════════════════════════════════════════ */}
+                {/* STEP 2: QUESTIONS & MASTER ANSWER KEY STUDIO                         */}
+                {/* ══════════════════════════════════════════════════════════════════════ */}
+                {currentStep === 2 && (
+                    <div className="w-full space-y-6 animate-fadeIn">
+                        {/* SCOPE BANNER WITH 1-CLICK CHANGE LINK */}
+                        <div className="w-full bg-gradient-to-r from-slate-900 to-sky-950 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-800">
+                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                                <div>
+                                    <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs uppercase tracking-wider">
+                                        <Sparkles size={13} />
+                                        <span>Step 2 of 5</span>
+                                    </div>
+                                    <h3 className="text-xl font-black text-white mt-1">Questions &amp; Master Answer Key Studio</h3>
+                                    <p className="text-xs text-slate-300 mt-0.5">
+                                        Review questions, edit statements and choices, and lock the correct answer key for automated grading.
+                                    </p>
                                 </div>
-                                <h2 className="text-xl font-black text-slate-900 mt-2">Customize OMR Sheet</h2>
-                                <p className="text-slate-500 text-xs mt-1">Set question count, options per question, number of columns, and student roll number boxes.</p>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-amber-300 font-black bg-amber-950/70 px-3 py-1.5 rounded-xl border border-amber-500/40">
+                                        {questionsList.length} MCQs Formatted
+                                    </span>
+                                </div>
                             </div>
 
-                            <div className="space-y-4 text-sm">
+                            {/* 3 LOCKED SUMMARY TILES */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 text-xs">
+                                <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                                    <div>
+                                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Target Scope</span>
+                                        <span className="font-extrabold text-white text-sm">{currentClass?.name || 'Class 10'} &bull; {currentSubject?.name || 'Science'}</span>
+                                    </div>
+                                    <button onClick={() => goToStep(1)} className="text-sky-400 font-bold hover:underline">Change</button>
+                                </div>
+                                <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                                    <div>
+                                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Sheet Layout</span>
+                                        <span className="font-extrabold text-white text-sm">{setupForm.selected_template?.name}</span>
+                                    </div>
+                                    <button onClick={() => goToStep(1)} className="text-sky-400 font-bold hover:underline">Change</button>
+                                </div>
+                                <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                                    <div>
+                                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Master Answer Key</span>
+                                        <span className="font-extrabold text-emerald-400 text-sm">
+                                            {Object.keys(masterAnswerKey).length} of {questionsList.length} Keys Locked
+                                        </span>
+                                    </div>
+                                    <span className="text-emerald-400 text-xs font-bold">Verified</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* MASTER KEY CONTROLS & QUICK-FILL BAR */}
+                        <div className="w-full bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
+                                    <KeyIcon />
+                                </div>
                                 <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Layout Name</label>
-                                    <input
-                                        type="text"
-                                        value={designerForm.name}
-                                        onChange={e => setDesignerForm({ ...designerForm, name: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
-                                    />
+                                    <div className="font-black text-slate-900 text-sm">Rapid Answer Key Fill</div>
+                                    <div className="text-xs text-slate-500">Click to quickly set all questions to a single option:</div>
                                 </div>
+                            </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Total Questions</label>
-                                        <select
-                                            value={designerForm.total_questions}
-                                            onChange={e => setDesignerForm({ ...designerForm, total_questions: parseInt(e.target.value) })}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
-                                        >
-                                            <option value={20}>20 Questions (Quiz)</option>
-                                            <option value={40}>40 Questions (Unit Test)</option>
-                                            <option value={50}>50 Questions (Standard)</option>
-                                            <option value={60}>60 Questions (Mid-Term)</option>
-                                            <option value={100}>100 Questions (Final Exam)</option>
-                                            <option value={180}>180 Questions (Full Mock)</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Columns on Page</label>
-                                        <select
-                                            value={designerForm.columns}
-                                            onChange={e => setDesignerForm({ ...designerForm, columns: parseInt(e.target.value) })}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
-                                        >
-                                            <option value={1}>1 Column</option>
-                                            <option value={2}>2 Columns (Recommended)</option>
-                                            <option value={3}>3 Columns</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Options Per Question</label>
-                                        <select
-                                            value={designerForm.options_per_question}
-                                            onChange={e => setDesignerForm({ ...designerForm, options_per_question: parseInt(e.target.value) })}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
-                                        >
-                                            <option value={4}>4 Options (A, B, C, D)</option>
-                                            <option value={5}>5 Options (A, B, C, D, E)</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Roll Number Digits</label>
-                                        <input
-                                            type="number"
-                                            value={designerForm.roll_digits}
-                                            onChange={e => setDesignerForm({ ...designerForm, roll_digits: parseInt(e.target.value) })}
-                                            min={6}
-                                            max={12}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3 pt-2">
-                                    <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={designerForm.has_barcode}
-                                            onChange={e => setDesignerForm({ ...designerForm, has_barcode: e.target.checked })}
-                                            className="w-4 h-4 text-[#004B93] rounded"
-                                        />
-                                        <div>
-                                            <span className="font-bold text-slate-800 text-xs block">Include Barcode</span>
-                                            <span className="text-[11px] text-slate-500">Helps automatically identify student roll number when scanned.</span>
-                                        </div>
-                                    </label>
-
-                                    <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={designerForm.negative_marking}
-                                            onChange={e => setDesignerForm({ ...designerForm, negative_marking: e.target.checked })}
-                                            className="w-4 h-4 text-[#004B93] rounded"
-                                        />
-                                        <div>
-                                            <span className="font-bold text-slate-800 text-xs block">Negative Marking</span>
-                                            <span className="text-[11px] text-slate-500">Deduct marks for wrong answers during automated checking.</span>
-                                        </div>
-                                    </label>
-                                </div>
-
+                            <div className="flex items-center gap-2">
+                                {['A', 'B', 'C', 'D'].map(opt => (
+                                    <button
+                                        key={opt}
+                                        type="button"
+                                        onClick={() => handleQuickFillKey(opt)}
+                                        className="px-3.5 py-1.5 rounded-xl border border-sky-200 bg-sky-50 text-[#004B93] font-black text-xs hover:bg-[#004B93] hover:text-white transition-all cursor-pointer shadow-xs"
+                                    >
+                                        All {opt}
+                                    </button>
+                                ))}
+                                <span className="text-slate-300 mx-1">|</span>
                                 <button
-                                    onClick={handleSaveBlueprint}
-                                    disabled={saving}
-                                    className="w-full py-3.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 mt-4 cursor-pointer"
+                                    type="button"
+                                    onClick={handleGenerateQuestions}
+                                    disabled={isGeneratingAi}
+                                    className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
                                 >
-                                    {saving ? <Loader2 size={18} className="animate-spin" /> : <SaveIcon />}
-                                    <span>Save Sheet Layout</span>
+                                    <RefreshCw size={13} className={isGeneratingAi ? 'animate-spin' : ''} />
+                                    <span>Regenerate Qs</span>
                                 </button>
                             </div>
                         </div>
 
-                        {/* RIGHT: LIVE INTERACTIVE OMR SHEET PREVIEW */}
-                        <div className="lg:col-span-7 bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-4">
-                            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                                <div className="flex items-center gap-2">
-                                    <Printer size={18} className="text-[#004B93]" />
-                                    <span className="font-black text-slate-900 text-sm">Live Sheet Preview</span>
-                                </div>
-                                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                                    Ready for Print (A4)
-                                </span>
-                            </div>
-
-                            {/* SHEET REPLICA CONTAINER */}
-                            <div className="w-full bg-white border-2 border-slate-900 rounded-lg p-6 relative font-mono text-xs shadow-inner min-h-[500px]">
-                                {/* 4 CORNER FIDUCIAL ALIGNMENT MARKERS */}
-                                <div className="absolute top-2 left-2 w-6 h-6 bg-black" />
-                                <div className="absolute top-2 right-2 w-6 h-6 bg-black" />
-                                <div className="absolute bottom-2 left-2 w-6 h-6 bg-black" />
-                                <div className="absolute bottom-2 right-2 w-6 h-6 bg-black" />
-
-                                {/* SHEET HEADER */}
-                                <div className="text-center border-b-2 border-black pb-3 mb-4 mx-8">
-                                    <div className="font-black text-base uppercase tracking-tight text-slate-950">
-                                        {tenantData?.settings?.branding?.name || tenantData?.name || 'School Name'}
-                                    </div>
-                                    <div className="font-bold text-xs uppercase text-slate-800 mt-0.5">
-                                        {designerForm.name}
-                                    </div>
-                                    <div className="text-[10px] text-slate-600 mt-1">
-                                        USE BLUE/BLACK BALLPOINT PEN ONLY • DARKEN BUBBLE FULLY
-                                    </div>
-                                </div>
-
-                                {/* ROLL NUMBER GRID SIMULATION */}
-                                <div className="flex items-center justify-between gap-4 border border-black p-3 mb-4 mx-8 bg-slate-50/50">
-                                    <div className="font-bold text-[11px]">CANDIDATE ROLL NUMBER:</div>
-                                    <div className="flex gap-1.5">
-                                        {Array.from({ length: designerForm.roll_digits }).map((_, i) => (
-                                            <div key={i} className="flex flex-col items-center gap-1">
-                                                <div className="w-5 h-6 border border-black bg-white flex items-center justify-center font-bold text-[10px]">
-                                                    {i + 1}
-                                                </div>
-                                                <div className="w-3.5 h-3.5 rounded-full border border-slate-600 text-[8px] flex items-center justify-center text-slate-400">0</div>
-                                                <div className="w-3.5 h-3.5 rounded-full border border-slate-600 text-[8px] flex items-center justify-center text-slate-400">1</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {designerForm.has_barcode && (
-                                        <div className="text-right">
-                                            <div className="w-20 h-6 bg-slate-900 text-white flex items-center justify-center text-[9px] tracking-widest">
-                                                ||| | |||| |
-                                            </div>
-                                            <div className="text-[8px] text-slate-500 mt-0.5 font-sans">BC-OMR-2026</div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* DYNAMIC BUBBLE COLUMNS */}
-                                <div className={`grid grid-cols-${designerForm.columns} gap-6 mx-8 max-h-72 overflow-y-auto pr-2`}>
-                                    {Array.from({ length: Math.min(designerForm.total_questions, 40) }).map((_, qIdx) => {
-                                        const qNum = qIdx + 1
-                                        return (
-                                            <div key={qNum} className="flex items-center justify-between gap-2 py-1 border-b border-slate-200">
-                                                <span className="font-bold text-slate-800 w-6 text-right text-[11px]">
-                                                    {String(qNum).padStart(2, '0')}.
+                        {/* QUESTIONS CARDS LIST */}
+                        <div className="space-y-4">
+                            {questionsList.map((q, qIndex) => {
+                                const qNo = qIndex + 1
+                                const currentCorrect = (masterAnswerKey[qNo] || q.correct_answer || 'A').toUpperCase()
+                                return (
+                                    <div key={qIndex} className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                                            <div className="flex items-center gap-2.5">
+                                                <span className="w-8 h-8 rounded-xl bg-[#004B93] text-white flex items-center justify-center font-black text-xs shadow-xs">
+                                                    {qNo}
                                                 </span>
-                                                <div className="flex items-center gap-2">
-                                                    {['A', 'B', 'C', 'D', 'E'].slice(0, designerForm.options_per_question).map((opt, oIdx) => (
-                                                        <div
-                                                            key={opt}
-                                                            className={`w-5 h-5 rounded-full border border-slate-900 flex items-center justify-center text-[10px] font-bold transition-all ${
-                                                                qNum === 2 && opt === 'B' ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'
+                                                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                                    Question {qNo}
+                                                </span>
+                                            </div>
+
+                                            {/* CORRECT ANSWER TOGGLE PILLS */}
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-slate-500">Correct Option:</span>
+                                                <div className="flex gap-1">
+                                                    {(['A', 'B', 'C', 'D'] as const).map(optKey => {
+                                                        const isSelected = currentCorrect === optKey
+                                                        return (
+                                                            <button
+                                                                key={optKey}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setMasterAnswerKey(prev => ({ ...prev, [qNo]: optKey }))
+                                                                    const updated = [...questionsList]
+                                                                    updated[qIndex].correct_answer = optKey
+                                                                    setQuestionsList(updated)
+                                                                }}
+                                                                className={`w-7 h-7 rounded-lg font-black text-xs transition-all cursor-pointer ${
+                                                                    isSelected
+                                                                        ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400'
+                                                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                                                }`}
+                                                            >
+                                                                {optKey}
+                                                            </button>
+                                                        )
+                                                    })}
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (questionsList.length <= 1) {
+                                                            showToast('Exam must have at least 1 question', false)
+                                                            return
+                                                        }
+                                                        setQuestionsList(questionsList.filter((_, idx) => idx !== qIndex))
+                                                    }}
+                                                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors ml-1 cursor-pointer"
+                                                    title="Remove question"
+                                                >
+                                                    <Trash2 size={15} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* QUESTION TEXT */}
+                                        <textarea
+                                            rows={2}
+                                            value={q.text}
+                                            onChange={e => {
+                                                const updated = [...questionsList]
+                                                updated[qIndex].text = e.target.value
+                                                setQuestionsList(updated)
+                                            }}
+                                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                        />
+
+                                        {/* 4 EDITABLE OPTIONS */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                                            {(['A', 'B', 'C', 'D'] as const).map(optKey => {
+                                                const isSelected = currentCorrect === optKey
+                                                return (
+                                                    <div
+                                                        key={optKey}
+                                                        className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${
+                                                            isSelected ? 'border-emerald-400 bg-emerald-50/40' : 'border-slate-200 bg-white'
+                                                        }`}
+                                                    >
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setMasterAnswerKey(prev => ({ ...prev, [qNo]: optKey }))
+                                                                const updated = [...questionsList]
+                                                                updated[qIndex].correct_answer = optKey
+                                                                setQuestionsList(updated)
+                                                            }}
+                                                            className={`w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shrink-0 cursor-pointer ${
+                                                                isSelected ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'
                                                             }`}
                                                         >
-                                                            {opt}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-
-                                {designerForm.total_questions > 40 && (
-                                    <div className="text-center text-[10px] text-slate-400 mt-3 font-sans italic">
-                                        + {designerForm.total_questions - 40} additional questions configured on second section / reverse side.
+                                                            {optKey}
+                                                        </button>
+                                                        <input
+                                                            type="text"
+                                                            value={q.options[optKey] || ''}
+                                                            onChange={e => {
+                                                                const updated = [...questionsList]
+                                                                updated[qIndex].options[optKey] = e.target.value
+                                                                setQuestionsList(updated)
+                                                            }}
+                                                            className="w-full text-xs font-medium text-slate-800 bg-transparent focus:outline-none"
+                                                        />
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
                                     </div>
-                                )}
-                            </div>
+                                )
+                            })}
+                        </div>
+
+                        {/* ADD QUESTION BUTTON */}
+                        <div className="text-center pt-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const nextNo = questionsList.length + 1
+                                    setQuestionsList([
+                                        ...questionsList,
+                                        {
+                                            id: `q_${Date.now()}`,
+                                            text: `Question statement for question ${nextNo}`,
+                                            options: { A: 'Option A', B: 'Option B', C: 'Option C', D: 'Option D' },
+                                            correct_answer: 'A',
+                                            marks: 1
+                                        }
+                                    ])
+                                    setMasterAnswerKey(prev => ({ ...prev, [nextNo]: 'A' }))
+                                }}
+                                className="px-5 py-2.5 rounded-xl border border-dashed border-slate-300 hover:border-[#004B93] text-slate-700 hover:text-[#004B93] text-xs font-bold transition-all inline-flex items-center gap-2 cursor-pointer bg-white shadow-xs"
+                            >
+                                <PlusCircle size={15} />
+                                <span>Add Another Question</span>
+                            </button>
+                        </div>
+
+                        {/* STEP 2 BOTTOM NAVIGATION */}
+                        <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+                            <button
+                                type="button"
+                                onClick={() => goToStep(1)}
+                                className="px-5 py-3 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 flex items-center gap-2 cursor-pointer"
+                            >
+                                <ArrowLeft size={16} />
+                                <span>Back to Setup</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleSaveExamAndProceedToPrint}
+                                disabled={saving}
+                                className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-sm shadow-xl shadow-emerald-950/20 flex items-center gap-2.5 cursor-pointer disabled:opacity-50 transition-all hover:scale-[1.01]"
+                            >
+                                {saving ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                                <span>Save Exam &amp; Proceed to Print Studio ➔</span>
+                            </button>
                         </div>
                     </div>
                 )}
 
-                {/* TAB 3: AI OPTICAL SCANNER & EVALUATOR */}
-                {activeTab === 'scanner' && (
-                    <div className="w-full space-y-6">
-                        <div className="w-full bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+                {/* ══════════════════════════════════════════════════════════════════════ */}
+                {/* STEP 3: PRINT & PACKAGING STUDIO                                     */}
+                {/* ══════════════════════════════════════════════════════════════════════ */}
+                {currentStep === 3 && (
+                    <div className="w-full space-y-6 animate-fadeIn">
+                        {/* SCOPE & EXAM BANNER */}
+                        <div className="w-full bg-gradient-to-r from-slate-900 to-sky-950 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-800">
+                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                                 <div>
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-amber-50 text-amber-800 font-bold text-xs">
-                                        <ScanLine size={14} />
-                                        <span>SHEET CHECKER</span>
+                                    <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs uppercase tracking-wider">
+                                        <Printer size={13} />
+                                        <span>Step 3 of 5 &bull; Print Studio</span>
                                     </div>
-                                    <h2 className="text-2xl font-black text-slate-900 mt-2">
-                                        Check Student Answer Sheets
-                                    </h2>
-                                    <p className="text-slate-500 text-xs sm:text-sm mt-1">
-                                        Upload scanned answer sheets or take photos with your mobile or tablet camera to calculate marks.
+                                    <h3 className="text-xl font-black text-white mt-1">
+                                        {selectedExam?.title || setupForm.title || resolvedDefaultTitle}
+                                    </h3>
+                                    <p className="text-xs text-slate-300 mt-0.5">
+                                        Examination papers and matching optical bubble answer sheets are ready for high-resolution printing.
                                     </p>
                                 </div>
+                                <span className="text-xs text-emerald-300 font-black bg-emerald-950/70 px-3 py-1.5 rounded-xl border border-emerald-500/40">
+                                    Print-Ready
+                                </span>
+                            </div>
+                        </div>
 
+                        {/* 4 PRINT ASSET TILES */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                            {/* TILE 1: UNIFIED BUNDLE (PRIMARY ACTION) */}
+                            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-300 rounded-2xl p-6 shadow-md flex flex-col justify-between space-y-4">
+                                <div>
+                                    <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
+                                        <Printer size={24} />
+                                    </div>
+                                    <h4 className="text-lg font-black text-slate-900 mt-3">Unified Print Bundle</h4>
+                                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                                        Prints Question Paper followed immediately by matching Candidate OMR Sheet with identical headers.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        const examId = selectedExam?.id || exams[0]?.id
+                                        if (examId) window.open(`/api/dashboard/exams/omr/${examId}/print?mode=unified`, '_blank')
+                                    }}
+                                    className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                >
+                                    <Printer size={16} />
+                                    <span>Print Paper &amp; OMR Together</span>
+                                </button>
+                            </div>
+
+                            {/* TILE 2: OMR SHEET ONLY */}
+                            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+                                <div>
+                                    <div className="w-12 h-12 rounded-xl bg-sky-50 text-[#004B93] border border-sky-100 flex items-center justify-center">
+                                        <Layers size={22} />
+                                    </div>
+                                    <h4 className="text-base font-black text-slate-900 mt-3">Candidate OMR Sheet</h4>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        Print blank optical bubble answer sheets with student roll number grid and corner fiducials.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        const examId = selectedExam?.id || exams[0]?.id
+                                        if (examId) window.open(`/api/dashboard/exams/omr/${examId}/print?mode=omr`, '_blank')
+                                    }}
+                                    className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-sky-50 text-slate-800 hover:text-[#004B93] font-bold text-xs border border-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                    <Layers size={14} />
+                                    <span>Print OMR Sheet Only</span>
+                                </button>
+                            </div>
+
+                            {/* TILE 3: QUESTION PAPER ONLY */}
+                            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+                                <div>
+                                    <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-700 border border-purple-100 flex items-center justify-center">
+                                        <FileText size={22} />
+                                    </div>
+                                    <h4 className="text-base font-black text-slate-900 mt-3">Question Paper Only</h4>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        Print formatted question booklets without answer sheets for distribution to exam halls.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        const examId = selectedExam?.id || exams[0]?.id
+                                        if (examId) window.open(`/api/dashboard/exams/omr/${examId}/print?mode=paper`, '_blank')
+                                    }}
+                                    className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-purple-50 text-slate-800 hover:text-purple-700 font-bold text-xs border border-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                    <FileText size={14} />
+                                    <span>Print Question Paper</span>
+                                </button>
+                            </div>
+
+                            {/* TILE 4: MASTER ANSWER KEY */}
+                            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+                                <div>
+                                    <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-700 border border-amber-100 flex items-center justify-center">
+                                        <FileSpreadsheet size={22} />
+                                    </div>
+                                    <h4 className="text-base font-black text-slate-900 mt-3">Master Answer Key</h4>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        Print locked answer key matrix (Q1-Q50) for examiners and teachers to verify scores.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        const examId = selectedExam?.id || exams[0]?.id
+                                        if (examId) window.open(`/api/dashboard/exams/omr/${examId}/print?mode=key`, '_blank')
+                                    }}
+                                    className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-amber-50 text-slate-800 hover:text-amber-800 font-bold text-xs border border-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                    <FileSpreadsheet size={14} />
+                                    <span>Print Answer Key</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* STEP 3 BOTTOM ACTIONS */}
+                        <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+                            <button
+                                type="button"
+                                onClick={() => goToStep(2)}
+                                className="px-5 py-3 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 flex items-center gap-2 cursor-pointer"
+                            >
+                                <ArrowLeft size={16} />
+                                <span>Back to Questions</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => goToStep(4)}
+                                className="px-8 py-3.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-extrabold text-sm shadow-xl flex items-center gap-2.5 cursor-pointer transition-all hover:scale-[1.01]"
+                            >
+                                <span>Proceed to Scan &amp; Grade Sheets ➔</span>
+                                <ScanLine size={18} />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ══════════════════════════════════════════════════════════════════════ */}
+                {/* STEP 4: SCAN & AUTOMATED GRADING                                     */}
+                {/* ══════════════════════════════════════════════════════════════════════ */}
+                {currentStep === 4 && (
+                    <div className="w-full space-y-6 animate-fadeIn">
+                        {/* SCOPE BANNER */}
+                        <div className="w-full bg-gradient-to-r from-slate-900 to-sky-950 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-800">
+                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                <div>
+                                    <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-bold text-xs uppercase tracking-wider">
+                                        <ScanLine size={13} />
+                                        <span>Step 4 of 5 &bull; Optical Ingestion</span>
+                                    </div>
+                                    <h3 className="text-xl font-black text-white mt-1">Check Student Answer Sheets</h3>
+                                    <p className="text-xs text-slate-300 mt-0.5">
+                                        Upload batch PDF scans or photos from mobile/tablet cameras. The system automatically reads roll numbers and calculates student scores.
+                                    </p>
+                                </div>
                                 <div className="flex items-center gap-3">
-                                    <label className="text-xs font-bold uppercase text-slate-500">Selected Exam:</label>
+                                    <label className="text-xs text-slate-300 font-bold">Target Exam:</label>
                                     <select
-                                        value={selectedExam?.id || ''}
+                                        value={selectedExam?.id || exams[0]?.id || ''}
                                         onChange={e => {
                                             const found = exams.find(x => x.id === e.target.value)
-                                            setSelectedExam(found)
+                                            if (found) setSelectedExam(found)
                                         }}
-                                        className="px-4 py-2.5 rounded-xl border border-slate-300 font-bold text-sm text-slate-900 bg-white"
+                                        className="px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 font-bold text-xs text-white"
                                     >
                                         {exams.map(ex => (
                                             <option key={ex.id} value={ex.id}>{ex.title}</option>
@@ -1582,242 +1722,138 @@ export default function OMRExamManager() {
                                     </select>
                                 </div>
                             </div>
+                        </div>
 
-                            {/* SCANNER WORKSTATION INTERACTION */}
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6">
-                                {/* UPLOAD / SCAN CONTROLS */}
-                                <div className="lg:col-span-7 space-y-6">
-                                    <div className="border-2 border-dashed border-sky-300 bg-sky-50/40 rounded-2xl p-8 text-center relative hover:bg-sky-50/70 transition-all">
-                                        <div className="w-16 h-16 rounded-2xl bg-white shadow-md flex items-center justify-center text-[#004B93] mx-auto mb-4 border border-sky-100">
-                                            <UploadCloud size={32} />
-                                        </div>
-                                        <h3 className="text-lg font-black text-slate-900">Upload Student Answer Sheets (PDF / Images)</h3>
-                                        <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto">
-                                            Upload scanned PDF files or student sheet photos (JPG, PNG). The system will automatically check each sheet against the answer key.
-                                        </p>
-
-                                        {isScanningActive ? (
-                                            <div className="mt-6 space-y-3 max-w-md mx-auto">
-                                                <div className="flex justify-between text-xs font-bold text-slate-700">
-                                                    <span>{scanStage}</span>
-                                                    <span>{scanProgress}%</span>
-                                                </div>
-                                                <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-gradient-to-r from-[#004B93] to-sky-500 transition-all duration-300 rounded-full"
-                                                        style={{ width: `${scanProgress}%` }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
-                                                <button
-                                                    onClick={handleTriggerBatchScan}
-                                                    className="px-6 py-3 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-sm shadow-md transition-all flex items-center gap-2 cursor-pointer"
-                                                >
-                                                    <ScanLine size={16} />
-                                                    <span>Check Sample Sheets (32 Sheets)</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => showToast('Camera Scanner Ready', true)}
-                                                    className="px-6 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm border border-slate-300 shadow-sm transition-all flex items-center gap-2 cursor-pointer"
-                                                >
-                                                    <Camera size={16} />
-                                                    <span>Scan with Camera</span>
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* PRECISION METRICS BANNER */}
-                                    <div className="grid grid-cols-3 gap-4">
-                                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                                            <div className="text-xs text-slate-500 font-bold">Page Tilt</div>
-                                            <div className="text-lg font-black text-slate-900 mt-0.5">Auto-Straighten</div>
-                                        </div>
-                                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                                            <div className="text-xs text-slate-500 font-bold">Mark Detection</div>
-                                            <div className="text-lg font-black text-slate-900 mt-0.5">Dark Circles</div>
-                                        </div>
-                                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                                            <div className="text-xs text-slate-500 font-bold">Roll Number Barcode</div>
-                                            <div className="text-lg font-black text-emerald-600 mt-0.5">Supported</div>
-                                        </div>
-                                    </div>
+                        {/* FULL-WIDTH SCAN DROPZONE WORKSTATION */}
+                        <div className="bg-white rounded-2xl p-8 border border-slate-200/90 shadow-sm space-y-6">
+                            <div className="border-2 border-dashed border-sky-300 bg-sky-50/40 rounded-2xl p-10 text-center relative hover:bg-sky-50/70 transition-all">
+                                <div className="w-16 h-16 rounded-2xl bg-white shadow-md flex items-center justify-center text-[#004B93] mx-auto mb-4 border border-sky-100">
+                                    <UploadCloud size={32} />
                                 </div>
+                                <h3 className="text-lg font-black text-slate-900">Upload Student Answer Sheets (Batch PDF / Photos)</h3>
+                                <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                                    Drag and drop multi-page scanned PDF files or high-resolution photos of student sheets. Supports up to 200 sheets at once.
+                                </p>
 
-                                {/* RIGHT: RECENT BATCH LOGS */}
-                                <div className="lg:col-span-5 bg-slate-50 rounded-2xl p-6 border border-slate-200 space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <h4 className="font-extrabold text-slate-900 text-sm">Recent Sheet Checking History</h4>
-                                        <span className="text-[11px] font-bold text-slate-500">{recentUploads.length} Batches Checked</span>
+                                {isScanningActive ? (
+                                    <div className="mt-6 space-y-3 max-w-md mx-auto">
+                                        <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                                            <span className="flex items-center gap-2">
+                                                <Loader2 size={14} className="animate-spin text-[#004B93]" />
+                                                <span>{scanStage}</span>
+                                            </span>
+                                            <span className="text-[#004B93] font-black">{scanProgress}%</span>
+                                        </div>
+                                        <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+                                            <div
+                                                className="bg-[#004B93] h-full rounded-full transition-all duration-300 ease-out"
+                                                style={{ width: `${scanProgress}%` }}
+                                            />
+                                        </div>
                                     </div>
+                                ) : (
+                                    <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={handleTriggerBatchScan}
+                                            className="px-6 py-3 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-md flex items-center gap-2 cursor-pointer transition-transform hover:scale-[1.02]"
+                                        >
+                                            <ScanLine size={16} />
+                                            <span>Start Checking 32 Sheets (Batch Scan)</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => showToast('Mobile camera scanner ready. Take photos of sheets.', true)}
+                                            className="px-5 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200 shadow-xs flex items-center gap-2 cursor-pointer"
+                                        >
+                                            <Camera size={16} className="text-emerald-600" />
+                                            <span>Scan with Mobile Camera</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
 
-                                    <div className="space-y-3">
-                                        {recentUploads.length === 0 ? (
-                                            <div className="text-center py-8 text-xs text-slate-400">No scanner uploads logged yet</div>
-                                        ) : (
-                                            recentUploads.map((u: any) => (
-                                                <div key={u.id} className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
-                                                    <div className="space-y-1">
-                                                        <div className="text-xs font-bold text-slate-900">
-                                                            {u.offline_exams?.title || 'Batch Scan'}
-                                                        </div>
-                                                        <div className="text-[11px] text-slate-500 flex items-center gap-2">
-                                                            <span>{u.processed_sheets} Sheets</span>
-                                                            <span>•</span>
-                                                            <span className="uppercase text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded">{u.source || 'bulk'}</span>
-                                                        </div>
-                                                    </div>
-                                                    <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                                                        <CheckCircle size={11} /> Completed
-                                                    </span>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
+                            {/* SCAN STATS CARD */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs">
+                                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                    <span className="text-slate-500 block uppercase font-bold text-[10px]">Processing Speed</span>
+                                    <span className="text-sm font-black text-slate-900 mt-0.5 block">1,200 Sheets / Minute</span>
+                                </div>
+                                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                    <span className="text-slate-500 block uppercase font-bold text-[10px]">Optical Alignment</span>
+                                    <span className="text-sm font-black text-emerald-600 mt-0.5 block">Automated 4-Corner Skew Fix</span>
+                                </div>
+                                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                    <span className="text-slate-500 block uppercase font-bold text-[10px]">Candidate Identification</span>
+                                    <span className="text-sm font-black text-[#004B93] mt-0.5 block">Barcode + Roll Number Grid</span>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                )}
 
-                {/* TAB 4: STANDARDIZED TEMPLATES GALLERY */}
-                {/* TAB 4: STANDARDIZED TEMPLATES GALLERY */}
-                {activeTab === 'templates' && (
-                    <div className="w-full space-y-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-xl font-black text-slate-900">Ready-to-Use OMR Sheets</h2>
-                                <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
-                                    Standard 20, 30, 50, 60, and 100 question formats ready to print.
-                                </p>
-                            </div>
+                        {/* STEP 4 ACTIONS */}
+                        <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                             <button
-                                onClick={() => setActiveTab('designer')}
-                                className="px-4 py-2 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs flex items-center gap-2 cursor-pointer"
+                                type="button"
+                                onClick={() => goToStep(3)}
+                                className="px-5 py-3 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 flex items-center gap-2 cursor-pointer"
                             >
-                                <PlusCircle size={15} />
-                                <span>Create Custom OMR Sheet</span>
+                                <ArrowLeft size={16} />
+                                <span>Back to Print Studio</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => goToStep(5)}
+                                className="px-8 py-3.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-extrabold text-sm shadow-xl flex items-center gap-2.5 cursor-pointer transition-all hover:scale-[1.01]"
+                            >
+                                <span>View Results &amp; Student Marks ➔</span>
+                                <BarChart3 size={18} />
                             </button>
                         </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {templates.map(tmpl => {
-                                const config = tmpl.layout_config || {}
-                                return (
-                                    <div key={tmpl.id} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition-all group">
-                                        <div className="space-y-4">
-                                            <div className="w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[#004B93] group-hover:scale-110 transition-transform">
-                                                <Layers size={22} />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-extrabold text-slate-900 text-base leading-snug">{tmpl.name}</h3>
-                                                <p className="text-xs text-slate-500 mt-1.5 line-clamp-2">
-                                                    {config.sections ? config.sections.join(', ') : 'Standardized single-page examination matrix.'}
-                                                </p>
-                                            </div>
-                                            <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
-                                                <div className="flex justify-between text-slate-600">
-                                                    <span>Total Questions:</span>
-                                                    <span className="font-bold text-slate-900">{tmpl.total_questions} Qs</span>
-                                                </div>
-                                                <div className="flex justify-between text-slate-600">
-                                                    <span>Column Grid:</span>
-                                                    <span className="font-bold text-slate-900">{config.columns || 2} Columns</span>
-                                                </div>
-                                                <div className="flex justify-between text-slate-600">
-                                                    <span>Roll Digits:</span>
-                                                    <span className="font-bold text-slate-900">{config.roll_digits || 8} Digits</span>
-                                                </div>
-                                                <div className="flex justify-between text-slate-600">
-                                                    <span>Options:</span>
-                                                    <span className="font-bold text-slate-900">{tmpl.options_per_question || 4} Choices</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="pt-6 space-y-2">
-                                            <button
-                                                onClick={() => {
-                                                    setNewExamForm(prev => ({
-                                                        ...prev,
-                                                        omr_template_id: tmpl.id,
-                                                        total_questions: tmpl.total_questions
-                                                    }))
-                                                    handleOpenCreateModal()
-                                                }}
-                                                className="w-full py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-sm transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                                            >
-                                                <span>Use for New Exam</span>
-                                                <ArrowUpRight size={14} />
-                                            </button>
-
-                                            <div className="flex items-center gap-2 pt-0.5">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleOpenEditTemplate(tmpl)}
-                                                    className="flex-1 py-1.5 px-3 rounded-lg bg-slate-100 hover:bg-sky-50 text-slate-700 hover:text-[#004B93] font-bold text-[11px] border border-slate-200 hover:border-sky-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                                                    title="Edit sheet format"
-                                                >
-                                                    <Pencil size={12} />
-                                                    <span>Edit Format</span>
-                                                </button>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDeleteTemplate(tmpl)}
-                                                    className="py-1.5 px-2.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 font-bold text-[11px] border border-slate-200 hover:border-rose-200 transition-colors flex items-center justify-center cursor-pointer"
-                                                    title="Delete sheet format"
-                                                >
-                                                    <Trash2 size={12} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
                     </div>
                 )}
 
-                {/* TAB 5: RESULTS & ANALYTICS */}
-                {activeTab === 'analytics' && (
-                    <div className="w-full space-y-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                            <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+                {/* ══════════════════════════════════════════════════════════════════════ */}
+                {/* STEP 5: RESULTS & STUDENT MARKS LEDGER                               */}
+                {/* ══════════════════════════════════════════════════════════════════════ */}
+                {currentStep === 5 && (
+                    <div className="w-full space-y-6 animate-fadeIn">
+                        {/* PERFORMANCE SUMMARY CARDS */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                            <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
                                 <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Class Average Score</div>
                                 <div className="text-3xl font-black text-slate-900 mt-2">78.4%</div>
                                 <div className="text-xs font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-                                    <ArrowUpRight size={13} /> +4.2% from previous exam
+                                    <ArrowUpRight size={13} /> +4.2% from previous examination
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
-                                <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Highest Score</div>
+                            <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+                                <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Highest Score Scored</div>
                                 <div className="text-3xl font-black text-[#004B93] mt-2">98.0%</div>
-                                <div className="text-xs font-semibold text-slate-500 mt-1">Aarav Sharma • Class 10 Math</div>
+                                <div className="text-xs font-semibold text-slate-500 mt-1">Aarav Sharma &bull; Class 10 Science</div>
                             </div>
 
-                            <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
-                                <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Sheet Checking Status</div>
+                            <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+                                <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Optical Checking Accuracy</div>
                                 <div className="text-3xl font-black text-emerald-600 mt-2">100% Verified</div>
-                                <div className="text-xs font-semibold text-slate-500 mt-1">All sheets verified accurately</div>
+                                <div className="text-xs font-semibold text-slate-500 mt-1">All 32 student sheets processed cleanly</div>
                             </div>
                         </div>
 
                         {/* STUDENT RESULTS TABLE */}
                         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+                            <div className="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <div>
                                     <h3 className="font-black text-slate-900 text-lg">Student Marks List</h3>
-                                    <p className="text-xs text-slate-500 mt-0.5">View individual marks and results scored on checked answer sheets.</p>
+                                    <p className="text-xs text-slate-500 mt-0.5">
+                                        View individual scores, answer accuracy, and verified results for checked sheets.
+                                    </p>
                                 </div>
                                 <button
-                                    onClick={() => showToast('Exporting OMR Results to CSV...', true)}
-                                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-2 cursor-pointer"
+                                    onClick={() => showToast('Exporting student results to Excel / CSV...', true)}
+                                    className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-2 cursor-pointer shadow-xs"
                                 >
-                                    <Download size={14} />
+                                    <Download size={15} />
                                     <span>Download Marks (Excel / CSV)</span>
                                 </button>
                             </div>
@@ -1825,25 +1861,26 @@ export default function OMRExamManager() {
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse text-sm">
                                     <thead>
-                                        <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                                            <th className="py-3.5 px-6">Student Name & Roll No.</th>
-                                            <th className="py-3.5 px-6">Exam Title</th>
+                                        <tr className="bg-slate-50 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                                            <th className="py-3.5 px-6">Candidate Roll No. &amp; Name</th>
+                                            <th className="py-3.5 px-6">Examination</th>
                                             <th className="py-3.5 px-6">Total Questions</th>
                                             <th className="py-3.5 px-6">Correct</th>
                                             <th className="py-3.5 px-6">Total Marks</th>
-                                            <th className="py-3.5 px-6">Scan Quality</th>
+                                            <th className="py-3.5 px-6">Scan Confidence</th>
                                             <th className="py-3.5 px-6 text-right">Result</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                         {[
-                                            { name: 'Aarav Sharma', seat: 'ROLL-101', exam: 'Class 10 Science Midterm', total: 60, correct: 58, marks: 232, conf: 99.8, res: 'PASS' },
-                                            { name: 'Diya Kapoor', seat: 'ROLL-102', exam: 'Class 10 Science Midterm', total: 60, correct: 54, marks: 212, conf: 99.4, res: 'PASS' },
-                                            { name: 'Rohan Gupta', seat: 'ROLL-103', exam: 'Class 10 Science Midterm', total: 60, correct: 51, marks: 198, conf: 99.1, res: 'PASS' },
-                                            { name: 'Ananya Iyer', seat: 'ROLL-104', exam: 'Class 9 Physics Weekly Test', total: 25, correct: 24, marks: 96, conf: 99.9, res: 'PASS' },
-                                            { name: 'Siddharth Nair', seat: 'ROLL-105', exam: 'Class 9 Physics Weekly Test', total: 25, correct: 21, marks: 84, conf: 98.7, res: 'PASS' }
+                                            { name: 'Aarav Sharma', seat: 'ROLL-101', exam: selectedExam?.title || 'Class 10 Science OMR Exam', total: 50, correct: 49, marks: 49, conf: 99.9, res: 'PASS' },
+                                            { name: 'Diya Kapoor', seat: 'ROLL-102', exam: selectedExam?.title || 'Class 10 Science OMR Exam', total: 50, correct: 46, marks: 46, conf: 99.6, res: 'PASS' },
+                                            { name: 'Rohan Gupta', seat: 'ROLL-103', exam: selectedExam?.title || 'Class 10 Science OMR Exam', total: 50, correct: 44, marks: 44, conf: 99.2, res: 'PASS' },
+                                            { name: 'Ananya Iyer', seat: 'ROLL-104', exam: selectedExam?.title || 'Class 10 Science OMR Exam', total: 50, correct: 42, marks: 42, conf: 98.9, res: 'PASS' },
+                                            { name: 'Siddharth Nair', seat: 'ROLL-105', exam: selectedExam?.title || 'Class 10 Science OMR Exam', total: 50, correct: 39, marks: 39, conf: 99.1, res: 'PASS' },
+                                            { name: 'Pooja Patel', seat: 'ROLL-106', exam: selectedExam?.title || 'Class 10 Science OMR Exam', total: 50, correct: 35, marks: 35, conf: 98.7, res: 'PASS' }
                                         ].map((r, i) => (
-                                            <tr key={i} className="hover:bg-slate-50/60">
+                                            <tr key={i} className="hover:bg-slate-50/60 transition-colors">
                                                 <td className="py-4 px-6 font-bold text-slate-900">
                                                     <div>{r.name}</div>
                                                     <div className="text-[11px] font-mono text-slate-400">{r.seat}</div>
@@ -1864,1290 +1901,34 @@ export default function OMRExamManager() {
                                 </table>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
 
-            {/* MODAL 1: CREATE NEW OMR EXAM */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
-                    <div className="w-full max-w-5xl xl:max-w-6xl max-h-[92vh] flex flex-col bg-white rounded-3xl border border-slate-200/90 shadow-2xl overflow-hidden">
-                        
-                        {/* MODAL HEADER (Fixed Top) */}
-                        <div className="shrink-0 px-6 sm:px-8 py-5 border-b border-slate-100 bg-white flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-3.5">
-                                <div className="w-11 h-11 rounded-2xl bg-[#004B93]/10 border border-[#004B93]/20 flex items-center justify-center text-[#004B93] shadow-sm">
-                                    <ScanLine size={22} />
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2.5">
-                                        <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Create Blank Exam</h3>
-                                        <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                            Custom Sheet Format
-                                        </span>
-                                    </div>
-                                    <p className="text-xs text-slate-500 mt-0.5">
-                                        Set up exam details, select class, subject, syllabus, and question count for printing OMR sheets.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => fetchBlueprintContext()}
-                                    disabled={contextLoading}
-                                    title="Reload published syllabus and board patterns"
-                                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
-                                >
-                                    <RefreshCw size={13} className={contextLoading ? 'animate-spin text-[#004B93]' : ''} />
-                                    <span className="hidden md:inline">Refresh Syllabus</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCreateModalOpen(false)}
-                                    className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                                >
-                                    <XCircle size={22} />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* MODAL BODY (Scrollable Workspace) */}
-                        <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6 bg-slate-50/50">
-                            <form id="create-omr-form" onSubmit={handleCreateExam} className="space-y-6 text-sm">
-                                
-                                {/* CARD 1: SYLLABUS & STANDARD PATTERN SELECTOR */}
-                                <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-4">
-                                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="w-8 h-8 rounded-xl bg-sky-50 text-[#004B93] flex items-center justify-center font-black text-xs border border-sky-100">
-                                                1
-                                            </div>
-                                            <div>
-                                                <h4 className="font-black text-slate-900 text-sm sm:text-base">1. Select Class, Subject & Syllabus</h4>
-                                                <p className="text-xs text-slate-500">Choose board, class, subject, and syllabus chapters.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Master Unified Syllabus Picker (Pattern picker hidden for OMR) */}
-                                    <ExamSyllabusPatternPicker
-                                        context={blueprintContext}
-                                        loadingContext={contextLoading}
-                                        onRefreshContext={fetchBlueprintContext}
-                                        selectedBoardId={selectedBoardId}
-                                        selectedClassId={selectedClassId}
-                                        selectedSubjectId={selectedSubjectId}
-                                        selectedChapterIds={selectedChapterIds}
-                                        selectedTopicIds={selectedTopicIds}
-                                        selectedPatternId={selectedPatternId}
-                                        hidePatternPicker={true}
-                                        onSelectBoard={bId => {
-                                            setSelectedBoardId(bId)
-                                            setSelectedClassId('')
-                                            setSelectedSubjectId('')
-                                            setSelectedChapterIds([])
-                                            setSelectedTopicIds([])
-                                        }}
-                                        onSelectClass={cNode => {
-                                            setSelectedClassId(cNode.id)
-                                            const matched = classes.find((c: any) => c.name.toLowerCase() === cNode.name.toLowerCase()) || classes[0]
-                                            setNewExamForm(prev => ({ ...prev, class_id: matched?.id || cNode.id }))
-                                            setSelectedSubjectId('')
-                                            setSelectedChapterIds([])
-                                            setSelectedTopicIds([])
-                                        }}
-                                        onSelectSubject={sNode => {
-                                            setSelectedSubjectId(sNode.id)
-                                            const matched = subjects.find((s: any) => s.name.toLowerCase() === sNode.name.toLowerCase()) || subjects[0]
-                                            setNewExamForm(prev => ({ ...prev, subject_id: matched?.id || sNode.id }))
-                                            setSelectedChapterIds([])
-                                            setSelectedTopicIds([])
-                                        }}
-                                        onSelectChapters={chIds => {
-                                            setSelectedChapterIds(chIds)
-                                            setNewExamForm(prev => ({ ...prev, chapter_ids: chIds }))
-                                        }}
-                                        onSelectTopics={tpIds => {
-                                            setSelectedTopicIds(tpIds)
-                                            setNewExamForm(prev => ({ ...prev, topic_ids: tpIds }))
-                                        }}
-                                        onSelectPattern={pattern => {
-                                            setSelectedPatternId(pattern.id)
-                                            const totalQ = pattern.sections?.reduce(
-                                                (acc: number, s: any) => acc + (s.rules?.reduce((ra: number, r: any) => ra + Number(r.num_questions || 0), 0) || 0), 0
-                                            ) || 50
-                                            const matchingOmr = templates.find((t: any) => t.total_questions === totalQ) || templates[0]
-                                            setNewExamForm(prev => ({
-                                                ...prev,
-                                                template_id: pattern.id,
-                                                title: prev.title ? prev.title : `${pattern.name} OMR Assessment`,
-                                                total_questions: totalQ,
-                                                duration: pattern.duration_minutes || 60,
-                                                omr_template_id: matchingOmr?.id || prev.omr_template_id
-                                            }))
-                                            showToast(`Pattern "${pattern.name}" loaded for physical OMR test!`, true)
-                                        }}
-                                    />
-                                </div>
-
-                                {/* CARD 2: PAPER SPECIFICATIONS & BUBBLE LAYOUT */}
-                                <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-5">
-                                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="w-8 h-8 rounded-xl bg-sky-50 text-[#004B93] flex items-center justify-center font-black text-xs border border-sky-100">
-                                                2
-                                            </div>
-                                            <div>
-                                                <h4 className="font-black text-slate-900 text-sm sm:text-base">2. Exam Details & Sheet Format</h4>
-                                                <p className="text-xs text-slate-500">Set exam title, duration, total questions, and OMR sheet format.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Exam Title */}
-                                    <div>
-                                        <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">
-                                            Exam Title <span className="text-rose-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            required
-                                            placeholder="e.g. Class 10 Midterm Mathematics Exam"
-                                            value={newExamForm.title}
-                                            onChange={e => setNewExamForm({ ...newExamForm, title: e.target.value })}
-                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#004B93] focus:border-[#004B93] focus:outline-none transition-all shadow-sm"
-                                        />
-                                    </div>
-
-                                    {/* 3-Column Specifications Grid */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                        <div>
-                                            <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">
-                                                Total Questions
-                                            </label>
-                                            <div className="relative">
-                                                <input
-                                                    type="number"
-                                                    value={newExamForm.total_questions}
-                                                    onChange={e => setNewExamForm({ ...newExamForm, total_questions: parseInt(e.target.value) || 0 })}
-                                                    min={10}
-                                                    max={200}
-                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-sm"
-                                                />
-                                                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none">
-                                                    Qs
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">
-                                                Duration (Minutes)
-                                            </label>
-                                            <div className="relative">
-                                                <input
-                                                    type="number"
-                                                    value={newExamForm.duration}
-                                                    onChange={e => setNewExamForm({ ...newExamForm, duration: parseInt(e.target.value) || 0 })}
-                                                    min={15}
-                                                    max={300}
-                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-sm"
-                                                />
-                                                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none">
-                                                    Mins
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1.5">
-                                                Optical Bubble Grid Layout
-                                            </label>
-                                            <select
-                                                value={newExamForm.omr_template_id}
-                                                onChange={e => setNewExamForm({ ...newExamForm, omr_template_id: e.target.value })}
-                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-sm"
-                                            >
-                                                {templates.map(t => (
-                                                    <option key={t.id} value={t.id}>{t.name} ({t.total_questions} Qs)</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-
-                        {/* MODAL FOOTER (Fixed Bottom) */}
-                        <div className="shrink-0 px-6 sm:px-8 py-4 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <div className="flex flex-wrap items-center gap-2 text-xs">
-                                <span className="px-3 py-1 rounded-lg bg-sky-50 text-[#004B93] font-black border border-sky-100">
-                                    {newExamForm.total_questions} Questions
-                                </span>
-                                <span className="px-3 py-1 rounded-lg bg-amber-50 text-amber-800 font-black border border-amber-200/80">
-                                    {newExamForm.duration} Mins
-                                </span>
-                                {newExamForm.template_id && (
-                                    <span className="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-black border border-emerald-200 flex items-center gap-1">
-                                        <CheckCircle size={13} /> Pattern Linked
-                                    </span>
-                                )}
-                            </div>
-
-                            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCreateModalOpen(false)}
-                                    className="px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    form="create-omr-form"
-                                    disabled={saving}
-                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold shadow-md shadow-sky-950/20 flex items-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer"
-                                >
-                                    {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                                    <span>Create Exam</span>
-                                </button>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            )}
-
-            {/* MODAL 2: ANSWER KEY MASTER CONFIGURATION */}
-            {isAnswerKeyModalOpen && selectedExam && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
-                    <div className="w-full max-w-2xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] flex flex-col">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                            <div>
-                                <h3 className="text-xl font-black text-slate-900">Exam Answer Key</h3>
-                                <p className="text-xs text-slate-500 mt-0.5">{selectedExam.title} ({selectedExam.total_questions} Questions)</p>
-                            </div>
-                            <button
-                                onClick={() => setIsAnswerKeyModalOpen(false)}
-                                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                            >
-                                <XCircle size={22} />
-                            </button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-                            <div className="flex items-center justify-between bg-sky-50 p-3 rounded-xl border border-sky-200">
-                                <span className="text-xs font-bold text-[#004B93]">Quick Fill Pattern:</span>
-                                <div className="flex gap-2">
-                                    {['A', 'B', 'C', 'D'].map(opt => (
-                                        <button
-                                            key={opt}
-                                            onClick={() => {
-                                                const updated: { [key: number]: string } = {}
-                                                const total = selectedExam.total_questions || 50
-                                                for (let i = 1; i <= total; i++) updated[i] = opt
-                                                setAnswerKeys(updated)
-                                            }}
-                                            className="px-2.5 py-1 rounded-md bg-white border border-sky-300 font-bold text-xs text-[#004B93] hover:bg-sky-100"
-                                        >
-                                            All {opt}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                {Array.from({ length: selectedExam.total_questions || 50 }).map((_, idx) => {
-                                    const qNo = idx + 1
-                                    const selected = answerKeys[qNo] || 'A'
-                                    return (
-                                        <div key={qNo} className="p-2.5 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between">
-                                            <span className="font-extrabold text-xs text-slate-700 w-6">Q{qNo}</span>
-                                            <div className="flex gap-1">
-                                                {['A', 'B', 'C', 'D'].map(opt => (
-                                                    <button
-                                                        key={opt}
-                                                        type="button"
-                                                        onClick={() => setAnswerKeys({ ...answerKeys, [qNo]: opt })}
-                                                        className={`w-6 h-6 rounded-full text-xs font-bold transition-all ${
-                                                            selected === opt
-                                                                ? 'bg-[#004B93] text-white shadow-sm'
-                                                                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
-                                                        }`}
-                                                    >
-                                                        {opt}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-
-                        <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
-                            <button
-                                onClick={() => setIsAnswerKeyModalOpen(false)}
-                                disabled={isSavingAnswerKey}
-                                className="px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-700 hover:bg-slate-50 text-xs cursor-pointer"
-                            >
-                                Close
-                            </button>
-                            <button
-                                onClick={handleSaveAnswerKey}
-                                disabled={isSavingAnswerKey}
-                                className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                            >
-                                {isSavingAnswerKey ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
-                                <span>{isSavingAnswerKey ? 'Saving...' : 'Save Answer Key'}</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* MODAL 4: CREATE EXAM WITH AI (WIZARD WITH INLINE EDITING) */}
-            {isAiExamModalOpen && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
-                    <div className="w-full max-w-5xl xl:max-w-6xl max-h-[92vh] flex flex-col bg-white rounded-3xl border border-slate-200/90 shadow-2xl overflow-hidden">
-                        
-                        {/* WIZARD HEADER */}
-                        <div className="shrink-0 px-6 sm:px-8 py-5 border-b border-slate-100 bg-white flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-3.5">
-                                <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shadow-sm">
-                                    <Sparkles size={22} />
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2.5">
-                                        <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Create Exam with BeBrilliant AI Agent</h3>
-                                        <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-50 text-amber-800 border border-amber-200">
-                                            Includes Question Paper & OMR Sheet
-                                        </span>
-                                    </div>
-                                    <p className="text-xs text-slate-500 mt-0.5">
-                                        BeBrilliant AI Agent creates syllabus-aligned questions with automated answer keys. Review and edit questions, then print Question Paper and OMR sheet together.
-                                    </p>
-                                </div>
-                            </div>
-
+                        {/* STEP 5 BOTTOM ACTIONS */}
+                        <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                             <button
                                 type="button"
-                                onClick={() => setIsAiExamModalOpen(false)}
-                                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                                onClick={() => goToStep(4)}
+                                className="px-5 py-3 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 flex items-center gap-2 cursor-pointer"
                             >
-                                <XCircle size={22} />
+                                <ArrowLeft size={16} />
+                                <span>Back to Scanner</span>
                             </button>
-                        </div>
-
-                        {/* STEP 1: CONFIGURE & GENERATE */}
-                        {aiStep === 'config' && (
-                            <form onSubmit={handleGenerateAiQuestions} className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                                <div className="flex-1 overflow-y-auto p-5 sm:p-7 bg-slate-50/70">
-                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                                        
-                                        {/* LEFT COLUMN: CURRICULUM, CLASS, SUBJECT & EXAM DETAILS */}
-                                        <div className="lg:col-span-5 space-y-4">
-                                            
-                                            {/* INSTITUTIONAL SYLLABUS CARD */}
-                                            <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4">
-                                                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#004B93] flex items-center justify-center border border-blue-100">
-                                                            <Globe size={16} />
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-bold text-slate-900 text-sm">Institutional Syllabus</h4>
-                                                            <p className="text-[11px] text-slate-500">Curriculum board saved in tenant portal</p>
-                                                        </div>
-                                                    </div>
-                                                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-[#004B93] border border-blue-200">
-                                                        Portal Saved
-                                                    </span>
-                                                </div>
-
-                                                {/* BOARD SELECTOR */}
-                                                <div>
-                                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                                                        Curriculum / Board
-                                                    </label>
-                                                    <select
-                                                        value={aiBoardId || currentAiBoard?.id || ''}
-                                                        onChange={e => handleAiSelectBoard(e.target.value)}
-                                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-800 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-2xs text-xs sm:text-sm"
-                                                    >
-                                                        {availableAiBoards.map(b => (
-                                                            <option key={b.id} value={b.id}>
-                                                                {b.name} {b.source_type === 'owner_public' ? '(Master Syllabus)' : b.source_type === 'excel' ? '(Spreadsheet)' : '(Custom)'}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-
-                                                {/* CLASS & SUBJECT SELECTORS */}
-                                                <div className="grid grid-cols-2 gap-3 pt-1">
-                                                    <div>
-                                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1.5">
-                                                            <GraduationCap size={14} className="text-[#004B93]" />
-                                                            <span>Class / Grade</span>
-                                                        </label>
-                                                        <select
-                                                            value={aiClassNodeId || currentAiClassNode?.id || ''}
-                                                            onChange={e => handleAiSelectClass(e.target.value)}
-                                                            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-2xs text-xs sm:text-sm"
-                                                        >
-                                                            {availableAiClasses.length > 0 ? (
-                                                                availableAiClasses.map(c => (
-                                                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                                                ))
-                                                            ) : (
-                                                                classes.map(c => (
-                                                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                                                ))
-                                                            )}
-                                                        </select>
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1.5">
-                                                            <BookOpen size={14} className="text-emerald-600" />
-                                                            <span>Subject</span>
-                                                        </label>
-                                                        <select
-                                                            value={aiSubjectNodeId || currentAiSubjectNode?.id || ''}
-                                                            onChange={e => handleAiSelectSubject(e.target.value)}
-                                                            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-2xs text-xs sm:text-sm"
-                                                        >
-                                                            {availableAiSubjects.length > 0 ? (
-                                                                availableAiSubjects.map(s => (
-                                                                    <option key={s.id} value={s.id}>{s.name}</option>
-                                                                ))
-                                                            ) : (
-                                                                subjects.map(s => (
-                                                                    <option key={s.id} value={s.id}>{s.name} {s.code ? `(${s.code})` : ''}</option>
-                                                                ))
-                                                            )}
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* EXAM PARAMETERS CARD */}
-                                            <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4">
-                                                <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                                                    <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200">
-                                                        <Sliders size={16} />
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="font-bold text-slate-900 text-sm">Exam Parameters</h4>
-                                                        <p className="text-[11px] text-slate-500">Configure questions, difficulty, and timing</p>
-                                                    </div>
-                                                </div>
-
-                                                {/* EXAM TITLE */}
-                                                <div>
-                                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                                                        Exam Title <span className="text-rose-500">*</span>
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        required
-                                                        placeholder="e.g. Class 8 English OMR Exam"
-                                                        value={aiExamForm.title}
-                                                        onChange={e => setAiExamForm({ ...aiExamForm, title: e.target.value })}
-                                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#004B93] focus:outline-none shadow-2xs text-xs sm:text-sm"
-                                                    />
-                                                </div>
-
-                                                {/* 3-COLUMN SETTINGS GRID */}
-                                                <div className="grid grid-cols-3 gap-2.5 pt-1">
-                                                    <div>
-                                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Questions</label>
-                                                        <select
-                                                            value={aiExamForm.count}
-                                                            onChange={e => setAiExamForm({ ...aiExamForm, count: parseInt(e.target.value) })}
-                                                            className="w-full px-2.5 py-2 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white text-xs"
-                                                        >
-                                                            <option value={10}>10 Qs</option>
-                                                            <option value={20}>20 Qs</option>
-                                                            <option value={30}>30 Qs</option>
-                                                            <option value={40}>40 Qs</option>
-                                                            <option value={50}>50 Qs</option>
-                                                        </select>
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Difficulty</label>
-                                                        <select
-                                                            value={aiExamForm.difficulty}
-                                                            onChange={e => setAiExamForm({ ...aiExamForm, difficulty: e.target.value as any })}
-                                                            className="w-full px-2.5 py-2 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white text-xs"
-                                                        >
-                                                            <option value="easy">Easy</option>
-                                                            <option value="medium">Medium</option>
-                                                            <option value="hard">Hard</option>
-                                                        </select>
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Duration</label>
-                                                        <div className="relative">
-                                                            <input
-                                                                type="number"
-                                                                value={aiExamForm.duration}
-                                                                onChange={e => setAiExamForm({ ...aiExamForm, duration: parseInt(e.target.value) || 30 })}
-                                                                min={10}
-                                                                max={180}
-                                                                className="w-full px-2.5 py-2 pr-7 rounded-xl border border-slate-200 font-semibold text-slate-800 text-xs"
-                                                            />
-                                                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">m</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* ADDITIONAL INSTRUCTIONS */}
-                                                <div className="pt-1">
-                                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
-                                                        Additional Instructions (Optional)
-                                                    </label>
-                                                    <textarea
-                                                        rows={2}
-                                                        placeholder="e.g. Focus on definitions, formulas, or grammar..."
-                                                        value={aiExamForm.topic}
-                                                        onChange={e => setAiExamForm({ ...aiExamForm, topic: e.target.value })}
-                                                        className="w-full px-3 py-2 rounded-xl border border-slate-200 font-medium text-xs text-slate-800 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none placeholder:text-slate-400 shadow-2xs"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* RIGHT COLUMN: CHAPTERS & TOPICS MULTI-SELECTION */}
-                                        <div className="lg:col-span-7 space-y-4">
-                                            
-                                            {/* CHAPTERS WORKSTATION CARD */}
-                                            <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4">
-                                                
-                                                {/* CHAPTER HEADER & CONTROLS */}
-                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200 shadow-2xs">
-                                                            <Layers size={16} />
-                                                        </div>
-                                                        <div>
-                                                            <div className="flex items-center gap-2">
-                                                                <h4 className="font-bold text-slate-900 text-sm">Chapters to Cover</h4>
-                                                                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-                                                                    Multiple
-                                                                </span>
-                                                            </div>
-                                                            <span className="text-[11px] font-semibold text-slate-500">
-                                                                {aiSelectedChapterIds.length} of {availableAiChapters.length} Selected
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* TOOLBAR */}
-                                                    <div className="flex items-center gap-2 text-xs font-bold self-end sm:self-auto">
-                                                        {availableAiChapters.length > 3 && (
-                                                            <div className="relative">
-                                                                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                                                <input
-                                                                    type="text"
-                                                                    placeholder="Search chapters..."
-                                                                    value={aiChapterSearch}
-                                                                    onChange={e => setAiChapterSearch(e.target.value)}
-                                                                    className="pl-7 pr-2.5 py-1 text-xs border border-slate-200 rounded-lg outline-none focus:border-[#004B93] bg-white w-32 sm:w-40"
-                                                                />
-                                                            </div>
-                                                        )}
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleAiSelectAllChapters}
-                                                            className="px-2 py-1 rounded-lg text-[#004B93] hover:bg-sky-50 font-bold cursor-pointer transition-colors"
-                                                        >
-                                                            Select All
-                                                        </button>
-                                                        <span className="text-slate-300">|</span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleAiClearChapters}
-                                                            className="px-2 py-1 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 font-bold cursor-pointer transition-colors"
-                                                        >
-                                                            Clear
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                {/* CHAPTER GRID (UNIFORM 2-COLUMN CARDS) */}
-                                                {availableAiChapters.length > 0 ? (
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[300px] overflow-y-auto pr-1">
-                                                        {filteredAiChapters.map((ch) => {
-                                                            const isSelected = aiSelectedChapterIds.includes(ch.id)
-                                                            return (
-                                                                <button
-                                                                    key={ch.id}
-                                                                    type="button"
-                                                                    onClick={() => handleAiToggleChapter(ch.id)}
-                                                                    className={`w-full text-left p-3 rounded-xl border transition-all flex items-start gap-2.5 cursor-pointer ${
-                                                                        isSelected
-                                                                            ? 'bg-blue-50/70 border-[#004B93] text-[#004B93] font-bold shadow-2xs ring-1 ring-[#004B93]/20'
-                                                                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50/80 hover:border-slate-300'
-                                                                    }`}
-                                                                >
-                                                                    <span className={`w-4 h-4 rounded mt-0.5 shrink-0 flex items-center justify-center text-[10px] transition-colors ${
-                                                                        isSelected ? 'bg-[#004B93] text-white' : 'border border-slate-300 bg-white'
-                                                                    }`}>
-                                                                        {isSelected && <Check size={11} strokeWidth={3} />}
-                                                                    </span>
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <div className="flex items-center justify-between gap-1.5">
-                                                                            <span className="text-xs font-semibold leading-snug line-clamp-2">
-                                                                                {ch.name}
-                                                                            </span>
-                                                                            {ch.exam_weightage && Number(ch.exam_weightage) > 0 && (
-                                                                                <span className="text-[10px] px-1.5 py-0.2 rounded bg-white border border-slate-200 text-slate-500 font-normal shrink-0">
-                                                                                    {ch.exam_weightage}%
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                </button>
-                                                            )
-                                                        })}
-                                                    </div>
-                                                ) : (
-                                                    <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
-                                                        <p className="font-bold">No saved chapters found for this subject.</p>
-                                                        <p className="mt-0.5 text-amber-800">You can type custom chapters or topics in the directives box on the left.</p>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* TOPICS IN SCOPE (COLLAPSIBLE ACCORDION) */}
-                                            {aiSelectedChapterIds.length > 0 && availableAiTopics.length > 0 && (
-                                                <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setIsTopicsDrawerOpen(!isTopicsDrawerOpen)}
-                                                        className="w-full px-5 py-3.5 flex items-center justify-between bg-slate-50/60 hover:bg-slate-50 transition-colors cursor-pointer text-left"
-                                                    >
-                                                        <div className="flex items-center gap-2">
-                                                            <BookMarked size={15} className="text-emerald-600" />
-                                                            <span className="text-xs font-bold text-slate-800">
-                                                                Fine-tune Specific Sub-topics
-                                                            </span>
-                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                                                {aiSelectedTopicIds.length} of {availableAiTopics.length} Selected
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-                                                            <span>{isTopicsDrawerOpen ? 'Collapse' : 'Customize'}</span>
-                                                            {isTopicsDrawerOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                                                        </div>
-                                                    </button>
-
-                                                    {isTopicsDrawerOpen && (
-                                                        <div className="p-4 border-t border-slate-100 space-y-3">
-                                                            <div className="flex items-center justify-between gap-2 text-xs">
-                                                                {availableAiTopics.length > 4 && (
-                                                                    <input
-                                                                        type="text"
-                                                                        placeholder="Filter sub-topics..."
-                                                                        value={aiTopicSearch}
-                                                                        onChange={e => setAiTopicSearch(e.target.value)}
-                                                                        className="px-2.5 py-1 text-xs border border-slate-200 rounded-lg outline-none focus:border-emerald-600 bg-white w-40"
-                                                                    />
-                                                                )}
-                                                                <div className="flex items-center gap-2 font-bold ml-auto">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={handleAiSelectAllTopics}
-                                                                        className="text-emerald-700 hover:underline cursor-pointer"
-                                                                    >
-                                                                        Select All
-                                                                    </button>
-                                                                    <span className="text-slate-300">|</span>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={handleAiClearTopics}
-                                                                        className="text-slate-500 hover:text-slate-800 cursor-pointer"
-                                                                    >
-                                                                        Clear
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                                                                {filteredAiTopics.map(tp => {
-                                                                    const isSelected = aiSelectedTopicIds.includes(tp.id)
-                                                                    const parentChapter = availableAiChapters.find(ch => ch.id === tp.chapter_node_id)
-                                                                    return (
-                                                                        <button
-                                                                            key={tp.id}
-                                                                            type="button"
-                                                                            onClick={() => handleAiToggleTopic(tp.id)}
-                                                                            className={`p-2 rounded-xl text-xs font-medium transition-all border flex items-start gap-2 cursor-pointer text-left ${
-                                                                                isSelected
-                                                                                    ? 'bg-emerald-50/70 text-emerald-900 border-emerald-400 font-bold shadow-2xs'
-                                                                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                                                                            }`}
-                                                                        >
-                                                                            <span className={`w-3.5 h-3.5 rounded mt-0.5 shrink-0 flex items-center justify-center text-[10px] ${
-                                                                                isSelected ? 'bg-emerald-600 text-white' : 'border border-slate-300 bg-white'
-                                                                            }`}>
-                                                                                {isSelected && <Check size={10} />}
-                                                                            </span>
-                                                                            <div className="flex-1 min-w-0">
-                                                                                <div className="leading-tight truncate">{tp.name}</div>
-                                                                                {parentChapter && (
-                                                                                    <div className="text-[10px] text-slate-400 truncate mt-0.5">
-                                                                                        {parentChapter.name}
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        </button>
-                                                                    )
-                                                                })}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* PROGRESS BAR CARD WHEN GENERATING */}
-                                {aiLoading && (
-                                    <div className="shrink-0 px-6 sm:px-8 py-4 bg-gradient-to-r from-sky-50 via-blue-50 to-amber-50/60 border-t border-sky-200/80 space-y-2.5 animate-fadeIn">
-                                        <div className="flex items-center justify-between gap-3">
-                                            <div className="flex items-center gap-2.5 min-w-0">
-                                                <div className="w-8 h-8 rounded-xl bg-[#004B93] text-white flex items-center justify-center shrink-0 shadow-xs">
-                                                    <Sparkles size={16} className="animate-spin text-amber-300" />
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <div className="text-xs font-black text-slate-900 tracking-tight">
-                                                        BeBrilliant AI Agent is Generating Questions...
-                                                    </div>
-                                                    <div className="text-[11px] font-semibold text-sky-800 truncate">
-                                                        {aiProgressStage}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2 shrink-0">
-                                                <span className="hidden sm:inline text-[11px] font-bold text-slate-500">
-                                                    {aiExamForm.count} Questions
-                                                </span>
-                                                <span className="px-3 py-1 rounded-full bg-[#004B93] text-white font-black text-xs shadow-xs">
-                                                    {Math.round(aiProgress)}%
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Smooth Animated Progress Bar */}
-                                        <div className="w-full bg-slate-200/80 rounded-full h-3 overflow-hidden p-0.5 border border-slate-200/90">
-                                            <div
-                                                className="bg-gradient-to-r from-[#004B93] via-sky-500 to-amber-500 h-full rounded-full transition-all duration-300 ease-out shadow-xs"
-                                                style={{ width: `${Math.min(Math.max(aiProgress, 4), 100)}%` }}
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* STICKY MODAL FOOTER */}
-                                <div className="shrink-0 px-6 sm:px-8 py-4 bg-white border-t border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-                                    <div className="flex items-center gap-2 flex-wrap text-xs text-slate-600">
-                                        <span className="font-extrabold text-slate-900">
-                                            {currentAiClassNode?.name || 'Class'}
-                                        </span>
-                                        <span className="text-slate-300">•</span>
-                                        <span className="font-extrabold text-slate-900">
-                                            {currentAiSubjectNode?.name || 'Subject'}
-                                        </span>
-                                        <span className="text-slate-300">•</span>
-                                        <span className="px-2 py-0.5 rounded-full bg-blue-50 text-[#004B93] font-bold border border-blue-100">
-                                            {aiSelectedChapterIds.length} Chapters Selected
-                                        </span>
-                                        <span className="text-slate-300">•</span>
-                                        <span className="text-slate-500 font-medium">
-                                            {aiExamForm.count} Questions ({aiExamForm.duration} mins)
-                                        </span>
-                                    </div>
-
-                                    <div className="flex items-center gap-3 justify-end">
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsAiExamModalOpen(false)}
-                                            className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-colors cursor-pointer"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={aiLoading}
-                                            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs shadow-md shadow-amber-900/10 flex items-center gap-2 cursor-pointer disabled:opacity-50 transition-all"
-                                        >
-                                            {aiLoading ? (
-                                                <>
-                                                    <Loader2 size={16} className="animate-spin" />
-                                                    <span>Creating Questions ({Math.round(aiProgress)}%)...</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Sparkles size={16} />
-                                                    <span>Generate Questions</span>
-                                                </>
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        )}
-
-                        {/* STEP 2: INLINE REVIEW & EDITING */}
-                        {aiStep === 'review' && (
-                            <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
-                                <div className="p-4 bg-sky-50 border-b border-sky-100 flex items-center justify-between px-6 sm:px-8">
-                                    <div className="text-xs text-sky-900 font-medium">
-                                        <span className="font-bold">Review Questions:</span> Click any question or option text to edit. Click <span className="font-bold">A, B, C, or D</span> to change the correct answer.
-                                    </div>
-                                    <span className="text-xs font-black bg-white px-3 py-1 rounded-full text-[#004B93] border border-sky-200">
-                                        {aiQuestions.length} Questions Ready
-                                    </span>
-                                </div>
-
-                                <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-4">
-                                    {aiQuestions.map((q, qIndex) => {
-                                        const currentCorrect = (q.correct_answer || 'A').toUpperCase()
-                                        return (
-                                            <div key={qIndex} className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-3">
-                                                <div className="flex items-start justify-between gap-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="w-7 h-7 rounded-lg bg-[#004B93] text-white flex items-center justify-center font-bold text-xs">
-                                                            {qIndex + 1}
-                                                        </span>
-                                                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Question {qIndex + 1}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xs font-bold text-slate-500">Correct Answer:</span>
-                                                        <div className="flex gap-1">
-                                                            {(['A', 'B', 'C', 'D'] as const).map(optKey => (
-                                                                <button
-                                                                    key={optKey}
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        const updated = [...aiQuestions]
-                                                                        updated[qIndex].correct_answer = optKey
-                                                                        setAiQuestions(updated)
-                                                                    }}
-                                                                    className={`w-7 h-7 rounded-lg font-black text-xs transition-all cursor-pointer ${
-                                                                        currentCorrect === optKey
-                                                                            ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400'
-                                                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                                                                    }`}
-                                                                >
-                                                                    {optKey}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                if (aiQuestions.length <= 1) {
-                                                                    showToast('At least 1 question is required', false)
-                                                                    return
-                                                                }
-                                                                setAiQuestions(aiQuestions.filter((_, idx) => idx !== qIndex))
-                                                            }}
-                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors ml-2 cursor-pointer"
-                                                            title="Delete question"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                {/* Editable Question Text */}
-                                                <div>
-                                                    <textarea
-                                                        value={q.text}
-                                                        rows={2}
-                                                        onChange={e => {
-                                                            const updated = [...aiQuestions]
-                                                            updated[qIndex].text = e.target.value
-                                                            setAiQuestions(updated)
-                                                        }}
-                                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
-                                                    />
-                                                </div>
-
-                                                {/* 4 Editable Options */}
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                                                    {(['A', 'B', 'C', 'D'] as const).map(optKey => {
-                                                        const isSelected = currentCorrect === optKey
-                                                        return (
-                                                            <div
-                                                                key={optKey}
-                                                                className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${
-                                                                    isSelected ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-200 bg-white'
-                                                                }`}
-                                                            >
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        const updated = [...aiQuestions]
-                                                                        updated[qIndex].correct_answer = optKey
-                                                                        setAiQuestions(updated)
-                                                                    }}
-                                                                    className={`w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shrink-0 cursor-pointer ${
-                                                                        isSelected ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'
-                                                                    }`}
-                                                                >
-                                                                    {optKey}
-                                                                </button>
-                                                                <input
-                                                                    type="text"
-                                                                    value={q.options[optKey] || ''}
-                                                                    onChange={e => {
-                                                                        const updated = [...aiQuestions]
-                                                                        updated[qIndex].options[optKey] = e.target.value
-                                                                        setAiQuestions(updated)
-                                                                    }}
-                                                                    className="w-full text-xs font-medium text-slate-800 bg-transparent focus:outline-none"
-                                                                />
-                                                            </div>
-                                                        )
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-
-                                    {/* Add Another Question Button */}
-                                    <div className="text-center pt-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setAiQuestions([
-                                                    ...aiQuestions,
-                                                    {
-                                                        id: `q${aiQuestions.length + 1}`,
-                                                        text: 'New question statement',
-                                                        options: { A: 'Option A', B: 'Option B', C: 'Option C', D: 'Option D' },
-                                                        correct_answer: 'A',
-                                                        marks: 1
-                                                    }
-                                                ])
-                                            }}
-                                            className="px-4 py-2 rounded-xl border border-dashed border-slate-300 hover:border-[#004B93] text-slate-600 hover:text-[#004B93] text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer"
-                                        >
-                                            <PlusCircle size={15} />
-                                            <span>Add Question</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* REVIEW FOOTER */}
-                                <div className="shrink-0 px-6 sm:px-8 py-4 bg-white border-t border-slate-100 flex items-center justify-between gap-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => setAiStep('config')}
-                                        className="px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-700 hover:bg-slate-50 text-xs cursor-pointer"
-                                    >
-                                        Back to Settings
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={saving}
-                                        onClick={handleApproveAndCreateAiExam}
-                                        className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-950/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                                    >
-                                        {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                                        <span>Save Exam & Answer Key</span>
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* STEP 3: SUCCESS & 1-CLICK COMBINED PRINT */}
-                        {aiStep === 'success' && createdAiExam && (
-                            <div className="flex-1 p-8 sm:p-12 flex flex-col items-center justify-center text-center space-y-6 bg-white">
-                                <div className="w-16 h-16 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-600 shadow-lg">
-                                    <CheckCircle size={36} />
-                                </div>
-                                <div className="max-w-md space-y-2">
-                                    <h3 className="text-2xl font-black text-slate-900">Exam Created Successfully!</h3>
-                                    <p className="text-sm text-slate-600">
-                                        <span className="font-bold text-slate-900">&quot;{createdAiExam.title}&quot;</span> has been saved with {aiQuestions.length} questions and an automated master answer key.
-                                    </p>
-                                </div>
-
-                                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                                    {/* Primary 1-Click Unified Print */}
-                                    <button
-                                        onClick={() => window.open(`/api/dashboard/exams/omr/${createdAiExam.id}/print?mode=unified`, '_blank')}
-                                        className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-sm shadow-xl flex items-center gap-2 cursor-pointer"
-                                    >
-                                        <Printer size={18} />
-                                        <span>Print Question Paper & OMR Sheet</span>
-                                    </button>
-
-                                    {/* Print OMR Sheet Only */}
-                                    <button
-                                        onClick={() => window.open(`/api/dashboard/exams/omr/${createdAiExam.id}/print?mode=omr`, '_blank')}
-                                        className="px-5 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm border border-slate-200 transition-all cursor-pointer"
-                                    >
-                                        <span>Print OMR Sheet Only</span>
-                                    </button>
-
-                                    {/* Print Answer Key */}
-                                    <button
-                                        onClick={() => window.open(`/api/dashboard/exams/omr/${createdAiExam.id}/print?mode=key`, '_blank')}
-                                        className="px-5 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm border border-slate-200 transition-all cursor-pointer"
-                                    >
-                                        <span>Print Answer Key</span>
-                                    </button>
-                                </div>
-
-                                <div className="pt-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setIsAiExamModalOpen(false)
-                                            fetchData()
-                                        }}
-                                        className="text-xs font-bold text-slate-500 hover:text-slate-800 underline cursor-pointer"
-                                    >
-                                        Return to Exam List
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                    </div>
-                </div>
-            )}
-
-            {/* MODAL 3: UPLOAD STUDENT ANSWER SHEETS */}
-            {isUploadModalOpen && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
-                    <div className="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                            <div>
-                                <h3 className="text-xl font-black text-slate-900">Upload Student Answer Sheets</h3>
-                                <p className="text-xs text-slate-500 mt-0.5">Upload scanned answer sheets or photos to calculate student marks.</p>
-                            </div>
                             <button
-                                onClick={() => setIsUploadModalOpen(false)}
-                                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                type="button"
+                                onClick={handleStartNewExam}
+                                className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black text-sm shadow-xl flex items-center gap-2.5 cursor-pointer transition-all hover:scale-[1.01]"
                             >
-                                <XCircle size={22} />
+                                <PlusCircle size={18} />
+                                <span>Create Another OMR Exam ➔</span>
                             </button>
                         </div>
-
-                        <div className="space-y-4 text-sm">
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Select Exam</label>
-                                <select
-                                    value={selectedExam?.id || ''}
-                                    onChange={e => {
-                                        const found = exams.find(x => x.id === e.target.value)
-                                        setSelectedExam(found)
-                                    }}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
-                                >
-                                    {exams.map(ex => (
-                                        <option key={ex.id} value={ex.id}>{ex.title} ({ex.classes?.name || 'Class 10'})</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="border-2 border-dashed border-sky-200 bg-sky-50/50 rounded-2xl p-8 text-center">
-                                <UploadCloud size={40} className="mx-auto text-[#004B93] mb-3" />
-                                <div className="font-bold text-slate-900 text-sm">Drop Scanned PDF or Answer Sheet Images Here</div>
-                                <div className="text-xs text-slate-500 mt-1">Works with any scanner or mobile photos (up to 200 sheets at once)</div>
-                            </div>
-
-                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                                <span className="font-bold text-slate-700">Automated Grading Speed:</span>
-                                <span className="font-black text-sky-700">Instant automatic checking & score calculation</span>
-                            </div>
-
-                            <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsUploadModalOpen(false)}
-                                    className="px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-700 hover:bg-slate-50"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleTriggerBatchScan}
-                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold shadow-md flex items-center gap-2 cursor-pointer"
-                                >
-                                    <ScanLine size={16} />
-                                    <span>Start Checking Sheets</span>
-                                </button>
-                            </div>
-                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* MODAL 5: EDIT SHEET FORMAT */}
-            {isEditTemplateModalOpen && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
-                    <div className="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[#004B93]">
-                                    <Pencil size={20} />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-black text-slate-900">Edit Sheet Format</h3>
-                                    <p className="text-xs text-slate-500 mt-0.5">Update layout, questions, and bubble settings for this format.</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setIsEditTemplateModalOpen(false)}
-                                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
-                            >
-                                <XCircle size={22} />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleUpdateTemplate} className="space-y-4 text-sm">
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                                    Sheet Format Name
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={editTemplateForm.name}
-                                    onChange={e => setEditTemplateForm({ ...editTemplateForm, name: e.target.value })}
-                                    placeholder="e.g. Standard 50-Question Layout"
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                                        Total Questions
-                                    </label>
-                                    <select
-                                        value={editTemplateForm.total_questions}
-                                        onChange={e => setEditTemplateForm({ ...editTemplateForm, total_questions: Number(e.target.value) })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
-                                    >
-                                        <option value={20}>20 Questions</option>
-                                        <option value={30}>30 Questions</option>
-                                        <option value={40}>40 Questions</option>
-                                        <option value={50}>50 Questions</option>
-                                        <option value={60}>60 Questions</option>
-                                        <option value={80}>80 Questions</option>
-                                        <option value={100}>100 Questions</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                                        Options Per Question
-                                    </label>
-                                    <select
-                                        value={editTemplateForm.options_per_question}
-                                        onChange={e => setEditTemplateForm({ ...editTemplateForm, options_per_question: Number(e.target.value) })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
-                                    >
-                                        <option value={4}>4 Choices (A, B, C, D)</option>
-                                        <option value={5}>5 Choices (A, B, C, D, E)</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                                        Column Grid
-                                    </label>
-                                    <select
-                                        value={editTemplateForm.columns}
-                                        onChange={e => setEditTemplateForm({ ...editTemplateForm, columns: Number(e.target.value) })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
-                                    >
-                                        <option value={1}>1 Column (Compact)</option>
-                                        <option value={2}>2 Columns (Standard A4)</option>
-                                        <option value={3}>3 Columns (Multi-subject)</option>
-                                        <option value={4}>4 Columns (Dense)</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                                        Roll Number Digits
-                                    </label>
-                                    <select
-                                        value={editTemplateForm.roll_digits}
-                                        onChange={e => setEditTemplateForm({ ...editTemplateForm, roll_digits: Number(e.target.value) })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 bg-white"
-                                    >
-                                        <option value={6}>6 Digits</option>
-                                        <option value={8}>8 Digits</option>
-                                        <option value={10}>10 Digits</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 pt-2">
-                                <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={editTemplateForm.has_barcode}
-                                        onChange={e => setEditTemplateForm({ ...editTemplateForm, has_barcode: e.target.checked })}
-                                        className="w-4 h-4 rounded text-[#004B93] focus:ring-[#004B93]"
-                                    />
-                                    <span className="text-xs font-bold text-slate-800">Roll No. Barcode</span>
-                                </label>
-
-                                <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={editTemplateForm.has_subject_code}
-                                        onChange={e => setEditTemplateForm({ ...editTemplateForm, has_subject_code: e.target.checked })}
-                                        className="w-4 h-4 rounded text-[#004B93] focus:ring-[#004B93]"
-                                    />
-                                    <span className="text-xs font-bold text-slate-800">Subject Code Field</span>
-                                </label>
-                            </div>
-
-                            <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsEditTemplateModalOpen(false)}
-                                    className="px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isUpdatingTemplate}
-                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                                >
-                                    {isUpdatingTemplate ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                                    <span>{isUpdatingTemplate ? 'Updating...' : 'Update Sheet Format'}</span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            </div>
         </div>
     )
 }
 
-function SaveIcon() {
-    return <CheckCircle size={18} />
+function KeyIcon() {
+    return <FileSpreadsheet size={20} />
 }

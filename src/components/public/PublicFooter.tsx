@@ -50,9 +50,9 @@ const FOOTER_COLUMNS = [
 
 export const PublicFooter = () => {
     return (
-        <footer style={{ background: '#090D16', color: '#FFFFFF', position: 'relative', overflow: 'hidden', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <footer style={{ background: '#0C101A', color: '#FFFFFF', position: 'relative', overflow: 'hidden', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
             {/* Subtle radial ambient glow */}
-            <div style={{ position: 'absolute', top: 0, right: '15%', width: 500, height: 300, background: 'radial-gradient(circle, rgba(37, 99, 235, 0.08), transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: 0, right: '15%', width: 500, height: 300, background: 'transparent', pointerEvents: 'none' }} />
 
             <div style={{ width: '100%', padding: '64px 5% 32px', position: 'relative', zIndex: 10, boxSizing: 'border-box' }} className="font-worksans">
 
@@ -63,7 +63,7 @@ export const PublicFooter = () => {
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         {/* Logo */}
                         <Link href="/" style={{ display: 'inline-flex', marginBottom: 20 }}>
-                            <div style={{ background: '#FFFFFF', borderRadius: 12, padding: '8px 14px', display: 'inline-flex' }}>
+                            <div style={{ background: 'transparent', borderRadius: 12, padding: '8px 14px', display: 'inline-flex' }}>
                                 <img
                                     src="/logo.png"
                                     alt="BeBrilliant"

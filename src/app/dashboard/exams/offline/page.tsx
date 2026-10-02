@@ -173,8 +173,21 @@ const STANDARD_CHAPTERS: Record<string, string[]> = {
 }
 
 export default function OfflinePaperManager() {
-    // 5 Operational Tabs
+    // Step-based workspace model (1=Setup, 2=Question Bank, 3=Paper Pattern, 4=Build Paper, 5=Print)
+    const [currentStep, setCurrentStep] = useState<number>(1)
+    const [isAllPapersOpen, setIsAllPapersOpen] = useState(false)
+
+    // Keep activeTab in sync for internal nav (maps to step panels)
     const [activeTab, setActiveTab] = useState<'roster' | 'composer' | 'templates' | 'questions' | 'packaging'>('roster')
+
+    // Helper: navigate to a step and sync activeTab
+    const goToStep = (step: number) => {
+        setCurrentStep(step)
+        if (step === 2) { setActiveTab('questions'); fetchQuestionSets() }
+        else if (step === 3) setActiveTab('templates')
+        else if (step === 4) setActiveTab('composer')
+        else if (step === 5) setActiveTab('packaging')
+    }
 
     // Data States
     const [loading, setLoading] = useState(true)
@@ -200,6 +213,7 @@ export default function OfflinePaperManager() {
     const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([])
     const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([])
     const [selectedPatternId, setSelectedPatternId] = useState<string>('')
+    const [selectedPattern, setSelectedPattern] = useState<any | null>(null)
 
     // Search & Filters for Papers Roster
     const [searchQuery, setSearchQuery] = useState('')
@@ -218,6 +232,7 @@ export default function OfflinePaperManager() {
 
     // ── QUESTION BANK & QUESTION SETS DYNAMIC STATE ─────────────
     const [questionSets, setQuestionSets] = useState<any[]>([])
+    const [selectedQuestionSet, setSelectedQuestionSet] = useState<any | null>(null)
     const [activeSetId, setActiveSetId] = useState<string | null>(null)
     const [activeSetData, setActiveSetData] = useState<any | null>(null)
     const [activeSetQuestions, setActiveSetQuestions] = useState<any[]>([])
@@ -528,6 +543,26 @@ export default function OfflinePaperManager() {
         }
     }, [])
 
+    // Select Question Bank Set & Advance to Step 3 (Paper Pattern)
+    const handleSelectQuestionSet = (qs: any) => {
+        if (!qs) return
+        setSelectedQuestionSet(qs)
+        if (qs.class_id) setSelectedClassId(qs.class_id)
+        if (qs.subject_id) setSelectedSubjectId(qs.subject_id)
+        if (qs.chapter_id) setSelectedChapterIds([qs.chapter_id])
+        setComposerForm(prev => ({
+            ...prev,
+            class_id: qs.class_id || prev.class_id,
+            subject_id: qs.subject_id || prev.subject_id,
+            chapter_ids: qs.chapter_id ? [qs.chapter_id] : prev.chapter_ids,
+            total_questions: qs.total_questions || prev.total_questions,
+            marks: qs.total_marks || prev.marks,
+            title: prev.title || `${qs.class_name || 'Class'} ${qs.subject_name || 'Subject'} - ${qs.title || 'Examination Paper'}`
+        }))
+        showToast(`Selected Question Bank: ${qs.title}`, true)
+        goToStep(3)
+    }
+
     // Fetch All Dynamic Records
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -619,18 +654,29 @@ export default function OfflinePaperManager() {
     // Create New Offline Exam Paper
     const handleCreatePaper = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!composerForm.title.trim()) {
-            showToast('Please enter an exam paper title', false)
-            return
-        }
+        const activePattern = selectedPattern || displayPatterns.find(p => p.id === selectedPatternId) || displayPatterns[0]
+        const activeQuestionSet = selectedQuestionSet || (activeSetId ? questionSets.find(s => s.id === activeSetId) : null) || questionSets[0]
+        const fallbackTitle = `${activeQuestionSet?.class_name || classes.find(c => c.id === selectedClassId)?.name || 'Class 8'} ${activeQuestionSet?.subject_name || subjects.find(s => s.id === selectedSubjectId)?.name || 'English'} — ${activePattern?.name || 'Examination Paper'}`
+        const finalTitle = composerForm.title.trim() || fallbackTitle
+
         setSaving(true)
         try {
+            const patternMarks = activePattern?.total_marks || composerForm.marks || 80
+            const patternDuration = activePattern?.duration_minutes || composerForm.duration || 180
+            const patternQuestions = activePattern?.sections?.reduce((sum: number, s: any) => sum + (Number(s.total_questions) || (s.rules?.length || 0)), 0) || composerForm.total_questions || 25
+
             const res = await fetch('/api/dashboard/exams/offline', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'CREATE_EXAM',
-                    payload: composerForm
+                    payload: {
+                        ...composerForm,
+                        title: finalTitle,
+                        marks: patternMarks,
+                        duration: patternDuration,
+                        total_questions: patternQuestions
+                    }
                 })
             })
             const data = await res.json()
@@ -639,8 +685,8 @@ export default function OfflinePaperManager() {
             showToast('Examination Paper generated successfully!', true)
             setIsCreateModalOpen(false)
             setComposerForm(prev => ({ ...prev, title: '' }))
-            fetchData()
-            setActiveTab('roster')
+            await fetchData()
+            goToStep(5)
         } catch (err: any) {
             showToast(err.message || 'Error creating paper', false)
         } finally {
@@ -1685,10 +1731,10 @@ export default function OfflinePaperManager() {
                             <Target size={26} />
                         </div>
                         <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Question Sets</div>
+                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Question Banks</div>
                             <div className="text-2xl font-black text-slate-900 mt-0.5">{questionSets.length} Sets</div>
                             <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-                                <Check size={12} /> {totalQuestionsInSets} Questions Indexed
+                                <Check size={12} /> {totalQuestionsInSets} Questions Stored
                             </div>
                         </div>
                     </div>
@@ -1707,395 +1753,595 @@ export default function OfflinePaperManager() {
                     </div>
                 </div>
 
-                {/* 5 SIMPLE ENGLISH TABS */}
-                <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-2 shadow-sm flex items-center gap-2 overflow-x-auto">
-                    {[
-                        { id: 'roster', label: 'All Question Papers', icon: FileText, count: filteredPapers.length },
-                        { id: 'composer', label: 'Create Question Paper', icon: Sparkles, badge: 'Smart Builder' },
-                        { id: 'templates', label: 'Paper Patterns', icon: Layers, count: displayPatterns.length },
-                        { id: 'questions', label: 'Question Bank', icon: Database, count: questionSets.length },
-                        { id: 'packaging', label: 'Print & Download Center', icon: Printer }
-                    ].map(tab => {
-                        const Icon = tab.icon
-                        const isActive = activeTab === tab.id
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => {
-                                    setActiveTab(tab.id as any)
-                                    if (tab.id === 'questions') {
-                                        fetchQuestionSets()
-                                    }
-                                }}
-                                className={`flex items-center gap-2.5 px-5 py-3 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all ${
-                                    isActive
-                                        ? 'bg-[#004B93] text-white shadow-md shadow-sky-950/20'
-                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                                }`}
-                            >
-                                <Icon size={17} />
-                                <span>{tab.label}</span>
-                                {tab.count !== undefined && (
-                                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-black ${
-                                        isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                                    }`}>
-                                        {tab.count}
-                                    </span>
-                                )}
-                                {tab.badge && (
-                                    <span className="text-[10px] px-2 py-0.5 rounded-full font-black bg-purple-500 text-white">
-                                        {tab.badge}
-                                    </span>
-                                )}
-                            </button>
-                        )
-                    })}
+                {/* ── STEP PROGRESS BAR ─────────────────────────────────── */}
+                <div className="w-full bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4">
+                    <div className="flex items-center gap-0">
+                        {[
+                            { step: 1, label: 'Setup', sub: 'Class & Subject', icon: BookOpen },
+                            { step: 2, label: 'Question Bank', sub: 'Build Questions', icon: Database },
+                            { step: 3, label: 'Paper Pattern', sub: 'Exam Structure', icon: Layers },
+                            { step: 4, label: 'Build Paper', sub: 'Create & Save', icon: Sparkles },
+                            { step: 5, label: 'Print & Download', sub: 'Exam Ready', icon: Printer },
+                        ].map((s, idx) => {
+                            const Icon = s.icon
+                            const isDone = currentStep > s.step
+                            const isActive = currentStep === s.step
+                            return (
+                                <div key={s.step} className="flex items-center flex-1 min-w-0">
+                                    <button
+                                        onClick={() => goToStep(s.step)}
+                                        className={`flex flex-col items-center gap-1 flex-1 px-2 py-2 rounded-xl transition-all ${
+                                            isActive ? 'bg-[#004B93]/5' : 'hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-sm border-2 transition-all ${
+                                            isDone
+                                                ? 'bg-emerald-500 border-emerald-500 text-white'
+                                                : isActive
+                                                ? 'bg-[#004B93] border-[#004B93] text-white shadow-md shadow-sky-950/20'
+                                                : 'bg-white border-slate-200 text-slate-400'
+                                        }`}>
+                                            {isDone ? <Check size={16} /> : <Icon size={15} />}
+                                        </div>
+                                        <div className="text-center">
+                                            <div className={`text-[11px] font-black leading-tight ${
+                                                isActive ? 'text-[#004B93]' : isDone ? 'text-emerald-700' : 'text-slate-400'
+                                            }`}>{s.label}</div>
+                                            <div className="text-[10px] text-slate-400 font-medium hidden sm:block">{s.sub}</div>
+                                        </div>
+                                    </button>
+                                    {idx < 4 && (
+                                        <div className={`h-0.5 w-4 sm:w-8 shrink-0 mx-1 rounded-full transition-all ${
+                                            isDone ? 'bg-emerald-400' : 'bg-slate-200'
+                                        }`} />
+                                    )}
+                                </div>
+                            )
+                        })}
+                    </div>
                 </div>
 
-                {/* TAB 1: ALL QUESTION PAPERS */}
-                {activeTab === 'roster' && (
-                    <div className="w-full space-y-4">
-                        {/* SEARCH & FILTERS */}
-                        <div className="w-full bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <div className="relative w-full sm:w-96">
-                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input
-                                    type="text"
-                                    placeholder="Search by paper title, class, or subject..."
-                                    value={searchQuery}
-                                    onChange={e => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#004B93] focus:border-transparent bg-slate-50/50"
-                                />
+
+                {/* ── COLLAPSIBLE: ALL QUESTION PAPERS (persistent, above steps) ─── */}
+                <div className="w-full bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                    <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setIsAllPapersOpen(p => !p)}
+                        onKeyDown={e => e.key === 'Enter' && setIsAllPapersOpen(p => !p)}
+                        className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer select-none"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[#004B93]">
+                                <FileText size={18} />
                             </div>
-
-                            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                                <select
-                                    value={selectedClassFilter}
-                                    onChange={e => setSelectedClassFilter(e.target.value)}
-                                    className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]"
-                                >
-                                    <option value="ALL">All Classes</option>
-                                    {classes.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
-
-                                <select
-                                    value={selectedSubjectFilter}
-                                    onChange={e => setSelectedSubjectFilter(e.target.value)}
-                                    className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]"
-                                >
-                                    <option value="ALL">All Subjects</option>
-                                    {subjects.map(s => (
-                                        <option key={s.id} value={s.id}>{s.name} ({s.code || 'GEN'})</option>
-                                    ))}
-                                </select>
+                            <div className="text-left">
+                                <div className="font-black text-slate-900 text-sm">All Question Papers</div>
+                                <div className="text-xs text-slate-500 font-medium">{filteredPapers.length} papers ready for printing</div>
                             </div>
                         </div>
-
-                        {/* QUESTION PAPERS GRID */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {filteredPapers.length === 0 ? (
-                                <div className="col-span-full py-16 text-center bg-white rounded-2xl border border-slate-200 p-8">
-                                    <FileText className="mx-auto text-slate-300 mb-3" size={48} />
-                                    <h3 className="font-bold text-slate-800 text-base">No exam papers found</h3>
-                                    <p className="text-xs text-slate-500 mt-1">Click "Create New Exam Paper" to generate a question paper.</p>
-                                </div>
-                            ) : (
-                                filteredPapers.map(p => (
-                                    <div key={p.id} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col justify-between hover:shadow-lg transition-all group">
-                                        <div className="space-y-4">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[#004B93] group-hover:scale-110 transition-transform">
-                                                    <FileText size={22} />
-                                                </div>
-                                                <span className="text-[11px] font-mono font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100">
-                                                    ID: {p.id.split('-')[0].toUpperCase()}
-                                                </span>
-                                            </div>
-
-                                            <div>
-                                                <h3 className="font-black text-slate-900 text-base leading-snug group-hover:text-[#004B93] transition-colors line-clamp-2">
-                                                    {p.title}
-                                                </h3>
-                                                <div className="flex items-center gap-2 mt-2 text-xs font-semibold text-slate-500">
-                                                    <span className="text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-100">
-                                                        {p.classes?.name || 'Class 10'}
-                                                    </span>
-                                                    <span>•</span>
-                                                    <span>{p.subjects?.name || 'Mathematics'}</span>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs">
-                                                <div className="flex items-center gap-1.5 text-slate-600">
-                                                    <Target size={14} className="text-emerald-600" />
-                                                    <span><strong>{p.total_questions ? p.total_questions * 2 : 80}</strong> Marks</span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-slate-600">
-                                                    <Clock size={14} className="text-amber-600" />
-                                                    <span><strong>{p.duration || 180}</strong> Mins</span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-slate-600">
-                                                    <HelpCircle size={14} className="text-sky-600" />
-                                                    <span><strong>{p.total_questions || 25}</strong> Questions</span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-slate-600">
-                                                    <Globe size={14} className="text-purple-600" />
-                                                    <span>Dual Language</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2 pt-6">
-                                            <button
-                                                onClick={() => window.open(`/api/dashboard/exams/offline/${p.id}/print?mode=paper`, '_blank')}
-                                                className="w-full py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
-                                            >
-                                                <Printer size={15} />
-                                                <span>Print Question Paper</span>
-                                            </button>
-
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <button
-                                                    onClick={() => window.open(`/api/dashboard/exams/offline/${p.id}/print?mode=key`, '_blank')}
-                                                    className="py-2 rounded-xl bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-800 font-bold text-xs border border-slate-200 transition-colors flex items-center justify-center gap-1.5"
-                                                >
-                                                    <span>Answer Key</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => window.open(`/api/dashboard/exams/offline/${p.id}/print?mode=solution`, '_blank')}
-                                                    className="py-2 rounded-xl bg-slate-50 hover:bg-sky-50 text-slate-700 hover:text-[#004B93] font-bold text-xs border border-slate-200 transition-colors flex items-center justify-center gap-1.5"
-                                                >
-                                                    <span>Solution Guide</span>
-                                                </button>
-                                            </div>
-
-                                            <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-                                                <button
-                                                    onClick={() => handleDuplicatePaper(p.id, p.title)}
-                                                    className="text-slate-500 hover:text-slate-900 font-semibold flex items-center gap-1"
-                                                    title="Create duplicate paper"
-                                                >
-                                                    <Copy size={13} /> Make Copy (Set B)
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeletePaper(p.id, p.title)}
-                                                    className="text-rose-500 hover:text-rose-700 font-semibold flex items-center gap-1"
-                                                    title="Delete Paper"
-                                                >
-                                                    <Trash2 size={13} /> Delete
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-400 font-semibold hidden sm:inline">{isAllPapersOpen ? 'Click to hide' : 'Click to view'}</span>
+                            <ChevronRight size={18} className={`text-slate-400 transition-transform ${isAllPapersOpen ? 'rotate-90' : ''}`} />
                         </div>
                     </div>
-                )}
 
-                {/* TAB 2: CREATE QUESTION PAPER (COMPOSER) */}
-                {activeTab === 'composer' && (
-                    <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
-                        {/* LEFT: COMPOSER FORM */}
-                        <div className="lg:col-span-7 bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
-                            <div className="border-b border-slate-100 pb-4">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-purple-50 text-purple-700 font-bold text-xs">
-                                    <Sparkles size={14} />
-                                    <span>QUESTION PAPER BUILDER</span>
-                                </div>
-                                <h2 className="text-2xl font-black text-slate-900 mt-2">Create New Question Paper</h2>
-                                <p className="text-slate-500 text-xs sm:text-sm mt-1">
-                                    Choose your school class, subject, chapters, and question paper pattern to create an exam paper.
-                                </p>
-                            </div>
-
-                            <form onSubmit={handleCreatePaper} className="space-y-6 text-sm">
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Exam Paper Title</label>
+                    {isAllPapersOpen && (
+                        <div className="px-6 pb-6 space-y-4 border-t border-slate-100">
+                            <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <div className="relative w-full sm:w-80">
+                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                     <input
                                         type="text"
-                                        required
-                                        placeholder="e.g., Class 10 Midterm Exam — Mathematics"
-                                        value={composerForm.title}
-                                        onChange={e => setComposerForm({ ...composerForm, title: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                        placeholder="Search by title, class, or subject..."
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#004B93] bg-slate-50/50"
                                     />
                                 </div>
+                                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                                    <select
+                                        value={selectedClassFilter}
+                                        onChange={e => setSelectedClassFilter(e.target.value)}
+                                        className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                                    >
+                                        <option value="ALL">All Classes</option>
+                                        {classes.map(c => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                    <select
+                                        value={selectedSubjectFilter}
+                                        onChange={e => setSelectedSubjectFilter(e.target.value)}
+                                        className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                                    >
+                                        <option value="ALL">All Subjects</option>
+                                        {subjects.map(s => (
+                                            <option key={s.id} value={s.id}>{s.name} ({s.code || 'GEN'})</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
 
-                                {/* Dynamic Unified Syllabus Tree & Pattern Selector */}
-                                <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                                            <BookOpen size={14} className="text-[#004B93]" />
-                                            Select Syllabus & Exam Pattern
-                                        </div>
-                                        <span className="text-[11px] font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
-                                            School Curriculum
-                                        </span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                                {filteredPapers.length === 0 ? (
+                                    <div className="col-span-full py-12 text-center bg-slate-50 rounded-2xl border border-slate-200">
+                                        <FileText className="mx-auto text-slate-300 mb-3" size={40} />
+                                        <h3 className="font-bold text-slate-800 text-sm">No exam papers yet</h3>
+                                        <p className="text-xs text-slate-500 mt-1">Use the 5-step workspace below to configure and compose your paper.</p>
                                     </div>
+                                ) : (
+                                    filteredPapers.map(p => (
+                                        <div key={p.id} className="bg-slate-50 rounded-2xl border border-slate-200/80 p-5 flex flex-col justify-between hover:shadow-md transition-all group">
+                                            <div className="space-y-3">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[#004B93] group-hover:scale-110 transition-transform">
+                                                        <FileText size={18} />
+                                                    </div>
+                                                    <span className="text-[10px] font-mono font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-100">
+                                                        ID: {p.id.split('-')[0].toUpperCase()}
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-black text-slate-900 text-sm leading-snug group-hover:text-[#004B93] transition-colors line-clamp-2">{p.title}</h3>
+                                                    <div className="flex items-center gap-1.5 mt-1.5 text-xs font-semibold text-slate-500">
+                                                        <span className="text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-100">{p.classes?.name || 'Class 10'}</span>
+                                                        <span>•</span>
+                                                        <span>{p.subjects?.name || 'Mathematics'}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-100 text-xs">
+                                                    <div className="flex items-center gap-1 text-slate-600"><Target size={12} className="text-emerald-600" /><span><strong>{p.total_questions ? p.total_questions * 2 : 80}</strong> Marks</span></div>
+                                                    <div className="flex items-center gap-1 text-slate-600"><Clock size={12} className="text-amber-600" /><span><strong>{p.duration || 180}</strong> Mins</span></div>
+                                                    <div className="flex items-center gap-1 text-slate-600"><HelpCircle size={12} className="text-sky-600" /><span><strong>{p.total_questions || 25}</strong> Questions</span></div>
+                                                    <div className="flex items-center gap-1 text-slate-600"><Globe size={12} className="text-purple-600" /><span>English + Gujarati</span></div>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2 pt-4">
+                                                <button
+                                                    onClick={() => window.open(`/api/dashboard/exams/offline/${p.id}/print?mode=paper`, '_blank')}
+                                                    className="w-full py-2 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5"
+                                                >
+                                                    <Printer size={13} /><span>Print Question Paper</span>
+                                                </button>
+                                                <div className="grid grid-cols-2 gap-1.5">
+                                                    <button
+                                                        onClick={() => window.open(`/api/dashboard/exams/offline/${p.id}/print?mode=key`, '_blank')}
+                                                        className="py-1.5 rounded-xl bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-800 font-bold text-xs border border-slate-200 transition-colors flex items-center justify-center gap-1"
+                                                    >
+                                                        <span>Answer Key</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => window.open(`/api/dashboard/exams/offline/${p.id}/print?mode=solution`, '_blank')}
+                                                        className="py-1.5 rounded-xl bg-white hover:bg-sky-50 text-slate-700 hover:text-[#004B93] font-bold text-xs border border-slate-200 transition-colors flex items-center justify-center gap-1"
+                                                    >
+                                                        <span>Solution Guide</span>
+                                                    </button>
+                                                </div>
+                                                <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-xs">
+                                                    <button onClick={() => handleDuplicatePaper(p.id, p.title)} className="text-slate-500 hover:text-slate-900 font-semibold flex items-center gap-1">
+                                                        <Copy size={12} /> Make Copy (Set B)
+                                                    </button>
+                                                    <button onClick={() => handleDeletePaper(p.id, p.title)} className="text-rose-500 hover:text-rose-700 font-semibold flex items-center gap-1">
+                                                        <Trash2 size={12} /> Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
 
-                                    <ExamSyllabusPatternPicker
-                                        context={blueprintContext}
-                                        loadingContext={contextLoading}
-                                        onRefreshContext={fetchBlueprintContext}
-                                        selectedBoardId={selectedBoardId}
-                                        selectedClassId={selectedClassId}
-                                        selectedSubjectId={selectedSubjectId}
-                                        selectedChapterIds={selectedChapterIds}
-                                        selectedTopicIds={selectedTopicIds}
-                                        selectedPatternId={selectedPatternId}
-                                        onSelectBoard={bId => {
-                                            setSelectedBoardId(bId)
+                {/* ── STEP 1: SETUP — Choose Class, Subject & Exam Board ─────── */}
+                {currentStep === 1 && (
+                    <div className="w-full space-y-6">
+                        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
+                            <div className="border-b border-slate-100 pb-5 mb-6">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-7 h-7 rounded-lg bg-[#004B93] text-white flex items-center justify-center text-xs font-black">1</div>
+                                    <span className="text-xs font-black uppercase tracking-wider text-[#004B93]">Step 1 of 5</span>
+                                </div>
+                                <h2 className="text-2xl font-black text-slate-900">Choose Class &amp; Subject</h2>
+                                <p className="text-slate-500 text-sm mt-1">Select the exam board, class, and subject. This sets the scope for your question bank and exam paper.</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                                {/* Board */}
+                                <div className="p-5 rounded-2xl border-2 border-slate-200 hover:border-[#004B93]/30 transition-colors bg-slate-50/50 space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-9 h-9 rounded-xl bg-sky-100 text-[#004B93] flex items-center justify-center">
+                                            <Shield size={18} />
+                                        </div>
+                                        <span className="font-black text-slate-900 text-sm">Exam Board</span>
+                                    </div>
+                                    <select
+                                        value={selectedBoardId}
+                                        onChange={e => {
+                                            setSelectedBoardId(e.target.value)
                                             setSelectedClassId('')
                                             setSelectedSubjectId('')
                                             setSelectedChapterIds([])
                                             setSelectedTopicIds([])
                                         }}
-                                        onSelectClass={cNode => {
-                                            setSelectedClassId(cNode.id)
-                                            setComposerForm(prev => ({ ...prev, class_id: cNode.id }))
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none text-sm"
+                                    >
+                                        <option value="">Select exam board...</option>
+                                        {blueprintContext?.activeBoards?.map(b => (
+                                            <option key={b.id} value={b.id}>{b.name}</option>
+                                        ))}
+                                    </select>
+                                    <p className="text-[11px] text-slate-400 font-medium">e.g., CBSE, Gujarat Board (GSEB)</p>
+                                </div>
+
+                                {/* Class */}
+                                <div className="p-5 rounded-2xl border-2 border-slate-200 hover:border-[#004B93]/30 transition-colors bg-slate-50/50 space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                                            <BookOpen size={18} />
+                                        </div>
+                                        <span className="font-black text-slate-900 text-sm">Class / Grade</span>
+                                    </div>
+                                    <select
+                                        value={selectedClassId}
+                                        onChange={e => {
+                                            setSelectedClassId(e.target.value)
                                             setSelectedSubjectId('')
                                             setSelectedChapterIds([])
                                             setSelectedTopicIds([])
                                         }}
-                                        onSelectSubject={sNode => {
-                                            setSelectedSubjectId(sNode.id)
-                                            setComposerForm(prev => ({ ...prev, subject_id: sNode.id }))
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none text-sm"
+                                    >
+                                        <option value="">Select class...</option>
+                                        {(blueprintContext?.syllabusTree?.classes || classes).map((c: any) => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                    <p className="text-[11px] text-slate-400 font-medium">e.g., Class 8, Class 10</p>
+                                </div>
+
+                                {/* Subject */}
+                                <div className="p-5 rounded-2xl border-2 border-slate-200 hover:border-[#004B93]/30 transition-colors bg-slate-50/50 space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                                            <Tag size={18} />
+                                        </div>
+                                        <span className="font-black text-slate-900 text-sm">Subject</span>
+                                    </div>
+                                    <select
+                                        value={selectedSubjectId}
+                                        onChange={e => {
+                                            setSelectedSubjectId(e.target.value)
                                             setSelectedChapterIds([])
                                             setSelectedTopicIds([])
                                         }}
-                                        onSelectChapters={chIds => {
-                                            setSelectedChapterIds(chIds)
-                                            setComposerForm(f => ({ ...f, chapter_ids: chIds }))
-                                        }}
-                                        onSelectTopics={tpIds => {
-                                            setSelectedTopicIds(tpIds)
-                                        }}
-                                        onSelectPattern={pattern => {
-                                            setSelectedPatternId(pattern.id)
-                                            setComposerForm(prev => ({
-                                                ...prev,
-                                                template_id: pattern.id,
-                                                marks: pattern.total_marks || prev.marks,
-                                                duration: pattern.duration_minutes || prev.duration,
-                                                total_questions: pattern.sections?.reduce((sum: number, s: any) => sum + (s.rules?.length || 0), 0) || prev.total_questions
-                                            }))
-                                            showToast(`Selected Pattern: ${pattern.name}`, true)
-                                        }}
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Total Marks</label>
-                                        <input
-                                            type="number"
-                                            value={composerForm.marks}
-                                            onChange={e => setComposerForm({ ...composerForm, marks: parseInt(e.target.value) || 80 })}
-                                            min={20}
-                                            max={100}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Duration (Minutes)</label>
-                                        <input
-                                            type="number"
-                                            value={composerForm.duration}
-                                            onChange={e => setComposerForm({ ...composerForm, duration: parseInt(e.target.value) || 180 })}
-                                            min={30}
-                                            max={240}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Total Questions</label>
-                                        <input
-                                            type="number"
-                                            value={composerForm.total_questions}
-                                            onChange={e => setComposerForm({ ...composerForm, total_questions: parseInt(e.target.value) || 25 })}
-                                            min={5}
-                                            max={60}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3 pt-2">
-                                    <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={composerForm.bilingual}
-                                            onChange={e => setComposerForm({ ...composerForm, bilingual: e.target.checked })}
-                                            className="w-4 h-4 text-[#004B93] rounded"
-                                        />
-                                        <div>
-                                            <span className="font-bold text-slate-900 text-xs block">Include Gujarati Translation (Dual Language)</span>
-                                            <span className="text-[11px] text-slate-500">Prints English and Gujarati side-by-side on question papers.</span>
-                                        </div>
-                                    </label>
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={saving}
-                                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#004B93] to-sky-700 hover:from-sky-800 hover:to-sky-600 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 mt-4"
-                                >
-                                    {saving ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-                                    <span>Create & Save Exam Paper</span>
-                                </button>
-                            </form>
-                        </div>
-
-                        {/* RIGHT: PREVIEW & INFO */}
-                        <div className="lg:col-span-5 space-y-6">
-                            <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-4">
-                                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                                    <div className="flex items-center gap-2">
-                                        <Printer size={18} className="text-[#004B93]" />
-                                        <span className="font-black text-slate-900 text-sm">Paper Pattern Structure</span>
-                                    </div>
-                                    <span className="text-xs font-bold text-sky-700 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-200">
-                                        Print-Ready Format
-                                    </span>
-                                </div>
-
-                                <div className="space-y-3 text-xs">
-                                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                                        <div className="font-extrabold text-slate-900 text-xs">Section A: Multiple Choice Questions</div>
-                                        <div className="text-slate-500 text-[11px]">Objective questions with 4 options per question.</div>
-                                    </div>
-                                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                                        <div className="font-extrabold text-slate-900 text-xs">Section B: Short Answer Questions</div>
-                                        <div className="text-slate-500 text-[11px]">2-3 marks questions: definitions, equations, and short problems.</div>
-                                    </div>
-                                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                                        <div className="font-extrabold text-slate-900 text-xs">Section C: Long Answer Questions</div>
-                                        <div className="text-slate-500 text-[11px]">4-5 marks questions: detailed solutions and diagrams.</div>
-                                    </div>
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none text-sm"
+                                    >
+                                        <option value="">Select subject...</option>
+                                        {subjects.map((s: any) => (
+                                            <option key={s.id} value={s.id}>{s.name}</option>
+                                        ))}
+                                    </select>
+                                    <p className="text-[11px] text-slate-400 font-medium">e.g., Mathematics, Science, English</p>
                                 </div>
                             </div>
 
-                            <div className="bg-purple-50 rounded-2xl p-6 border border-purple-200/80 space-y-3">
-                                <h4 className="font-extrabold text-purple-900 text-sm flex items-center gap-2">
-                                    <Shield size={16} /> Exam Features & Safety
-                                </h4>
-                                <ul className="text-xs text-purple-800 space-y-2 list-disc pl-4 font-medium">
-                                    <li>Questions selected from your school and board syllabus.</li>
-                                    <li>Multiple paper sets (Set A, B, C, D) to prevent copying in the exam hall.</li>
-                                    <li>Formatted mathematical formulas and science diagrams.</li>
-                                    <li>Includes answer key and marking solutions.</li>
-                                </ul>
-                            </div>
+                            {selectedClassId && selectedSubjectId ? (
+                                <div className="mt-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                    <div className="flex items-center gap-2.5 text-sm font-semibold text-emerald-800">
+                                        <CheckCircle size={18} className="text-emerald-600 shrink-0" />
+                                        <span>
+                                            Scope set: <strong>{classes.find(c => c.id === selectedClassId)?.name || 'Selected Class'}</strong> &mdash; <strong>{subjects.find(s => s.id === selectedSubjectId)?.name || 'Selected Subject'}</strong>.
+                                            {papers.filter(p => p.class_id === selectedClassId && p.subject_id === selectedSubjectId).length > 0 && (
+                                                <span className="text-emerald-700 ml-1">You already have {papers.filter(p => p.class_id === selectedClassId && p.subject_id === selectedSubjectId).length} paper(s) for this selection.</span>
+                                            )}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => goToStep(2)}
+                                        className="shrink-0 px-5 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-black text-sm flex items-center gap-2 shadow-md transition-all hover:scale-[1.02]"
+                                    >
+                                        Continue to Question Bank <ChevronRight size={16} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="mt-6 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-500 font-medium flex items-center gap-2">
+                                    <AlertCircle size={16} className="text-slate-400 shrink-0" />
+                                    Select a class and subject above to continue.
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
 
-                {/* TAB 3: PAPER PATTERNS */}
-                {activeTab === 'templates' && (
+                {/* ── STEP 4: BUILD PAPER (COMPOSER & FINALIZE) ────────────────── */}
+                {currentStep === 4 && (() => {
+                    const activePattern = selectedPattern || displayPatterns.find(p => p.id === selectedPatternId) || displayPatterns[0]
+                    const activeQuestionSet = selectedQuestionSet || (activeSetId ? questionSets.find(s => s.id === activeSetId) : null) || questionSets[0]
+                    const resolvedTitle = composerForm.title || `${activeQuestionSet?.class_name || classes.find(c => c.id === selectedClassId)?.name || 'Class 8'} ${activeQuestionSet?.subject_name || subjects.find(s => s.id === selectedSubjectId)?.name || 'English'} — ${activePattern?.name || 'Examination Paper'}`
+
+                    return (
+                        <div className="w-full space-y-6">
+                            {/* ── SCOPE & BLUEPRINT SUMMARY CARD ─── */}
+                            <div className="w-full bg-gradient-to-r from-slate-900 to-sky-950 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-800">
+                                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                                    <div>
+                                        <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-bold text-xs uppercase tracking-wider">
+                                            <CheckCircle size={13} />
+                                            <span>Ready to Compose</span>
+                                        </div>
+                                        <h3 className="text-xl font-black text-white mt-1">Review &amp; Finalize Exam Paper</h3>
+                                        <p className="text-xs text-slate-300 mt-0.5">Your exam scope, question bank, and paper pattern are locked in. Configure final paper details below.</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-sky-200 font-semibold bg-sky-900/60 px-3 py-1.5 rounded-xl border border-sky-500/30">
+                                            Step 4 of 5
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* 3 SUMMARY TILES */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+                                    {/* TILE 1: CLASS & SUBJECT */}
+                                    <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-start justify-between">
+                                        <div className="space-y-1">
+                                            <div className="text-[11px] font-bold uppercase tracking-wider text-sky-300 flex items-center gap-1.5">
+                                                <BookOpen size={13} /> Target Scope
+                                            </div>
+                                            <div className="font-extrabold text-sm text-white">
+                                                {activeQuestionSet?.class_name || classes.find(c => c.id === selectedClassId)?.name || 'Class 8'} &bull; {activeQuestionSet?.subject_name || subjects.find(s => s.id === selectedSubjectId)?.name || 'English'}
+                                            </div>
+                                            <div className="text-[11px] text-slate-400">
+                                                {blueprintContext?.activeBoards?.find(b => b.id === selectedBoardId)?.name || 'Gujarat Board (English Medium)'}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => goToStep(1)}
+                                            className="text-[11px] font-bold text-sky-400 hover:text-sky-300 underline"
+                                        >
+                                            Change
+                                        </button>
+                                    </div>
+
+                                    {/* TILE 2: QUESTION BANK */}
+                                    <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-start justify-between">
+                                        <div className="space-y-1">
+                                            <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
+                                                <Database size={13} /> Question Bank
+                                            </div>
+                                            <div className="font-extrabold text-sm text-white line-clamp-1" title={activeQuestionSet?.title || 'Selected Question Set'}>
+                                                {activeQuestionSet?.title || 'Active Question Set'}
+                                            </div>
+                                            <div className="text-[11px] text-slate-400">
+                                                {activeQuestionSet?.total_questions || 0} questions available
+                                                {activeQuestionSet?.chapter_name && ` • ${activeQuestionSet.chapter_name}`}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => goToStep(2)}
+                                            className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 underline"
+                                        >
+                                            Change
+                                        </button>
+                                    </div>
+
+                                    {/* TILE 3: PAPER PATTERN */}
+                                    <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-start justify-between">
+                                        <div className="space-y-1">
+                                            <div className="text-[11px] font-bold uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
+                                                <Layers size={13} /> Paper Pattern
+                                            </div>
+                                            <div className="font-extrabold text-sm text-white line-clamp-1" title={activePattern?.name || 'Selected Pattern'}>
+                                                {activePattern?.name || 'Standard Exam Pattern'}
+                                            </div>
+                                            <div className="text-[11px] text-slate-400">
+                                                {activePattern?.total_marks || 80} Marks &bull; {activePattern?.duration_minutes || 180} Mins
+                                                {activePattern?.sections?.length ? ` • ${activePattern.sections.length} Sections` : ''}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => goToStep(3)}
+                                            className="text-[11px] font-bold text-purple-400 hover:text-purple-300 underline"
+                                        >
+                                            Change
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* ── TWO-COLUMN FORM & LIVE BLUEPRINT PREVIEW ─── */}
+                            <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                {/* LEFT: COMPOSER FORM */}
+                                <div className="lg:col-span-7 bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
+                                    <div className="border-b border-slate-100 pb-4">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-purple-50 text-purple-700 font-bold text-xs">
+                                            <Sparkles size={14} />
+                                            <span>QUESTION PAPER DETAILS</span>
+                                        </div>
+                                        <h2 className="text-2xl font-black text-slate-900 mt-2">Configure Paper Parameters</h2>
+                                        <p className="text-slate-500 text-xs sm:text-sm mt-1">
+                                            Confirm paper title and language options before generating the print-ready exam paper.
+                                        </p>
+                                    </div>
+
+                                    <form onSubmit={handleCreatePaper} className="space-y-6 text-sm">
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Exam Paper Title</label>
+                                            <input
+                                                type="text"
+                                                placeholder={resolvedTitle}
+                                                value={composerForm.title}
+                                                onChange={e => setComposerForm({ ...composerForm, title: e.target.value })}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                            />
+                                            <p className="text-[11px] text-slate-400 mt-1">Leave blank to use the default title: <span className="font-semibold text-slate-600">{resolvedTitle}</span></p>
+                                        </div>
+
+                                        {/* Pattern Specifications (Locked from Step 3 Pattern — no re-input required) */}
+                                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                                            <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                                <span>Pattern Parameters (Locked)</span>
+                                                <span className="text-[10px] font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
+                                                    Pattern: {activePattern?.name || 'Selected Pattern'}
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-3 pt-1">
+                                                <div className="p-3 rounded-xl bg-white border border-slate-200/80 shadow-xs">
+                                                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Total Marks</span>
+                                                    <span className="font-black text-slate-900 text-sm sm:text-base flex items-center gap-1.5 mt-0.5">
+                                                        <Target size={15} className="text-emerald-600" />
+                                                        {activePattern?.total_marks || 80} Marks
+                                                    </span>
+                                                </div>
+                                                <div className="p-3 rounded-xl bg-white border border-slate-200/80 shadow-xs">
+                                                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Duration</span>
+                                                    <span className="font-black text-slate-900 text-sm sm:text-base flex items-center gap-1.5 mt-0.5">
+                                                        <Clock size={15} className="text-amber-600" />
+                                                        {activePattern?.duration_minutes || 180} Mins
+                                                    </span>
+                                                </div>
+                                                <div className="p-3 rounded-xl bg-white border border-slate-200/80 shadow-xs">
+                                                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Total Questions</span>
+                                                    <span className="font-black text-slate-900 text-sm sm:text-base flex items-center gap-1.5 mt-0.5">
+                                                        <HelpCircle size={15} className="text-sky-600" />
+                                                        {activePattern?.sections?.reduce((sum: number, s: any) => sum + (Number(s.total_questions) || (s.rules?.length || 0)), 0) || 25} Qs
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3 pt-1">
+                                            <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={composerForm.bilingual}
+                                                    onChange={e => setComposerForm({ ...composerForm, bilingual: e.target.checked })}
+                                                    className="w-4 h-4 text-[#004B93] rounded"
+                                                />
+                                                <div>
+                                                    <span className="font-bold text-slate-900 text-xs block">Include Gujarati Translation (Dual Language)</span>
+                                                    <span className="text-[11px] text-slate-500">Prints English and Gujarati side-by-side on question papers.</span>
+                                                </div>
+                                            </label>
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            disabled={saving}
+                                            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#004B93] to-sky-700 hover:from-sky-800 hover:to-sky-600 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 mt-4 hover:scale-[1.01]"
+                                        >
+                                            {saving ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+                                            <span>Create &amp; Save Exam Paper</span>
+                                        </button>
+                                    </form>
+                                </div>
+
+                                {/* RIGHT: LIVE PATTERN PREVIEW & INFO */}
+                                <div className="lg:col-span-5 space-y-6">
+                                    <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+                                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                            <div className="flex items-center gap-2">
+                                                <Printer size={18} className="text-[#004B93]" />
+                                                <span className="font-black text-slate-900 text-sm">Paper Pattern Structure</span>
+                                            </div>
+                                            <span className="text-xs font-bold text-sky-700 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-200">
+                                                {activePattern?.name || 'Selected Pattern'}
+                                            </span>
+                                        </div>
+
+                                        <div className="space-y-3 text-xs">
+                                            {activePattern?.sections && activePattern.sections.length > 0 ? (
+                                                activePattern.sections.map((sec: any, sIdx: number) => (
+                                                    <div key={sIdx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="font-extrabold text-slate-900 text-xs">
+                                                                {sec.name || `Section ${String.fromCharCode(65 + sIdx)}`}
+                                                            </div>
+                                                            <span className="text-[10px] font-bold text-sky-800 bg-sky-100/70 px-2 py-0.5 rounded">
+                                                                {sec.total_marks ? `${sec.total_marks} Marks` : `${sec.marks_per_question || 1} M/Q`}
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-slate-500 text-[11px] flex items-center justify-between">
+                                                            <span>{sec.question_type || sec.description || 'Section questions'}</span>
+                                                            {sec.total_questions && (
+                                                                <span className="font-semibold text-slate-700">{sec.total_questions} Questions</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <>
+                                                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                                                        <div className="font-extrabold text-slate-900 text-xs">Section A: Multiple Choice Questions</div>
+                                                        <div className="text-slate-500 text-[11px]">Objective questions with 4 options per question.</div>
+                                                    </div>
+                                                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                                                        <div className="font-extrabold text-slate-900 text-xs">Section B: Short Answer Questions</div>
+                                                        <div className="text-slate-500 text-[11px]">2-3 marks questions: definitions, equations, and short problems.</div>
+                                                    </div>
+                                                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                                                        <div className="font-extrabold text-slate-900 text-xs">Section C: Long Answer Questions</div>
+                                                        <div className="text-slate-500 text-[11px]">4-5 marks questions: detailed solutions and diagrams.</div>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* QUESTION POOL STATUS */}
+                                    <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
+                                            <CheckCircle size={16} className="text-emerald-600" />
+                                            <span>Question Bank Connected</span>
+                                        </div>
+                                        <p className="text-xs text-emerald-800 leading-relaxed font-medium">
+                                            <strong>{activeQuestionSet?.total_questions || 0}</strong> verified questions are available in &ldquo;{activeQuestionSet?.title || 'Selected Question Set'}&rdquo; to generate this paper.
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-purple-50 rounded-2xl p-6 border border-purple-200/80 space-y-3">
+                                        <h4 className="font-extrabold text-purple-900 text-sm flex items-center gap-2">
+                                            <Shield size={16} /> Exam Features &amp; Safety
+                                        </h4>
+                                        <ul className="text-xs text-purple-800 space-y-2 list-disc pl-4 font-medium">
+                                            <li>Questions selected from your school and board syllabus.</li>
+                                            <li>Multiple paper sets (Set A, B, C, D) to prevent copying in the exam hall.</li>
+                                            <li>Formatted mathematical formulas and science diagrams.</li>
+                                            <li>Includes answer key and marking solutions.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                })()}
+
+                {/* ── STEP 3: PAPER PATTERN ──────────────────────────────── */}
+                {currentStep === 3 && (
                     <div className="w-full space-y-6">
+                        {selectedQuestionSet && (
+                            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-emerald-900">
+                                    <CheckCircle size={18} className="text-emerald-600 shrink-0" />
+                                    <span>
+                                        Selected Question Bank: <strong>{selectedQuestionSet.title}</strong>
+                                        {selectedQuestionSet.class_name && <span> ({selectedQuestionSet.class_name} &bull; {selectedQuestionSet.subject_name})</span>}
+                                        <span className="text-emerald-700 ml-2 font-normal">({selectedQuestionSet.total_questions || 0} questions available)</span>
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => goToStep(2)}
+                                    className="shrink-0 text-xs font-bold text-emerald-800 hover:text-emerald-950 underline"
+                                >
+                                    Change Question Bank
+                                </button>
+                            </div>
+                        )}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div>
                                 <h2 className="text-xl font-black text-slate-900">Exam Paper Patterns</h2>
@@ -2187,20 +2433,23 @@ export default function OfflinePaperManager() {
                                             <div className="pt-6 space-y-2">
                                                 <button
                                                     onClick={() => {
+                                                        setSelectedPattern(tmpl)
+                                                        setSelectedPatternId(tmpl.id)
+                                                        const defaultTitle = `${selectedQuestionSet?.class_name || classes.find(c => c.id === selectedClassId)?.name || 'Class'} ${selectedQuestionSet?.subject_name || subjects.find(s => s.id === selectedSubjectId)?.name || 'Subject'} — ${tmpl.name}`
                                                         setComposerForm(prev => ({
                                                             ...prev,
                                                             template_id: tmpl.id,
                                                             marks: tmpl.total_marks || 80,
                                                             duration: tmpl.duration_minutes || 180,
-                                                            total_questions: questionCount || prev.total_questions
+                                                            total_questions: questionCount || prev.total_questions,
+                                                            title: prev.title || defaultTitle
                                                         }))
-                                                        setSelectedPatternId(tmpl.id)
-                                                        setActiveTab('composer')
+                                                        goToStep(4)
                                                         showToast(`Loaded pattern: ${tmpl.name}`, true)
                                                     }}
-                                                    className="w-full py-2.5 rounded-xl bg-slate-50 hover:bg-[#004B93] text-slate-700 hover:text-white font-bold text-xs border border-slate-200 transition-colors flex items-center justify-center gap-1.5"
+                                                    className="w-full py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 hover:scale-[1.01]"
                                                 >
-                                                    <span>Use in Paper Builder</span>
+                                                    <span>Select &amp; Build Paper</span>
                                                     <ArrowUpRight size={14} />
                                                 </button>
 
@@ -2231,8 +2480,8 @@ export default function OfflinePaperManager() {
                     </div>
                 )}
 
-                {/* TAB 4: SCHOOL QUESTION BANK (ORGANIZED BY QUESTION SETS: SYLLABUS, CLASS, SUBJECT, CHAPTER) */}
-                {activeTab === 'questions' && (
+                {/* ── STEP 2: QUESTION BANK ────────────────────────────────── */}
+                {currentStep === 2 && (
                     <div className="w-full space-y-6">
                         {/* VIEW A: QUESTION SETS OVERVIEW (WHEN NO SET IS EXPANDED) */}
                         {!activeSetId ? (
@@ -2242,9 +2491,9 @@ export default function OfflinePaperManager() {
                                     <div>
                                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 font-bold text-xs">
                                             <FolderOpen size={14} />
-                                            <span>CURRICULUM QUESTION REPOSITORY</span>
+                                            <span>Question Sets</span>
                                         </div>
-                                        <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">School Question Bank</h2>
+                                        <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">Question Bank</h2>
                                     </div>
                                     <div className="flex items-center gap-3 self-start sm:self-auto">
                                         <button
@@ -2372,13 +2621,26 @@ export default function OfflinePaperManager() {
                                                 {/* ACTIONS */}
                                                 <div className="space-y-2 pt-6">
                                                     <button
+                                                        onClick={() => handleSelectQuestionSet(qs)}
+                                                        className={`w-full py-2.5 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 ${
+                                                            selectedQuestionSet?.id === qs.id
+                                                                ? 'bg-emerald-700 text-white shadow-emerald-700/20'
+                                                                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 hover:scale-[1.01]'
+                                                        }`}
+                                                    >
+                                                        <CheckCircle size={15} />
+                                                        <span>{selectedQuestionSet?.id === qs.id ? 'Selected ✓ Choose Pattern' : 'Select Question Bank'}</span>
+                                                        <ChevronRight size={14} />
+                                                    </button>
+
+                                                    <button
                                                         onClick={() => {
                                                             setActiveSetId(qs.id)
                                                             fetchSetQuestions(qs.id)
                                                         }}
-                                                        className="w-full py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
+                                                        className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all flex items-center justify-center gap-2"
                                                     >
-                                                        <Eye size={15} />
+                                                        <Eye size={14} />
                                                         <span>View Questions ({qs.total_questions || 0})</span>
                                                     </button>
 
@@ -2488,12 +2750,22 @@ export default function OfflinePaperManager() {
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-4 text-xs font-bold bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200 self-start sm:self-auto">
-                                            <span className="text-slate-700">{activeSetQuestions.length} Questions</span>
-                                            <span>•</span>
-                                            <span className="text-emerald-700">
-                                                {activeSetQuestions.reduce((sum, q) => sum + (Number(q.marks) || 1), 0)} Total Marks
-                                            </span>
+                                        <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
+                                            <div className="flex items-center gap-4 text-xs font-bold bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200">
+                                                <span className="text-slate-700">{activeSetQuestions.length} Questions</span>
+                                                <span>•</span>
+                                                <span className="text-emerald-700">
+                                                    {activeSetQuestions.reduce((sum, q) => sum + (Number(q.marks) || 1), 0)} Total Marks
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={() => handleSelectQuestionSet(activeSetData)}
+                                                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.02]"
+                                            >
+                                                <CheckCircle size={15} />
+                                                <span>Select &amp; Choose Pattern</span>
+                                                <ChevronRight size={14} />
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -2619,8 +2891,8 @@ export default function OfflinePaperManager() {
                     </div>
                 )}
 
-                {/* TAB 5: PRINT & DOWNLOAD CENTER */}
-                {activeTab === 'packaging' && (
+                {/* ── STEP 5: PRINT & DOWNLOAD ─────────────────────────────── */}
+                {currentStep === 5 && (
                     <div className="w-full space-y-6">
                         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
                             <div className="border-b border-slate-100 pb-4">
@@ -2678,6 +2950,70 @@ export default function OfflinePaperManager() {
                                         Print Question Papers
                                     </button>
                                 </div>
+                            </div>
+
+                            {/* PAPERS READY FOR PRINT LIST */}
+                            <div className="pt-6 border-t border-slate-100 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-lg font-black text-slate-900">Papers Ready for Print &amp; Download</h3>
+                                        <p className="text-xs text-slate-500 mt-0.5">Select a question paper below to open the print preview or download answer keys.</p>
+                                    </div>
+                                    <span className="text-xs font-bold text-sky-700 bg-sky-50 px-3 py-1 rounded-full border border-sky-200">
+                                        {papers.length} Papers
+                                    </span>
+                                </div>
+
+                                {papers.length === 0 ? (
+                                    <div className="py-12 text-center bg-slate-50 rounded-2xl border border-slate-200">
+                                        <FileText className="mx-auto text-slate-300 mb-2" size={36} />
+                                        <p className="text-slate-600 font-bold text-sm">No exam papers generated yet</p>
+                                        <p className="text-xs text-slate-400 mt-1">Go to Step 4 to create your first exam paper.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {papers.slice(0, 6).map(p => (
+                                            <div key={p.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:shadow-md transition-all space-y-3">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="font-extrabold text-sm text-slate-900 line-clamp-1">{p.title}</div>
+                                                    <span className="text-[10px] font-mono text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                                                        {p.id.split('-')[0].toUpperCase()}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                                                    <span className="text-sky-700 bg-sky-50 px-2 py-0.5 rounded font-semibold">{p.classes?.name || 'Class'}</span>
+                                                    <span>•</span>
+                                                    <span>{p.subjects?.name || 'Subject'}</span>
+                                                    <span>•</span>
+                                                    <span className="text-emerald-700 font-semibold">{p.marks || 80} Marks</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 pt-1">
+                                                    <button
+                                                        onClick={() => window.open(`/api/dashboard/exams/offline/${p.id}/print?mode=paper`, '_blank')}
+                                                        className="flex-1 py-1.5 rounded-lg bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm"
+                                                    >
+                                                        <Printer size={13} />
+                                                        <span>Print Paper</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => window.open(`/api/dashboard/exams/offline/${p.id}/print?mode=key`, '_blank')}
+                                                        className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200"
+                                                        title="Print Answer Key"
+                                                    >
+                                                        Key
+                                                    </button>
+                                                    <button
+                                                        onClick={() => window.open(`/api/dashboard/exams/offline/${p.id}/print?mode=solution`, '_blank')}
+                                                        className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200"
+                                                        title="Print Solution Guide"
+                                                    >
+                                                        Solution
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

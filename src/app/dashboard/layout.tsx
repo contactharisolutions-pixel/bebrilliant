@@ -33,43 +33,60 @@ import {
   AlertCircle,
   Printer,
   SlidersHorizontal,
+  Layers,
+  Activity,
+  FileText,
+  FileBarChart2,
+  ChevronDown,
 } from "lucide-react";
 import { IdentityProvider, useIdentity } from "@/contexts/IdentityContext";
 import { C, GRADIENT, getRoleAccent } from "@/lib/theme";
 // NAVIGATION STRUCTURE
 const NAV_GROUPS = [
   {
-    title: "Academics & Testing",
-    roles: ["tenant_admin", "owner", "teacher", "student", "parent"],
+    title: "",
+    roles: ["tenant_admin", "owner"],
     items: [
       {
-        label: "Dashboard",
+        label: "Admin Dashboard",
         icon: LayoutDashboard,
         href: "/dashboard",
-        roles: ["tenant_admin", "owner", "teacher", "student", "parent"],
+        roles: ["tenant_admin", "owner"],
       },
+    ],
+  },
+  {
+    title: "Create Exams",
+    roles: ["tenant_admin", "owner", "teacher"],
+    items: [
       {
-        label: "Exam Formats",
-        icon: SlidersHorizontal,
-        href: "/dashboard/exams/templates",
+        label: "Create Offline Exams",
+        icon: Printer,
+        href: "/dashboard/exams/offline",
         roles: ["tenant_admin", "owner", "teacher"],
       },
       {
-        label: "Online Exam Portal",
-        icon: Zap,
-        href: "/dashboard/exams/online",
-        roles: ["tenant_admin", "owner", "teacher"],
-      },
-      {
-        label: "Exams & OMR Sheets",
+        label: "Create OMR Sheets",
         icon: ScanLine,
         href: "/dashboard/exams/omr",
         roles: ["tenant_admin", "owner", "teacher"],
       },
       {
-        label: "Offline Paper Engine",
-        icon: Printer,
-        href: "/dashboard/exams/offline",
+        label: "Create Online Exams",
+        icon: Zap,
+        href: "/dashboard/exams/online",
+        roles: ["tenant_admin", "owner", "teacher"],
+      },
+    ],
+  },
+  {
+    title: "Exam Master",
+    roles: ["tenant_admin", "owner", "teacher"],
+    items: [
+      {
+        label: "Exam Patterns",
+        icon: SlidersHorizontal,
+        href: "/dashboard/exams/templates",
         roles: ["tenant_admin", "owner", "teacher"],
       },
       {
@@ -81,25 +98,7 @@ const NAV_GROUPS = [
     ],
   },
   {
-    title: "Evaluation Hub",
-    roles: ["tenant_admin", "owner", "teacher"],
-    items: [
-      {
-        label: "Grade Answer Sheets",
-        icon: Edit3,
-        href: "/dashboard/faculty/answer-grading",
-        roles: ["tenant_admin", "owner", "teacher"],
-      },
-      {
-        label: "Result Analytics",
-        icon: BarChart3,
-        href: "/dashboard/faculty/analytics/results-360",
-        roles: ["tenant_admin", "owner", "teacher"],
-      },
-    ],
-  },
-  {
-    title: "Student Directory",
+    title: "Student Zone",
     roles: ["tenant_admin", "owner", "teacher"],
     items: [
       {
@@ -109,35 +108,17 @@ const NAV_GROUPS = [
         roles: ["tenant_admin", "owner", "teacher"],
       },
       {
-        label: "Notes & Homework",
-        icon: BookOpen,
-        href: "/dashboard/material",
-        roles: ["tenant_admin", "owner", "teacher"],
-      },
-      {
-        label: "Notice Board",
-        icon: Share2,
-        href: "/dashboard/messages",
-        roles: ["tenant_admin", "owner", "teacher"],
-      },
-    ],
-  },
-  {
-    title: "Academy Management",
-    roles: ["tenant_admin", "owner"],
-    items: [
-      {
-        label: "Academy Setup",
-        icon: School,
-        href: "/dashboard/academy",
-        roles: ["tenant_admin", "owner"],
-      },
-      {
-        label: "Academic Lifecycle",
+        label: "Student Migration",
         icon: Calendar,
         href: "/dashboard/tenant/academic-year",
         roles: ["tenant_admin", "owner"],
       },
+    ],
+  },
+  {
+    title: "Teacher Zone",
+    roles: ["tenant_admin", "owner", "teacher"],
+    items: [
       {
         label: "Teacher List",
         icon: UsersRound,
@@ -146,16 +127,99 @@ const NAV_GROUPS = [
         tenantTypes: ["institute", "school"],
       },
       {
-        label: "Staff Directory",
-        icon: Users,
-        href: "/dashboard/staff",
-        roles: ["tenant_admin", "owner"],
-        tenantTypes: ["institute", "school"],
+        label: "Notes & Homework",
+        icon: BookOpen,
+        href: "/dashboard/material",
+        roles: ["tenant_admin", "owner", "teacher"],
       },
+      {
+        label: "Grade Answer Sheets",
+        icon: Edit3,
+        href: "/dashboard/faculty/answer-grading",
+        roles: ["tenant_admin", "owner", "teacher"],
+      },
+    ],
+  },
+  {
+    title: "Communication",
+    roles: ["tenant_admin", "owner", "teacher"],
+    items: [
+      {
+        label: "Notice Board",
+        icon: BellRing,
+        href: "/dashboard/messages",
+        roles: ["tenant_admin", "owner", "teacher"],
+      },
+    ],
+  },
+  {
+    title: "Revenue and Payments",
+    roles: ["tenant_admin", "owner"],
+    items: [
       {
         label: "Payments & Fees",
         icon: Wallet,
         href: "/dashboard/wallet",
+        roles: ["tenant_admin", "owner"],
+      },
+    ],
+  },
+  {
+    title: "Reports & Analytics",
+    roles: ["tenant_admin", "owner", "teacher"],
+    items: [
+      {
+        label: "Results Analytics",
+        icon: BarChart3,
+        href: "/dashboard/faculty/analytics/results-360",
+        roles: ["tenant_admin", "owner", "teacher"],
+      },
+      {
+        label: "Students Report",
+        icon: GraduationCap,
+        href: "/dashboard/reports?type=students",
+        roles: ["tenant_admin", "owner", "teacher"],
+      },
+      {
+        label: "Teacher Report",
+        icon: UsersRound,
+        href: "/dashboard/reports?type=teachers",
+        roles: ["tenant_admin", "owner"],
+      },
+      {
+        label: "Class Report",
+        icon: Layers,
+        href: "/dashboard/reports?type=class",
+        roles: ["tenant_admin", "owner", "teacher"],
+      },
+      {
+        label: "Subject Report",
+        icon: BookOpen,
+        href: "/dashboard/reports?type=subject",
+        roles: ["tenant_admin", "owner", "teacher"],
+      },
+      {
+        label: "Chapter & Topic Analytic",
+        icon: PieChart,
+        href: "/dashboard/reports?type=chapters",
+        roles: ["tenant_admin", "owner", "teacher"],
+      },
+      {
+        label: "School Performance Report",
+        icon: Activity,
+        href: "/dashboard/reports?type=performance",
+        roles: ["tenant_admin", "owner"],
+      },
+    ],
+  },
+  {
+    title: "School/Institute Setup",
+    roles: ["tenant_admin", "owner"],
+    items: [
+      {
+        label: "Academy Setup",
+        icon: School,
+        href: "/dashboard/academy",
         roles: ["tenant_admin", "owner"],
       },
       {
@@ -168,31 +232,6 @@ const NAV_GROUPS = [
         label: "Institute Settings",
         icon: Settings,
         href: "/dashboard/settings",
-        roles: ["tenant_admin", "owner"],
-      },
-    ],
-  },
-  {
-    title: "Affiliate Network",
-    roles: ["tenant_admin", "owner"],
-    tenantTypes: ["institute"],
-    items: [
-      {
-        label: "Affiliate Hub",
-        icon: Share2,
-        href: "/dashboard/affiliates/hub",
-        roles: ["tenant_admin", "owner"],
-      },
-      {
-        label: "Partner Teachers",
-        icon: Users,
-        href: "/dashboard/affiliates/teachers",
-        roles: ["tenant_admin", "owner"],
-      },
-      {
-        label: "Student Referrals",
-        icon: GraduationCap,
-        href: "/dashboard/affiliates/students",
         roles: ["tenant_admin", "owner"],
       },
     ],
@@ -286,7 +325,18 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const { identity, setIdentity } = useIdentity();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setSearchQuery(window.location.search);
+      const onPop = () => setSearchQuery(window.location.search);
+      window.addEventListener("popstate", onPop);
+      return () => window.removeEventListener("popstate", onPop);
+    }
+  }, [pathname]);
   useEffect(() => {
     const fetchMe = async () => {
       const timeout = setTimeout(() => {
@@ -494,99 +544,140 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 });
                 if (validItems.length === 0 && group.title !== "Platform Core")
                   return null;
+                const hasGroupTitle = Boolean(group.title && group.title.trim().length > 0);
+                const isExpanded = !hasGroupTitle || expandedGroup === group.title;
+
                 return (
-                  <div key={gid} style={{ marginBottom: 16 }}>
-                    {group.title && (
-                      <p
+                  <div key={gid} style={{ marginBottom: hasGroupTitle ? 8 : 4 }}>
+                    {hasGroupTitle && (
+                      <button
+                        type="button"
+                        onClick={() => setExpandedGroup(expandedGroup === group.title ? null : group.title)}
                         style={{
-                          padding: "0 12px",
-                          fontSize: 10,
+                          width: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "8px 12px",
+                          background: isExpanded ? "rgba(0, 51, 100, 0.05)" : "transparent",
+                          border: "none",
+                          borderRadius: 8,
+                          cursor: "pointer",
+                          fontSize: 11,
                           fontWeight: 800,
-                          color: "var(--color-text-muted)",
+                          color: "#003364",
                           textTransform: "uppercase",
-                          letterSpacing: "0.1em",
-                          marginBottom: 8,
+                          letterSpacing: "0.08em",
+                          marginBottom: 4,
+                          transition: "all 0.15s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isExpanded) (e.currentTarget as HTMLButtonElement).style.background = "rgba(0, 51, 100, 0.03)";
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isExpanded) (e.currentTarget as HTMLButtonElement).style.background = "transparent";
                         }}
                       >
-                        {group.title}
-                      </p>
-                    )}
-                    {validItems.map((item: any) => {
-                      const active =
-                        pathname === item.href ||
-                        (item.href !== "/dashboard" &&
-                          pathname.startsWith(item.href));
-                      // Specialized Labeling for Dashboards
-                      let displayLabel = item.label;
-                      if (
-                        item.href === "/dashboard" ||
-                        item.href === "/dashboard/"
-                      ) {
-                        if (role === "parent")
-                          displayLabel = "Parent Dashboard";
-                        else if (role === "student")
-                          displayLabel = "Student Dashboard";
-                        else if (role === "teacher")
-                          displayLabel = "Teacher Dashboard";
-                        else if (role === "tenant_admin" || role === "owner")
-                          displayLabel = "Admin Dashboard";
-                      }
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
+                        <span style={{ color: "#003364" }}>{group.title}</span>
+                        <ChevronDown
+                          size={14}
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 12,
-                            padding: "12px 14px",
-                            borderRadius: 10,
-                            textDecoration: "none",
-                            background: active
-                              ? "var(--color-primary-gradient)"
-                              : "transparent",
-                            color: active
-                              ? "#fff"
-                              : "var(--color-text-secondary)",
-                            fontWeight: active ? 800 : 700,
-                            fontSize: 13,
-                            transition: "all 0.1s",
-                            marginBottom: 4,
+                            color: "#003364",
+                            transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                            transition: "transform 0.2s ease",
+                            flexShrink: 0,
                           }}
-                          onMouseEnter={(e) => {
-                            if (!active) {
-                              (
-                                e.currentTarget as HTMLAnchorElement
-                              ).style.background = "var(--color-bg-card2)";
-                              (
-                                e.currentTarget as HTMLAnchorElement
-                              ).style.color = "var(--color-text-primary)";
+                        />
+                      </button>
+                    )}
+                    {isExpanded && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2, paddingLeft: hasGroupTitle ? 4 : 0 }}>
+                        {validItems.map((item: any) => {
+                          const active = (() => {
+                            if (item.href === "/dashboard") return pathname === "/dashboard";
+                            const [base, query] = item.href.split("?");
+                            if (query) {
+                              return pathname === base && searchQuery === `?${query}`;
                             }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!active) {
-                              (
-                                e.currentTarget as HTMLAnchorElement
-                              ).style.background = "transparent";
-                              (
-                                e.currentTarget as HTMLAnchorElement
-                              ).style.color = "var(--color-text-secondary)";
-                            }
-                          }}
-                        >
-                          <item.icon
-                            size={18}
-                            strokeWidth={active ? 2.5 : 2}
-                            style={{
-                              color: active
-                                ? "#fff"
-                                : "var(--color-text-muted)",
-                            }}
-                          />
-                          {displayLabel}
-                        </Link>
-                      );
-                    })}
+                            return pathname === base || (base !== "/dashboard" && pathname.startsWith(base + "/"));
+                          })();
+                          // Specialized Labeling for Dashboards
+                          let displayLabel = item.label;
+                          if (
+                            item.href === "/dashboard" ||
+                            item.href === "/dashboard/"
+                          ) {
+                            if (role === "parent")
+                              displayLabel = "Parent Dashboard";
+                            else if (role === "student")
+                              displayLabel = "Student Dashboard";
+                            else if (role === "teacher")
+                              displayLabel = "Teacher Dashboard";
+                            else if (role === "tenant_admin" || role === "owner")
+                              displayLabel = "Admin Dashboard";
+                          }
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              onClick={() => {
+                                const [, q] = item.href.split("?");
+                                setSearchQuery(q ? `?${q}` : "");
+                              }}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                                padding: "10px 14px",
+                                borderRadius: 10,
+                                textDecoration: "none",
+                                background: active
+                                  ? "var(--color-primary-gradient)"
+                                  : "transparent",
+                                color: active
+                                  ? "#fff"
+                                  : "var(--color-text-secondary)",
+                                fontWeight: active ? 800 : 700,
+                                fontSize: 13,
+                                transition: "all 0.1s",
+                                marginBottom: 2,
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!active) {
+                                  (
+                                    e.currentTarget as HTMLAnchorElement
+                                  ).style.background = "var(--color-bg-card2)";
+                                  (
+                                    e.currentTarget as HTMLAnchorElement
+                                  ).style.color = "var(--color-text-primary)";
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!active) {
+                                  (
+                                    e.currentTarget as HTMLAnchorElement
+                                  ).style.background = "transparent";
+                                  (
+                                    e.currentTarget as HTMLAnchorElement
+                                  ).style.color = "var(--color-text-secondary)";
+                                }
+                              }}
+                            >
+                              <item.icon
+                                size={18}
+                                strokeWidth={active ? 2.5 : 2}
+                                style={{
+                                  color: active
+                                    ? "#fff"
+                                    : "var(--color-text-muted)",
+                                }}
+                              />
+                              {displayLabel}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })
