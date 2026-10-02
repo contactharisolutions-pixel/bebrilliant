@@ -13,7 +13,7 @@
 - **AI Core:** Google Gemini AI (`@google/generative-ai`) calibrated for strict syllabus-grounded question paper creation, Bloom's Taxonomy cognitive scoring, and auto-grading.
 - **Financial & Treasury Engine:** Razorpay Payment Gateway, automated GST invoicing, split settlements, affiliate wallet ledgers, and KYC/TDS compliance.
 - **Omnichannel Communication:** WhatsApp Cloud API automated messaging, Nodemailer SMTP, and mobile push notifications.
-- **Mobile Ecosystem:** Dedicated native mobile applications built on Expo / React Native for **Students**, **Teachers**, and **Parents** (iOS & Android).
+- **Mobile Ecosystem:** Installable Progressive Web Apps (PWAs) with zero offline data persistence, role-based mobile bottom navigation, and Web Push notifications for **Students**, **Teachers**, and **Parents** (iOS & Android).
 
 ---
 
