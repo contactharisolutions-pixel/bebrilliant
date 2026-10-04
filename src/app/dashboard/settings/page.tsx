@@ -432,14 +432,14 @@ export default function SettingsPage() {
                                     <span className="w-2 h-2 rounded-full bg-[#09834F]" />
                                     Governance Synchronized
                                 </span>
-                                <span className="text-xs text-[#64748B] font-semibold font-mono">
+                                <span className="text-xs text-[#07549A] font-bold font-mono">
                                     PORTAL: {(data?.subdomain || domains?.subdomain || 'portal').toLowerCase()}.bebrilliant.in • PLAN: {data?.subscription_plan || 'Standard'}
                                 </span>
                             </div>
                             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#092746]">
                                 Institutional Governance &amp; Settings
                             </h1>
-                            <p className="text-xs sm:text-sm text-[#64748B] max-w-3xl leading-relaxed font-normal">
+                            <p className="text-xs sm:text-sm text-[#3B5270] max-w-3xl leading-relaxed font-medium">
                                 Master institutional controls, multi-tenant domain routing, security auth policies, visual brand tokens, and automated communication triggers.
                             </p>
                         </div>

@@ -798,14 +798,14 @@ export default function WalletPayouts() {
                                     <span className="w-2 h-2 rounded-full bg-[#09834F]" />
                                     Fee Treasury Active
                                 </span>
-                                <span className="text-xs text-[#64748B] font-semibold font-mono">
+                                <span className="text-xs text-[#07549A] font-bold font-mono">
                                     BANK GATEWAY: HDFC CLEARING • TDS RATE: 10%
                                 </span>
                             </div>
                             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#092746]">
                                 School Fee Collections &amp; Bank Settlements
                             </h1>
-                            <p className="text-xs sm:text-sm text-[#64748B] max-w-3xl leading-relaxed font-normal">
+                            <p className="text-xs sm:text-sm text-[#3B5270] max-w-3xl leading-relaxed font-medium">
                                 Real-time student fee collections, online examination registration revenues, automatic TDS compliance tracking, and scheduled bank disbursements.
                             </p>
                         </div>

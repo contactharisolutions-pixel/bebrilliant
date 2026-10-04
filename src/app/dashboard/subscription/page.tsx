@@ -903,14 +903,14 @@ export default function SubscriptionPage() {
                                     <span className="w-2 h-2 rounded-full bg-[#09834F]" />
                                     School Account Active
                                 </span>
-                                <span className="text-xs text-[#64748B] font-semibold font-mono">
+                                <span className="text-xs text-[#07549A] font-bold font-mono">
                                     ACCOUNT ID: {current.plan_id.substring(0, 8).toUpperCase()}
                                 </span>
                             </div>
                             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#092746]">
                                 Billing, Plans &amp; Resource Quotas
                             </h1>
-                            <p className="text-xs sm:text-sm text-[#64748B] max-w-2xl leading-relaxed font-normal">
+                            <p className="text-xs sm:text-sm text-[#3B5270] max-w-2xl leading-relaxed font-medium">
                                 Manage your school subscription plan, faculty allocations, storage quotas, and official GST tax invoices.
                             </p>
                         </div>

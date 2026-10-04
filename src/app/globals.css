@@ -7,6 +7,23 @@
 @theme {
   --font-manrope: var(--font-manrope);
   --font-worksans: var(--font-worksans);
+
+  /* ── Enterprise Neutral Scale (assets/bebrilliant_enterprise_color_palette_theme.md) ── */
+  --color-slate-950: #071C33;
+  --color-slate-900: #092746;
+  --color-slate-800: #0C345B;
+  --color-slate-700: #10456F;
+  --color-slate-600: #34445A;
+  --color-slate-500: #475569;
+  --color-slate-400: #64748B;
+
+  --color-gray-950: #071C33;
+  --color-gray-900: #092746;
+  --color-gray-800: #0C345B;
+  --color-gray-700: #10456F;
+  --color-gray-600: #34445A;
+  --color-gray-500: #475569;
+  --color-gray-400: #64748B;
 }
 
 @theme inline {
@@ -289,6 +306,53 @@
   body {
     min-height: 100vh;
     overflow-x: hidden;
+    color: var(--color-text-primary);
+  }
+
+  /* ── Enterprise Differentiated Headings System ── */
+  h1 {
+    color: #092746;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+  }
+
+  h2 {
+    color: #0C345B;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+  }
+
+  h3 {
+    color: #07549A;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+
+  h4 {
+    color: #10456F;
+    font-weight: 650;
+  }
+
+  h5 {
+    color: #172033;
+    font-weight: 600;
+  }
+
+  h6 {
+    color: #253247;
+    font-weight: 600;
+  }
+
+  p {
+    color: #34445A;
+  }
+
+  label {
+    color: #0F2844;
+  }
+
+  small {
+    color: #64748B;
   }
 }
 
@@ -1513,4 +1577,86 @@
   background: linear-gradient(145deg, #FFFFFF, #E6ECF2) !important;
   box-shadow: 3px 3px 8px rgba(166, 178, 196, 0.35), -3px -3px 8px rgba(255, 255, 255, 0.95) !important;
   color: #64748B !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DIFFERENTIATED TYPOGRAPHY UTILITIES (assets/bebrilliant_enterprise_color_palette_theme.md)
+   Provides distinct chromatic hierarchy across Headings, Subheadings, and Content
+═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Headings ── */
+.text-heading-page, .heading-h1 {
+  color: #092746 !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.025em !important;
+}
+
+.text-heading-section, .heading-h2 {
+  color: #0C345B !important;
+  font-weight: 750 !important;
+  letter-spacing: -0.02em !important;
+}
+
+.text-heading-card, .heading-h3 {
+  color: #07549A !important;
+  font-weight: 700 !important;
+}
+
+.text-heading-subcard, .heading-h4 {
+  color: #10456F !important;
+  font-weight: 650 !important;
+}
+
+/* ── Subheadings & Subtitles ── */
+.text-subheading-primary {
+  color: #3B5270 !important;
+  font-weight: 500 !important;
+}
+
+.text-subheading-secondary {
+  color: #475569 !important;
+  font-weight: 500 !important;
+}
+
+.text-subheading-brand {
+  color: #0868B2 !important;
+  font-weight: 600 !important;
+}
+
+.text-subheading-success {
+  color: #09834F !important;
+  font-weight: 600 !important;
+}
+
+.text-subheading-amber {
+  color: #D97706 !important;
+  font-weight: 600 !important;
+}
+
+.text-subheading-purple {
+  color: #7C3AED !important;
+  font-weight: 600 !important;
+}
+
+/* ── Content & Body ── */
+.text-content-body {
+  color: #34445A !important;
+  line-height: 1.6 !important;
+}
+
+.text-content-secondary {
+  color: #475569 !important;
+}
+
+.text-content-muted {
+  color: #64748B !important;
+}
+
+.text-content-caption {
+  color: #7B8C9E !important;
+}
+
+.text-label-form {
+  color: #0F2844 !important;
+  font-weight: 650 !important;
 }

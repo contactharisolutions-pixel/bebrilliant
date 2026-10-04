@@ -399,7 +399,7 @@ export default function StudentDirectoryPage() {
                     <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#092746] mb-2">
                         Student Directory &amp; Admissions
                     </h1>
-                    <p className="text-xs sm:text-sm text-[#64748B] font-normal leading-relaxed">
+                    <p className="text-xs sm:text-sm text-[#3B5270] font-medium leading-relaxed">
                         Manage student admissions, profiles, and attendance. View report cards and track academic progress across all classes and sections.
                     </p>
 

@@ -602,13 +602,13 @@ export default function OMRExamManager() {
                             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#092746] leading-tight">
                                 Exams &amp; OMR Sheets
                             </h1>
-                            <p className="text-[#64748B] text-xs sm:text-sm leading-relaxed font-normal">
+                            <p className="text-[#3B5270] text-xs sm:text-sm leading-relaxed font-medium">
                                 Create offline exams, print question papers with matching OMR answer sheets together, and calculate student marks automatically.
                             </p>
-                            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-[#64748B] pt-1">
-                                <span className="flex items-center gap-1.5"><Shield size={14} className="text-[#09834F]" /> Printed with School Logo &amp; Header</span>
-                                <span className="flex items-center gap-1.5"><Printer size={14} className="text-[#0868B2]" /> Print Question Paper &amp; OMR Sheet Together</span>
-                                <span className="flex items-center gap-1.5"><Sparkles size={14} className="text-[#D97706]" /> Automated Scanning &amp; Grading</span>
+                            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold pt-1">
+                                <span className="flex items-center gap-1.5 text-[#05603A]"><Shield size={14} className="text-[#09834F]" /> Printed with School Logo &amp; Header</span>
+                                <span className="flex items-center gap-1.5 text-[#07549A]"><Printer size={14} className="text-[#0868B2]" /> Print Question Paper &amp; OMR Sheet Together</span>
+                                <span className="flex items-center gap-1.5 text-[#B45309]"><Sparkles size={14} className="text-[#D97706]" /> Automated Scanning &amp; Grading</span>
                             </div>
                         </div>
 
@@ -763,12 +763,12 @@ export default function OMRExamManager() {
                                 <Database size={18} />
                             </div>
                             <div className="text-left">
-                                <div className="font-black text-slate-900 text-sm">All OMR Examinations</div>
-                                <div className="text-xs text-slate-500 font-medium">{filteredExams.length} offline exams configured in database</div>
+                                <div className="font-black text-[#07549A] text-sm">All OMR Examinations</div>
+                                <div className="text-xs text-[#3B5270] font-medium">{filteredExams.length} offline exams configured in database</div>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-400 font-semibold hidden sm:inline">
+                            <span className="text-xs text-[#64748B] font-semibold hidden sm:inline">
                                 {isAllExamsOpen ? 'Click to collapse' : 'Click to view exams roster'}
                             </span>
                             <ChevronRight size={18} className={`text-slate-400 transition-transform ${isAllExamsOpen ? 'rotate-90' : ''}`} />
@@ -798,7 +798,7 @@ export default function OMRExamManager() {
                                     >
                                         <option value="ALL">All Classes</option>
                                         {classes.map(c => (
-                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                             <option key={c.id} value={c.id}>{c.name}</option>
                                         ))}
                                     </select>
                                     <select
@@ -817,7 +817,7 @@ export default function OMRExamManager() {
                             <div className="overflow-x-auto rounded-xl border border-slate-200">
                                 <table className="w-full text-left border-collapse text-xs">
                                     <thead>
-                                        <tr className="bg-slate-50 text-[10px] font-black uppercase text-slate-500 border-b border-slate-200">
+                                        <tr className="bg-slate-50 text-[10px] font-black uppercase text-[#07549A] border-b border-slate-200">
                                             <th className="py-3 px-4">Exam Title</th>
                                             <th className="py-3 px-4">Class &amp; Subject</th>
                                             <th className="py-3 px-4">Format / Questions</th>
@@ -838,16 +838,16 @@ export default function OMRExamManager() {
                                                 return (
                                                     <tr key={ex.id} className={`hover:bg-slate-50/80 transition-colors ${isCurrent ? 'bg-sky-50/40' : ''}`}>
                                                         <td className="py-3 px-4">
-                                                            <div className="font-extrabold text-slate-900 line-clamp-1">{ex.title}</div>
-                                                            <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                                            <div className="font-extrabold text-[#092746] line-clamp-1">{ex.title}</div>
+                                                            <div className="text-[10px] text-[#0868B2] font-semibold flex items-center gap-1.5 mt-0.5">
                                                                 <Clock size={11} /> {ex.duration || 60} Mins &bull; {ex.total_questions || 50} Qs
                                                             </div>
                                                         </td>
-                                                        <td className="py-3 px-4 font-semibold text-slate-700">
+                                                        <td className="py-3 px-4 font-semibold text-[#09834F]">
                                                             {ex.classes?.name || 'Class 10'} &bull; {ex.subjects?.name || 'Science'}
                                                         </td>
                                                         <td className="py-3 px-4">
-                                                            <span className="px-2 py-0.5 rounded-md bg-slate-100 font-semibold text-slate-700 text-[10px]">
+                                                            <span className="px-2 py-0.5 rounded-md bg-slate-100 font-semibold text-[#10456F] text-[10px]">
                                                                 {ex.omr_templates?.name || 'Standard 50-Q'}
                                                             </span>
                                                         </td>

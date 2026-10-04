@@ -766,7 +766,7 @@ export default function SyllabusHubPage() {
                             <h1 className="text-2xl sm:text-3xl font-black text-[#092746] tracking-tight">
                                 Academic Syllabus &amp; Curriculum Management
                             </h1>
-                            <p className="mt-1.5 text-xs sm:text-sm text-[#64748B] leading-relaxed">
+                            <p className="mt-1.5 text-xs sm:text-sm text-[#3B5270] font-medium leading-relaxed">
                                 Structure, organize, and publish standard school curricula across classes, subjects, chapters, and topics.
                                 Import official owner-published board frameworks or upload your school&apos;s custom spreadsheet.
                             </p>

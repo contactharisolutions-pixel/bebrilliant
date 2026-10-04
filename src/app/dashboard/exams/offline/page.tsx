@@ -1645,10 +1645,10 @@ export default function OfflinePaperManager() {
                             <p className="text-[#475569] text-sm sm:text-base leading-relaxed">
                                 Create, customize, and print school examination papers with matching answer keys and answer sheets.
                             </p>
-                            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-[#64748B] pt-1">
-                                <span className="flex items-center gap-1.5"><Shield size={14} className="text-[#09834F]" /> School Watermark &amp; QR Code</span>
-                                <span className="flex items-center gap-1.5"><Zap size={14} className="text-[#D97706]" /> Multiple Sets (A, B, C, D)</span>
-                                <span className="flex items-center gap-1.5"><Globe size={14} className="text-[#0868B2]" /> English &amp; Regional Languages</span>
+                            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold pt-1">
+                                <span className="flex items-center gap-1.5 text-[#05603A]"><Shield size={14} className="text-[#09834F]" /> School Watermark &amp; QR Code</span>
+                                <span className="flex items-center gap-1.5 text-[#B45309]"><Zap size={14} className="text-[#D97706]" /> Multiple Sets (A, B, C, D)</span>
+                                <span className="flex items-center gap-1.5 text-[#07549A]"><Globe size={14} className="text-[#0868B2]" /> English &amp; Regional Languages</span>
                             </div>
                         </div>
 
