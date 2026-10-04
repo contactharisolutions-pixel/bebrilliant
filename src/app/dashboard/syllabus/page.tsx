@@ -701,114 +701,100 @@ export default function SyllabusHubPage() {
             )}
 
             <div className="w-full px-4 sm:px-8 py-6 space-y-6">
-                {/* ── 1. ART-DIRECTED EDITORIAL HEADER BANNER ──────────── */}
-                <div className="relative w-full rounded-2xl overflow-hidden shadow-md border border-slate-200/80 bg-slate-900">
-                    <div className="relative h-56 sm:h-64 w-full">
-                        <Image
-                            src="/assets/images/dashboard/syllabus_banner.jpg"
-                            alt="Course Syllabus & Academic Curriculum Design Studio"
-                            fill
-                            priority
-                            className="object-cover object-center opacity-40 mix-blend-luminosity"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/85 to-indigo-950/70" />
+                {/* ── 1. ENTERPRISE ACADEMIC HEADER ──────────── */}
+                <div className="w-full rounded-xl border border-[#E2E8F0] bg-white p-6 sm:p-8 shadow-xs space-y-6">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <span className="px-3.5 py-1.5 rounded-lg bg-[#E5F3FB] border border-[#B6DCF2] text-[#0868B2] text-xs font-bold tracking-wide flex items-center gap-2">
+                                <Building2 className="w-3.5 h-3.5 text-[#0868B2]" />
+                                School Academic Curriculum Desk
+                            </span>
 
-                        {/* Banner Content */}
-                        <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-between z-10">
-                            <div className="flex flex-wrap items-center justify-between gap-4">
-                                <div className="flex items-center gap-3">
-                                    <span className="px-3.5 py-1.5 rounded-lg bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-xs font-semibold tracking-wide flex items-center gap-2 backdrop-blur-sm">
-                                        <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-                                        School Academic Curriculum Desk
-                                    </span>
-
-                                    {/* Board Licensing Badge */}
-                                    <button
-                                        onClick={() => setMultiBoardModalOpen(true)}
-                                        className={`px-3 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all backdrop-blur-sm ${
-                                            metrics.multiBoardEnabled
-                                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40 hover:bg-emerald-500/30'
-                                                : 'bg-amber-500/20 text-amber-200 border-amber-400/40 hover:bg-amber-500/30'
-                                        }`}
-                                    >
-                                        <Award className="w-3.5 h-3.5 text-amber-300" />
-                                        <span>
-                                            {metrics.multiBoardEnabled ? 'Multi-Board Enterprise Plan' : 'Single Board License'}
-                                        </span>
-                                        {!metrics.multiBoardEnabled && !isTeacher && (
-                                            <span className="underline ml-1 text-amber-300 font-bold">Upgrade</span>
-                                        )}
-                                    </button>
-                                </div>
-
-                                <div className="flex items-center gap-2.5">
-                                    <button
-                                        onClick={fetchData}
-                                        disabled={loading}
-                                        className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/90 border border-white/15 backdrop-blur-sm transition-colors"
-                                        title="Refresh Curriculum Data"
-                                    >
-                                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                                    </button>
-
-                                    <button
-                                        onClick={handleDownloadActiveSyllabus}
-                                        className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/15 backdrop-blur-sm flex items-center gap-2 transition-colors"
-                                    >
-                                        <Download className="w-4 h-4 text-indigo-300" />
-                                        <span>Download Active Excel</span>
-                                    </button>
-
-                                    {!isTeacher && (
-                                        <button
-                                            onClick={handleSyncAcademy}
-                                            disabled={syncingAcademy || loading}
-                                            className="px-4 py-2 rounded-xl bg-indigo-500/30 hover:bg-indigo-500/45 text-indigo-100 text-xs font-semibold border border-indigo-400/40 backdrop-blur-sm flex items-center gap-2 transition-all shadow-sm"
-                                            title="Synchronize Classes and Subjects to School Academy & Faculty records"
-                                        >
-                                            <GraduationCap className={`w-4 h-4 text-indigo-300 ${syncingAcademy ? 'animate-bounce' : ''}`} />
-                                            <span>{syncingAcademy ? 'Syncing...' : 'Sync to Academy'}</span>
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                                <div className="max-w-2xl">
-                                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
-                                        Academic Syllabus & Curriculum Management
-                                    </h1>
-                                    <p className="mt-2 text-xs sm:text-sm text-slate-300/90 leading-relaxed">
-                                        Structure, organize, and publish standard school curricula across classes, subjects, chapters, and topics.
-                                        Import official owner-published board frameworks or upload your school's custom spreadsheet.
-                                    </p>
-                                </div>
-
-                                {!isTeacher ? (
-                                    <div className="flex items-center gap-2.5 shrink-0">
-                                        <button
-                                            onClick={() => {
-                                                setItemModal({
-                                                    open: true,
-                                                    mode: 'add',
-                                                    nodeType: 'class'
-                                                })
-                                                setItemForm({ name: '', order_index: metrics.totalClasses + 1 })
-                                            }}
-                                            className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"
-                                        >
-                                            <PlusCircle className="w-4 h-4" />
-                                            <span>+ Add Grade / Class</span>
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 text-indigo-200 text-xs font-semibold backdrop-blur-sm">
-                                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                                        <span>Teacher View Mode</span>
-                                    </div>
+                            {/* Board Licensing Badge */}
+                            <button
+                                onClick={() => setMultiBoardModalOpen(true)}
+                                className={`px-3 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                                    metrics.multiBoardEnabled
+                                        ? 'bg-[#DCF7E7] text-[#09834F] border-[#B7E8CC] hover:bg-[#C9F3DB]'
+                                        : 'bg-[#FEF3C7] text-[#D97706] border-[#FDE68A] hover:bg-[#FEEAA0]'
+                                }`}
+                            >
+                                <Award className="w-3.5 h-3.5" />
+                                <span>
+                                    {metrics.multiBoardEnabled ? 'Multi-Board Enterprise Plan' : 'Single Board License'}
+                                </span>
+                                {!metrics.multiBoardEnabled && !isTeacher && (
+                                    <span className="underline ml-1 font-bold">Upgrade</span>
                                 )}
-                            </div>
+                            </button>
                         </div>
+
+                        <div className="flex items-center gap-2.5">
+                            <button
+                                onClick={fetchData}
+                                disabled={loading}
+                                className="p-2 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#092746] border border-[#CBD5E1] transition-colors shadow-xs"
+                                title="Refresh Curriculum Data"
+                            >
+                                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                            </button>
+
+                            <button
+                                onClick={handleDownloadActiveSyllabus}
+                                className="px-3.5 py-2 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#092746] text-xs font-semibold border border-[#CBD5E1] flex items-center gap-2 transition-colors shadow-xs"
+                            >
+                                <Download className="w-4 h-4 text-[#0868B2]" />
+                                <span>Download Active Excel</span>
+                            </button>
+
+                            {!isTeacher && (
+                                <button
+                                    onClick={handleSyncAcademy}
+                                    disabled={syncingAcademy || loading}
+                                    className="px-3.5 py-2 rounded-lg bg-[#E5F3FB] hover:bg-[#D5EBF8] text-[#0868B2] text-xs font-bold border border-[#B6DCF2] flex items-center gap-2 transition-all shadow-xs"
+                                    title="Synchronize Classes and Subjects to School Academy & Faculty records"
+                                >
+                                    <GraduationCap className={`w-4 h-4 text-[#0868B2] ${syncingAcademy ? 'animate-bounce' : ''}`} />
+                                    <span>{syncingAcademy ? 'Syncing...' : 'Sync to Academy'}</span>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-2 border-t border-[#E2E8F0]">
+                        <div className="max-w-2xl">
+                            <h1 className="text-2xl sm:text-3xl font-black text-[#092746] tracking-tight">
+                                Academic Syllabus &amp; Curriculum Management
+                            </h1>
+                            <p className="mt-1.5 text-xs sm:text-sm text-[#64748B] leading-relaxed">
+                                Structure, organize, and publish standard school curricula across classes, subjects, chapters, and topics.
+                                Import official owner-published board frameworks or upload your school&apos;s custom spreadsheet.
+                            </p>
+                        </div>
+
+                        {!isTeacher ? (
+                            <div className="flex items-center gap-2.5 shrink-0">
+                                <button
+                                    onClick={() => {
+                                        setItemModal({
+                                            open: true,
+                                            mode: 'add',
+                                            nodeType: 'class'
+                                        })
+                                        setItemForm({ name: '', order_index: metrics.totalClasses + 1 })
+                                    }}
+                                    className="px-4 py-2.5 rounded-lg bg-[#0868B2] hover:bg-[#07549A] text-white text-xs sm:text-sm font-bold shadow-sm flex items-center gap-2 transition-all"
+                                >
+                                    <PlusCircle className="w-4 h-4" />
+                                    <span>+ Add Grade / Class</span>
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] text-[#64748B] text-xs font-semibold">
+                                <ShieldCheck className="w-4 h-4 text-[#09834F]" />
+                                <span>Teacher View Mode</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 

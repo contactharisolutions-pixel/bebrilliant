@@ -292,72 +292,58 @@ export default function AnswerGradingHub() {
             )}
 
             <div className="w-full px-4 sm:px-8 py-6 space-y-6">
-                {/* ── 1. ART-DIRECTED EDITORIAL HEADER BANNER ──────────── */}
-                <div className="relative w-full rounded-2xl overflow-hidden shadow-md border border-slate-200/80 bg-slate-900">
-                    <div className="relative h-56 sm:h-64 w-full">
-                        <Image
-                            src="/assets/images/dashboard/answer_grading_banner.jpg"
-                            alt="Faculty Evaluation Hall - Answer Sheet Checking"
-                            fill
-                            priority
-                            className="object-cover object-center opacity-40 mix-blend-luminosity"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/85 to-indigo-950/70" />
+                {/* ── 1. ENTERPRISE ACADEMIC HEADER ──────────── */}
+                <div className="w-full rounded-xl border border-[#E2E8F0] bg-white p-6 sm:p-8 shadow-xs space-y-6">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <span className="px-3.5 py-1.5 rounded-lg bg-[#E5F3FB] border border-[#B6DCF2] text-[#0868B2] text-xs font-bold tracking-wide flex items-center gap-2">
+                                <Building2 className="w-3.5 h-3.5 text-[#0868B2]" />
+                                Faculty Evaluation Hall • Academic Desk
+                            </span>
+                            <span className="px-3 py-1 rounded-lg bg-[#DCF7E7] border border-[#B7E8CC] text-[#09834F] text-xs font-semibold">
+                                Session 2026-27 Active
+                            </span>
+                        </div>
 
-                        {/* Banner Overlay Content */}
-                        <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-between z-10">
-                            <div className="flex flex-wrap items-center justify-between gap-4">
-                                <div className="flex items-center gap-3">
-                                    <span className="px-3.5 py-1.5 rounded-lg bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-xs font-semibold tracking-wide flex items-center gap-2 backdrop-blur-sm">
-                                        <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-                                        Faculty Evaluation Hall • Academic Desk
-                                    </span>
-                                    <span className="px-3 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold backdrop-blur-sm">
-                                        Session 2026-27 Active
-                                    </span>
-                                </div>
+                        <div className="flex items-center gap-2.5">
+                            <button
+                                onClick={fetchData}
+                                disabled={loading}
+                                className="p-2 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#092746] border border-[#CBD5E1] transition-colors shadow-xs"
+                                title="Refresh Queue"
+                            >
+                                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                            </button>
 
-                                <div className="flex items-center gap-2.5">
-                                    <button
-                                        onClick={fetchData}
-                                        disabled={loading}
-                                        className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/90 border border-white/15 backdrop-blur-sm transition-colors"
-                                        title="Refresh Queue"
-                                    >
-                                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                                    </button>
+                            <button
+                                onClick={handleBatchPublish}
+                                disabled={saving}
+                                className="px-4 py-2 rounded-lg bg-[#09834F] hover:bg-[#07683F] text-white text-xs font-bold shadow-sm flex items-center gap-2 transition-all"
+                            >
+                                <Award className="w-4 h-4" />
+                                <span>Publish All Checked Marks</span>
+                            </button>
+                        </div>
+                    </div>
 
-                                    <button
-                                        onClick={handleBatchPublish}
-                                        disabled={saving}
-                                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-700/30 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"
-                                    >
-                                        <Award className="w-4 h-4" />
-                                        <span>Publish All Checked Marks</span>
-                                    </button>
-                                </div>
-                            </div>
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-2 border-t border-[#E2E8F0]">
+                        <div className="max-w-2xl">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#092746] tracking-tight">
+                                Student Answer Sheet Checking &amp; Grading
+                            </h1>
+                            <p className="mt-1.5 text-xs sm:text-sm text-[#64748B] leading-relaxed">
+                                Review handwritten examination booklets, award question-by-question marks, write personalized teacher feedback, and publish report cards directly to student accounts.
+                            </p>
+                        </div>
 
-                            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                                <div className="max-w-2xl">
-                                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
-                                        Student Answer Sheet Checking & Grading
-                                    </h1>
-                                    <p className="mt-2 text-xs sm:text-sm text-slate-300/90 leading-relaxed">
-                                        Review handwritten examination booklets, award question-by-question marks, write personalized teacher feedback, and publish report cards directly to student accounts.
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center gap-2.5 shrink-0">
-                                    <button
-                                        onClick={() => setActiveTab('upload')}
-                                        className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"
-                                    >
-                                        <Upload className="w-4 h-4" />
-                                        <span>+ Upload Answer Sheet</span>
-                                    </button>
-                                </div>
-                            </div>
+                        <div className="flex items-center gap-2.5 shrink-0">
+                            <button
+                                onClick={() => setActiveTab('upload')}
+                                className="px-4 py-2.5 rounded-lg bg-[#0868B2] hover:bg-[#07549A] text-white text-xs sm:text-sm font-bold shadow-sm flex items-center gap-2 transition-all"
+                            >
+                                <Upload className="w-4 h-4" />
+                                <span>+ Upload Answer Sheet</span>
+                            </button>
                         </div>
                     </div>
                 </div>

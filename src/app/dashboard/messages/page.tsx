@@ -374,50 +374,38 @@ export default function NoticeBoardDashboard() {
 
             {/* ── FULL WIDTH WORKSPACE CONTAINER ── */}
             <div className="w-full px-4 sm:px-8 lg:px-10 py-6 space-y-8">
-                {/* ── 16:9 PHOTOGRAPHIC HERO BANNER ── */}
-                <div className="relative w-full rounded-3xl overflow-hidden border border-slate-200 bg-white shadow-sm">
-                    <div className="relative h-64 sm:h-80 w-full">
-                        <Image
-                            src="/assets/images/dashboard/notice_board_banner.jpg"
-                            alt="School administrators and faculty reviewing official campus circulars on the institutional notice board"
-                            fill
-                            className="object-cover object-center"
-                            priority
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/50 to-transparent" />
-                        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-transparent to-transparent" />
-
-                        <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-                            <div className="max-w-2xl text-white">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 backdrop-blur-md border border-blue-400/30 text-blue-200 text-xs font-semibold uppercase tracking-wider mb-3">
-                                    <BellRing className="w-3.5 h-3.5" />
-                                    Campus Communications & Circulars
-                                </div>
-                                <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-white mb-2">
-                                    School Notice Board & Official Circulars
-                                </h1>
-                                <p className="text-sm sm:text-base text-slate-200 leading-relaxed">
-                                    Broadcast official circulars, post examination timetables, announce academic events, and publish institutional alerts across your school community.
-                                </p>
+                {/* ── ENTERPRISE ACADEMIC HEADER ── */}
+                <div className="w-full rounded-xl border border-[#E2E8F0] bg-white p-6 sm:p-8 shadow-xs">
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                        <div className="max-w-2xl">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E5F3FB] border border-[#B6DCF2] text-[#0868B2] text-xs font-bold uppercase tracking-wider mb-3">
+                                <BellRing className="w-3.5 h-3.5" />
+                                Campus Communications &amp; Circulars
                             </div>
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#092746] mb-2">
+                                School Notice Board &amp; Official Circulars
+                            </h1>
+                            <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+                                Broadcast official circulars, post examination timetables, announce academic events, and publish institutional alerts across your school community.
+                            </p>
+                        </div>
 
-                            <div className="flex flex-wrap items-center gap-3">
-                                <button
-                                    onClick={() => setActiveTab('publish')}
-                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    Publish New Circular
-                                </button>
-                                <button
-                                    onClick={fetchNotices}
-                                    disabled={loading}
-                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md font-medium text-sm transition-all"
-                                >
-                                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                                    Refresh
-                                </button>
-                            </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <button
+                                onClick={() => setActiveTab('publish')}
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#0868B2] hover:bg-[#07549A] text-white font-bold text-xs sm:text-sm shadow-sm transition-all"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Publish New Circular
+                            </button>
+                            <button
+                                onClick={fetchNotices}
+                                disabled={loading}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#092746] border border-[#CBD5E1] font-semibold text-xs sm:text-sm transition-all shadow-xs"
+                            >
+                                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                                Refresh
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
@@ -422,35 +422,24 @@ export default function SettingsPage() {
                 </div>
             )}
 
-            {/* ART-DIRECTED OPENAI HERO BANNER - FULL WIDTH */}
-            <div className="relative w-full bg-slate-950 text-white overflow-hidden border-b border-slate-800">
-                <div className="absolute inset-0 z-0 opacity-40 mix-blend-luminosity">
-                    <Image
-                        src="/assets/images/dashboard/institute_settings_banner.jpg"
-                        alt="Institutional Governance Command Center"
-                        fill
-                        className="object-cover object-center"
-                        priority
-                    />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-transparent z-10" />
-
-                <div className="relative z-20 w-full px-6 py-10 sm:px-10 sm:py-12">
+            {/* ENTERPRISE ACADEMIC HEADER */}
+            <div className="relative w-full bg-white border-b border-[#E2E8F0]">
+                <div className="relative z-10 w-full px-6 py-6 sm:px-10 sm:py-8">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                        <div className="space-y-3">
+                        <div className="space-y-2.5">
                             <div className="flex flex-wrap items-center gap-3">
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-[#DCF7E7] text-[#09834F] border border-[#B7E8CC]">
+                                    <span className="w-2 h-2 rounded-full bg-[#09834F]" />
                                     Governance Synchronized
                                 </span>
-                                <span className="text-xs text-slate-400 font-semibold font-mono">
+                                <span className="text-xs text-[#64748B] font-semibold font-mono">
                                     PORTAL: {(data?.subdomain || domains?.subdomain || 'portal').toLowerCase()}.bebrilliant.in • PLAN: {data?.subscription_plan || 'Standard'}
                                 </span>
                             </div>
-                            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
-                                Institutional Governance & Settings
+                            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#092746]">
+                                Institutional Governance &amp; Settings
                             </h1>
-                            <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed font-normal">
+                            <p className="text-xs sm:text-sm text-[#64748B] max-w-3xl leading-relaxed font-normal">
                                 Master institutional controls, multi-tenant domain routing, security auth policies, visual brand tokens, and automated communication triggers.
                             </p>
                         </div>
@@ -458,14 +447,14 @@ export default function SettingsPage() {
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={fetchData}
-                                className="px-4 py-2.5 bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700/80 rounded-2xl text-xs font-bold flex items-center gap-2 backdrop-blur-sm transition"
+                                className="px-4 py-2 bg-white hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#092746] border border-[#CBD5E1] rounded-lg text-xs font-semibold flex items-center gap-2 transition cursor-pointer shadow-xs"
                             >
                                 <RefreshCcw size={14} /> Refresh
                             </button>
                             <button
                                 onClick={handleSaveAll}
                                 disabled={saving}
-                                className="px-6 py-2.5 bg-[#0868B2] hover:bg-[#07549A] disabled:bg-slate-700 text-white rounded-2xl text-xs font-black flex items-center gap-2 shadow-lg shadow-blue-900/20 transition"
+                                className="px-5 py-2 bg-[#0868B2] hover:bg-[#07549A] disabled:bg-slate-400 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm transition cursor-pointer"
                             >
                                 {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
                                 Save All Changes
@@ -476,7 +465,7 @@ export default function SettingsPage() {
             </div>
 
             {/* FULL WIDTH MAIN CONTENT WRAPPER */}
-            <div className="w-full px-6 sm:px-10 mt-8 space-y-8">
+            <div className="w-full px-6 sm:px-10 py-6 space-y-8">
                 {/* 4 EXECUTIVE KPI METRICS (FULL WIDTH) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     {/* Card 1: Institution Identity */}

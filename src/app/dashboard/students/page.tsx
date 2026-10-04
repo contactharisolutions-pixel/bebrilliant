@@ -389,59 +389,48 @@ export default function StudentDirectoryPage() {
                 </div>
             )}
 
-            {/* ── CINEMATIC ENTERPRISE HERO BANNER ────────────────────── */}
-            <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-900 shadow-sm mb-8">
-                <div className="absolute inset-0 z-0">
-                    <Image
-                        src="/assets/images/dashboard/student_directory_banner.jpg"
-                        alt="School Admissions and Student Records Registry"
-                        fill
-                        priority
-                        className="object-cover object-center opacity-35 filter brightness-95"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/80 to-transparent" />
-                </div>
-
-                <div className="relative z-10 px-6 sm:px-10 py-8 sm:py-10 max-w-4xl text-white">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-600/30 border border-blue-400/30 text-blue-300 text-xs font-semibold uppercase tracking-wider mb-3">
+            {/* ── ENTERPRISE ACADEMIC HEADER ────────────────────── */}
+            <div className="w-full bg-white rounded-xl border border-[#E2E8F0] p-6 sm:p-8 mb-8 shadow-xs">
+                <div className="max-w-4xl">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E5F3FB] border border-[#B6DCF2] text-[#0868B2] text-xs font-bold uppercase tracking-wider mb-3">
                         <GraduationCap className="w-3.5 h-3.5" />
-                        Student Directory & Academic Admissions Hub
+                        Student Directory &amp; Academic Admissions Hub
                     </div>
-                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white mb-2">
-                        Student Directory & Admissions
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#092746] mb-2">
+                        Student Directory &amp; Admissions
                     </h1>
-                    <p className="text-sm sm:text-base text-slate-300 font-normal leading-relaxed">
+                    <p className="text-xs sm:text-sm text-[#64748B] font-normal leading-relaxed">
                         Manage student admissions, profiles, and attendance. View report cards and track academic progress across all classes and sections.
                     </p>
 
                     <div className="mt-6 flex flex-wrap items-center gap-3">
                         <button
                             onClick={() => setActiveTab('add')}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 text-xs sm:text-sm font-bold shadow transition-all active:scale-95"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0868B2] hover:bg-[#07549A] text-white text-xs sm:text-sm font-bold shadow-sm transition-all"
                         >
-                            <UserPlus className="w-4 h-4 text-blue-600" />
+                            <UserPlus className="w-4 h-4 text-white" />
                             Add New Student
                         </button>
                         <button
                             onClick={() => setActiveTab('bulk')}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-200 border border-slate-700/80 text-xs sm:text-sm font-semibold transition-all active:scale-95"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#092746] border border-[#CBD5E1] text-xs sm:text-sm font-semibold transition-all shadow-xs"
                         >
-                            <UploadCloud className="w-4 h-4 text-blue-400" />
+                            <UploadCloud className="w-4 h-4 text-[#0868B2]" />
                             Bulk Roster Import
                         </button>
                         <button
                             onClick={exportRosterCSV}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-200 border border-slate-700/80 text-xs sm:text-sm font-semibold transition-all active:scale-95"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#092746] border border-[#CBD5E1] text-xs sm:text-sm font-semibold transition-all shadow-xs"
                         >
-                            <Download className="w-4 h-4 text-emerald-400" />
+                            <Download className="w-4 h-4 text-[#09834F]" />
                             Export Roster (CSV)
                         </button>
                         <button
                             onClick={() => fetchStudentsData(true)}
                             disabled={refreshing}
-                            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-300 border border-slate-700/60 text-xs sm:text-sm font-medium transition-all"
+                            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#092746] border border-[#CBD5E1] text-xs sm:text-sm font-medium transition-all shadow-xs"
                         >
-                            <RefreshCcw className={`w-3.5 h-3.5 text-blue-400 ${refreshing ? 'animate-spin' : ''}`} />
+                            <RefreshCcw className={`w-3.5 h-3.5 text-[#0868B2] ${refreshing ? 'animate-spin' : ''}`} />
                             {refreshing ? 'Refreshing...' : 'Sync'}
                         </button>
                     </div>

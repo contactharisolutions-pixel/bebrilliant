@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
@@ -1628,55 +1628,43 @@ export default function OfflinePaperManager() {
                 </div>
             )}
 
-            {/* FULL-WIDTH HERO BANNER */}
-            <div className="w-full relative overflow-hidden bg-slate-950 text-white">
-                <div className="absolute inset-0 z-0">
-                    <Image
-                        src="/assets/images/dashboard/offline_exam_banner.jpg"
-                        alt="Academic Examination Printing Desk"
-                        fill
-                        priority
-                        className="object-cover object-center opacity-40 mix-blend-luminosity scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40" />
-                </div>
-
-                <div className="w-full px-4 sm:px-8 py-10 sm:py-14 relative z-10">
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                        <div className="max-w-3xl space-y-4">
-                            <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-purple-500/10 border border-purple-400/20 backdrop-blur-md">
-                                <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping" />
-                                <span className="text-xs font-black tracking-widest text-purple-400 uppercase">
-                                    EXAM PAPER PRINTING & DESK
+            {/* ENTERPRISE ACADEMIC HEADER */}
+            <div className="w-full bg-white border-b border-[#E2E8F0]">
+                <div className="w-full px-4 sm:px-8 py-7">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                        <div className="max-w-3xl space-y-2">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E5F3FB] border border-[#B6DCF2]">
+                                <span className="w-2 h-2 rounded-full bg-[#0868B2]" />
+                                <span className="text-xs font-bold tracking-wider text-[#0868B2] uppercase">
+                                    Exam Paper Printing & Desk
                                 </span>
                             </div>
-                            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#092746]">
                                 School Question Paper Center
                             </h1>
-                            <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-normal">
+                            <p className="text-[#475569] text-sm sm:text-base leading-relaxed">
                                 Create, customize, and print school examination papers with matching answer keys and answer sheets.
                             </p>
-                            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300 pt-1">
-                                <span className="flex items-center gap-1.5"><Shield size={15} className="text-emerald-400" /> School Watermark & QR Code</span>
-                                <span className="flex items-center gap-1.5"><Zap size={15} className="text-amber-400" /> Multiple Sets (A, B, C, D)</span>
-                                <span className="flex items-center gap-1.5"><Globe size={15} className="text-sky-400" /> English & Regional Languages</span>
+                            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-[#64748B] pt-1">
+                                <span className="flex items-center gap-1.5"><Shield size={14} className="text-[#09834F]" /> School Watermark & QR Code</span>
+                                <span className="flex items-center gap-1.5"><Zap size={14} className="text-[#D97706]" /> Multiple Sets (A, B, C, D)</span>
+                                <span className="flex items-center gap-1.5"><Globe size={14} className="text-[#0868B2]" /> English & Regional Languages</span>
                             </div>
                         </div>
 
                         <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
                             <button
                                 onClick={() => setIsCreateModalOpen(true)}
-                                className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-gradient-to-r from-[#0868B2] to-sky-600 hover:from-sky-700 hover:to-sky-500 text-white font-bold text-sm shadow-xl shadow-sky-950/40 border border-sky-300/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0868B2] hover:bg-[#07549A] active:bg-[#073B73] text-white font-bold text-sm shadow-sm transition-all"
                             >
-                                <PlusCircle size={18} />
+                                <PlusCircle size={17} />
                                 <span>Create New Exam Paper</span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('packaging')}
-                                className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/90 text-white font-bold text-sm backdrop-blur-md border border-slate-700 shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white hover:bg-[#F2F9FD] text-[#0868B2] border border-[#B6DCF2] font-bold text-sm transition-all"
                             >
-                                <Printer size={18} className="text-purple-400" />
+                                <Printer size={17} className="text-[#0868B2]" />
                                 <span>Print & Download Center</span>
                             </button>
                             <button
@@ -1685,10 +1673,10 @@ export default function OfflinePaperManager() {
                                     fetchBlueprintContext()
                                     fetchQuestionSets()
                                 }}
-                                className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-all"
+                                className="p-2.5 rounded-lg bg-white hover:bg-[#F2F9FD] text-[#64748B] hover:text-[#0868B2] border border-[#E2E8F0] transition-all"
                                 title="Refresh data"
                             >
-                                <RefreshCw size={18} />
+                                <RefreshCw size={17} />
                             </button>
                         </div>
                     </div>
@@ -1696,65 +1684,65 @@ export default function OfflinePaperManager() {
             </div>
 
             {/* MAIN WORKSPACE */}
-            <div className="w-full px-4 sm:px-8 -mt-6 relative z-20 space-y-6">
+            <div className="w-full px-4 sm:px-8 py-6 relative space-y-6 bg-[#F8FAFC]">
 
-                {/* 4 SUMMARY CARDS */}
+                {/* 4 SUMMARY KPI CARDS (Section 20-21 Standards) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-13 h-13 rounded-2xl bg-sky-50 flex items-center justify-center text-[#0868B2] border border-sky-100">
-                            <FileText size={26} />
+                    <div className="bg-white rounded-xl p-5 border border-[#E2E8F0] shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="w-12 h-12 rounded-xl bg-[#E5F3FB] border border-[#B6DCF2] flex items-center justify-center text-[#0868B2] shrink-0">
+                            <FileText size={24} />
                         </div>
-                        <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Exam Papers Created</div>
-                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.totalPapers} Papers</div>
-                            <div className="text-[11px] font-semibold text-sky-700 mt-1 flex items-center gap-1">
+                        <div className="min-w-0">
+                            <div className="text-xs font-bold uppercase tracking-wider text-[#64748B]">Exam Papers Created</div>
+                            <div className="text-2xl font-black text-[#092746] mt-0.5">{metrics.totalPapers} Papers</div>
+                            <div className="text-[11px] font-semibold text-[#09834F] bg-[#DCF7E7] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
                                 <CheckCircle size={12} /> Ready for Examination
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-13 h-13 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100">
-                            <Printer size={26} />
+                    <div className="bg-white rounded-xl p-5 border border-[#E2E8F0] shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="w-12 h-12 rounded-xl bg-[#E5F3FB] border border-[#B6DCF2] flex items-center justify-center text-[#0868B2] shrink-0">
+                            <Printer size={24} />
                         </div>
-                        <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Printed Papers</div>
-                            <div className="text-2xl font-black text-slate-900 mt-0.5">{metrics.printedAssets} Copies</div>
-                            <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
+                        <div className="min-w-0">
+                            <div className="text-xs font-bold uppercase tracking-wider text-[#64748B]">Printed Papers</div>
+                            <div className="text-2xl font-black text-[#092746] mt-0.5">{metrics.printedAssets} Copies</div>
+                            <div className="text-[11px] font-semibold text-[#09834F] bg-[#DCF7E7] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
                                 <ArrowUpRight size={12} /> Ready for Exam Hall
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-13 h-13 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100">
-                            <Target size={26} />
+                    <div className="bg-white rounded-xl p-5 border border-[#E2E8F0] shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="w-12 h-12 rounded-xl bg-[#DCF7E7] border border-[#B7E8CC] flex items-center justify-center text-[#09834F] shrink-0">
+                            <Target size={24} />
                         </div>
-                        <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Question Banks</div>
-                            <div className="text-2xl font-black text-slate-900 mt-0.5">{questionSets.length} Sets</div>
-                            <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
+                        <div className="min-w-0">
+                            <div className="text-xs font-bold uppercase tracking-wider text-[#64748B]">Question Banks</div>
+                            <div className="text-2xl font-black text-[#092746] mt-0.5">{questionSets.length} Sets</div>
+                            <div className="text-[11px] font-semibold text-[#09834F] bg-[#DCF7E7] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
                                 <Check size={12} /> {totalQuestionsInSets} Questions Stored
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-13 h-13 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100">
-                            <Shield size={26} />
+                    <div className="bg-white rounded-xl p-5 border border-[#E2E8F0] shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="w-12 h-12 rounded-xl bg-[#FEF3C7] border border-[#FDE68A] flex items-center justify-center text-[#D97706] shrink-0">
+                            <Shield size={24} />
                         </div>
-                        <div>
-                            <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Paper Patterns</div>
-                            <div className="text-2xl font-black text-slate-900 mt-0.5">{displayPatterns.length} Patterns</div>
-                            <div className="text-[11px] font-semibold text-amber-700 mt-1 flex items-center gap-1">
-                                <BookOpen size={12} /> Board & School Patterns
+                        <div className="min-w-0">
+                            <div className="text-xs font-bold uppercase tracking-wider text-[#64748B]">Paper Patterns</div>
+                            <div className="text-2xl font-black text-[#092746] mt-0.5">{displayPatterns.length} Patterns</div>
+                            <div className="text-[11px] font-semibold text-[#0868B2] bg-[#E5F3FB] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
+                                <BookOpen size={12} /> Board &amp; School Patterns
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* ── STEP PROGRESS BAR ─────────────────────────────────── */}
-                <div className="w-full bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4">
+                <div className="w-full bg-white rounded-xl border border-[#E2E8F0] shadow-sm p-4">
                     <div className="flex items-center gap-0">
                         {[
                             { step: 1, label: 'Setup', sub: 'Class & Subject', icon: BookOpen },
@@ -1771,28 +1759,28 @@ export default function OfflinePaperManager() {
                                     <button
                                         onClick={() => goToStep(s.step)}
                                         className={`flex flex-col items-center gap-1 flex-1 px-2 py-2 rounded-xl transition-all ${
-                                            isActive ? 'bg-[#0868B2]/5' : 'hover:bg-slate-50'
+                                            isActive ? 'bg-[#E5F3FB]' : 'hover:bg-[#F2F9FD]'
                                         }`}
                                     >
-                                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-sm border-2 transition-all ${
+                                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-all ${
                                             isDone
-                                                ? 'bg-emerald-500 border-emerald-500 text-white'
+                                                ? 'bg-[#09834F] border-[#09834F] text-white'
                                                 : isActive
-                                                ? 'bg-[#0868B2] border-[#0868B2] text-white shadow-md shadow-sky-950/20'
-                                                : 'bg-white border-slate-200 text-slate-400'
+                                                ? 'bg-[#0868B2] border-[#0868B2] text-white shadow-sm'
+                                                : 'bg-white border-[#E2E8F0] text-[#94A3B8]'
                                         }`}>
                                             {isDone ? <Check size={16} /> : <Icon size={15} />}
                                         </div>
                                         <div className="text-center">
-                                            <div className={`text-[11px] font-black leading-tight ${
-                                                isActive ? 'text-[#0868B2]' : isDone ? 'text-emerald-700' : 'text-slate-400'
+                                            <div className={`text-[11px] font-bold leading-tight ${
+                                                isActive ? 'text-[#0868B2]' : isDone ? 'text-[#09834F]' : 'text-[#64748B]'
                                             }`}>{s.label}</div>
-                                            <div className="text-[10px] text-slate-400 font-medium hidden sm:block">{s.sub}</div>
+                                            <div className="text-[10px] text-[#94A3B8] font-medium hidden sm:block">{s.sub}</div>
                                         </div>
                                     </button>
                                     {idx < 4 && (
                                         <div className={`h-0.5 w-4 sm:w-8 shrink-0 mx-1 rounded-full transition-all ${
-                                            isDone ? 'bg-emerald-400' : 'bg-slate-200'
+                                            isDone ? 'bg-[#09834F]' : 'bg-[#E2E8F0]'
                                         }`} />
                                     )}
                                 </div>
@@ -1939,23 +1927,23 @@ export default function OfflinePaperManager() {
                 {currentStep === 1 && (
                     <div className="w-full space-y-6">
                         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
-                            <div className="border-b border-slate-100 pb-5 mb-6">
+                            <div className="border-b border-[#E2E8F0] pb-5 mb-6">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-7 h-7 rounded-lg bg-[#0868B2] text-white flex items-center justify-center text-xs font-black">1</div>
-                                    <span className="text-xs font-black uppercase tracking-wider text-[#0868B2]">Step 1 of 5</span>
+                                    <div className="w-7 h-7 rounded-lg bg-[#0868B2] text-white flex items-center justify-center text-xs font-bold">1</div>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-[#0868B2]">Step 1 of 5</span>
                                 </div>
-                                <h2 className="text-2xl font-black text-slate-900">Choose Class &amp; Subject</h2>
-                                <p className="text-slate-500 text-sm mt-1">Select the exam board, class, and subject. This sets the scope for your question bank and exam paper.</p>
+                                <h2 className="text-2xl font-black text-[#092746]">Choose Class &amp; Subject</h2>
+                                <p className="text-[#64748B] text-sm mt-1">Select the exam board, class, and subject. This sets the scope for your question bank and exam paper.</p>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                                 {/* Board */}
-                                <div className="p-5 rounded-2xl border-2 border-slate-200 hover:border-[#0868B2]/30 transition-colors bg-slate-50/50 space-y-3">
+                                <div className="p-5 rounded-xl border border-[#E2E8F0] hover:border-[#0868B2] transition-colors bg-[#F8FAFC] space-y-3">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-9 h-9 rounded-xl bg-sky-100 text-[#0868B2] flex items-center justify-center">
+                                        <div className="w-9 h-9 rounded-lg bg-[#E5F3FB] text-[#0868B2] border border-[#B6DCF2] flex items-center justify-center">
                                             <Shield size={18} />
                                         </div>
-                                        <span className="font-black text-slate-900 text-sm">Exam Board</span>
+                                        <span className="font-bold text-[#092746] text-sm">Exam Board</span>
                                     </div>
                                     <select
                                         value={selectedBoardId}
@@ -1966,23 +1954,23 @@ export default function OfflinePaperManager() {
                                             setSelectedChapterIds([])
                                             setSelectedTopicIds([])
                                         }}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 bg-white focus:ring-2 focus:ring-[#0868B2] focus:outline-none text-sm"
+                                        className="w-full px-3 py-2.5 rounded-lg border border-[#CBD5E1] font-semibold text-[#092746] bg-white focus:ring-2 focus:ring-[#0868B2] focus:outline-none text-sm"
                                     >
                                         <option value="">Select exam board...</option>
                                         {blueprintContext?.activeBoards?.map(b => (
                                             <option key={b.id} value={b.id}>{b.name}</option>
                                         ))}
                                     </select>
-                                    <p className="text-[11px] text-slate-400 font-medium">e.g., CBSE, Gujarat Board (GSEB)</p>
+                                    <p className="text-[11px] text-[#94A3B8] font-medium">e.g., CBSE, Gujarat Board (GSEB)</p>
                                 </div>
 
                                 {/* Class */}
-                                <div className="p-5 rounded-2xl border-2 border-slate-200 hover:border-[#0868B2]/30 transition-colors bg-slate-50/50 space-y-3">
+                                <div className="p-5 rounded-xl border border-[#E2E8F0] hover:border-[#0868B2] transition-colors bg-[#F8FAFC] space-y-3">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                                        <div className="w-9 h-9 rounded-lg bg-[#E5F3FB] text-[#0868B2] border border-[#B6DCF2] flex items-center justify-center">
                                             <BookOpen size={18} />
                                         </div>
-                                        <span className="font-black text-slate-900 text-sm">Class / Grade</span>
+                                        <span className="font-bold text-[#092746] text-sm">Class / Grade</span>
                                     </div>
                                     <select
                                         value={selectedClassId}
@@ -1992,23 +1980,23 @@ export default function OfflinePaperManager() {
                                             setSelectedChapterIds([])
                                             setSelectedTopicIds([])
                                         }}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 bg-white focus:ring-2 focus:ring-[#0868B2] focus:outline-none text-sm"
+                                        className="w-full px-3 py-2.5 rounded-lg border border-[#CBD5E1] font-semibold text-[#092746] bg-white focus:ring-2 focus:ring-[#0868B2] focus:outline-none text-sm"
                                     >
                                         <option value="">Select class...</option>
                                         {(blueprintContext?.syllabusTree?.classes || classes).map((c: any) => (
                                             <option key={c.id} value={c.id}>{c.name}</option>
                                         ))}
                                     </select>
-                                    <p className="text-[11px] text-slate-400 font-medium">e.g., Class 8, Class 10</p>
+                                    <p className="text-[11px] text-[#94A3B8] font-medium">e.g., Class 8, Class 10</p>
                                 </div>
 
                                 {/* Subject */}
-                                <div className="p-5 rounded-2xl border-2 border-slate-200 hover:border-[#0868B2]/30 transition-colors bg-slate-50/50 space-y-3">
+                                <div className="p-5 rounded-xl border border-[#E2E8F0] hover:border-[#0868B2] transition-colors bg-[#F8FAFC] space-y-3">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                                        <div className="w-9 h-9 rounded-lg bg-[#E5F3FB] text-[#0868B2] border border-[#B6DCF2] flex items-center justify-center">
                                             <Tag size={18} />
                                         </div>
-                                        <span className="font-black text-slate-900 text-sm">Subject</span>
+                                        <span className="font-bold text-[#092746] text-sm">Subject</span>
                                     </div>
                                     <select
                                         value={selectedSubjectId}
@@ -2017,38 +2005,38 @@ export default function OfflinePaperManager() {
                                             setSelectedChapterIds([])
                                             setSelectedTopicIds([])
                                         }}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 bg-white focus:ring-2 focus:ring-[#0868B2] focus:outline-none text-sm"
+                                        className="w-full px-3 py-2.5 rounded-lg border border-[#CBD5E1] font-semibold text-[#092746] bg-white focus:ring-2 focus:ring-[#0868B2] focus:outline-none text-sm"
                                     >
                                         <option value="">Select subject...</option>
                                         {subjects.map((s: any) => (
                                             <option key={s.id} value={s.id}>{s.name}</option>
                                         ))}
                                     </select>
-                                    <p className="text-[11px] text-slate-400 font-medium">e.g., Mathematics, Science, English</p>
+                                    <p className="text-[11px] text-[#94A3B8] font-medium">e.g., Mathematics, Science, English</p>
                                 </div>
                             </div>
 
                             {selectedClassId && selectedSubjectId ? (
-                                <div className="mt-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                    <div className="flex items-center gap-2.5 text-sm font-semibold text-emerald-800">
-                                        <CheckCircle size={18} className="text-emerald-600 shrink-0" />
+                                <div className="mt-6 p-4 rounded-xl bg-[#DCF7E7] border border-[#B7E8CC] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                    <div className="flex items-center gap-2.5 text-sm font-semibold text-[#09834F]">
+                                        <CheckCircle size={18} className="text-[#09834F] shrink-0" />
                                         <span>
                                             Scope set: <strong>{classes.find(c => c.id === selectedClassId)?.name || 'Selected Class'}</strong> &mdash; <strong>{subjects.find(s => s.id === selectedSubjectId)?.name || 'Selected Subject'}</strong>.
                                             {papers.filter(p => p.class_id === selectedClassId && p.subject_id === selectedSubjectId).length > 0 && (
-                                                <span className="text-emerald-700 ml-1">You already have {papers.filter(p => p.class_id === selectedClassId && p.subject_id === selectedSubjectId).length} paper(s) for this selection.</span>
+                                                <span className="text-[#09834F] ml-1">You already have {papers.filter(p => p.class_id === selectedClassId && p.subject_id === selectedSubjectId).length} paper(s) for this selection.</span>
                                             )}
                                         </span>
                                     </div>
                                     <button
                                         onClick={() => goToStep(2)}
-                                        className="shrink-0 px-5 py-2.5 rounded-xl bg-[#0868B2] hover:bg-sky-800 text-white font-black text-sm flex items-center gap-2 shadow-md transition-all hover:scale-[1.02]"
+                                        className="shrink-0 px-5 py-2.5 rounded-lg bg-[#0868B2] hover:bg-[#07549A] text-white font-bold text-sm flex items-center gap-2 shadow-sm transition-all"
                                     >
                                         Continue to Question Bank <ChevronRight size={16} />
                                     </button>
                                 </div>
                             ) : (
-                                <div className="mt-6 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-500 font-medium flex items-center gap-2">
-                                    <AlertCircle size={16} className="text-slate-400 shrink-0" />
+                                <div className="mt-6 p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-sm text-[#64748B] font-medium flex items-center gap-2">
+                                    <AlertCircle size={16} className="text-[#94A3B8] shrink-0" />
                                     Select a class and subject above to continue.
                                 </div>
                             )}
@@ -2065,18 +2053,18 @@ export default function OfflinePaperManager() {
                     return (
                         <div className="w-full space-y-6">
                             {/* ── SCOPE & BLUEPRINT SUMMARY CARD ─── */}
-                            <div className="w-full bg-gradient-to-r from-slate-900 to-sky-950 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-800">
-                                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                            <div className="w-full bg-white text-[#092746] rounded-xl p-5 sm:p-6 shadow-xs border border-[#E2E8F0]">
+                                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
                                     <div>
-                                        <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-bold text-xs uppercase tracking-wider">
+                                        <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-[#DCF7E7] text-[#09834F] font-bold text-xs uppercase tracking-wider border border-[#B7E8CC]">
                                             <CheckCircle size={13} />
                                             <span>Ready to Compose</span>
                                         </div>
-                                        <h3 className="text-xl font-black text-white mt-1">Review &amp; Finalize Exam Paper</h3>
-                                        <p className="text-xs text-slate-300 mt-0.5">Your exam scope, question bank, and paper pattern are locked in. Configure final paper details below.</p>
+                                        <h3 className="text-xl font-black text-[#092746] mt-1">Review &amp; Finalize Exam Paper</h3>
+                                        <p className="text-xs text-[#64748B] mt-0.5">Your exam scope, question bank, and paper pattern are locked in. Configure final paper details below.</p>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs text-sky-200 font-semibold bg-sky-900/60 px-3 py-1.5 rounded-xl border border-sky-500/30">
+                                        <span className="text-xs text-[#0868B2] font-semibold bg-[#E5F3FB] px-3 py-1.5 rounded-lg border border-[#B6DCF2]">
                                             Step 4 of 5
                                         </span>
                                     </div>
@@ -2085,37 +2073,37 @@ export default function OfflinePaperManager() {
                                 {/* 3 SUMMARY TILES */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
                                     {/* TILE 1: CLASS & SUBJECT */}
-                                    <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-start justify-between">
+                                    <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-start justify-between">
                                         <div className="space-y-1">
-                                            <div className="text-[11px] font-bold uppercase tracking-wider text-sky-300 flex items-center gap-1.5">
+                                            <div className="text-[11px] font-bold uppercase tracking-wider text-[#0868B2] flex items-center gap-1.5">
                                                 <BookOpen size={13} /> Target Scope
                                             </div>
-                                            <div className="font-extrabold text-sm text-white">
+                                            <div className="font-extrabold text-sm text-[#092746]">
                                                 {activeQuestionSet?.class_name || classes.find(c => c.id === selectedClassId)?.name || 'Class 8'} &bull; {activeQuestionSet?.subject_name || subjects.find(s => s.id === selectedSubjectId)?.name || 'English'}
                                             </div>
-                                            <div className="text-[11px] text-slate-400">
+                                            <div className="text-[11px] text-[#64748B]">
                                                 {blueprintContext?.activeBoards?.find(b => b.id === selectedBoardId)?.name || 'Gujarat Board (English Medium)'}
                                             </div>
                                         </div>
                                         <button
                                             type="button"
                                             onClick={() => goToStep(1)}
-                                            className="text-[11px] font-bold text-sky-400 hover:text-sky-300 underline"
+                                            className="text-[11px] font-bold text-[#0868B2] hover:text-[#07549A] hover:underline"
                                         >
                                             Change
                                         </button>
                                     </div>
 
                                     {/* TILE 2: QUESTION BANK */}
-                                    <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-start justify-between">
+                                    <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-start justify-between">
                                         <div className="space-y-1">
-                                            <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
+                                            <div className="text-[11px] font-bold uppercase tracking-wider text-[#09834F] flex items-center gap-1.5">
                                                 <Database size={13} /> Question Bank
                                             </div>
-                                            <div className="font-extrabold text-sm text-white line-clamp-1" title={activeQuestionSet?.title || 'Selected Question Set'}>
+                                            <div className="font-extrabold text-sm text-[#092746] line-clamp-1" title={activeQuestionSet?.title || 'Selected Question Set'}>
                                                 {activeQuestionSet?.title || 'Active Question Set'}
                                             </div>
-                                            <div className="text-[11px] text-slate-400">
+                                            <div className="text-[11px] text-[#64748B]">
                                                 {activeQuestionSet?.total_questions || 0} questions available
                                                 {activeQuestionSet?.chapter_name && ` • ${activeQuestionSet.chapter_name}`}
                                             </div>
@@ -2123,22 +2111,22 @@ export default function OfflinePaperManager() {
                                         <button
                                             type="button"
                                             onClick={() => goToStep(2)}
-                                            className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 underline"
+                                            className="text-[11px] font-bold text-[#0868B2] hover:text-[#07549A] hover:underline"
                                         >
                                             Change
                                         </button>
                                     </div>
 
                                     {/* TILE 3: PAPER PATTERN */}
-                                    <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-start justify-between">
+                                    <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-start justify-between">
                                         <div className="space-y-1">
-                                            <div className="text-[11px] font-bold uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
+                                            <div className="text-[11px] font-bold uppercase tracking-wider text-[#0868B2] flex items-center gap-1.5">
                                                 <Layers size={13} /> Paper Pattern
                                             </div>
-                                            <div className="font-extrabold text-sm text-white line-clamp-1" title={activePattern?.name || 'Selected Pattern'}>
+                                            <div className="font-extrabold text-sm text-[#092746] line-clamp-1" title={activePattern?.name || 'Selected Pattern'}>
                                                 {activePattern?.name || 'Standard Exam Pattern'}
                                             </div>
-                                            <div className="text-[11px] text-slate-400">
+                                            <div className="text-[11px] text-[#64748B]">
                                                 {activePattern?.total_marks || 80} Marks &bull; {activePattern?.duration_minutes || 180} Mins
                                                 {activePattern?.sections?.length ? ` • ${activePattern.sections.length} Sections` : ''}
                                             </div>
@@ -2146,7 +2134,7 @@ export default function OfflinePaperManager() {
                                         <button
                                             type="button"
                                             onClick={() => goToStep(3)}
-                                            className="text-[11px] font-bold text-purple-400 hover:text-purple-300 underline"
+                                            className="text-[11px] font-bold text-[#0868B2] hover:text-[#07549A] hover:underline"
                                         >
                                             Change
                                         </button>

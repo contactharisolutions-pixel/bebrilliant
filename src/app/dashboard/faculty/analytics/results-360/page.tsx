@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
@@ -407,52 +407,41 @@ export default function Result360Analytics() {
 
     return (
         <div className="w-full px-4 sm:px-8 py-6 pb-24 bg-slate-50/60 min-h-screen text-slate-800 antialiased">
-            {/* ── CINEMATIC ENTERPRISE HERO BANNER ────────────────────── */}
-            <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-900 shadow-sm mb-8">
-                <div className="absolute inset-0 z-0">
-                    <Image
-                        src="/assets/images/dashboard/student_analytics_banner.jpg"
-                        alt="Academic Leadership Reviewing Student Performance"
-                        fill
-                        priority
-                        className="object-cover object-center opacity-35 filter brightness-95"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/80 to-transparent" />
-                </div>
-
-                <div className="relative z-10 px-6 sm:px-10 py-8 sm:py-10 max-w-4xl text-white">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-600/30 border border-blue-400/30 text-blue-300 text-xs font-semibold uppercase tracking-wider mb-3">
+            {/* ── ENTERPRISE ACADEMIC HEADER ────────────────────── */}
+            <div className="w-full rounded-xl border border-[#E2E8F0] bg-white p-6 sm:p-8 mb-8 shadow-xs">
+                <div className="max-w-4xl">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E5F3FB] border border-[#B6DCF2] text-[#0868B2] text-xs font-bold uppercase tracking-wider mb-3">
                         <GraduationCap className="w-3.5 h-3.5" />
-                        Academic Performance & Examination Intelligence Suite
+                        Academic Performance &amp; Examination Intelligence Suite
                     </div>
-                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white mb-2">
-                        Student Performance & Result Analytics
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#092746] mb-2">
+                        Student Performance &amp; Result Analytics
                     </h1>
-                    <p className="text-sm sm:text-base text-slate-300 font-normal leading-relaxed">
+                    <p className="text-xs sm:text-sm text-[#64748B] font-normal leading-relaxed">
                         Track class-wide passing rates, diagnose weaker subjects and syllabus chapters, evaluate 360° student mastery, and monitor academic progress across school terms.
                     </p>
 
                     <div className="mt-6 flex flex-wrap items-center gap-3">
                         <button
                             onClick={exportToCSV}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 text-xs sm:text-sm font-bold shadow transition-all active:scale-95"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0868B2] hover:bg-[#07549A] text-white text-xs sm:text-sm font-bold shadow-sm transition-all"
                         >
-                            <Download className="w-4 h-4 text-blue-600" />
+                            <Download className="w-4 h-4 text-white" />
                             Download Marks Ledger (CSV)
                         </button>
                         <button
                             onClick={() => setActiveTab('weaker_areas')}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold shadow transition-all active:scale-95"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#FEF2F2] hover:bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA] text-xs sm:text-sm font-bold shadow-xs transition-all"
                         >
-                            <Flame className="w-4 h-4 text-rose-200" />
+                            <Flame className="w-4 h-4 text-[#DC2626]" />
                             Weaker Areas Diagnostic
                         </button>
                         <button
                             onClick={() => fetchAnalytics(true)}
                             disabled={refreshing}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-200 border border-slate-700/80 text-xs sm:text-sm font-semibold transition-all active:scale-95"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#092746] border border-[#CBD5E1] text-xs sm:text-sm font-medium transition-all shadow-xs"
                         >
-                            <RefreshCcw className={`w-4 h-4 text-emerald-400 ${refreshing ? 'animate-spin' : ''}`} />
+                            <RefreshCcw className={`w-4 h-4 text-[#0868B2] ${refreshing ? 'animate-spin' : ''}`} />
                             {refreshing ? 'Updating Records...' : 'Refresh Live Data'}
                         </button>
                     </div>

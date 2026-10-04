@@ -426,39 +426,28 @@ export default function AcademicYearPortal() {
                 ))}
             </div>
 
-            {/* ── HERO BANNER ── */}
-            <div className="relative mx-6 sm:mx-10 mt-6 rounded-[28px] overflow-hidden border border-slate-200/80 shadow-sm bg-slate-900">
-                <div className="relative h-64 sm:h-72 w-full">
-                    <Image
-                        src="/assets/images/dashboard/academic_lifecycle_banner.jpg"
-                        alt="Academic Lifecycle Chronometer"
-                        fill
-                        priority
-                        className="object-cover object-center opacity-85"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/70 to-slate-900/40" />
-                </div>
-
-                <div className="absolute inset-0 p-8 sm:p-10 flex flex-col justify-between">
-                    <div className="flex flex-wrap items-center gap-3">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-500/20 text-sky-200 border border-sky-400/30 backdrop-blur-md">
+            {/* ENTERPRISE ACADEMIC HEADER */}
+            <div className="w-full bg-white border-b border-[#E2E8F0]">
+                <div className="w-full px-6 sm:px-10 py-6 sm:py-8">
+                    <div className="flex flex-wrap items-center gap-3 mb-3">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#E5F3FB] text-[#0868B2] border border-[#B6DCF2]">
                             <Clock className="w-3.5 h-3.5" /> Institutional Chronometer
                         </span>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 backdrop-blur-md">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#DCF7E7] text-[#09834F] border border-[#B7E8CC]">
                             <ShieldCheck className="w-3.5 h-3.5" /> Audit Verified
                         </span>
                         {activeYear && (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 backdrop-blur-md">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#E5F3FB] text-[#0868B2] border border-[#B6DCF2]">
                                 <Sparkles className="w-3.5 h-3.5" /> {activeYear.name}
                             </span>
                         )}
                     </div>
 
                     <div>
-                        <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
-                            Academic Years & Student Promotions
+                        <h1 className="text-2xl sm:text-3xl font-black text-[#092746] tracking-tight leading-tight">
+                            Academic Years &amp; Student Promotions
                         </h1>
-                        <p className="mt-2 text-sm sm:text-base text-slate-300 font-medium leading-relaxed max-w-3xl">
+                        <p className="mt-1.5 text-xs sm:text-sm text-[#64748B] font-normal leading-relaxed max-w-3xl">
                             Manage annual school sessions, set up automatic class promotion rules, and promote students to their next class with complete record history.
                         </p>
                     </div>

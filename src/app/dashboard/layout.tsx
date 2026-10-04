@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -559,30 +559,30 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                           alignItems: "center",
                           justifyContent: "space-between",
                           padding: "8px 12px",
-                          background: isExpanded ? "rgba(0, 51, 100, 0.05)" : "transparent",
+                          background: isExpanded ? "rgba(8, 104, 178, 0.05)" : "transparent",
                           border: "none",
                           borderRadius: 8,
                           cursor: "pointer",
                           fontSize: 11,
                           fontWeight: 800,
-                          color: "#003364",
+                          color: "#092746",
                           textTransform: "uppercase",
                           letterSpacing: "0.08em",
                           marginBottom: 4,
                           transition: "all 0.15s ease",
                         }}
                         onMouseEnter={(e) => {
-                          if (!isExpanded) (e.currentTarget as HTMLButtonElement).style.background = "rgba(0, 51, 100, 0.03)";
+                          if (!isExpanded) (e.currentTarget as HTMLButtonElement).style.background = "rgba(8, 104, 178, 0.03)";
                         }}
                         onMouseLeave={(e) => {
                           if (!isExpanded) (e.currentTarget as HTMLButtonElement).style.background = "transparent";
                         }}
                       >
-                        <span style={{ color: "#003364" }}>{group.title}</span>
+                        <span style={{ color: "#092746", fontWeight: 800 }}>{group.title}</span>
                         <ChevronDown
                           size={14}
                           style={{
-                            color: "#003364",
+                            color: "#64748B",
                             transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
                             transition: "transform 0.2s ease",
                             flexShrink: 0,
@@ -632,24 +632,27 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                                 borderRadius: 10,
                                 textDecoration: "none",
                                 background: active
-                                  ? "var(--color-primary-gradient)"
+                                  ? "#E5F3FB"
                                   : "transparent",
                                 color: active
-                                  ? "#fff"
-                                  : "var(--color-text-secondary)",
-                                fontWeight: active ? 800 : 700,
+                                  ? "#0868B2"
+                                  : "#475569",
+                                border: active
+                                  ? "1px solid #B6DCF2"
+                                  : "1px solid transparent",
+                                fontWeight: active ? 700 : 500,
                                 fontSize: 13,
-                                transition: "all 0.1s",
+                                transition: "all 0.15s ease",
                                 marginBottom: 2,
                               }}
                               onMouseEnter={(e) => {
                                 if (!active) {
                                   (
                                     e.currentTarget as HTMLAnchorElement
-                                  ).style.background = "var(--color-bg-card2)";
+                                  ).style.background = "#F2F9FD";
                                   (
                                     e.currentTarget as HTMLAnchorElement
-                                  ).style.color = "var(--color-text-primary)";
+                                  ).style.color = "#07549A";
                                 }
                               }}
                               onMouseLeave={(e) => {
@@ -659,7 +662,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                                   ).style.background = "transparent";
                                   (
                                     e.currentTarget as HTMLAnchorElement
-                                  ).style.color = "var(--color-text-secondary)";
+                                  ).style.color = "#475569";
                                 }
                               }}
                             >
@@ -668,11 +671,14 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                                 strokeWidth={active ? 2.5 : 2}
                                 style={{
                                   color: active
-                                    ? "#fff"
-                                    : "var(--color-text-muted)",
+                                    ? "#0868B2"
+                                    : "#64748B",
+                                  flexShrink: 0,
                                 }}
                               />
-                              {displayLabel}
+                              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {displayLabel}
+                              </span>
                             </Link>
                           );
                         })}
@@ -685,9 +691,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           </nav>
           <div
             style={{
-              padding: "20px",
-              borderTop: "1px solid var(--color-border)",
-              background: "var(--color-bg-card)",
+              padding: "16px 20px",
+              borderTop: "1px solid #E2E8F0",
+              background: "#FFFFFF",
             }}
           >
             <button
@@ -697,18 +703,28 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 10,
-                padding: "12px",
-                borderRadius: 12,
-                border: "1px solid #FECACA",             /* official error border */
-                background: C.errorBg,                   /* official #FEE2E2 */
-                color: C.error,                          /* official #DC2626 */
-                fontSize: 14,
-                fontWeight: 700,
+                padding: "10px 14px",
+                borderRadius: 10,
+                border: "1px solid #E2E8F0",
+                background: "#FFFFFF",
+                color: "#475569",
+                fontSize: 13,
+                fontWeight: 600,
                 cursor: "pointer",
-                transition: "all 0.1s",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "#FEF2F2";
+                (e.currentTarget as HTMLButtonElement).style.color = "#DC2626";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "#FCA5A5";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "#FFFFFF";
+                (e.currentTarget as HTMLButtonElement).style.color = "#475569";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "#E2E8F0";
               }}
             >
-              <LogOut size={16} strokeWidth={2.5} /> Logout
+              <LogOut size={16} strokeWidth={2} /> Logout
             </button>
           </div>
         </aside>

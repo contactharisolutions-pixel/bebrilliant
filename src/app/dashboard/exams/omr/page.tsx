@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
@@ -588,60 +588,48 @@ export default function OMRExamManager() {
                 </div>
             )}
 
-            {/* FULL-WIDTH HERO BANNER */}
-            <div className="w-full relative overflow-hidden bg-slate-950 text-white">
-                <div className="absolute inset-0 z-0">
-                    <Image
-                        src="/assets/images/dashboard/omr_scanner_banner.jpg"
-                        alt="Exams and OMR Sheets Hub"
-                        fill
-                        priority
-                        className="object-cover object-center opacity-35 mix-blend-luminosity scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-transparent" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40" />
-                </div>
-
-                <div className="w-full px-4 sm:px-8 py-8 sm:py-12 relative z-10">
+            {/* ENTERPRISE ACADEMIC HEADER */}
+            <div className="w-full bg-white border-b border-[#E2E8F0]">
+                <div className="w-full px-4 sm:px-8 py-6 sm:py-8">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                        <div className="max-w-3xl space-y-3">
-                            <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-400/20 backdrop-blur-md">
-                                <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
-                                <span className="text-xs font-black tracking-widest text-sky-400 uppercase">
+                        <div className="max-w-3xl space-y-2.5">
+                            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#E5F3FB] border border-[#B6DCF2]">
+                                <span className="w-2 h-2 rounded-full bg-[#0868B2]" />
+                                <span className="text-[11px] font-bold tracking-wider text-[#0868B2] uppercase">
                                     School Exams &amp; Print Center
                                 </span>
                             </div>
-                            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#092746] leading-tight">
                                 Exams &amp; OMR Sheets
                             </h1>
-                            <p className="text-slate-300 text-xs sm:text-sm leading-relaxed font-normal">
+                            <p className="text-[#64748B] text-xs sm:text-sm leading-relaxed font-normal">
                                 Create offline exams, print question papers with matching OMR answer sheets together, and calculate student marks automatically.
                             </p>
-                            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300 pt-1">
-                                <span className="flex items-center gap-1.5"><Shield size={14} className="text-emerald-400" /> Printed with School Logo &amp; Header</span>
-                                <span className="flex items-center gap-1.5"><Printer size={14} className="text-sky-400" /> Print Question Paper &amp; OMR Sheet Together</span>
-                                <span className="flex items-center gap-1.5"><Sparkles size={14} className="text-amber-400" /> Powered by BeBrilliant AI Agent</span>
+                            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-[#64748B] pt-1">
+                                <span className="flex items-center gap-1.5"><Shield size={14} className="text-[#09834F]" /> Printed with School Logo &amp; Header</span>
+                                <span className="flex items-center gap-1.5"><Printer size={14} className="text-[#0868B2]" /> Print Question Paper &amp; OMR Sheet Together</span>
+                                <span className="flex items-center gap-1.5"><Sparkles size={14} className="text-[#D97706]" /> Automated Scanning &amp; Grading</span>
                             </div>
                         </div>
 
                         <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
                             <button
                                 onClick={handleStartNewExam}
-                                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs sm:text-sm shadow-xl shadow-amber-950/40 border border-amber-300/40 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#0868B2] hover:bg-[#07549A] text-white font-bold text-xs sm:text-sm shadow-sm transition-all cursor-pointer"
                             >
                                 <PlusCircle size={16} />
                                 <span>+ Start New OMR Exam</span>
                             </button>
                             <button
                                 onClick={() => goToStep(4)}
-                                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm backdrop-blur-md border border-slate-700 shadow-xl transition-all cursor-pointer"
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#092746] font-semibold text-xs sm:text-sm border border-[#CBD5E1] shadow-xs transition-all cursor-pointer"
                             >
-                                <UploadCloud size={16} className="text-sky-400" />
+                                <UploadCloud size={16} className="text-[#0868B2]" />
                                 <span>Upload Scans</span>
                             </button>
                             <button
                                 onClick={fetchData}
-                                className="p-3 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-all cursor-pointer"
+                                className="p-2.5 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#092746] border border-[#CBD5E1] transition-all cursor-pointer shadow-xs"
                                 title="Refresh data"
                             >
                                 <RefreshCw size={16} />
@@ -652,57 +640,57 @@ export default function OMRExamManager() {
             </div>
 
             {/* MAIN FULL-WIDTH WORKSPACE */}
-            <div className="w-full px-4 sm:px-8 -mt-5 relative z-20 space-y-6">
+            <div className="w-full px-4 sm:px-8 py-6 space-y-6">
 
                 {/* 4 EXECUTIVE KPIS */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center gap-3.5 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 rounded-xl bg-sky-50 flex items-center justify-center text-[#0868B2] border border-sky-100">
+                    <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-xs flex items-center gap-3.5 hover:shadow-sm transition-shadow">
+                        <div className="w-12 h-12 rounded-xl bg-[#E5F3FB] border border-[#B6DCF2] flex items-center justify-center text-[#0868B2] shrink-0">
                             <Target size={22} />
                         </div>
-                        <div>
-                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">OMR Sheet Formats</div>
-                            <div className="text-xl font-black text-slate-900 mt-0.5">{metrics.totalTemplates || 4} Formats</div>
-                            <div className="text-[10px] font-semibold text-sky-700 mt-0.5 flex items-center gap-1">
+                        <div className="min-w-0">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">OMR Sheet Formats</div>
+                            <div className="text-xl font-black text-[#092746] mt-0.5">{metrics.totalTemplates || 4} Formats</div>
+                            <div className="text-[10px] font-semibold text-[#0868B2] bg-[#E5F3FB] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
                                 <CheckCircle size={11} /> Ready to Print
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center gap-3.5 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100">
+                    <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-xs flex items-center gap-3.5 hover:shadow-sm transition-shadow">
+                        <div className="w-12 h-12 rounded-xl bg-[#DCF7E7] border border-[#B7E8CC] flex items-center justify-center text-[#09834F] shrink-0">
                             <UploadCloud size={22} />
                         </div>
-                        <div>
-                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Answer Sheets Checked</div>
-                            <div className="text-xl font-black text-slate-900 mt-0.5">{metrics.totalScanned} Sheets</div>
-                            <div className="text-[10px] font-semibold text-emerald-600 mt-0.5 flex items-center gap-1">
+                        <div className="min-w-0">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">Answer Sheets Checked</div>
+                            <div className="text-xl font-black text-[#092746] mt-0.5">{metrics.totalScanned} Sheets</div>
+                            <div className="text-[10px] font-semibold text-[#09834F] bg-[#DCF7E7] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
                                 <ArrowUpRight size={11} /> Auto Checked
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center gap-3.5 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100">
+                    <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-xs flex items-center gap-3.5 hover:shadow-sm transition-shadow">
+                        <div className="w-12 h-12 rounded-xl bg-[#DCF7E7] border border-[#B7E8CC] flex items-center justify-center text-[#09834F] shrink-0">
                             <Shield size={22} />
                         </div>
-                        <div>
-                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Accuracy Rate</div>
-                            <div className="text-xl font-black text-slate-900 mt-0.5">{metrics.successRate}</div>
-                            <div className="text-[10px] font-semibold text-emerald-600 mt-0.5 flex items-center gap-1">
+                        <div className="min-w-0">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">Accuracy Rate</div>
+                            <div className="text-xl font-black text-[#092746] mt-0.5">{metrics.successRate}</div>
+                            <div className="text-[10px] font-semibold text-[#09834F] bg-[#DCF7E7] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
                                 <Check size={11} /> Verified Accurate
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center gap-3.5 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100">
+                    <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-xs flex items-center gap-3.5 hover:shadow-sm transition-shadow">
+                        <div className="w-12 h-12 rounded-xl bg-[#E5F3FB] border border-[#B6DCF2] flex items-center justify-center text-[#0868B2] shrink-0">
                             <Award size={22} />
                         </div>
-                        <div>
-                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Students Scored</div>
-                            <div className="text-xl font-black text-slate-900 mt-0.5">{metrics.totalEvaluated} Scored</div>
-                            <div className="text-[10px] font-semibold text-purple-700 mt-0.5 flex items-center gap-1">
+                        <div className="min-w-0">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">Students Scored</div>
+                            <div className="text-xl font-black text-[#092746] mt-0.5">{metrics.totalEvaluated} Scored</div>
+                            <div className="text-[10px] font-semibold text-[#0868B2] bg-[#E5F3FB] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
                                 <Users size={11} /> Marks Saved
                             </div>
                         </div>
@@ -914,19 +902,19 @@ export default function OMRExamManager() {
                 {currentStep === 1 && (
                     <div className="w-full space-y-6 animate-fadeIn">
                         {/* HEADER TILE */}
-                        <div className="w-full bg-gradient-to-r from-slate-900 to-sky-950 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-800">
+                        <div className="w-full bg-white text-[#092746] rounded-xl p-5 sm:p-6 shadow-xs border border-[#E2E8F0]">
                             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                                 <div>
-                                    <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-bold text-xs uppercase tracking-wider">
+                                    <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-[#E5F3FB] text-[#0868B2] font-bold text-xs uppercase tracking-wider border border-[#B6DCF2]">
                                         <Target size={13} />
                                         <span>Step 1 of 5</span>
                                     </div>
-                                    <h3 className="text-xl font-black text-white mt-1">Configure Exam Scope &amp; OMR Sheet Format</h3>
-                                    <p className="text-xs text-slate-300 mt-0.5">
+                                    <h3 className="text-xl font-black text-[#092746] mt-1">Configure Exam Scope &amp; OMR Sheet Format</h3>
+                                    <p className="text-xs text-[#64748B] mt-0.5">
                                         Select class, subject, syllabus chapters, and choose your preferred physical OMR bubble layout.
                                     </p>
                                 </div>
-                                <span className="text-xs text-sky-200 font-semibold bg-sky-900/60 px-3 py-1.5 rounded-xl border border-sky-500/30">
+                                <span className="text-xs text-[#0868B2] font-semibold bg-[#E5F3FB] px-3 py-1.5 rounded-lg border border-[#B6DCF2]">
                                     Optical Grid Designer
                                 </span>
                             </div>
@@ -1297,20 +1285,20 @@ export default function OMRExamManager() {
                 {currentStep === 2 && (
                     <div className="w-full space-y-6 animate-fadeIn">
                         {/* SCOPE BANNER WITH 1-CLICK CHANGE LINK */}
-                        <div className="w-full bg-gradient-to-r from-slate-900 to-sky-950 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-800">
-                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                        <div className="w-full bg-white text-[#092746] rounded-xl p-5 sm:p-6 shadow-xs border border-[#E2E8F0]">
+                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
                                 <div>
-                                    <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs uppercase tracking-wider">
+                                    <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-[#E5F3FB] text-[#0868B2] font-bold text-xs uppercase tracking-wider border border-[#B6DCF2]">
                                         <Sparkles size={13} />
                                         <span>Step 2 of 5</span>
                                     </div>
-                                    <h3 className="text-xl font-black text-white mt-1">Questions &amp; Master Answer Key Studio</h3>
-                                    <p className="text-xs text-slate-300 mt-0.5">
+                                    <h3 className="text-xl font-black text-[#092746] mt-1">Questions &amp; Master Answer Key Studio</h3>
+                                    <p className="text-xs text-[#64748B] mt-0.5">
                                         Review questions, edit statements and choices, and lock the correct answer key for automated grading.
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs text-amber-300 font-black bg-amber-950/70 px-3 py-1.5 rounded-xl border border-amber-500/40">
+                                    <span className="text-xs text-[#0868B2] font-bold bg-[#E5F3FB] px-3 py-1.5 rounded-lg border border-[#B6DCF2]">
                                         {questionsList.length} MCQs Formatted
                                     </span>
                                 </div>
@@ -1318,28 +1306,28 @@ export default function OMRExamManager() {
 
                             {/* 3 LOCKED SUMMARY TILES */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 text-xs">
-                                <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                                <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-between">
                                     <div>
-                                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Target Scope</span>
-                                        <span className="font-extrabold text-white text-sm">{currentClass?.name || 'Class 10'} &bull; {currentSubject?.name || 'Science'}</span>
+                                        <span className="text-[#64748B] block text-[10px] uppercase font-bold">Target Scope</span>
+                                        <span className="font-extrabold text-[#092746] text-sm">{currentClass?.name || 'Class 10'} &bull; {currentSubject?.name || 'Science'}</span>
                                     </div>
-                                    <button onClick={() => goToStep(1)} className="text-sky-400 font-bold hover:underline">Change</button>
+                                    <button onClick={() => goToStep(1)} className="text-[#0868B2] font-bold hover:underline">Change</button>
                                 </div>
-                                <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                                <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-between">
                                     <div>
-                                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Sheet Layout</span>
-                                        <span className="font-extrabold text-white text-sm">{setupForm.selected_template?.name}</span>
+                                        <span className="text-[#64748B] block text-[10px] uppercase font-bold">Sheet Layout</span>
+                                        <span className="font-extrabold text-[#092746] text-sm">{setupForm.selected_template?.name}</span>
                                     </div>
-                                    <button onClick={() => goToStep(1)} className="text-sky-400 font-bold hover:underline">Change</button>
+                                    <button onClick={() => goToStep(1)} className="text-[#0868B2] font-bold hover:underline">Change</button>
                                 </div>
-                                <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                                <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-between">
                                     <div>
-                                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Master Answer Key</span>
-                                        <span className="font-extrabold text-emerald-400 text-sm">
+                                        <span className="text-[#64748B] block text-[10px] uppercase font-bold">Master Answer Key</span>
+                                        <span className="font-extrabold text-[#09834F] text-sm">
                                             {Object.keys(masterAnswerKey).length} of {questionsList.length} Keys Locked
                                         </span>
                                     </div>
-                                    <span className="text-emerald-400 text-xs font-bold">Verified</span>
+                                    <span className="text-[#09834F] text-xs font-bold bg-[#DCF7E7] px-2 py-0.5 rounded border border-[#B7E8CC]">Verified</span>
                                 </div>
                             </div>
                         </div>
@@ -1551,21 +1539,21 @@ export default function OMRExamManager() {
                 {currentStep === 3 && (
                     <div className="w-full space-y-6 animate-fadeIn">
                         {/* SCOPE & EXAM BANNER */}
-                        <div className="w-full bg-gradient-to-r from-slate-900 to-sky-950 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-800">
+                        <div className="w-full bg-white text-[#092746] rounded-xl p-5 sm:p-6 shadow-xs border border-[#E2E8F0]">
                             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                                 <div>
-                                    <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs uppercase tracking-wider">
+                                    <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-[#DCF7E7] text-[#09834F] font-bold text-xs uppercase tracking-wider border border-[#B7E8CC]">
                                         <Printer size={13} />
                                         <span>Step 3 of 5 &bull; Print Studio</span>
                                     </div>
-                                    <h3 className="text-xl font-black text-white mt-1">
+                                    <h3 className="text-xl font-black text-[#092746] mt-1">
                                         {selectedExam?.title || setupForm.title || resolvedDefaultTitle}
                                     </h3>
-                                    <p className="text-xs text-slate-300 mt-0.5">
+                                    <p className="text-xs text-[#64748B] mt-0.5">
                                         Examination papers and matching optical bubble answer sheets are ready for high-resolution printing.
                                     </p>
                                 </div>
-                                <span className="text-xs text-emerald-300 font-black bg-emerald-950/70 px-3 py-1.5 rounded-xl border border-emerald-500/40">
+                                <span className="text-xs text-[#09834F] font-bold bg-[#DCF7E7] px-3 py-1.5 rounded-lg border border-[#B7E8CC]">
                                     Print-Ready
                                 </span>
                             </div>
@@ -1694,27 +1682,27 @@ export default function OMRExamManager() {
                 {currentStep === 4 && (
                     <div className="w-full space-y-6 animate-fadeIn">
                         {/* SCOPE BANNER */}
-                        <div className="w-full bg-gradient-to-r from-slate-900 to-sky-950 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-800">
+                        <div className="w-full bg-white text-[#092746] rounded-xl p-5 sm:p-6 shadow-xs border border-[#E2E8F0]">
                             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                                 <div>
-                                    <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-bold text-xs uppercase tracking-wider">
+                                    <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-[#E5F3FB] text-[#0868B2] font-bold text-xs uppercase tracking-wider border border-[#B6DCF2]">
                                         <ScanLine size={13} />
                                         <span>Step 4 of 5 &bull; Optical Ingestion</span>
                                     </div>
-                                    <h3 className="text-xl font-black text-white mt-1">Check Student Answer Sheets</h3>
-                                    <p className="text-xs text-slate-300 mt-0.5">
+                                    <h3 className="text-xl font-black text-[#092746] mt-1">Check Student Answer Sheets</h3>
+                                    <p className="text-xs text-[#64748B] mt-0.5">
                                         Upload batch PDF scans or photos from mobile/tablet cameras. The system automatically reads roll numbers and calculates student scores.
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <label className="text-xs text-slate-300 font-bold">Target Exam:</label>
+                                    <label className="text-xs text-[#092746] font-bold">Target Exam:</label>
                                     <select
                                         value={selectedExam?.id || exams[0]?.id || ''}
                                         onChange={e => {
                                             const found = exams.find(x => x.id === e.target.value)
                                             if (found) setSelectedExam(found)
                                         }}
-                                        className="px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 font-bold text-xs text-white"
+                                        className="px-3.5 py-2 rounded-lg bg-white border border-[#CBD5E1] font-semibold text-xs text-[#092746] focus:ring-2 focus:ring-[#0868B2] focus:outline-none"
                                     >
                                         {exams.map(ex => (
                                             <option key={ex.id} value={ex.id}>{ex.title}</option>
