@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Building2, Search, Plus, Activity, Users, Settings, Filter,
-    Ban, ShieldCheck, RefreshCw, X, Eye, EyeOff, CheckCircle,
+    Ban, ShieldCheck, RefreshCw, X, Eye, EyeOff, CheckCircle, CheckCircle2,
     XCircle, Loader2, AlertTriangle, Globe, Crown, UserCheck,
     Download, Mail, Pencil, Trash2, ShieldAlert, Zap, Award,
     School, Key, Database, ExternalLink, GraduationCap,
@@ -68,7 +68,7 @@ type Tenant = {
 };
 
 const SYSTEM_TENANT_TYPES = [
-    { key: 'school', label: 'School (K-12)', icon: School, color: '#004B93', bg: '#004B9315', desc: 'Comprehensive school academies & chains' },
+    { key: 'school', label: 'School (K-12)', icon: School, color: '#0868B2', bg: '#0868B215', desc: 'Comprehensive school academies & chains' },
     { key: 'institute', label: 'Coaching Institute', icon: Building2, color: '#7C3AED', bg: '#7C3AED15', desc: 'Exam prep centres & coaching institutes' },
     { key: 'independent_teacher', label: 'Independent Teacher', icon: GraduationCap, color: '#D97706', bg: '#D9770615', desc: 'Solo educators, private tutors & creators' },
 ] as const;
@@ -644,20 +644,20 @@ export default function TenantManagementPage() {
             {/* CANDIDATE INTAKE ALERT BANNER */}
             {unprovisionedCandidates.length > 0 && (
                 <div style={{
-                    background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
-                    border: '1px solid #BFDBFE', borderRadius: 16, padding: '14px 20px',
+                    background: 'linear-gradient(135deg, #E5F3FB 0%, #DBEAFE 100%)',
+                    border: '1px solid #B6DCF2', borderRadius: 16, padding: '14px 20px',
                     marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     gap: 16, flexWrap: 'wrap'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#0868B2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
                             <Sparkles size={18} />
                         </div>
                         <div>
-                            <div style={{ fontSize: 14, fontWeight: 900, color: '#1E3A8A' }}>
+                            <div style={{ fontSize: 14, fontWeight: 900, color: '#0868B2' }}>
                                 {unprovisionedCandidates.length} Completed Institutional Client{unprovisionedCandidates.length > 1 ? 's' : ''} Ready for Tenant Provisioning
                             </div>
-                            <div style={{ fontSize: 12, color: '#3B82F6', fontWeight: 600 }}>
+                            <div style={{ fontSize: 12, color: '#0868B2', fontWeight: 600 }}>
                                 Onboarding setup & training completed. Ready to allocate production subdomain, quota, and master admin credentials.
                             </div>
                         </div>
@@ -691,7 +691,7 @@ export default function TenantManagementPage() {
                                     setProvisionDrawerOpen(true);
                                 }}
                                 style={{
-                                    padding: '7px 14px', background: '#2563EB', color: '#fff',
+                                    padding: '7px 14px', background: '#0868B2', color: '#fff',
                                     border: 'none', borderRadius: 10, fontSize: 12, fontWeight: 800,
                                     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
                                 }}
@@ -714,7 +714,7 @@ export default function TenantManagementPage() {
                     </div>
                     <div style={{ fontSize: 26, fontWeight: 900, color: P.dark }}>{metrics.totalTenants}</div>
                     <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 10, fontWeight: 800, color: '#004B93', background: '#004B9310', padding: '2px 6px', borderRadius: 4 }}>{metrics.schoolCount} Schools</span>
+                        <span style={{ fontSize: 10, fontWeight: 800, color: '#0868B2', background: '#0868B210', padding: '2px 6px', borderRadius: 4 }}>{metrics.schoolCount} Schools</span>
                         <span style={{ fontSize: 10, fontWeight: 800, color: '#7C3AED', background: '#7C3AED10', padding: '2px 6px', borderRadius: 4 }}>{metrics.instituteCount} Institutes</span>
                         <span style={{ fontSize: 10, fontWeight: 800, color: '#D97706', background: '#D9770610', padding: '2px 6px', borderRadius: 4 }}>{metrics.teacherCount} Educators</span>
                     </div>
@@ -753,15 +753,15 @@ export default function TenantManagementPage() {
                 <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 16, padding: '18px 20px', boxShadow: SHADOWS.sm }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                         <span style={{ fontSize: 12, fontWeight: 700, color: P.muted }}>SYSTEM PLANS & MODULES</span>
-                        <div style={{ width: 34, height: 34, borderRadius: 9, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Layers size={18} color="#2563EB" />
+                        <div style={{ width: 34, height: 34, borderRadius: 9, background: '#E5F3FB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Layers size={18} color="#0868B2" />
                         </div>
                     </div>
                     <div style={{ fontSize: 26, fontWeight: 900, color: P.dark }}>
                         {availablePlans.length} <span style={{ fontSize: 13, fontWeight: 700, color: P.muted }}>Plans</span>
                     </div>
                     <div style={{ fontSize: 12, color: P.muted, fontWeight: 600, marginTop: 8 }}>
-                        <span style={{ color: '#2563EB', fontWeight: 800 }}>{availableFeatures.length} Feature Modules</span> configured
+                        <span style={{ color: '#0868B2', fontWeight: 800 }}>{availableFeatures.length} Feature Modules</span> configured
                     </div>
                 </div>
             </div>
@@ -891,8 +891,8 @@ export default function TenantManagementPage() {
                                             <Crown size={12} /> {planName}
                                         </span>
                                         <span style={{
-                                            background: isSubActive ? '#DCFCE7' : '#FEE2E2',
-                                            color: isSubActive ? '#15803D' : '#B91C1C',
+                                            background: isSubActive ? '#DCF7E7' : '#FEE2E2',
+                                            color: isSubActive ? '#087347' : '#B91C1C',
                                             fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 6
                                         }}>
                                             {isSubActive ? '(Active)' : '(Suspended)'}
@@ -962,8 +962,8 @@ export default function TenantManagementPage() {
                                     onClick={() => handleImpersonate(item)}
                                     title="Platform Direct Login / Impersonate"
                                     style={{
-                                        padding: '7px 11px', background: '#EFF6FF', border: '1px solid #BFDBFE',
-                                        borderRadius: 8, color: '#2563EB', fontWeight: 800, fontSize: 11,
+                                        padding: '7px 11px', background: '#E5F3FB', border: '1px solid #B6DCF2',
+                                        borderRadius: 8, color: '#0868B2', fontWeight: 800, fontSize: 11,
                                         cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5
                                     }}
                                 >
@@ -1058,16 +1058,16 @@ export default function TenantManagementPage() {
                         ) : (
                             <div>
                                 <div style={{
-                                    background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14,
+                                    background: '#F1FBF5', border: '1px solid #B7E8CC', borderRadius: 14,
                                     padding: 16, marginBottom: 20
                                 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#16A34A', fontWeight: 900, fontSize: 14, marginBottom: 10 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#09834F', fontWeight: 900, fontSize: 14, marginBottom: 10 }}>
                                         <CheckCircle2 size={18} /> Password Updated Successfully!
                                     </div>
                                     <div style={{ fontSize: 12, color: P.dark, display: 'flex', flexDirection: 'column', gap: 6 }}>
                                         <div><strong>Portal URL:</strong> https://{credentialsCard.subdomain}.bebrilliant.in</div>
                                         <div><strong>Admin Email:</strong> {credentialsCard.email}</div>
-                                        <div><strong>New Password:</strong> <code style={{ background: '#fff', padding: '2px 6px', borderRadius: 4, fontWeight: 900, color: '#004B93' }}>{credentialsCard.pass}</code></div>
+                                        <div><strong>New Password:</strong> <code style={{ background: '#fff', padding: '2px 6px', borderRadius: 4, fontWeight: 900, color: '#0868B2' }}>{credentialsCard.pass}</code></div>
                                     </div>
                                 </div>
 
@@ -1078,7 +1078,7 @@ export default function TenantManagementPage() {
                                             navigator.clipboard.writeText(txt);
                                             showToast('Credentials copied to clipboard!');
                                         }}
-                                        style={{ flex: 1, padding: 12, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, color: '#2563EB', fontWeight: 800, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                                        style={{ flex: 1, padding: 12, background: '#E5F3FB', border: '1px solid #B6DCF2', borderRadius: 10, color: '#0868B2', fontWeight: 800, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                                     >
                                         <Copy size={15} /> Copy Credentials
                                     </button>

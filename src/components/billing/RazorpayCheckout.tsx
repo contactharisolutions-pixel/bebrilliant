@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import Script from 'next/script'
@@ -78,7 +78,7 @@ export default function RazorpayCheckout({ tenantId, userEmail, userName }: { te
                     email: userEmail
                 },
                 theme: {
-                    color: "#672AEA", // Theme branding primary color
+                    color: "#7C3AED", // Theme branding primary color
                 }
             }
 
@@ -127,7 +127,7 @@ export default function RazorpayCheckout({ tenantId, userEmail, userName }: { te
                 <button
                     onClick={handleCheckout}
                     disabled={isProcessing}
-                    className="w-full bg-gradient-to-r from-[#672AEA] to-[#1FAC63] hover:from-[#5A24CC] hover:to-[#7C3AED] text-white py-3.5 px-4 rounded-xl font-bold transition-all shadow-md active:scale-[0.98] disabled:opacity-75 relative overflow-hidden"
+                    className="w-full bg-gradient-to-r from-[#7C3AED] to-[#09834F] hover:from-[#5A24CC] hover:to-[#7C3AED] text-white py-3.5 px-4 rounded-xl font-bold transition-all shadow-md active:scale-[0.98] disabled:opacity-75 relative overflow-hidden"
                 >
                     {isProcessing ? 'Connecting Server...' : 'Pay with RazorPay'}
                 </button>

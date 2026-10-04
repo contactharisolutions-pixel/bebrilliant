@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
             revenue: revenueData,
             performance: performanceData,
             pass_fail: [
-                { name: 'Pass Threshold', value: passFailRatio.pass, fill: '#10B981' },
+                { name: 'Pass Threshold', value: passFailRatio.pass, fill: '#09834F' },
                 { name: 'Failed', value: passFailRatio.fail, fill: '#EF4444' }
             ]
         })

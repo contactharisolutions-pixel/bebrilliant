@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
@@ -1605,8 +1605,8 @@ export default function OfflinePaperManager() {
         return (
             <div className="w-full min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8">
                 <div className="relative">
-                    <div className="w-16 h-16 border-4 border-sky-200 border-t-[#004B93] rounded-full animate-spin" />
-                    <Printer className="absolute inset-0 m-auto text-[#004B93]" size={24} />
+                    <div className="w-16 h-16 border-4 border-sky-200 border-t-[#0868B2] rounded-full animate-spin" />
+                    <Printer className="absolute inset-0 m-auto text-[#0868B2]" size={24} />
                 </div>
                 <h3 className="mt-4 font-bold text-slate-800 text-lg">Loading Exam Papers...</h3>
                 <p className="text-slate-500 text-sm mt-1">Getting school questions, exam patterns, and subjects ready...</p>
@@ -1667,7 +1667,7 @@ export default function OfflinePaperManager() {
                         <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
                             <button
                                 onClick={() => setIsCreateModalOpen(true)}
-                                className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-gradient-to-r from-[#004B93] to-sky-600 hover:from-sky-700 hover:to-sky-500 text-white font-bold text-sm shadow-xl shadow-sky-950/40 border border-sky-300/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-gradient-to-r from-[#0868B2] to-sky-600 hover:from-sky-700 hover:to-sky-500 text-white font-bold text-sm shadow-xl shadow-sky-950/40 border border-sky-300/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
                             >
                                 <PlusCircle size={18} />
                                 <span>Create New Exam Paper</span>
@@ -1701,7 +1701,7 @@ export default function OfflinePaperManager() {
                 {/* 4 SUMMARY CARDS */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-13 h-13 rounded-2xl bg-sky-50 flex items-center justify-center text-[#004B93] border border-sky-100">
+                        <div className="w-13 h-13 rounded-2xl bg-sky-50 flex items-center justify-center text-[#0868B2] border border-sky-100">
                             <FileText size={26} />
                         </div>
                         <div>
@@ -1771,21 +1771,21 @@ export default function OfflinePaperManager() {
                                     <button
                                         onClick={() => goToStep(s.step)}
                                         className={`flex flex-col items-center gap-1 flex-1 px-2 py-2 rounded-xl transition-all ${
-                                            isActive ? 'bg-[#004B93]/5' : 'hover:bg-slate-50'
+                                            isActive ? 'bg-[#0868B2]/5' : 'hover:bg-slate-50'
                                         }`}
                                     >
                                         <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-sm border-2 transition-all ${
                                             isDone
                                                 ? 'bg-emerald-500 border-emerald-500 text-white'
                                                 : isActive
-                                                ? 'bg-[#004B93] border-[#004B93] text-white shadow-md shadow-sky-950/20'
+                                                ? 'bg-[#0868B2] border-[#0868B2] text-white shadow-md shadow-sky-950/20'
                                                 : 'bg-white border-slate-200 text-slate-400'
                                         }`}>
                                             {isDone ? <Check size={16} /> : <Icon size={15} />}
                                         </div>
                                         <div className="text-center">
                                             <div className={`text-[11px] font-black leading-tight ${
-                                                isActive ? 'text-[#004B93]' : isDone ? 'text-emerald-700' : 'text-slate-400'
+                                                isActive ? 'text-[#0868B2]' : isDone ? 'text-emerald-700' : 'text-slate-400'
                                             }`}>{s.label}</div>
                                             <div className="text-[10px] text-slate-400 font-medium hidden sm:block">{s.sub}</div>
                                         </div>
@@ -1812,7 +1812,7 @@ export default function OfflinePaperManager() {
                         className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer select-none"
                     >
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[#004B93]">
+                            <div className="w-9 h-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[#0868B2]">
                                 <FileText size={18} />
                             </div>
                             <div className="text-left">
@@ -1836,14 +1836,14 @@ export default function OfflinePaperManager() {
                                         placeholder="Search by title, class, or subject..."
                                         value={searchQuery}
                                         onChange={e => setSearchQuery(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#004B93] bg-slate-50/50"
+                                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#0868B2] bg-slate-50/50"
                                     />
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                                     <select
                                         value={selectedClassFilter}
                                         onChange={e => setSelectedClassFilter(e.target.value)}
-                                        className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                                        className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                                     >
                                         <option value="ALL">All Classes</option>
                                         {classes.map(c => (
@@ -1853,7 +1853,7 @@ export default function OfflinePaperManager() {
                                     <select
                                         value={selectedSubjectFilter}
                                         onChange={e => setSelectedSubjectFilter(e.target.value)}
-                                        className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                                        className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                                     >
                                         <option value="ALL">All Subjects</option>
                                         {subjects.map(s => (
@@ -1875,7 +1875,7 @@ export default function OfflinePaperManager() {
                                         <div key={p.id} className="bg-slate-50 rounded-2xl border border-slate-200/80 p-5 flex flex-col justify-between hover:shadow-md transition-all group">
                                             <div className="space-y-3">
                                                 <div className="flex items-start justify-between gap-2">
-                                                    <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[#004B93] group-hover:scale-110 transition-transform">
+                                                    <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[#0868B2] group-hover:scale-110 transition-transform">
                                                         <FileText size={18} />
                                                     </div>
                                                     <span className="text-[10px] font-mono font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-100">
@@ -1883,7 +1883,7 @@ export default function OfflinePaperManager() {
                                                     </span>
                                                 </div>
                                                 <div>
-                                                    <h3 className="font-black text-slate-900 text-sm leading-snug group-hover:text-[#004B93] transition-colors line-clamp-2">{p.title}</h3>
+                                                    <h3 className="font-black text-slate-900 text-sm leading-snug group-hover:text-[#0868B2] transition-colors line-clamp-2">{p.title}</h3>
                                                     <div className="flex items-center gap-1.5 mt-1.5 text-xs font-semibold text-slate-500">
                                                         <span className="text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-100">{p.classes?.name || 'Class 10'}</span>
                                                         <span>•</span>
@@ -1900,7 +1900,7 @@ export default function OfflinePaperManager() {
                                             <div className="space-y-2 pt-4">
                                                 <button
                                                     onClick={() => window.open(`/api/dashboard/exams/offline/${p.id}/print?mode=paper`, '_blank')}
-                                                    className="w-full py-2 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5"
+                                                    className="w-full py-2 rounded-xl bg-[#0868B2] hover:bg-sky-800 text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5"
                                                 >
                                                     <Printer size={13} /><span>Print Question Paper</span>
                                                 </button>
@@ -1913,7 +1913,7 @@ export default function OfflinePaperManager() {
                                                     </button>
                                                     <button
                                                         onClick={() => window.open(`/api/dashboard/exams/offline/${p.id}/print?mode=solution`, '_blank')}
-                                                        className="py-1.5 rounded-xl bg-white hover:bg-sky-50 text-slate-700 hover:text-[#004B93] font-bold text-xs border border-slate-200 transition-colors flex items-center justify-center gap-1"
+                                                        className="py-1.5 rounded-xl bg-white hover:bg-sky-50 text-slate-700 hover:text-[#0868B2] font-bold text-xs border border-slate-200 transition-colors flex items-center justify-center gap-1"
                                                     >
                                                         <span>Solution Guide</span>
                                                     </button>
@@ -1941,8 +1941,8 @@ export default function OfflinePaperManager() {
                         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
                             <div className="border-b border-slate-100 pb-5 mb-6">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-7 h-7 rounded-lg bg-[#004B93] text-white flex items-center justify-center text-xs font-black">1</div>
-                                    <span className="text-xs font-black uppercase tracking-wider text-[#004B93]">Step 1 of 5</span>
+                                    <div className="w-7 h-7 rounded-lg bg-[#0868B2] text-white flex items-center justify-center text-xs font-black">1</div>
+                                    <span className="text-xs font-black uppercase tracking-wider text-[#0868B2]">Step 1 of 5</span>
                                 </div>
                                 <h2 className="text-2xl font-black text-slate-900">Choose Class &amp; Subject</h2>
                                 <p className="text-slate-500 text-sm mt-1">Select the exam board, class, and subject. This sets the scope for your question bank and exam paper.</p>
@@ -1950,9 +1950,9 @@ export default function OfflinePaperManager() {
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                                 {/* Board */}
-                                <div className="p-5 rounded-2xl border-2 border-slate-200 hover:border-[#004B93]/30 transition-colors bg-slate-50/50 space-y-3">
+                                <div className="p-5 rounded-2xl border-2 border-slate-200 hover:border-[#0868B2]/30 transition-colors bg-slate-50/50 space-y-3">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-9 h-9 rounded-xl bg-sky-100 text-[#004B93] flex items-center justify-center">
+                                        <div className="w-9 h-9 rounded-xl bg-sky-100 text-[#0868B2] flex items-center justify-center">
                                             <Shield size={18} />
                                         </div>
                                         <span className="font-black text-slate-900 text-sm">Exam Board</span>
@@ -1966,7 +1966,7 @@ export default function OfflinePaperManager() {
                                             setSelectedChapterIds([])
                                             setSelectedTopicIds([])
                                         }}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none text-sm"
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 bg-white focus:ring-2 focus:ring-[#0868B2] focus:outline-none text-sm"
                                     >
                                         <option value="">Select exam board...</option>
                                         {blueprintContext?.activeBoards?.map(b => (
@@ -1977,7 +1977,7 @@ export default function OfflinePaperManager() {
                                 </div>
 
                                 {/* Class */}
-                                <div className="p-5 rounded-2xl border-2 border-slate-200 hover:border-[#004B93]/30 transition-colors bg-slate-50/50 space-y-3">
+                                <div className="p-5 rounded-2xl border-2 border-slate-200 hover:border-[#0868B2]/30 transition-colors bg-slate-50/50 space-y-3">
                                     <div className="flex items-center gap-2">
                                         <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
                                             <BookOpen size={18} />
@@ -1992,7 +1992,7 @@ export default function OfflinePaperManager() {
                                             setSelectedChapterIds([])
                                             setSelectedTopicIds([])
                                         }}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none text-sm"
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 bg-white focus:ring-2 focus:ring-[#0868B2] focus:outline-none text-sm"
                                     >
                                         <option value="">Select class...</option>
                                         {(blueprintContext?.syllabusTree?.classes || classes).map((c: any) => (
@@ -2003,7 +2003,7 @@ export default function OfflinePaperManager() {
                                 </div>
 
                                 {/* Subject */}
-                                <div className="p-5 rounded-2xl border-2 border-slate-200 hover:border-[#004B93]/30 transition-colors bg-slate-50/50 space-y-3">
+                                <div className="p-5 rounded-2xl border-2 border-slate-200 hover:border-[#0868B2]/30 transition-colors bg-slate-50/50 space-y-3">
                                     <div className="flex items-center gap-2">
                                         <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
                                             <Tag size={18} />
@@ -2017,7 +2017,7 @@ export default function OfflinePaperManager() {
                                             setSelectedChapterIds([])
                                             setSelectedTopicIds([])
                                         }}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none text-sm"
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 font-semibold text-slate-900 bg-white focus:ring-2 focus:ring-[#0868B2] focus:outline-none text-sm"
                                     >
                                         <option value="">Select subject...</option>
                                         {subjects.map((s: any) => (
@@ -2041,7 +2041,7 @@ export default function OfflinePaperManager() {
                                     </div>
                                     <button
                                         onClick={() => goToStep(2)}
-                                        className="shrink-0 px-5 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-black text-sm flex items-center gap-2 shadow-md transition-all hover:scale-[1.02]"
+                                        className="shrink-0 px-5 py-2.5 rounded-xl bg-[#0868B2] hover:bg-sky-800 text-white font-black text-sm flex items-center gap-2 shadow-md transition-all hover:scale-[1.02]"
                                     >
                                         Continue to Question Bank <ChevronRight size={16} />
                                     </button>
@@ -2177,7 +2177,7 @@ export default function OfflinePaperManager() {
                                                 placeholder={resolvedTitle}
                                                 value={composerForm.title}
                                                 onChange={e => setComposerForm({ ...composerForm, title: e.target.value })}
-                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#0868B2] focus:outline-none"
                                             />
                                             <p className="text-[11px] text-slate-400 mt-1">Leave blank to use the default title: <span className="font-semibold text-slate-600">{resolvedTitle}</span></p>
                                         </div>
@@ -2221,7 +2221,7 @@ export default function OfflinePaperManager() {
                                                     type="checkbox"
                                                     checked={composerForm.bilingual}
                                                     onChange={e => setComposerForm({ ...composerForm, bilingual: e.target.checked })}
-                                                    className="w-4 h-4 text-[#004B93] rounded"
+                                                    className="w-4 h-4 text-[#0868B2] rounded"
                                                 />
                                                 <div>
                                                     <span className="font-bold text-slate-900 text-xs block">Include Gujarati Translation (Dual Language)</span>
@@ -2233,7 +2233,7 @@ export default function OfflinePaperManager() {
                                         <button
                                             type="submit"
                                             disabled={saving}
-                                            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#004B93] to-sky-700 hover:from-sky-800 hover:to-sky-600 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 mt-4 hover:scale-[1.01]"
+                                            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#0868B2] to-sky-700 hover:from-sky-800 hover:to-sky-600 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 mt-4 hover:scale-[1.01]"
                                         >
                                             {saving ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
                                             <span>Create &amp; Save Exam Paper</span>
@@ -2246,7 +2246,7 @@ export default function OfflinePaperManager() {
                                     <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-4">
                                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                                             <div className="flex items-center gap-2">
-                                                <Printer size={18} className="text-[#004B93]" />
+                                                <Printer size={18} className="text-[#0868B2]" />
                                                 <span className="font-black text-slate-900 text-sm">Paper Pattern Structure</span>
                                             </div>
                                             <span className="text-xs font-bold text-sky-700 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-200">
@@ -2351,7 +2351,7 @@ export default function OfflinePaperManager() {
                             </div>
                             <button
                                 onClick={handleOpenCreatePattern}
-                                className="px-5 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-sky-950/20 self-start sm:self-auto"
+                                className="px-5 py-2.5 rounded-xl bg-[#0868B2] hover:bg-sky-800 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-sky-950/20 self-start sm:self-auto"
                             >
                                 <PlusCircle size={16} />
                                 <span>Create New Paper Pattern</span>
@@ -2447,7 +2447,7 @@ export default function OfflinePaperManager() {
                                                         goToStep(4)
                                                         showToast(`Loaded pattern: ${tmpl.name}`, true)
                                                     }}
-                                                    className="w-full py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 hover:scale-[1.01]"
+                                                    className="w-full py-2.5 rounded-xl bg-[#0868B2] hover:bg-sky-800 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 hover:scale-[1.01]"
                                                 >
                                                     <span>Select &amp; Build Paper</span>
                                                     <ArrowUpRight size={14} />
@@ -2515,7 +2515,7 @@ export default function OfflinePaperManager() {
                                             placeholder="Search question sets by title or chapter..."
                                             value={qSetSearchQuery}
                                             onChange={e => setQSetSearchQuery(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#004B93] focus:border-transparent bg-slate-50/50"
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0868B2] focus:border-transparent bg-slate-50/50"
                                         />
                                     </div>
 
@@ -2523,7 +2523,7 @@ export default function OfflinePaperManager() {
                                         <select
                                             value={qSetClassFilter}
                                             onChange={e => setQSetClassFilter(e.target.value)}
-                                            className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                                            className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                                         >
                                             <option value="ALL">All Classes</option>
                                             {classes.map(c => (
@@ -2534,7 +2534,7 @@ export default function OfflinePaperManager() {
                                         <select
                                             value={qSetSubjectFilter}
                                             onChange={e => setQSetSubjectFilter(e.target.value)}
-                                            className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                                            className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                                         >
                                             <option value="ALL">All Subjects</option>
                                             {subjects.map(s => (
@@ -2547,7 +2547,7 @@ export default function OfflinePaperManager() {
                                 {/* QUESTION SETS CARDS GRID */}
                                 {questionBankLoading ? (
                                     <div className="py-20 text-center">
-                                        <Loader2 size={32} className="animate-spin text-[#004B93] mx-auto mb-3" />
+                                        <Loader2 size={32} className="animate-spin text-[#0868B2] mx-auto mb-3" />
                                         <p className="text-slate-500 font-medium text-sm">Loading Question Sets...</p>
                                     </div>
                                 ) : filteredQuestionSets.length === 0 ? (
@@ -2578,7 +2578,7 @@ export default function OfflinePaperManager() {
 
                                                     {/* SET TITLE & DESCRIPTION */}
                                                     <div>
-                                                        <h3 className="font-black text-slate-900 text-base leading-snug group-hover:text-[#004B93] transition-colors line-clamp-2">
+                                                        <h3 className="font-black text-slate-900 text-base leading-snug group-hover:text-[#0868B2] transition-colors line-clamp-2">
                                                             {qs.title}
                                                         </h3>
                                                         {qs.chapter_name && (
@@ -2694,7 +2694,7 @@ export default function OfflinePaperManager() {
                                                 setActiveSetQuestions([])
                                                 fetchQuestionSets()
                                             }}
-                                            className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-[#004B93] transition-colors self-start"
+                                            className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-[#0868B2] transition-colors self-start"
                                         >
                                             <ChevronLeft size={16} />
                                             <span>Back to All Question Sets</span>
@@ -2773,7 +2773,7 @@ export default function OfflinePaperManager() {
                                 {/* QUESTIONS IN THIS SET */}
                                 {loadingSetDetails ? (
                                     <div className="py-20 text-center bg-white rounded-2xl border border-slate-200">
-                                        <Loader2 size={32} className="animate-spin text-[#004B93] mx-auto mb-3" />
+                                        <Loader2 size={32} className="animate-spin text-[#0868B2] mx-auto mb-3" />
                                         <p className="text-slate-500 font-medium text-sm">Loading questions in this set...</p>
                                     </div>
                                 ) : activeSetQuestions.length === 0 ? (
@@ -2793,7 +2793,7 @@ export default function OfflinePaperManager() {
                                                     {/* TOP BAR: NUMBER, TYPE, DIFFICULTY, MARKS & ACTIONS */}
                                                     <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
                                                         <div className="flex items-center gap-2 flex-wrap">
-                                                            <span className="w-7 h-7 rounded-lg bg-[#004B93] text-white font-black text-xs flex items-center justify-center">
+                                                            <span className="w-7 h-7 rounded-lg bg-[#0868B2] text-white font-black text-xs flex items-center justify-center">
                                                                 Q{idx + 1}
                                                             </span>
                                                             <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-700">
@@ -2904,7 +2904,7 @@ export default function OfflinePaperManager() {
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                                    <div className="w-10 h-10 rounded-xl bg-sky-100 text-[#004B93] flex items-center justify-center font-black">
+                                    <div className="w-10 h-10 rounded-xl bg-sky-100 text-[#0868B2] flex items-center justify-center font-black">
                                         A
                                     </div>
                                     <h4 className="font-black text-slate-900 text-base">Multiple Exam Sets (Sets A, B, C, D)</h4>
@@ -2945,7 +2945,7 @@ export default function OfflinePaperManager() {
                                     </p>
                                     <button
                                         onClick={() => showToast('Sending question papers to printer queue...', true)}
-                                        className="w-full py-2 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-sm"
+                                        className="w-full py-2 rounded-xl bg-[#0868B2] hover:bg-sky-800 text-white font-bold text-xs shadow-sm"
                                     >
                                         Print Question Papers
                                     </button>
@@ -2990,7 +2990,7 @@ export default function OfflinePaperManager() {
                                                 <div className="flex items-center gap-2 pt-1">
                                                     <button
                                                         onClick={() => window.open(`/api/dashboard/exams/offline/${p.id}/print?mode=paper`, '_blank')}
-                                                        className="flex-1 py-1.5 rounded-lg bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm"
+                                                        className="flex-1 py-1.5 rounded-lg bg-[#0868B2] hover:bg-sky-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm"
                                                     >
                                                         <Printer size={13} />
                                                         <span>Print Paper</span>
@@ -3047,14 +3047,14 @@ export default function OfflinePaperManager() {
                                         placeholder="e.g., Grade 10 Midterm Mathematics Assessment"
                                         value={composerForm.title}
                                         onChange={e => setComposerForm({ ...composerForm, title: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#0868B2] focus:outline-none"
                                     />
                                 </div>
 
                                 <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                                     <div className="flex items-center justify-between">
                                         <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase">
-                                            <BookOpen size={14} className="text-[#004B93]" />
+                                            <BookOpen size={14} className="text-[#0868B2]" />
                                             Select Syllabus & Exam Pattern
                                         </div>
                                         <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
@@ -3143,7 +3143,7 @@ export default function OfflinePaperManager() {
                                             type="checkbox"
                                             checked={composerForm.bilingual}
                                             onChange={e => setComposerForm({ ...composerForm, bilingual: e.target.checked })}
-                                            className="w-4 h-4 text-[#004B93] rounded"
+                                            className="w-4 h-4 text-[#0868B2] rounded"
                                         />
                                         <div>
                                             <span className="font-bold text-slate-900 text-xs block">Include Gujarati Translation (Dual Language)</span>
@@ -3164,7 +3164,7 @@ export default function OfflinePaperManager() {
                                 <button
                                     type="submit"
                                     disabled={saving}
-                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold shadow-md flex items-center gap-2"
+                                    className="px-6 py-2.5 rounded-xl bg-[#0868B2] hover:bg-sky-800 text-white font-bold shadow-md flex items-center gap-2"
                                 >
                                     {saving ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}
                                     <span>Create Exam Paper</span>
@@ -3209,7 +3209,7 @@ export default function OfflinePaperManager() {
                                             placeholder="e.g., CBSE Class 10 Pre-Board Assessment"
                                             value={patternForm.name}
                                             onChange={e => setPatternForm({ ...patternForm, name: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#0868B2] focus:outline-none"
                                         />
                                     </div>
                                     <div>
@@ -3217,7 +3217,7 @@ export default function OfflinePaperManager() {
                                         <select
                                             value={patternForm.category}
                                             onChange={e => setPatternForm({ ...patternForm, category: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none bg-white"
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#0868B2] focus:outline-none bg-white"
                                         >
                                             <option value="Board Standard">Board Standard</option>
                                             <option value="Term Exam">Term Exam</option>
@@ -3256,7 +3256,7 @@ export default function OfflinePaperManager() {
                                         <select
                                             value={patternForm.exam_type}
                                             onChange={e => setPatternForm({ ...patternForm, exam_type: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none bg-white"
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#0868B2] focus:outline-none bg-white"
                                         >
                                             <option value="descriptive">Descriptive (Theory & Numerical)</option>
                                             <option value="objective">Objective (MCQ / Fill in blanks)</option>
@@ -3272,7 +3272,7 @@ export default function OfflinePaperManager() {
                                         value={patternForm.instructions}
                                         onChange={e => setPatternForm({ ...patternForm, instructions: e.target.value })}
                                         placeholder="1. All questions are compulsory..."
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#0868B2] focus:outline-none"
                                     />
                                 </div>
 
@@ -3341,7 +3341,7 @@ export default function OfflinePaperManager() {
                                                         <button
                                                             type="button"
                                                             onClick={() => handleAddRuleToSection(sIdx)}
-                                                            className="text-sky-700 hover:text-[#004B93] flex items-center gap-1 font-bold lowercase first-letter:uppercase"
+                                                            className="text-sky-700 hover:text-[#0868B2] flex items-center gap-1 font-bold lowercase first-letter:uppercase"
                                                         >
                                                             <Plus size={12} /> add rule
                                                         </button>
@@ -3446,7 +3446,7 @@ export default function OfflinePaperManager() {
                                 <button
                                     type="submit"
                                     disabled={patternSaving}
-                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold shadow-md flex items-center gap-2"
+                                    className="px-6 py-2.5 rounded-xl bg-[#0868B2] hover:bg-sky-800 text-white font-bold shadow-md flex items-center gap-2"
                                 >
                                     {patternSaving ? <Loader2 size={16} className="animate-spin" /> : <Award size={16} />}
                                     <span>{patternModalMode === 'create' ? 'Save Paper Pattern' : 'Update Paper Pattern'}</span>
@@ -3488,7 +3488,7 @@ export default function OfflinePaperManager() {
                                         placeholder="e.g., Class 8 English — Unit 5: This is Jody's Fawn"
                                         value={setForm.title}
                                         onChange={e => setSetForm({ ...setForm, title: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#0868B2] focus:outline-none"
                                     />
                                 </div>
 
@@ -3499,7 +3499,7 @@ export default function OfflinePaperManager() {
                                         placeholder="e.g., Comprehensive textbook question bank covering short answers, MCQs, and textual comprehension."
                                         value={setForm.description}
                                         onChange={e => setSetForm({ ...setForm, description: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#0868B2] focus:outline-none"
                                     />
                                 </div>
 
@@ -3511,7 +3511,7 @@ export default function OfflinePaperManager() {
                                             placeholder="e.g. Class 8"
                                             value={setForm.class_name}
                                             onChange={e => setSetForm({ ...setForm, class_name: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#0868B2] focus:outline-none"
                                         />
                                     </div>
                                     <div>
@@ -3521,7 +3521,7 @@ export default function OfflinePaperManager() {
                                             placeholder="e.g. English"
                                             value={setForm.subject_name}
                                             onChange={e => setSetForm({ ...setForm, subject_name: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#0868B2] focus:outline-none"
                                         />
                                     </div>
                                 </div>
@@ -3533,7 +3533,7 @@ export default function OfflinePaperManager() {
                                         placeholder="e.g. This is Jody's Fawn"
                                         value={setForm.chapter_name}
                                         onChange={e => setSetForm({ ...setForm, chapter_name: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#0868B2] focus:outline-none"
                                     />
                                 </div>
                             </div>
@@ -3549,7 +3549,7 @@ export default function OfflinePaperManager() {
                                 <button
                                     type="submit"
                                     disabled={savingSet}
-                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold shadow-md flex items-center gap-2"
+                                    className="px-6 py-2.5 rounded-xl bg-[#0868B2] hover:bg-sky-800 text-white font-bold shadow-md flex items-center gap-2"
                                 >
                                     {savingSet ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
                                     <span>Save Changes</span>
@@ -3638,7 +3638,7 @@ export default function OfflinePaperManager() {
                                         placeholder="Enter the complete question here..."
                                         value={questionForm.text_en}
                                         onChange={e => setQuestionForm({ ...questionForm, text_en: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-medium text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none text-sm"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-medium text-slate-900 focus:ring-2 focus:ring-[#0868B2] focus:outline-none text-sm"
                                     />
                                 </div>
 
@@ -3649,7 +3649,7 @@ export default function OfflinePaperManager() {
                                         placeholder="પ્રશ્ન અહીં ગુજરાતીમાં દાખલ કરો (વૈકલ્પિક)..."
                                         value={questionForm.text_gu}
                                         onChange={e => setQuestionForm({ ...questionForm, text_gu: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-medium text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none text-sm"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-medium text-slate-900 focus:ring-2 focus:ring-[#0868B2] focus:outline-none text-sm"
                                     />
                                 </div>
 
@@ -3710,7 +3710,7 @@ export default function OfflinePaperManager() {
                                             placeholder="e.g., The degree is 4 because..."
                                             value={questionForm.correct_answer}
                                             onChange={e => setQuestionForm({ ...questionForm, correct_answer: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#0868B2] focus:outline-none"
                                         />
                                     </div>
                                 )}
@@ -3722,7 +3722,7 @@ export default function OfflinePaperManager() {
                                         placeholder="Detailed explanation for the answer guide..."
                                         value={questionForm.explanation}
                                         onChange={e => setQuestionForm({ ...questionForm, explanation: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#0868B2] focus:outline-none"
                                     />
                                 </div>
                             </div>
@@ -3738,7 +3738,7 @@ export default function OfflinePaperManager() {
                                 <button
                                     type="submit"
                                     disabled={questionSaving}
-                                    className="px-6 py-2.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold shadow-md flex items-center gap-2"
+                                    className="px-6 py-2.5 rounded-xl bg-[#0868B2] hover:bg-sky-800 text-white font-bold shadow-md flex items-center gap-2"
                                 >
                                     {questionSaving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
                                     <span>{questionModalMode === 'create' ? 'Add Question' : 'Save Changes'}</span>

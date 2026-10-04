@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useEffect, useState, useCallback } from 'react'
 import {
@@ -236,9 +236,9 @@ export default function CommissionSettings() {
             {/* KPI OVERVIEW */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 32 }}>
                 <KpiCard icon={TrendingUp} title="Average Rate" value={getAvgCommission()} color="#EA580C" />
-                <KpiCard icon={Database} title="Active Rules" value={String(rules.length)} color="#059669" />
+                <KpiCard icon={Database} title="Active Rules" value={String(rules.length)} color="#09834F" />
                 <KpiCard icon={ShieldAlert} title="Special Overrides" value={String(rules.filter(r => r.is_override).length)} color="#7C3AED" />
-                <KpiCard icon={Globe} title="Global Base Rate" value={getGlobalBaseRate()} color="#004B93" />
+                <KpiCard icon={Globe} title="Global Base Rate" value={getGlobalBaseRate()} color="#0868B2" />
             </div>
 
             {/* CREATE / EDIT FORM MODAL */}
@@ -307,7 +307,7 @@ export default function CommissionSettings() {
                                     <div style={{ fontSize: 14, fontWeight: 900, color: P.dark }}>Special Override Rule</div>
                                     <div style={{ fontSize: 12, color: P.muted, fontWeight: 600, marginTop: 2 }}>Enforce this rule rate ahead of default global platform rules.</div>
                                 </div>
-                                <button onClick={() => setForm(f => ({ ...f, is_override: !f.is_override }))} style={{ width: 44, height: 24, borderRadius: 12, background: form.is_override ? '#059669' : P.border, border: 'none', position: 'relative', cursor: 'pointer', transition: 'all 0.2s' }}>
+                                <button onClick={() => setForm(f => ({ ...f, is_override: !f.is_override }))} style={{ width: 44, height: 24, borderRadius: 12, background: form.is_override ? '#09834F' : P.border, border: 'none', position: 'relative', cursor: 'pointer', transition: 'all 0.2s' }}>
                                     <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: form.is_override ? 23 : 3, transition: 'all 0.2s' }} />
                                 </button>
                             </div>
@@ -388,7 +388,7 @@ export default function CommissionSettings() {
                                             </td>
                                             <td style={{ padding: '18px 24px' }}>
                                                 {rule.is_override ? (
-                                                    <span style={{ background: '#ECFDF5', color: '#059669', padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800 }}>Special Override</span>
+                                                    <span style={{ background: '#ECFDF5', color: '#09834F', padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800 }}>Special Override</span>
                                                 ) : (
                                                     <span style={{ background: P.bg, color: P.muted, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700 }}>Global Base</span>
                                                 )}
@@ -455,7 +455,7 @@ export default function CommissionSettings() {
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700, color: P.dark, borderTop: `1px solid ${P.border}`, paddingTop: 10 }}>
                                 <span>Institute Share ({100 - (selectedSimRule?.percentage || 0)}%):</span>
-                                <span style={{ color: '#059669', fontWeight: 900 }}>Rs. {instituteShareAmt.toLocaleString('en-IN')}</span>
+                                <span style={{ color: '#09834F', fontWeight: 900 }}>Rs. {instituteShareAmt.toLocaleString('en-IN')}</span>
                             </div>
                         </div>
                     </div>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
@@ -366,7 +366,7 @@ export default function SettingsPage() {
     if (loading) {
         return (
             <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-8">
-                <Loader2 size={42} className="animate-spin text-[#004B93] mb-4" />
+                <Loader2 size={42} className="animate-spin text-[#0868B2] mb-4" />
                 <div className="text-xs font-black text-slate-500 uppercase tracking-widest">
                     Loading Institutional Settings...
                 </div>
@@ -389,7 +389,7 @@ export default function SettingsPage() {
                 <button
                     type="button"
                     onClick={fetchData}
-                    className="px-5 py-2.5 bg-[#004B93] hover:bg-[#003870] text-white text-xs font-bold rounded-xl transition shadow-sm inline-flex items-center gap-2"
+                    className="px-5 py-2.5 bg-[#0868B2] hover:bg-[#07549A] text-white text-xs font-bold rounded-xl transition shadow-sm inline-flex items-center gap-2"
                 >
                     <RefreshCcw size={14} /> Retry Loading
                 </button>
@@ -465,7 +465,7 @@ export default function SettingsPage() {
                             <button
                                 onClick={handleSaveAll}
                                 disabled={saving}
-                                className="px-6 py-2.5 bg-[#004B93] hover:bg-[#003870] disabled:bg-slate-700 text-white rounded-2xl text-xs font-black flex items-center gap-2 shadow-lg shadow-blue-900/20 transition"
+                                className="px-6 py-2.5 bg-[#0868B2] hover:bg-[#07549A] disabled:bg-slate-700 text-white rounded-2xl text-xs font-black flex items-center gap-2 shadow-lg shadow-blue-900/20 transition"
                             >
                                 {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
                                 Save All Changes
@@ -483,7 +483,7 @@ export default function SettingsPage() {
                     <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-md transition">
                         <div className="flex justify-between items-start mb-3">
                             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Institutional Identity</span>
-                            <div className="p-2 bg-blue-50 text-[#004B93] rounded-xl">
+                            <div className="p-2 bg-blue-50 text-[#0868B2] rounded-xl">
                                 <Building2 size={18} />
                             </div>
                         </div>
@@ -491,7 +491,7 @@ export default function SettingsPage() {
                             {branding.name}
                         </div>
                         <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 font-medium">
-                            <Globe size={13} className="text-[#004B93]" />
+                            <Globe size={13} className="text-[#0868B2]" />
                             <span className="font-mono text-slate-700 font-semibold">{domains.subdomain}.bebrilliant.in</span>
                         </div>
                     </div>
@@ -565,7 +565,7 @@ export default function SettingsPage() {
                                 onClick={() => setActiveTab(tab.id as any)}
                                 className={`px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center gap-2 ${
                                     isActive
-                                        ? 'bg-[#004B93] text-white shadow-md shadow-blue-900/15'
+                                        ? 'bg-[#0868B2] text-white shadow-md shadow-blue-900/15'
                                         : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
                                 }`}
                             >
@@ -600,7 +600,7 @@ export default function SettingsPage() {
                                                     branding: { ...prev!.settings.branding, name: e.target.value }
                                                 }
                                             }))}
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                         />
                                     </div>
 
@@ -616,7 +616,7 @@ export default function SettingsPage() {
                                                     branding: { ...prev!.settings.branding, legal_name: e.target.value }
                                                 }
                                             }))}
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                         />
                                     </div>
 
@@ -632,7 +632,7 @@ export default function SettingsPage() {
                                                     branding: { ...prev!.settings.branding, tagline: e.target.value }
                                                 }
                                             }))}
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                         />
                                     </div>
 
@@ -643,7 +643,7 @@ export default function SettingsPage() {
                                             <span className="text-[11px] text-slate-400 font-medium">Your primary school access address</span>
                                         </div>
                                         <div className="flex flex-col sm:flex-row gap-2.5">
-                                            <div className="flex-1 flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#004B93]/20 focus-within:border-[#004B93]">
+                                            <div className="flex-1 flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#0868B2]/20 focus-within:border-[#0868B2]">
                                                 <div className="pl-4 pr-2 text-slate-400 font-mono text-xs">https://</div>
                                                 <input
                                                     type="text"
@@ -666,14 +666,14 @@ export default function SettingsPage() {
                                                 type="button"
                                                 onClick={handleUpdateSubdomain}
                                                 disabled={subdomainSaving || !domains.subdomain}
-                                                className="px-5 py-2.5 bg-[#004B93] hover:bg-[#003870] disabled:bg-slate-300 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm"
+                                                className="px-5 py-2.5 bg-[#0868B2] hover:bg-[#07549A] disabled:bg-slate-300 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm"
                                             >
                                                 {subdomainSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                                                 Save Subdomain
                                             </button>
                                         </div>
                                         <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
-                                            <span>Live Link: <a href={`https://${domains.subdomain}.bebrilliant.in`} target="_blank" rel="noreferrer" className="text-[#004B93] font-semibold underline hover:text-blue-800">https://{domains.subdomain}.bebrilliant.in</a></span>
+                                            <span>Live Link: <a href={`https://${domains.subdomain}.bebrilliant.in`} target="_blank" rel="noreferrer" className="text-[#0868B2] font-semibold underline hover:text-blue-800">https://{domains.subdomain}.bebrilliant.in</a></span>
                                             <span className="text-slate-400 text-[10px]">Lowercase letters, numbers, and hyphens only</span>
                                         </div>
                                     </div>
@@ -682,7 +682,7 @@ export default function SettingsPage() {
                                 {/* Brand Colors Grid */}
                                 <div className="pt-4 border-t border-slate-100 space-y-4">
                                     <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                                        <Palette size={14} className="text-[#004B93]" /> Color Palette Tokens
+                                        <Palette size={14} className="text-[#0868B2]" /> Color Palette Tokens
                                     </h4>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         {[
@@ -695,7 +695,7 @@ export default function SettingsPage() {
                                                 <div className="flex items-center gap-3">
                                                     <input
                                                         type="color"
-                                                        value={clr.val || '#004B93'}
+                                                        value={clr.val || '#0868B2'}
                                                         onChange={e => setData(prev => ({
                                                             ...prev!,
                                                             settings: {
@@ -707,7 +707,7 @@ export default function SettingsPage() {
                                                     />
                                                     <input
                                                         type="text"
-                                                        value={clr.val || '#004B93'}
+                                                        value={clr.val || '#0868B2'}
                                                         onChange={e => setData(prev => ({
                                                             ...prev!,
                                                             settings: {
@@ -751,7 +751,7 @@ export default function SettingsPage() {
                                             onChange={e => handleUploadAsset(e, 'logo_url')}
                                             className="hidden"
                                         />
-                                        <div className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-[#004B93] text-xs font-black rounded-xl transition flex items-center justify-center gap-2">
+                                        <div className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-[#0868B2] text-xs font-black rounded-xl transition flex items-center justify-center gap-2">
                                             <UploadCloud size={14} /> Upload Institutional Crest
                                         </div>
                                     </label>
@@ -765,7 +765,7 @@ export default function SettingsPage() {
                                         <div className="flex items-center gap-3">
                                             <div
                                                 className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-sm"
-                                                style={{ backgroundColor: branding.primary_color || '#004B93' }}
+                                                style={{ backgroundColor: branding.primary_color || '#0868B2' }}
                                             >
                                                 {branding.name?.charAt(0) || 'S'}
                                             </div>
@@ -777,7 +777,7 @@ export default function SettingsPage() {
                                         <div className="flex gap-2">
                                             <button
                                                 className="flex-1 py-1.5 text-[11px] font-bold text-white rounded-lg shadow-sm"
-                                                style={{ backgroundColor: branding.primary_color || '#004B93' }}
+                                                style={{ backgroundColor: branding.primary_color || '#0868B2' }}
                                             >
                                                 Primary CTA
                                             </button>
@@ -815,7 +815,7 @@ export default function SettingsPage() {
                                                 contact: { ...prev!.settings.contact, address: e.target.value }
                                             }
                                         }))}
-                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 resize-none"
+                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 resize-none"
                                     />
                                 </div>
 
@@ -831,7 +831,7 @@ export default function SettingsPage() {
                                                 contact: { ...prev!.settings.contact, city: e.target.value }
                                             }
                                         }))}
-                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                     />
                                 </div>
 
@@ -847,7 +847,7 @@ export default function SettingsPage() {
                                                 contact: { ...prev!.settings.contact, state: e.target.value }
                                             }
                                         }))}
-                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                     />
                                 </div>
 
@@ -864,7 +864,7 @@ export default function SettingsPage() {
                                                 contact: { ...prev!.settings.contact, pincode: e.target.value }
                                             }
                                         }))}
-                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                     />
                                 </div>
 
@@ -880,7 +880,7 @@ export default function SettingsPage() {
                                                 contact: { ...prev!.settings.contact, phone: e.target.value }
                                             }
                                         }))}
-                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                     />
                                 </div>
 
@@ -896,7 +896,7 @@ export default function SettingsPage() {
                                                 contact: { ...prev!.settings.contact, whatsapp: e.target.value }
                                             }
                                         }))}
-                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                     />
                                 </div>
 
@@ -912,7 +912,7 @@ export default function SettingsPage() {
                                                 contact: { ...prev!.settings.contact, email: e.target.value }
                                             }
                                         }))}
-                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                     />
                                 </div>
 
@@ -928,7 +928,7 @@ export default function SettingsPage() {
                                                 contact: { ...prev!.settings.contact, website: e.target.value }
                                             }
                                         }))}
-                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                     />
                                 </div>
 
@@ -944,7 +944,7 @@ export default function SettingsPage() {
                                                 contact: { ...prev!.settings.contact, working_hours: e.target.value }
                                             }
                                         }))}
-                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                     />
                                 </div>
                             </div>
@@ -1000,7 +1000,7 @@ export default function SettingsPage() {
                                             className="p-5 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between gap-4"
                                         >
                                             <div className="flex items-center gap-4">
-                                                <div className="p-2.5 bg-white rounded-xl text-[#004B93] shadow-sm">
+                                                <div className="p-2.5 bg-white rounded-xl text-[#0868B2] shadow-sm">
                                                     <Icon size={18} />
                                                 </div>
                                                 <div>
@@ -1018,7 +1018,7 @@ export default function SettingsPage() {
                                                         security: { ...prev!.settings.security, [item.key]: e.target.checked }
                                                     }
                                                 }))}
-                                                className="w-5 h-5 rounded text-[#004B93] focus:ring-0 cursor-pointer"
+                                                className="w-5 h-5 rounded text-[#0868B2] focus:ring-0 cursor-pointer"
                                             />
                                         </div>
                                     );
@@ -1027,7 +1027,7 @@ export default function SettingsPage() {
                                 {/* Session Timeout Selector */}
                                 <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="flex items-center gap-4">
-                                        <div className="p-2.5 bg-white rounded-xl text-[#004B93] shadow-sm">
+                                        <div className="p-2.5 bg-white rounded-xl text-[#0868B2] shadow-sm">
                                             <Clock size={18} />
                                         </div>
                                         <div>
@@ -1072,7 +1072,7 @@ export default function SettingsPage() {
                                         title: 'Staff Login Notifications',
                                         desc: 'Send an email alert to the IT administrator when new teachers log in from an unfamiliar IP address',
                                         icon: BellRing,
-                                        color: '#004B93'
+                                        color: '#0868B2'
                                     },
                                     {
                                         key: 'attendance_sms_alert',
@@ -1203,8 +1203,8 @@ export default function SettingsPage() {
                                 {/* Step-by-Step DNS Guidance Cards */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                                     <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-1.5">
-                                        <div className="flex items-center gap-2 text-xs font-black text-[#004B93]">
-                                            <span className="w-5 h-5 rounded-full bg-[#004B93] text-white flex items-center justify-center text-[10px]">1</span>
+                                        <div className="flex items-center gap-2 text-xs font-black text-[#0868B2]">
+                                            <span className="w-5 h-5 rounded-full bg-[#0868B2] text-white flex items-center justify-center text-[10px]">1</span>
                                             Enter & Save Domain
                                         </div>
                                         <p className="text-[11px] text-slate-600 leading-relaxed">
@@ -1261,7 +1261,7 @@ export default function SettingsPage() {
                                                     }
                                                 }))}
                                                 placeholder="e.g. portal.silverbells.edu.in"
-                                                className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                                className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                             />
                                             <button
                                                 type="button"
@@ -1276,7 +1276,7 @@ export default function SettingsPage() {
                                                 type="button"
                                                 onClick={handleVerifyDNS}
                                                 disabled={dnsVerifying || !domains.custom_domain}
-                                                className="px-6 py-2.5 bg-[#004B93] hover:bg-[#003870] disabled:bg-slate-300 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm"
+                                                className="px-6 py-2.5 bg-[#0868B2] hover:bg-[#07549A] disabled:bg-slate-300 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm"
                                             >
                                                 {dnsVerifying ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
                                                 Verify DNS Propagation
@@ -1321,7 +1321,7 @@ export default function SettingsPage() {
                                                             </td>
                                                             <td className="p-3">
                                                                 <div className="flex items-center gap-2">
-                                                                    <span className="font-bold text-[#004B93]">cname.bebrilliant.in</span>
+                                                                    <span className="font-bold text-[#0868B2]">cname.bebrilliant.in</span>
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => copyToClipboard('cname.bebrilliant.in', 'cname')}

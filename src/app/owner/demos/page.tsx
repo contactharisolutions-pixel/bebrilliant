@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
@@ -13,43 +13,43 @@ import {
 const P = {
     bg: '#F8F9FA',
     card: '#FFFFFF',
-    border: '#E5E7EB',
-    borderLight: '#F3F4F6',
-    brand: '#004B93',
+    border: '#E2E8F0',
+    borderLight: '#F1F5F9',
+    brand: '#0868B2',
     brandBg: '#EEF4FF',
     brandHover: '#003A72',
-    cta: '#F0A026',
+    cta: '#D97706',
     ctaBg: '#FFF7E6',
-    dark: '#111827',
-    text: '#374151',
-    muted: '#6B7280',
-    subtle: '#9CA3AF',
-    hover: '#F9FAFB',
-    success: '#059669',
+    dark: '#34445A',
+    text: '#475569',
+    muted: '#64748B',
+    subtle: '#94A3B8',
+    hover: '#F8FAFC',
+    success: '#09834F',
     successBg: '#ECFDF5',
     warning: '#D97706',
     warningBg: '#FFFBEB',
     error: '#DC2626',
     errorBg: '#FEF2F2',
-    info: '#2563EB',
-    infoBg: '#EFF6FF',
+    info: '#0868B2',
+    infoBg: '#E5F3FB',
     purple: '#7C3AED',
     purpleBg: '#F5F3FF',
 }
 
 const DEMO_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
     pending_assignment: { label: 'Pending Staff',    color: '#D97706', bg: '#FFFBEB', icon: AlertTriangle },
-    staff_suggested:    { label: 'Staff Suggested',  color: '#2563EB', bg: '#EFF6FF', icon: UserCheck },
-    confirmed:          { label: 'Staff Confirmed',  color: '#059669', bg: '#ECFDF5', icon: ShieldCheck },
+    staff_suggested:    { label: 'Staff Suggested',  color: '#0868B2', bg: '#E5F3FB', icon: UserCheck },
+    confirmed:          { label: 'Staff Confirmed',  color: '#09834F', bg: '#ECFDF5', icon: ShieldCheck },
     scheduled:          { label: 'Demo Scheduled',   color: '#7C3AED', bg: '#F5F3FF', icon: Calendar },
-    completed:          { label: 'Completed',        color: '#059669', bg: '#ECFDF5', icon: CheckCircle2 },
+    completed:          { label: 'Completed',        color: '#09834F', bg: '#ECFDF5', icon: CheckCircle2 },
     missed:             { label: 'Missed',           color: '#DC2626', bg: '#FEF2F2', icon: XCircle },
-    cancelled:          { label: 'Cancelled',        color: '#6B7280', bg: '#F3F4F6', icon: X },
+    cancelled:          { label: 'Cancelled',        color: '#64748B', bg: '#F1F5F9', icon: X },
 }
 
 const OUTCOMES = [
-    { key: 'closed_won',        label: 'Closed Won',        sublabel: 'Ready to enroll school',           color: '#059669', bg: '#ECFDF5', icon: Award },
-    { key: 'highly_interested', label: 'Highly Interested', sublabel: 'Fast-track follow-up required',     color: '#2563EB', bg: '#EFF6FF', icon: Sparkles },
+    { key: 'closed_won',        label: 'Closed Won',        sublabel: 'Ready to enroll school',           color: '#09834F', bg: '#ECFDF5', icon: Award },
+    { key: 'highly_interested', label: 'Highly Interested', sublabel: 'Fast-track follow-up required',     color: '#0868B2', bg: '#E5F3FB', icon: Sparkles },
     { key: 'interested',        label: 'Interested',        sublabel: 'Standard evaluation & demo follow-up', color: '#D97706', bg: '#FFFBEB', icon: ThumbsUp },
     { key: 'proposal_required', label: 'Proposal Required', sublabel: 'Submit commercial / custom quote',  color: '#7C3AED', bg: '#F5F3FF', icon: FileText },
     { key: 'closed_lost',       label: 'Closed Lost',       sublabel: 'Budget mismatch or not feasible',   color: '#DC2626', bg: '#FEF2F2', icon: ThumbsDown },
@@ -61,11 +61,11 @@ const DEMO_MODULES = [
 ]
 
 const AVATAR_COLORS = [
-    { bg: '#EEF4FF', text: '#004B93' },
-    { bg: '#ECFDF5', text: '#059669' },
+    { bg: '#EEF4FF', text: '#0868B2' },
+    { bg: '#ECFDF5', text: '#09834F' },
     { bg: '#F5F3FF', text: '#7C3AED' },
     { bg: '#FFF7E6', text: '#D97706' },
-    { bg: '#EFF6FF', text: '#2563EB' },
+    { bg: '#E5F3FB', text: '#0868B2' },
 ]
 
 function getAvatarColor(name: string) {
@@ -463,7 +463,7 @@ export default function DemoManagementPage() {
                                             <span style={{ background: st.bg, color: st.color, padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                                                 <st.icon size={12} /> {st.label}
                                             </span>
-                                            <span style={{ background: demo.demo_type === 'on_site' ? '#FFFBEB' : '#EFF6FF', color: demo.demo_type === 'on_site' ? '#D97706' : '#2563EB', padding: '2px 7px', borderRadius: 4, fontSize: 10, fontWeight: 800 }}>
+                                            <span style={{ background: demo.demo_type === 'on_site' ? '#FFFBEB' : '#E5F3FB', color: demo.demo_type === 'on_site' ? '#D97706' : '#0868B2', padding: '2px 7px', borderRadius: 4, fontSize: 10, fontWeight: 800 }}>
                                                 {demo.demo_type === 'on_site' ? 'CAMPUS VISIT' : 'VIDEO CALL'}
                                             </span>
                                         </div>

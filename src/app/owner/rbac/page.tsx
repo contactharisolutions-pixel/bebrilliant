@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
@@ -16,17 +16,17 @@ import { P, GLASS_STYLES } from '@/components/shared/institutional/theme'
 const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; badge: string; desc: string }> = {
     owner: {
         label: 'Platform Owner',
-        color: '#004B93',
-        bg: '#EFF6FF',
-        border: '#BFDBFE',
+        color: '#0868B2',
+        bg: '#E5F3FB',
+        border: '#B6DCF2',
         badge: '👑',
         desc: 'Unrestricted super-admin authority across all schools, billing, settings & permissions.'
     },
     admin: {
         label: 'Administrator',
         color: '#1D4ED8',
-        bg: '#EFF6FF',
-        border: '#BFDBFE',
+        bg: '#E5F3FB',
+        border: '#B6DCF2',
         badge: '⚙️',
         desc: 'Administrative access for system configurations, school oversight, and staff management.'
     },
@@ -48,15 +48,15 @@ const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string; bo
     },
     demo_exec: {
         label: 'Demo Executive',
-        color: '#2563EB',
-        bg: '#EFF6FF',
-        border: '#BFDBFE',
+        color: '#0868B2',
+        bg: '#E5F3FB',
+        border: '#B6DCF2',
         badge: '📺',
         desc: 'Live demonstration schedules, feature presentations, and sandbox walkthroughs.'
     },
     onboarding_spec: {
         label: 'Onboarding Specialist',
-        color: '#059669',
+        color: '#09834F',
         bg: '#ECFDF5',
         border: '#A7F3D0',
         badge: '🚀',
@@ -89,7 +89,7 @@ function Toast({ msg, type, onClose }: { msg: string; type: 'success' | 'error';
             color: isOk ? '#065F46' : '#991B1B', fontSize: 13, fontWeight: 800,
             boxShadow: '0 20px 60px rgba(0,0,0,0.18)', backdropFilter: 'blur(8px)'
         }}>
-            {isOk ? <CheckCircle size={20} color="#059669" /> : <AlertTriangle size={20} color="#DC2626" />}
+            {isOk ? <CheckCircle size={20} color="#09834F" /> : <AlertTriangle size={20} color="#DC2626" />}
             <span>{msg}</span>
             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: 8, color: 'inherit' }}>
                 <X size={14} />
@@ -510,7 +510,7 @@ export default function StaffPermissionsPage() {
     if (loading) {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh', background: P.bg }}>
-                <div style={{ width: 48, height: 48, borderRadius: 16, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 16, background: '#E5F3FB', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                     <Shield size={24} color={P.brand} />
                 </div>
                 <Loader2 size={32} color={P.brand} style={{ animation: 'spin 1s linear infinite' }} />
@@ -535,8 +535,8 @@ export default function StaffPermissionsPage() {
             {/* ── HEADER ──────────────────────────────────────────────────────── */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
                 <div>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 9999, marginBottom: 10 }}>
-                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563EB', boxShadow: '0 0 6px #2563EB' }} />
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', background: '#E5F3FB', border: '1px solid #B6DCF2', borderRadius: 9999, marginBottom: 10 }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#0868B2', boxShadow: '0 0 6px #0868B2' }} />
                         <span style={{ fontSize: 11, fontWeight: 900, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.1em' }}>SETTINGS & CONTROLS</span>
                     </div>
                     <h1 style={{ fontSize: 32, fontWeight: 950, color: '#0F172A', margin: 0, letterSpacing: '-0.03em' }}>
@@ -560,7 +560,7 @@ export default function StaffPermissionsPage() {
                             boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                         }}
                     >
-                        <RefreshCw size={15} color="#004B93" style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+                        <RefreshCw size={15} color="#0868B2" style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
                         Sync Data
                     </button>
                     
@@ -574,7 +574,7 @@ export default function StaffPermissionsPage() {
                             boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                         }}
                     >
-                        <Download size={15} color="#004B93" />
+                        <Download size={15} color="#0868B2" />
                         Export CSV
                     </button>
                     
@@ -582,7 +582,7 @@ export default function StaffPermissionsPage() {
                         onClick={() => setShowInviteModal(true)}
                         className="action-btn"
                         style={{
-                            display: 'flex', alignItems: 'center', gap: 8, background: '#004B93',
+                            display: 'flex', alignItems: 'center', gap: 8, background: '#0868B2',
                             color: '#FFFFFF', border: 'none', borderRadius: 12, padding: '10px 22px',
                             fontSize: 13, fontWeight: 900, cursor: 'pointer',
                             boxShadow: '0 4px 14px rgba(0, 75, 147, 0.28)'
@@ -601,15 +601,15 @@ export default function StaffPermissionsPage() {
                         title: 'TOTAL PLATFORM STAFF',
                         value: String(stats.totalUsers ?? 0),
                         icon: Users,
-                        color: '#004B93',
-                        bg: '#EFF6FF',
+                        color: '#0868B2',
+                        bg: '#E5F3FB',
                         badge: 'All Active & Pending'
                     },
                     {
                         title: 'ACTIVE STAFF',
                         value: String(stats.activeUsers ?? 0),
                         icon: UserCheck,
-                        color: '#059669',
+                        color: '#09834F',
                         bg: '#ECFDF5',
                         badge: '100% Operational'
                     },
@@ -684,7 +684,7 @@ export default function StaffPermissionsPage() {
                             style={{
                                 display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 12, border: 'none',
                                 cursor: 'pointer', fontSize: 13, fontWeight: 800,
-                                background: isActive ? '#004B93' : 'transparent',
+                                background: isActive ? '#0868B2' : 'transparent',
                                 color: isActive ? '#FFFFFF' : '#64748B',
                                 transition: 'all 0.15s ease'
                             }}
@@ -872,14 +872,14 @@ export default function StaffPermissionsPage() {
                                                 <td style={{ padding: '16px 22px' }}>
                                                     <span style={{
                                                         background: u.is_active ? '#ECFDF5' : '#FEF2F2',
-                                                        color: u.is_active ? '#059669' : '#DC2626',
+                                                        color: u.is_active ? '#09834F' : '#DC2626',
                                                         border: `1px solid ${u.is_active ? '#A7F3D0' : '#FECACA'}`,
                                                         padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 900,
                                                         display: 'inline-flex', alignItems: 'center', gap: 6
                                                     }}>
                                                         <span style={{
                                                             width: 6, height: 6, borderRadius: '50%',
-                                                            background: u.is_active ? '#059669' : '#DC2626'
+                                                            background: u.is_active ? '#09834F' : '#DC2626'
                                                         }} />
                                                         {u.is_active ? 'ACTIVE' : 'SUSPENDED'}
                                                     </span>
@@ -905,7 +905,7 @@ export default function StaffPermissionsPage() {
                                                                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5
                                                             }}
                                                         >
-                                                            <Pencil size={13} color="#004B93" />
+                                                            <Pencil size={13} color="#0868B2" />
                                                             Edit
                                                         </button>
 
@@ -918,7 +918,7 @@ export default function StaffPermissionsPage() {
                                                                 background: u.is_active ? '#FEF2F2' : '#ECFDF5',
                                                                 border: `1px solid ${u.is_active ? '#FECACA' : '#A7F3D0'}`,
                                                                 borderRadius: 9,
-                                                                color: u.is_active ? '#DC2626' : '#059669',
+                                                                color: u.is_active ? '#DC2626' : '#09834F',
                                                                 fontWeight: 800, fontSize: 12, cursor: 'pointer',
                                                                 display: 'flex', alignItems: 'center', gap: 5
                                                             }}
@@ -932,8 +932,8 @@ export default function StaffPermissionsPage() {
                                                             onClick={() => { setResetTarget(u); setNewPassword(''); setConfirmPassword(''); }}
                                                             className="action-btn"
                                                             style={{
-                                                                padding: '7px 12px', background: '#EFF6FF',
-                                                                border: '1px solid #BFDBFE', borderRadius: 9,
+                                                                padding: '7px 12px', background: '#E5F3FB',
+                                                                border: '1px solid #B6DCF2', borderRadius: 9,
                                                                 color: '#1E40AF', fontWeight: 800, fontSize: 12,
                                                                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5
                                                             }}
@@ -1029,7 +1029,7 @@ export default function StaffPermissionsPage() {
                                 />
                             </div>
 
-                            {permLoading && <Loader2 size={18} color="#004B93" style={{ animation: 'spin 1s linear infinite' }} />}
+                            {permLoading && <Loader2 size={18} color="#0868B2" style={{ animation: 'spin 1s linear infinite' }} />}
                         </div>
                     </div>
 
@@ -1043,7 +1043,7 @@ export default function StaffPermissionsPage() {
                                             Permission Module & Action
                                         </th>
                                         {(permData.roles ?? []).map((r: any) => (
-                                            <th key={r.id} style={{ padding: '16px 14px', textAlign: 'center', fontSize: 11, fontWeight: 900, color: '#004B93', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                            <th key={r.id} style={{ padding: '16px 14px', textAlign: 'center', fontSize: 11, fontWeight: 900, color: '#0868B2', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                                 <div>{ROLE_CONFIG[r.name]?.badge}</div>
                                                 <div style={{ marginTop: 4 }}>{ROLE_CONFIG[r.name]?.label ?? r.name}</div>
                                             </th>
@@ -1060,7 +1060,7 @@ export default function StaffPermissionsPage() {
                                             return (
                                                 <React.Fragment key={group.module}>
                                                     <tr>
-                                                        <td colSpan={(permData.roles?.length ?? 0) + 1} style={{ padding: '12px 24px', background: '#EFF6FF', fontSize: 11, fontWeight: 950, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                                                        <td colSpan={(permData.roles?.length ?? 0) + 1} style={{ padding: '12px 24px', background: '#E5F3FB', fontSize: 11, fontWeight: 950, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                                                             {group.module.toUpperCase()} MODULE • {filteredPermissions.length} CONTROLS
                                                         </td>
                                                     </tr>
@@ -1081,15 +1081,15 @@ export default function StaffPermissionsPage() {
                                                                 return (
                                                                     <td key={role.id} style={{ padding: '14px 14px', textAlign: 'center' }}>
                                                                         {saving ? (
-                                                                            <Loader2 size={16} color="#004B93" style={{ animation: 'spin 1s linear infinite', margin: 'auto' }} />
+                                                                            <Loader2 size={16} color="#0868B2" style={{ animation: 'spin 1s linear infinite', margin: 'auto' }} />
                                                                         ) : (
                                                                             <button
                                                                                 onClick={() => handlePermissionToggle(role.id, perm.id, granted)}
                                                                                 title={granted ? `Revoke ${perm.action} from ${role.name}` : `Grant ${perm.action} to ${role.name}`}
                                                                                 style={{
                                                                                     width: 28, height: 28, borderRadius: 8,
-                                                                                    border: `1.5px solid ${granted ? '#059669' : '#CBD5E1'}`,
-                                                                                    background: granted ? '#059669' : '#FFFFFF',
+                                                                                    border: `1.5px solid ${granted ? '#09834F' : '#CBD5E1'}`,
+                                                                                    background: granted ? '#09834F' : '#FFFFFF',
                                                                                     cursor: 'pointer', display: 'flex', alignItems: 'center',
                                                                                     justifyContent: 'center', margin: 'auto',
                                                                                     boxShadow: granted ? '0 2px 6px rgba(5, 150, 105, 0.3)' : 'none',
@@ -1130,7 +1130,7 @@ export default function StaffPermissionsPage() {
                             onClick={() => setShowInviteModal(true)}
                             className="action-btn"
                             style={{
-                                display: 'flex', alignItems: 'center', gap: 8, background: '#004B93',
+                                display: 'flex', alignItems: 'center', gap: 8, background: '#0868B2',
                                 color: '#FFFFFF', border: 'none', borderRadius: 12, padding: '10px 20px',
                                 fontSize: 13, fontWeight: 900, cursor: 'pointer',
                                 boxShadow: '0 4px 14px rgba(0, 75, 147, 0.25)'
@@ -1175,7 +1175,7 @@ export default function StaffPermissionsPage() {
                                             <td style={{ padding: '16px 24px' }}>
                                                 <span style={{
                                                     background: inv.status === 'pending' ? '#FFFBEB' : '#ECFDF5',
-                                                    color: inv.status === 'pending' ? '#D97706' : '#059669',
+                                                    color: inv.status === 'pending' ? '#D97706' : '#09834F',
                                                     border: `1px solid ${inv.status === 'pending' ? '#FDE68A' : '#A7F3D0'}`,
                                                     padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 900
                                                 }}>
@@ -1281,7 +1281,7 @@ export default function StaffPermissionsPage() {
                                 {filteredLogs.map((log: any, i: number) => {
                                     const isCrit = log.severity === 'critical'
                                     const isWarn = log.severity === 'warning'
-                                    const dotColor = isCrit ? '#DC2626' : isWarn ? '#D97706' : '#2563EB'
+                                    const dotColor = isCrit ? '#DC2626' : isWarn ? '#D97706' : '#0868B2'
                                     return (
                                         <div
                                             key={log.id}
@@ -1296,7 +1296,7 @@ export default function StaffPermissionsPage() {
                                                     <span style={{ fontSize: 14, fontWeight: 900, color: '#0F172A' }}>
                                                         {log.action.replace(/_/g, ' ')}
                                                     </span>
-                                                    <span style={{ background: '#EFF6FF', color: '#1E40AF', padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 900, textTransform: 'uppercase' }}>
+                                                    <span style={{ background: '#E5F3FB', color: '#1E40AF', padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 900, textTransform: 'uppercase' }}>
                                                         {log.module}
                                                     </span>
                                                     {log.severity && (
@@ -1338,8 +1338,8 @@ export default function StaffPermissionsPage() {
                         alignItems: 'center', flexWrap: 'wrap', gap: 16, boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                            <div style={{ width: 44, height: 44, borderRadius: 14, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Shield size={22} color="#004B93" />
+                            <div style={{ width: 44, height: 44, borderRadius: 14, background: '#E5F3FB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Shield size={22} color="#0868B2" />
                             </div>
                             <div>
                                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 950, color: '#0F172A' }}>Enterprise Session Guard</h3>
@@ -1368,7 +1368,7 @@ export default function StaffPermissionsPage() {
                                     display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 9,
                                     border: `1px solid ${require2FA ? '#A7F3D0' : '#CBD5E1'}`,
                                     background: require2FA ? '#ECFDF5' : '#F8FAFC',
-                                    color: require2FA ? '#059669' : '#64748B',
+                                    color: require2FA ? '#09834F' : '#64748B',
                                     fontSize: 12, fontWeight: 800, cursor: 'pointer'
                                 }}
                             >
@@ -1385,7 +1385,7 @@ export default function StaffPermissionsPage() {
                                 key={sess.id}
                                 className="hover-scale"
                                 style={{
-                                    background: '#FFFFFF', border: sess.current ? '1.5px solid #004B93' : '1px solid #E2E8F0',
+                                    background: '#FFFFFF', border: sess.current ? '1.5px solid #0868B2' : '1px solid #E2E8F0',
                                     borderRadius: 18, padding: '20px 22px', display: 'flex', flexDirection: 'column',
                                     gap: 12, position: 'relative', boxShadow: '0 2px 5px rgba(0,0,0,0.03)'
                                 }}
@@ -1393,7 +1393,7 @@ export default function StaffPermissionsPage() {
                                 {sess.current && (
                                     <div style={{
                                         position: 'absolute', top: 16, right: 16,
-                                        background: '#EFF6FF', color: '#004B93', border: '1px solid #BFDBFE',
+                                        background: '#E5F3FB', color: '#0868B2', border: '1px solid #B6DCF2',
                                         borderRadius: 8, padding: '2px 8px', fontSize: 10, fontWeight: 900
                                     }}>
                                         CURRENT SESSION
@@ -1401,13 +1401,13 @@ export default function StaffPermissionsPage() {
                                 )}
 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <div style={{ width: 40, height: 40, borderRadius: 12, background: sess.current ? '#EFF6FF' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <div style={{ width: 40, height: 40, borderRadius: 12, background: sess.current ? '#E5F3FB' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         {sess.device.toLowerCase().includes('mac') || sess.device.toLowerCase().includes('dell') ? (
-                                            <Laptop size={20} color={sess.current ? '#004B93' : '#64748B'} />
+                                            <Laptop size={20} color={sess.current ? '#0868B2' : '#64748B'} />
                                         ) : sess.device.toLowerCase().includes('ipad') ? (
-                                            <Smartphone size={20} color={sess.current ? '#004B93' : '#64748B'} />
+                                            <Smartphone size={20} color={sess.current ? '#0868B2' : '#64748B'} />
                                         ) : (
-                                            <Monitor size={20} color={sess.current ? '#004B93' : '#64748B'} />
+                                            <Monitor size={20} color={sess.current ? '#0868B2' : '#64748B'} />
                                         )}
                                     </div>
                                     <div>
@@ -1431,7 +1431,7 @@ export default function StaffPermissionsPage() {
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                         <span style={{ color: '#94A3B8' }}>Last Active:</span>
-                                        <span style={{ fontWeight: 800, color: sess.current ? '#059669' : '#0F172A' }}>{sess.lastActive}</span>
+                                        <span style={{ fontWeight: 800, color: sess.current ? '#09834F' : '#0F172A' }}>{sess.lastActive}</span>
                                     </div>
                                 </div>
 
@@ -1469,13 +1469,13 @@ export default function StaffPermissionsPage() {
                         overflow: 'hidden', boxShadow: '0 30px 90px rgba(0,0,0,0.25)', border: '1px solid #E2E8F0'
                     }}>
                         {/* Header */}
-                        <div style={{ padding: '22px 28px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#EFF6FF' }}>
+                        <div style={{ padding: '22px 28px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#E5F3FB' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <div style={{ width: 40, height: 40, borderRadius: 12, background: '#004B93', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: 40, height: 40, borderRadius: 12, background: '#0868B2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <Pencil size={18} color="#FFFFFF" />
                                 </div>
                                 <div>
-                                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: '#004B93' }}>Edit Staff Member</h3>
+                                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: '#0868B2' }}>Edit Staff Member</h3>
                                     <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748B', fontWeight: 600 }}>Update staff profile details and assigned platform role.</p>
                                 </div>
                             </div>
@@ -1550,7 +1550,7 @@ export default function StaffPermissionsPage() {
                                         padding: '6px 14px', borderRadius: 8,
                                         background: editForm.is_active ? '#ECFDF5' : '#FEF2F2',
                                         border: `1px solid ${editForm.is_active ? '#A7F3D0' : '#FECACA'}`,
-                                        color: editForm.is_active ? '#059669' : '#DC2626',
+                                        color: editForm.is_active ? '#09834F' : '#DC2626',
                                         fontWeight: 900, fontSize: 12, cursor: 'pointer'
                                     }}
                                 >
@@ -1571,7 +1571,7 @@ export default function StaffPermissionsPage() {
                                 onClick={handleEditSubmit}
                                 disabled={editSaving}
                                 style={{
-                                    flex: 2, padding: 12, background: '#004B93', color: '#FFFFFF', border: 'none',
+                                    flex: 2, padding: 12, background: '#0868B2', color: '#FFFFFF', border: 'none',
                                     borderRadius: 10, fontWeight: 900, fontSize: 13, cursor: editSaving ? 'not-allowed' : 'pointer',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                                     boxShadow: '0 4px 14px rgba(0, 75, 147, 0.25)'
@@ -1625,7 +1625,7 @@ export default function StaffPermissionsPage() {
                                     {[deleteTarget.first_name, deleteTarget.last_name].filter(Boolean).join(' ') || 'Staff Member'}
                                 </div>
                                 <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>{deleteTarget.email}</div>
-                                <div style={{ fontSize: 11, color: '#004B93', fontWeight: 800, marginTop: 4 }}>Role: {deleteTarget.role}</div>
+                                <div style={{ fontSize: 11, color: '#0868B2', fontWeight: 800, marginTop: 4 }}>Role: {deleteTarget.role}</div>
                             </div>
 
                             <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '10px 14px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
@@ -1668,13 +1668,13 @@ export default function StaffPermissionsPage() {
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.6)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: 20 }}>
                     <div style={{ background: '#FFFFFF', borderRadius: 24, width: '100%', maxWidth: 540, maxHeight: '92vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 30px 90px rgba(0,0,0,0.25)', border: '1px solid #E2E8F0' }}>
                         {/* Header */}
-                        <div style={{ padding: '22px 28px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#EFF6FF', flexShrink: 0 }}>
+                        <div style={{ padding: '22px 28px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#E5F3FB', flexShrink: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <div style={{ width: 40, height: 40, borderRadius: 12, background: '#004B93', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: 40, height: 40, borderRadius: 12, background: '#0868B2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <Users size={18} color="#FFFFFF" />
                                 </div>
                                 <div>
-                                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: '#004B93' }}>Invite New Staff Member</h3>
+                                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: '#0868B2' }}>Invite New Staff Member</h3>
                                     <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748B', fontWeight: 600 }}>Create an authenticated login account for your platform staff.</p>
                                 </div>
                             </div>
@@ -1739,7 +1739,7 @@ export default function StaffPermissionsPage() {
                                     <button
                                         onClick={generateInvitePassword}
                                         type="button"
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 900, color: '#004B93', display: 'flex', alignItems: 'center', gap: 4 }}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 900, color: '#0868B2', display: 'flex', alignItems: 'center', gap: 4 }}
                                     >
                                         ⚡ Auto-Generate
                                     </button>
@@ -1780,7 +1780,7 @@ export default function StaffPermissionsPage() {
                                 onClick={handleSendInvite}
                                 disabled={inviteSaving}
                                 style={{
-                                    flex: 2, padding: 12, background: '#004B93', color: '#FFFFFF', border: 'none',
+                                    flex: 2, padding: 12, background: '#0868B2', color: '#FFFFFF', border: 'none',
                                     borderRadius: 10, fontWeight: 900, fontSize: 13, cursor: inviteSaving ? 'not-allowed' : 'pointer',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                                     boxShadow: '0 4px 14px rgba(0, 75, 147, 0.25)'
@@ -1807,13 +1807,13 @@ export default function StaffPermissionsPage() {
                         background: '#FFFFFF', borderRadius: 24, width: '100%', maxWidth: 480,
                         overflow: 'hidden', boxShadow: '0 30px 90px rgba(0,0,0,0.25)', border: '1px solid #E2E8F0'
                     }}>
-                        <div style={{ padding: '22px 28px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#EFF6FF' }}>
+                        <div style={{ padding: '22px 28px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#E5F3FB' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <div style={{ width: 38, height: 38, borderRadius: 12, background: '#004B93', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: 38, height: 38, borderRadius: 12, background: '#0868B2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <Key size={18} color="#FFFFFF" />
                                 </div>
                                 <div>
-                                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: '#004B93' }}>Reset Staff Password</h3>
+                                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: '#0868B2' }}>Reset Staff Password</h3>
                                     <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748B', fontWeight: 600 }}>{[resetTarget.first_name, resetTarget.last_name].filter(Boolean).join(' ') || resetTarget.email}</p>
                                 </div>
                             </div>
@@ -1834,9 +1834,9 @@ export default function StaffPermissionsPage() {
                             )}
 
                             <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: 12, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <Lock size={15} color="#004B93" />
+                                <Lock size={15} color="#0868B2" />
                                 <div style={{ fontSize: 12, color: '#0F172A', fontWeight: 700 }}>
-                                    Staff Email: <span style={{ color: '#004B93' }}>{resetTarget.email}</span>
+                                    Staff Email: <span style={{ color: '#0868B2' }}>{resetTarget.email}</span>
                                 </div>
                             </div>
 
@@ -1846,7 +1846,7 @@ export default function StaffPermissionsPage() {
                                     <button
                                         onClick={generateRandomPassword}
                                         type="button"
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 900, color: '#004B93' }}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 900, color: '#0868B2' }}
                                     >
                                         ⚡ Auto-Generate
                                     </button>
@@ -1891,7 +1891,7 @@ export default function StaffPermissionsPage() {
                                     onClick={handleDirectPasswordReset}
                                     disabled={resetSaving}
                                     style={{
-                                        flex: 2, padding: 12, background: '#004B93', color: '#FFFFFF', border: 'none',
+                                        flex: 2, padding: 12, background: '#0868B2', color: '#FFFFFF', border: 'none',
                                         borderRadius: 10, fontWeight: 900, fontSize: 13, cursor: 'pointer', display: 'flex',
                                         alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 14px rgba(0, 75, 147, 0.25)'
                                     }}

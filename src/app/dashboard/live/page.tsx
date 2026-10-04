@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     Video, Calendar, Clock, PlusCircle, Server, CheckCircle, XCircle, UsersRound,
@@ -136,7 +136,7 @@ export default function LiveClassesDashboard() {
                 </div>
                 <div style={{ background: '#FFF', padding: 24, borderRadius: 20, border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                        <div style={{ width: 40, height: 40, background: '#F5F3FF', color: '#1FAC63', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Server size={20} /></div>
+                        <div style={{ width: 40, height: 40, background: '#F5F3FF', color: '#09834F', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Server size={20} /></div>
                         <span style={{ fontSize: 14, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Session Recordings</span>
                     </div>
                     <div style={{ fontSize: 32, fontWeight: 900, color: '#0F172A' }}>{classes.filter(c => c.auto_record).length} Sessions</div>
@@ -174,7 +174,7 @@ export default function LiveClassesDashboard() {
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                                 {cls.status === 'completed' && cls.auto_record ? (
-                                    <button style={{ background: '#EFF6FF', color: '#1E3A8A', border: '1px solid #BFDBFE', padding: '12px 20px', borderRadius: 12, fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                                    <button style={{ background: '#E5F3FB', color: '#0868B2', border: '1px solid #B6DCF2', padding: '12px 20px', borderRadius: 12, fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                                         <DownloadCloud size={16} /> DOWNLOAD RECORDING
                                     </button>
                                 ) : cls.status === 'live' ? (

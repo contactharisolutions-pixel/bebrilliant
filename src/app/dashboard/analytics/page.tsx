@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import React, { useState, useEffect, useMemo } from 'react'
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -13,10 +13,10 @@ import {
     ArrowRight
 } from 'lucide-react'
 const COLORS = {
-    primary: '#004B93',
-    primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
-    success: '#1FAC63',
-    warning: '#F0A026',
+    primary: '#0868B2',
+    primaryGradient: 'linear-gradient(135deg, #0868B2 0%, #073B73 100%)',
+    success: '#09834F',
+    warning: '#D97706',
     danger: '#EF4444',
     slate: '#64748B',
     background: '#F8FAFC',

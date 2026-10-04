@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
@@ -326,7 +326,7 @@ export default function StudentPerformanceReport() {
     if (loading && !student) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[70vh] p-12 text-slate-500">
-                <Loader2 className="w-12 h-12 animate-spin text-[#004B93] mb-4" />
+                <Loader2 className="w-12 h-12 animate-spin text-[#0868B2] mb-4" />
                 <h3 className="text-lg font-bold text-slate-800">Loading Student Report...</h3>
                 <p className="text-sm text-slate-400 mt-1">Please wait while we fetch the latest data.</p>
             </div>
@@ -351,7 +351,7 @@ export default function StudentPerformanceReport() {
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm print:hidden">
                 <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-[#004B93]/10 flex items-center justify-center text-[#004B93]">
+                        <div className="w-10 h-10 rounded-2xl bg-[#0868B2]/10 flex items-center justify-center text-[#0868B2]">
                             <SlidersHorizontal className="w-5 h-5" />
                         </div>
                         <div>
@@ -397,7 +397,7 @@ export default function StudentPerformanceReport() {
                         <select
                             value={filters.academic_year}
                             onChange={e => setFilters(f => ({ ...f, academic_year: e.target.value }))}
-                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                         >
                             <option value="all">All Sessions</option>
                             {dropdowns.academic_years.map(y => (
@@ -414,7 +414,7 @@ export default function StudentPerformanceReport() {
                         <select
                             value={filters.class_name}
                             onChange={e => handleClassChange(e.target.value)}
-                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                         >
                             <option value="all">All Classes</option>
                             {dropdowns.classes.map(c => (
@@ -431,7 +431,7 @@ export default function StudentPerformanceReport() {
                         <select
                             value={filters.division}
                             onChange={e => handleDivisionChange(e.target.value)}
-                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                         >
                             <option value="all">All Sections</option>
                             {dropdowns.divisions.map(d => (
@@ -448,7 +448,7 @@ export default function StudentPerformanceReport() {
                         <select
                             value={filters.student_id}
                             onChange={e => setFilters(f => ({ ...f, student_id: e.target.value }))}
-                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                         >
                             {dropdowns.students.map(s => (
                                 <option key={s.id} value={s.id}>
@@ -466,7 +466,7 @@ export default function StudentPerformanceReport() {
                         <select
                             value={filters.subject_name}
                             onChange={e => setFilters(f => ({ ...f, subject_name: e.target.value }))}
-                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                         >
                             <option value="all">All Subjects</option>
                             {dropdowns.subjects.map(s => (
@@ -483,7 +483,7 @@ export default function StudentPerformanceReport() {
                         <select
                             value={filters.date_range}
                             onChange={e => setFilters(f => ({ ...f, date_range: e.target.value }))}
-                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                         >
                             <option value="academic_year">Academic Session</option>
                             <option value="term_1">Term 1</option>
@@ -520,7 +520,7 @@ export default function StudentPerformanceReport() {
 
             {/* ── SECTION 6 & 23: STUDENT HEADER (HERO CARD) ─────────────────── */}
             {student ? (
-                <div className="relative overflow-hidden bg-gradient-to-br from-[#003364] via-[#004B93] to-[#002850] rounded-3xl p-8 text-white shadow-xl">
+                <div className="relative overflow-hidden bg-gradient-to-br from-[#003364] via-[#0868B2] to-[#002850] rounded-3xl p-8 text-white shadow-xl">
                     <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="flex items-center gap-6">
                             {/* Avatar Badge */}
@@ -592,7 +592,7 @@ export default function StudentPerformanceReport() {
                     <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden">
                         <div className="flex items-center justify-between mb-3">
                             <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Overall Average</span>
-                            <div className="w-8 h-8 rounded-xl bg-[#004B93]/10 text-[#004B93] flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-xl bg-[#0868B2]/10 text-[#0868B2] flex items-center justify-center">
                                 <Award className="w-4 h-4" />
                             </div>
                         </div>
@@ -736,7 +736,7 @@ export default function StudentPerformanceReport() {
                                         className="hover:bg-slate-50/80 transition cursor-pointer group"
                                     >
                                         <td className="py-4 pl-4 font-bold text-slate-900 flex items-center gap-2.5">
-                                            <div className="w-8 h-8 rounded-lg bg-[#004B93]/5 text-[#004B93] flex items-center justify-center font-bold text-xs group-hover:bg-[#004B93] group-hover:text-white transition">
+                                            <div className="w-8 h-8 rounded-lg bg-[#0868B2]/5 text-[#0868B2] flex items-center justify-center font-bold text-xs group-hover:bg-[#0868B2] group-hover:text-white transition">
                                                 {sub.subject.slice(0, 2).toUpperCase()}
                                             </div>
                                             <span>{sub.subject}</span>
@@ -750,7 +750,7 @@ export default function StudentPerformanceReport() {
                                                     className="h-full rounded-full transition-all duration-500"
                                                     style={{ 
                                                         width: `${Math.min(sub.average, 100)}%`,
-                                                        backgroundColor: sub.average >= 75 ? '#10B981' : sub.average >= 55 ? '#004B93' : '#F59E0B'
+                                                        backgroundColor: sub.average >= 75 ? '#10B981' : sub.average >= 55 ? '#0868B2' : '#F59E0B'
                                                     }}
                                                 />
                                             </div>
@@ -776,7 +776,7 @@ export default function StudentPerformanceReport() {
                                                     e.stopPropagation()
                                                     setSelectedSubjectDrilldown(sub.subject)
                                                 }}
-                                                className="inline-flex items-center gap-1 text-xs font-bold text-[#004B93] hover:underline"
+                                                className="inline-flex items-center gap-1 text-xs font-bold text-[#0868B2] hover:underline"
                                             >
                                                 <span>View Details</span>
                                                 <ChevronRight className="w-3.5 h-3.5" />
@@ -804,7 +804,7 @@ export default function StudentPerformanceReport() {
                             </div>
                             <div className="flex items-center gap-4 text-xs font-bold">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-[#004B93]" />
+                                    <div className="w-3 h-3 rounded-full bg-[#0868B2]" />
                                     <span>Student Score</span>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -825,8 +825,8 @@ export default function StudentPerformanceReport() {
                                     <AreaChart data={performanceTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="studentScoreGrad" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#004B93" stopOpacity={0.25} />
-                                                <stop offset="95%" stopColor="#004B93" stopOpacity={0.0} />
+                                                <stop offset="5%" stopColor="#0868B2" stopOpacity={0.25} />
+                                                <stop offset="95%" stopColor="#0868B2" stopOpacity={0.0} />
                                             </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
@@ -863,7 +863,7 @@ export default function StudentPerformanceReport() {
                                         <Area
                                             type="monotone"
                                             dataKey="student_pct"
-                                            stroke="#004B93"
+                                            stroke="#0868B2"
                                             strokeWidth={3}
                                             fill="url(#studentScoreGrad)"
                                         />
@@ -959,7 +959,7 @@ export default function StudentPerformanceReport() {
                                 placeholder="Search exams or subjects..."
                                 value={examSearch}
                                 onChange={e => setExamSearch(e.target.value)}
-                                className="h-10 pl-9 pr-3 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#004B93] w-56"
+                                className="h-10 pl-9 pr-3 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#0868B2] w-56"
                             />
                         </div>
                     </div>
@@ -1074,7 +1074,7 @@ export default function StudentPerformanceReport() {
                     </div>
                     <button
                         onClick={() => setIsRemarkModalOpen(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#004B93] hover:bg-[#003870] text-white text-xs font-bold transition shadow-sm print:hidden"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0868B2] hover:bg-[#07549A] text-white text-xs font-bold transition shadow-sm print:hidden"
                     >
                         <Plus className="w-4 h-4" />
                         <span>Add New Remark</span>
@@ -1093,7 +1093,7 @@ export default function StudentPerformanceReport() {
                             <div key={remark.id} className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-3">
                                 <div className="flex items-center justify-between text-xs">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-7 h-7 rounded-lg bg-[#004B93]/10 text-[#004B93] font-black flex items-center justify-center text-xs">
+                                        <div className="w-7 h-7 rounded-lg bg-[#0868B2]/10 text-[#0868B2] font-black flex items-center justify-center text-xs">
                                             {remark.teacher_name[0] || 'T'}
                                         </div>
                                         <div>
@@ -1194,7 +1194,7 @@ export default function StudentPerformanceReport() {
             {isRemarkModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
                     <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden animate-in zoom-in-95">
-                        <div className="flex items-center justify-between p-6 bg-[#004B93] text-white">
+                        <div className="flex items-center justify-between p-6 bg-[#0868B2] text-white">
                             <div>
                                 <span className="text-[10px] font-black uppercase tracking-wider text-blue-200">Teacher Feedback</span>
                                 <h3 className="text-xl font-black text-white">Add Teacher Remark</h3>
@@ -1218,7 +1218,7 @@ export default function StudentPerformanceReport() {
                                     value={newRemarkAuthor}
                                     onChange={e => setNewRemarkAuthor(e.target.value)}
                                     placeholder="e.g. Divyesh Solanki (Academic Head)"
-                                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                                 />
                             </div>
 
@@ -1229,7 +1229,7 @@ export default function StudentPerformanceReport() {
                                 <select
                                     value={newRemarkSubject}
                                     onChange={e => setNewRemarkSubject(e.target.value)}
-                                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                                 >
                                     <option value="General">General / Overall Feedback</option>
                                     {dropdowns.subjects.map(s => (
@@ -1248,7 +1248,7 @@ export default function StudentPerformanceReport() {
                                     value={newRemarkText}
                                     onChange={e => setNewRemarkText(e.target.value)}
                                     placeholder="Enter feedback, observations, strengths, or areas to improve..."
-                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                                 />
                             </div>
 
@@ -1263,7 +1263,7 @@ export default function StudentPerformanceReport() {
                                 <button
                                     type="submit"
                                     disabled={submittingRemark}
-                                    className="px-5 py-2.5 rounded-xl bg-[#004B93] hover:bg-[#003870] text-white text-xs font-black transition shadow-sm"
+                                    className="px-5 py-2.5 rounded-xl bg-[#0868B2] hover:bg-[#07549A] text-white text-xs font-black transition shadow-sm"
                                 >
                                     {submittingRemark ? 'Saving...' : 'Save Remark'}
                                 </button>

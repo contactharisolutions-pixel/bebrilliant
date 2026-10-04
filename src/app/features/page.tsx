@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState } from 'react'
 import Link from 'next/link'
@@ -21,7 +21,7 @@ export default function FeaturesPage() {
             category: 'Smart Exam & Proctoring Engine',
             subtitle: 'BeBrilliant AI Agent paper creation, randomized anti-cheat question sets, and real-time live exam supervision.',
             icon: BrainCircuit,
-            color: '#004B93',
+            color: '#0868B2',
             badgeBg: '#EBF3FC',
             bgImage: '/tech_hero.png',
             highlights: ['BeBrilliant AI Agent Question Builder', 'Anti-Cheat Jumbling Engine', 'Instant Automated Solution Keys', 'Timed Exam Control'],
@@ -44,7 +44,7 @@ export default function FeaturesPage() {
             category: 'Payments & Revenue Engine',
             subtitle: 'Seamless Razorpay UPI payouts, credit wallets, and automated fee reconciliation reports.',
             icon: Wallet,
-            color: '#1FAC63',
+            color: '#09834F',
             badgeBg: '#ECFDF5',
             bgImage: '/pricing_hero.png',
             highlights: ['1-Click UPI & QR Payments', 'Razorpay Automated Payouts', 'Paid & Free Test Wallets', 'Instant Tax Invoicing'],
@@ -129,11 +129,11 @@ export default function FeaturesPage() {
                                 onClick={() => setActiveTab(idx)}
                                 className={`flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl text-xs md:text-sm transition-all duration-200 cursor-pointer ${
                                     isSelected
-                                        ? 'bg-white text-[#004B93] shadow-md border border-slate-200/60 font-extrabold scale-[1.01]'
+                                        ? 'bg-white text-[#0868B2] shadow-md border border-slate-200/60 font-extrabold scale-[1.01]'
                                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 font-semibold'
                                 }`}
                             >
-                                <Icon size={16} className={isSelected ? 'text-[#004B93]' : 'text-slate-500'} />
+                                <Icon size={16} className={isSelected ? 'text-[#0868B2]' : 'text-slate-500'} />
                                 <span className="truncate">{cat.tabName}</span>
                             </button>
                         )
@@ -227,7 +227,7 @@ export default function FeaturesPage() {
 
                 {/* ─── 4-PILLAR BENTO GRID ─────────────────────────────────── */}
                 <div className="text-center mb-10">
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#004B93] bg-[#004B93]/10 px-3.5 py-1 rounded-full">
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#0868B2] bg-[#0868B2]/10 px-3.5 py-1 rounded-full">
                         COMPLETE SUITE ARCHITECTURE
                     </span>
                     <h3 className="text-2xl md:text-3xl font-extrabold text-slate-900 font-manrope mt-3 mb-1">
@@ -256,7 +256,7 @@ export default function FeaturesPage() {
                                         </span>
                                     </div>
 
-                                    <h4 className="text-lg font-bold text-slate-900 mb-2 font-manrope group-hover:text-[#004B93] transition-colors">
+                                    <h4 className="text-lg font-bold text-slate-900 mb-2 font-manrope group-hover:text-[#0868B2] transition-colors">
                                         {cat.category}
                                     </h4>
 
@@ -280,7 +280,7 @@ export default function FeaturesPage() {
                                             setActiveTab(i)
                                             window.scrollTo({ top: 380, behavior: 'smooth' })
                                         }}
-                                        className="text-xs font-bold text-[#004B93] inline-flex items-center gap-1.5 hover:gap-2.5 transition-all cursor-pointer"
+                                        className="text-xs font-bold text-[#0868B2] inline-flex items-center gap-1.5 hover:gap-2.5 transition-all cursor-pointer"
                                     >
                                         Deep Dive Showcase <ArrowRight size={13} />
                                     </button>
@@ -310,7 +310,7 @@ export default function FeaturesPage() {
                         <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
                             <Link 
                                 href="/request-demo" 
-                                className="inline-flex items-center gap-2 bg-[#1FAC63] text-white px-7 py-3.5 rounded-xl text-sm font-extrabold shadow-lg hover:bg-[#199453] transition-all font-manrope"
+                                className="inline-flex items-center gap-2 bg-[#09834F] text-white px-7 py-3.5 rounded-xl text-sm font-extrabold shadow-lg hover:bg-[#087347] transition-all font-manrope"
                             >
                                 Schedule Live Demo <ArrowRight size={16} />
                             </Link>

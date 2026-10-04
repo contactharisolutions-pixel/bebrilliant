@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     TrendingUp, Users, Calendar, CheckCircle, XCircle, Loader2,
@@ -14,14 +14,14 @@ import {
 
 // ── PALETTE ────────────────────────────────────────────────
 const P = {
-    bg: '#F7F8FA', card: '#FEFEFE', border: '#E8E8E8',
-    brand: '#004B93', brandBg: '#EEF4FF',
-    cta: '#F0A026', ctaBg: '#FFF7E6',
+    bg: '#F8FAFC', card: '#FEFEFE', border: '#E8E8E8',
+    brand: '#0868B2', brandBg: '#EEF4FF',
+    cta: '#D97706', ctaBg: '#FFF7E6',
     dark: '#1B1D21', text: '#5A5A5A', muted: '#8E8E93', hover: '#F1F2F4',
-    success: '#059669', successBg: '#ECFDF5',
+    success: '#09834F', successBg: '#ECFDF5',
     warning: '#D97706', warningBg: '#FFFBEB',
     error: '#DC2626', errorBg: '#FEF2F2',
-    info: '#2563EB', infoBg: '#EFF6FF',
+    info: '#0868B2', infoBg: '#E5F3FB',
     purple: '#7C3AED', purpleBg: '#F5F3FF',
 }
 
@@ -35,15 +35,15 @@ const STAGE_LABELS: Record<string, string> = {
 }
 
 const FUNNEL_COLORS: Record<string, string> = {
-    new: '#059669',
+    new: '#09834F',
     contacted: '#D97706',
-    demo_scheduled: '#2563EB',
+    demo_scheduled: '#0868B2',
     demo_completed: '#7C3AED',
-    converted: '#059669',
+    converted: '#09834F',
     lost: '#DC2626',
 }
 
-const PIE_COLORS = ['#004B93', '#F0A026', '#059669', '#2563EB', '#7C3AED', '#DC2626', '#D97706']
+const PIE_COLORS = ['#0868B2', '#D97706', '#09834F', '#0868B2', '#7C3AED', '#DC2626', '#D97706']
 
 type Stats = {
     metrics: {

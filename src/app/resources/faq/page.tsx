@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState } from 'react'
 import Link from 'next/link'
@@ -126,9 +126,9 @@ export default function DetailedFAQPage() {
                                             borderRadius: 999,
                                             fontSize: 13,
                                             fontWeight: 700,
-                                            border: isActive ? '1.5px solid #2563EB' : '1px solid #E2E8F0',
-                                            background: isActive ? '#EFF6FF' : '#FFFFFF',
-                                            color: isActive ? '#2563EB' : '#475569',
+                                            border: isActive ? '1.5px solid #0868B2' : '1px solid #E2E8F0',
+                                            background: isActive ? '#E5F3FB' : '#FFFFFF',
+                                            color: isActive ? '#0868B2' : '#475569',
                                             cursor: 'pointer',
                                             transition: 'all 0.15s ease'
                                         }}

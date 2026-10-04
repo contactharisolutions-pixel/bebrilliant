@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
@@ -95,9 +95,9 @@ interface ExecutiveSummary {
 }
 
 const COLORS = {
-    primary: '#004B93',
-    primaryHover: '#003870',
-    primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
+    primary: '#0868B2',
+    primaryHover: '#07549A',
+    primaryGradient: 'linear-gradient(135deg, #0868B2 0%, #073B73 100%)',
     emerald: '#10B981',
     emeraldLight: '#ECFDF5',
     amber: '#F59E0B',
@@ -127,7 +127,7 @@ function TaxReceiptModal({ invoice, billingSettings, onClose }: { invoice: Invoi
                 {/* Modal Header */}
                 <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/70 print:hidden">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-50 text-[#004B93] rounded-xl">
+                        <div className="p-2 bg-blue-50 text-[#0868B2] rounded-xl">
                             <Receipt size={20} />
                         </div>
                         <div>
@@ -156,7 +156,7 @@ function TaxReceiptModal({ invoice, billingSettings, onClose }: { invoice: Invoi
                     {/* Invoice Meta Bar */}
                     <div className="flex justify-between items-start border-b border-slate-200 pb-6">
                         <div>
-                            <div className="text-2xl font-black text-[#004B93] tracking-tight">BeBrilliant</div>
+                            <div className="text-2xl font-black text-[#0868B2] tracking-tight">BeBrilliant</div>
                             <div className="text-xs text-slate-500 mt-1 font-semibold">Enterprise EdTech Infrastructure</div>
                             <div className="text-xs text-slate-600 mt-2 space-y-0.5">
                                 <p>BeBrilliant EdTech Solutions Pvt. Ltd.</p>
@@ -250,7 +250,7 @@ function TaxReceiptModal({ invoice, billingSettings, onClose }: { invoice: Invoi
                             </div>
                             <div className="border-t border-slate-200 pt-2 flex justify-between text-sm font-black text-slate-900">
                                 <span>Total Paid (INR):</span>
-                                <span className="text-[#004B93]">₹{invoice.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                <span className="text-[#0868B2]">₹{invoice.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                             </div>
                         </div>
                     </div>
@@ -328,7 +328,7 @@ function UpgradeModal({
                 {/* Header */}
                 <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/70">
                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-blue-50 text-[#004B93] rounded-xl">
+                        <div className="p-2.5 bg-blue-50 text-[#0868B2] rounded-xl">
                             <Sparkles size={20} />
                         </div>
                         <div>
@@ -354,7 +354,7 @@ function UpgradeModal({
                                 type="button"
                                 onClick={() => { setBillingCycle('monthly'); setCouponApplied(false); setDiscountAmount(0); }}
                                 className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
-                                    billingCycle === 'monthly' ? 'bg-white text-[#004B93] shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                                    billingCycle === 'monthly' ? 'bg-white text-[#0868B2] shadow-sm' : 'text-slate-600 hover:text-slate-900'
                                 }`}
                             >
                                 Monthly Billing
@@ -363,7 +363,7 @@ function UpgradeModal({
                                 type="button"
                                 onClick={() => { setBillingCycle('annual'); setCouponApplied(false); setDiscountAmount(0); }}
                                 className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 relative ${
-                                    billingCycle === 'annual' ? 'bg-white text-[#004B93] shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                                    billingCycle === 'annual' ? 'bg-white text-[#0868B2] shadow-sm' : 'text-slate-600 hover:text-slate-900'
                                 }`}
                             >
                                 Annual (Save 20%)
@@ -376,7 +376,7 @@ function UpgradeModal({
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
                         <div className="flex justify-between items-start">
                             <div>
-                                <span className="text-[10px] font-bold text-[#004B93] uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-md">Selected Node</span>
+                                <span className="text-[10px] font-bold text-[#0868B2] uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-md">Selected Node</span>
                                 <div className="text-lg font-black text-slate-900 mt-1">{plan.name}</div>
                                 <div className="text-xs text-slate-500 mt-0.5">{plan.max_students.toLocaleString()} Students • {plan.max_teachers} Faculty • {plan.max_storage_gb} GB Storage</div>
                             </div>
@@ -396,12 +396,12 @@ function UpgradeModal({
                                 onChange={e => { setCouponCode(e.target.value); setCouponError(''); }}
                                 disabled={couponApplied}
                                 placeholder="Try WELCOME30 or FESTIVE50"
-                                className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 uppercase"
+                                className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 uppercase"
                             />
                             <button
                                 onClick={handleApplyCoupon}
                                 disabled={couponApplied || !couponCode.trim()}
-                                className="px-4 py-2.5 bg-[#004B93] hover:bg-[#003870] disabled:bg-slate-300 text-white rounded-xl text-xs font-bold transition"
+                                className="px-4 py-2.5 bg-[#0868B2] hover:bg-[#07549A] disabled:bg-slate-300 text-white rounded-xl text-xs font-bold transition"
                             >
                                 {couponApplied ? 'Applied' : 'Apply'}
                             </button>
@@ -428,7 +428,7 @@ function UpgradeModal({
                         </div>
                         <div className="border-t border-slate-200 pt-2 flex justify-between items-center text-sm font-black text-slate-900">
                             <span>Total Payable Amount:</span>
-                            <span className="text-lg text-[#004B93]">₹{finalTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            <span className="text-lg text-[#0868B2]">₹{finalTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                         </div>
                     </div>
 
@@ -438,7 +438,7 @@ function UpgradeModal({
                             type="checkbox"
                             checked={agreeTerms}
                             onChange={e => setAgreeTerms(e.target.checked)}
-                            className="mt-0.5 rounded text-[#004B93] focus:ring-0"
+                            className="mt-0.5 rounded text-[#0868B2] focus:ring-0"
                         />
                         <span>I authorize the immediate upgrade of institutional resource quotas and generation of GST tax invoice.</span>
                     </label>
@@ -455,7 +455,7 @@ function UpgradeModal({
                     <button
                         onClick={handleConfirm}
                         disabled={saving || !agreeTerms}
-                        className="px-6 py-2.5 bg-[#004B93] hover:bg-[#003870] disabled:bg-slate-300 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-blue-900/10 transition"
+                        className="px-6 py-2.5 bg-[#0868B2] hover:bg-[#07549A] disabled:bg-slate-300 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-blue-900/10 transition"
                     >
                         {saving ? <Loader2 size={15} className="animate-spin" /> : <ArrowRight size={15} />}
                         Confirm & Upgrade Now
@@ -530,12 +530,12 @@ function TopupModal({
                                     onClick={() => setSelectedOption(opt)}
                                     className={`p-4 rounded-2xl border cursor-pointer transition flex items-center justify-between ${
                                         isSelected
-                                            ? 'border-[#004B93] bg-blue-50/40 shadow-sm'
+                                            ? 'border-[#0868B2] bg-blue-50/40 shadow-sm'
                                             : 'border-slate-200 hover:border-slate-300 bg-white'
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`p-2 rounded-xl ${isSelected ? 'bg-[#004B93] text-white' : 'bg-slate-100 text-slate-600'}`}>
+                                        <div className={`p-2 rounded-xl ${isSelected ? 'bg-[#0868B2] text-white' : 'bg-slate-100 text-slate-600'}`}>
                                             <Icon size={16} />
                                         </div>
                                         <div>
@@ -563,7 +563,7 @@ function TopupModal({
                         </div>
                         <div className="border-t border-slate-200 pt-1.5 flex justify-between font-bold text-slate-900">
                             <span>Total Payable:</span>
-                            <span className="text-[#004B93]">₹{(selectedOption.price * 1.18).toFixed(2)}</span>
+                            <span className="text-[#0868B2]">₹{(selectedOption.price * 1.18).toFixed(2)}</span>
                         </div>
                     </div>
                 </div>
@@ -857,7 +857,7 @@ export default function SubscriptionPage() {
     if (loading) {
         return (
             <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-8">
-                <Loader2 size={42} className="animate-spin text-[#004B93] mb-4" />
+                <Loader2 size={42} className="animate-spin text-[#0868B2] mb-4" />
                 <div className="text-xs font-black text-slate-500 uppercase tracking-widest">
                     Loading Billing & Subscription Details...
                 </div>
@@ -873,7 +873,7 @@ export default function SubscriptionPage() {
                 <p className="text-sm text-slate-600 text-center max-w-md mb-6">{error || 'Could not connect to the billing service. Please check your connection and retry.'}</p>
                 <button
                     onClick={fetchData}
-                    className="px-6 py-3 bg-[#004B93] hover:bg-[#003870] text-white rounded-2xl text-xs font-bold flex items-center gap-2 transition"
+                    className="px-6 py-3 bg-[#0868B2] hover:bg-[#07549A] text-white rounded-2xl text-xs font-bold flex items-center gap-2 transition"
                 >
                     <RefreshCcw size={15} /> Retry Connection
                 </button>
@@ -952,7 +952,7 @@ export default function SubscriptionPage() {
                     <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-md transition">
                         <div className="flex justify-between items-start mb-3">
                             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Institutional Tier</span>
-                            <div className="p-2 bg-blue-50 text-[#004B93] rounded-xl">
+                            <div className="p-2 bg-blue-50 text-[#0868B2] rounded-xl">
                                 <ShieldCheck size={18} />
                             </div>
                         </div>
@@ -1012,7 +1012,7 @@ export default function SubscriptionPage() {
                             {invoices.filter(i => i.status === 'paid').length} Settled
                         </div>
                         <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 font-medium">
-                            <Shield size={13} className="text-[#004B93]" />
+                            <Shield size={13} className="text-[#0868B2]" />
                             <span>18% GST Compliant Invoices</span>
                         </div>
                     </div>
@@ -1026,7 +1026,7 @@ export default function SubscriptionPage() {
                             onClick={() => setActiveTab('overview')}
                             className={`px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center gap-2 ${
                                 activeTab === 'overview'
-                                    ? 'bg-[#004B93] text-white shadow-md shadow-blue-900/10'
+                                    ? 'bg-[#0868B2] text-white shadow-md shadow-blue-900/10'
                                     : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
                             }`}
                         >
@@ -1036,7 +1036,7 @@ export default function SubscriptionPage() {
                             onClick={() => setActiveTab('plans')}
                             className={`px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center gap-2 ${
                                 activeTab === 'plans'
-                                    ? 'bg-[#004B93] text-white shadow-md shadow-blue-900/10'
+                                    ? 'bg-[#0868B2] text-white shadow-md shadow-blue-900/10'
                                     : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
                             }`}
                         >
@@ -1046,7 +1046,7 @@ export default function SubscriptionPage() {
                             onClick={() => setActiveTab('invoices')}
                             className={`px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center gap-2 relative ${
                                 activeTab === 'invoices'
-                                    ? 'bg-[#004B93] text-white shadow-md shadow-blue-900/10'
+                                    ? 'bg-[#0868B2] text-white shadow-md shadow-blue-900/10'
                                     : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
                             }`}
                         >
@@ -1059,7 +1059,7 @@ export default function SubscriptionPage() {
                             onClick={() => setActiveTab('settings')}
                             className={`px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center gap-2 ${
                                 activeTab === 'settings'
-                                    ? 'bg-[#004B93] text-white shadow-md shadow-blue-900/10'
+                                    ? 'bg-[#0868B2] text-white shadow-md shadow-blue-900/10'
                                     : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
                             }`}
                         >
@@ -1074,7 +1074,7 @@ export default function SubscriptionPage() {
                             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm relative overflow-hidden">
                                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                                     <div className="space-y-3">
-                                        <div className="flex items-center gap-2 text-xs font-black text-[#004B93] uppercase tracking-wider">
+                                        <div className="flex items-center gap-2 text-xs font-black text-[#0868B2] uppercase tracking-wider">
                                             <ShieldCheck size={16} /> Active School Plan
                                         </div>
                                         <div className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
@@ -1088,7 +1088,7 @@ export default function SubscriptionPage() {
                                             <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg">
                                                 Cycle: {current.billing_cycle === 'annual' ? 'Annual Commitment' : 'Monthly Recurring'}
                                             </span>
-                                            <span className="px-3 py-1 bg-blue-50 text-[#004B93] rounded-lg">
+                                            <span className="px-3 py-1 bg-blue-50 text-[#0868B2] rounded-lg">
                                                 Next Billing: {formatDate(current.renewal)}
                                             </span>
                                         </div>
@@ -1097,7 +1097,7 @@ export default function SubscriptionPage() {
                                     <div className="flex flex-wrap items-center gap-3">
                                         <button
                                             onClick={() => setActiveTab('plans')}
-                                            className="px-5 py-3 bg-[#004B93] hover:bg-[#003870] text-white rounded-2xl text-xs font-black flex items-center gap-2 shadow-lg shadow-blue-900/15 transition"
+                                            className="px-5 py-3 bg-[#0868B2] hover:bg-[#07549A] text-white rounded-2xl text-xs font-black flex items-center gap-2 shadow-lg shadow-blue-900/15 transition"
                                         >
                                             <Sparkles size={15} /> Upgrade Tier
                                         </button>
@@ -1126,7 +1126,7 @@ export default function SubscriptionPage() {
                                         max: usage?.max_students ?? 1000,
                                         unit: 'Nodes',
                                         icon: Globe,
-                                        color: '#004B93',
+                                        color: '#0868B2',
                                         bg: 'bg-blue-50',
                                         action: () => setShowTopupModal(true)
                                     },
@@ -1240,7 +1240,7 @@ export default function SubscriptionPage() {
                                         <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
                                             {tenantTypeDisplay} Subscription Plans & Quotas
                                         </h3>
-                                        <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-[#004B93] border border-blue-200 flex items-center gap-1.5">
+                                        <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-[#0868B2] border border-blue-200 flex items-center gap-1.5">
                                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                             Active Account Type: <strong>{tenantTypeDisplay}</strong>
                                         </span>
@@ -1271,7 +1271,7 @@ export default function SubscriptionPage() {
                                         onClick={() => setCatalogBillingCycle('monthly')}
                                         className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
                                             catalogBillingCycle === 'monthly'
-                                                ? 'bg-white text-[#004B93] shadow-sm'
+                                                ? 'bg-white text-[#0868B2] shadow-sm'
                                                 : 'text-slate-600 hover:text-slate-900'
                                         }`}
                                     >
@@ -1281,7 +1281,7 @@ export default function SubscriptionPage() {
                                         onClick={() => setCatalogBillingCycle('annual')}
                                         className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 relative ${
                                             catalogBillingCycle === 'annual'
-                                                ? 'bg-white text-[#004B93] shadow-sm'
+                                                ? 'bg-white text-[#0868B2] shadow-sm'
                                                 : 'text-slate-600 hover:text-slate-900'
                                         }`}
                                     >
@@ -1305,12 +1305,12 @@ export default function SubscriptionPage() {
                                             key={p.id}
                                             className={`bg-white rounded-3xl p-6 sm:p-7 border flex flex-col justify-between transition-all relative ${
                                                 isCurrent
-                                                    ? 'border-[#004B93] ring-2 ring-[#004B93]/20 shadow-lg'
+                                                    ? 'border-[#0868B2] ring-2 ring-[#0868B2]/20 shadow-lg'
                                                     : 'border-slate-200 hover:border-slate-300 hover:shadow-md'
                                             }`}
                                         >
                                             {isCurrent && (
-                                                <div className="absolute -top-3 right-6 px-3 py-1 bg-[#004B93] text-white rounded-full text-[10px] font-black tracking-wider uppercase shadow-md flex items-center gap-1">
+                                                <div className="absolute -top-3 right-6 px-3 py-1 bg-[#0868B2] text-white rounded-full text-[10px] font-black tracking-wider uppercase shadow-md flex items-center gap-1">
                                                     <Target size={12} /> Current Active Plan
                                                 </div>
                                             )}
@@ -1328,7 +1328,7 @@ export default function SubscriptionPage() {
                                                                 🏢 Institute Tier • Multiple Teachers Allowed
                                                             </span>
                                                         ) : (
-                                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-[#004B93] border border-blue-200">
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-[#0868B2] border border-blue-200">
                                                                 🏫 School Tier • Multiple Teachers Allowed
                                                             </span>
                                                         )}
@@ -1398,7 +1398,7 @@ export default function SubscriptionPage() {
                                                 ) : (
                                                     <button
                                                         onClick={() => setSelectedUpgradePlan(p)}
-                                                        className="w-full py-3 bg-[#004B93] hover:bg-[#003870] text-white font-bold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-blue-900/10 transition"
+                                                        className="w-full py-3 bg-[#0868B2] hover:bg-[#07549A] text-white font-bold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-blue-900/10 transition"
                                                     >
                                                         Upgrade to {p.name} <ArrowRight size={14} />
                                                     </button>
@@ -1426,7 +1426,7 @@ export default function SubscriptionPage() {
                                         value={invoiceSearch}
                                         onChange={e => setInvoiceSearch(e.target.value)}
                                         placeholder="Search invoice #..."
-                                        className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                        className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                     />
                                     <div className="flex items-center gap-1 p-1 bg-white border border-slate-200 rounded-xl">
                                         {(['all', 'paid', 'pending'] as const).map((filter) => (
@@ -1435,7 +1435,7 @@ export default function SubscriptionPage() {
                                                 onClick={() => setInvoiceFilter(filter)}
                                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition ${
                                                     invoiceFilter === filter
-                                                        ? 'bg-[#004B93] text-white'
+                                                        ? 'bg-[#0868B2] text-white'
                                                         : 'text-slate-600 hover:text-slate-900'
                                                 }`}
                                             >
@@ -1506,7 +1506,7 @@ export default function SubscriptionPage() {
                                                     <td className="py-4 px-6 text-right">
                                                         <button
                                                             onClick={() => setSelectedReceipt(inv)}
-                                                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#004B93] rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition"
+                                                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0868B2] rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition"
                                                         >
                                                             <Printer size={13} /> View Tax Invoice
                                                         </button>
@@ -1544,7 +1544,7 @@ export default function SubscriptionPage() {
                                             onChange={e => setBillingSettings(prev => ({ ...prev, legal_name: e.target.value }))}
                                             required
                                             placeholder="Silver Bells School Mansarovar"
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                         />
                                     </div>
 
@@ -1556,7 +1556,7 @@ export default function SubscriptionPage() {
                                             onChange={e => setBillingSettings(prev => ({ ...prev, gstin: e.target.value.toUpperCase() }))}
                                             placeholder="08AAAAA0000A1Z5"
                                             maxLength={15}
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 uppercase font-mono"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 uppercase font-mono"
                                         />
                                     </div>
 
@@ -1568,7 +1568,7 @@ export default function SubscriptionPage() {
                                             onChange={e => setBillingSettings(prev => ({ ...prev, pan: e.target.value.toUpperCase() }))}
                                             placeholder="AAAAA0000A"
                                             maxLength={10}
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 uppercase font-mono"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 uppercase font-mono"
                                         />
                                     </div>
 
@@ -1580,7 +1580,7 @@ export default function SubscriptionPage() {
                                             onChange={e => setBillingSettings(prev => ({ ...prev, billing_email: e.target.value }))}
                                             required
                                             placeholder="accounts@silverbells.edu"
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                         />
                                     </div>
 
@@ -1591,7 +1591,7 @@ export default function SubscriptionPage() {
                                             value={billingSettings.billing_phone}
                                             onChange={e => setBillingSettings(prev => ({ ...prev, billing_phone: e.target.value }))}
                                             placeholder="+91 94140 12345"
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                         />
                                     </div>
 
@@ -1603,7 +1603,7 @@ export default function SubscriptionPage() {
                                             onChange={e => setBillingSettings(prev => ({ ...prev, pincode: e.target.value }))}
                                             placeholder="302020"
                                             maxLength={6}
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                         />
                                     </div>
 
@@ -1614,7 +1614,7 @@ export default function SubscriptionPage() {
                                             onChange={e => setBillingSettings(prev => ({ ...prev, address: e.target.value }))}
                                             rows={2}
                                             placeholder="Sector 12, Institutional Area, Mansarovar, Jaipur, Rajasthan"
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 resize-none"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 resize-none"
                                         />
                                     </div>
                                 </div>
@@ -1629,7 +1629,7 @@ export default function SubscriptionPage() {
                                         type="checkbox"
                                         checked={billingSettings.auto_renew}
                                         onChange={e => setBillingSettings(prev => ({ ...prev, auto_renew: e.target.checked }))}
-                                        className="h-5 w-5 rounded text-[#004B93] focus:ring-0 cursor-pointer"
+                                        className="h-5 w-5 rounded text-[#0868B2] focus:ring-0 cursor-pointer"
                                     />
                                 </div>
 
@@ -1637,7 +1637,7 @@ export default function SubscriptionPage() {
                                     <button
                                         type="submit"
                                         disabled={saving}
-                                        className="px-6 py-2.5 bg-[#004B93] hover:bg-[#003870] disabled:bg-slate-300 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-blue-900/10 transition"
+                                        className="px-6 py-2.5 bg-[#0868B2] hover:bg-[#07549A] disabled:bg-slate-300 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-blue-900/10 transition"
                                     >
                                         {saving && <Loader2 size={14} className="animate-spin" />}
                                         Save Billing Preferences

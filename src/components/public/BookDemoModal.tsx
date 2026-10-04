@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { createPortal } from 'react-[#000]'
 import { createPortal as reactCreatePortal } from 'react-dom'
 import {
     X, User, Mail, Phone, Building, Briefcase, MessageSquare,
@@ -157,7 +156,7 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
 
                 {submitted ? (
                     <div style={{ textAlign: 'center', padding: '24px 12px' }}>
-                        <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#DCFCE7', color: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                        <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#DCF7E7', color: '#09834F', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
                             <CheckCircle2 size={36} />
                         </div>
                         <h3 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 10 }}>
@@ -169,7 +168,7 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
                         <button
                             onClick={onClose}
                             style={{
-                                background: '#004B93',
+                                background: '#0868B2',
                                 color: '#FFFFFF',
                                 border: 'none',
                                 padding: '12px 28px',
@@ -186,7 +185,7 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
                     <>
                         {/* Header */}
                         <div style={{ textAlign: 'center', marginBottom: 24, paddingRight: 20 }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#EFF6FF', color: '#004B93', padding: '4px 12px', borderRadius: 999, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#E5F3FB', color: '#0868B2', padding: '4px 12px', borderRadius: 999, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
                                 <Sparkles size={12} /> Book Live Demo
                             </div>
                             <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 4 }}>
@@ -365,7 +364,7 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
                                     padding: '13px',
                                     borderRadius: 12,
                                     border: 'none',
-                                    background: 'linear-gradient(135deg, #004B93 0%, #1FAC63 100%)',
+                                    background: 'linear-gradient(135deg, #0868B2 0%, #09834F 100%)',
                                     color: '#FFFFFF',
                                     fontSize: 14.5,
                                     fontWeight: 800,

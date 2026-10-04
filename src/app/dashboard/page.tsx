@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import React, { useState, useEffect } from 'react'
 import {
     Users, UserCheck, GraduationCap, ClipboardList, Wallet, DollarSign, Target,
@@ -21,25 +21,25 @@ import { C, GRADIENT, getRoleAccent } from '@/lib/theme'
 
 // ── DESIGN TOKENS ─────────────────────────────────────────────────────────────
 const T = {
-    blue: '#2563EB',            // Accent / interactive blue (official)
-    blueDark: '#1E3A8A',        // Brand primary (deep navy)
-    blueLight: '#EFF6FF',       // AI block / blue bg
-    green: '#0CA35C',           // Official brand green
-    greenLight: '#DCFCE7',      // Official success bg
+    blue: '#0868B2',            // Accent / interactive blue (official)
+    blueDark: '#0868B2',        // Brand primary (deep navy)
+    blueLight: '#E5F3FB',       // AI block / blue bg
+    green: '#09834F',           // Official brand green
+    greenLight: '#DCF7E7',      // Official success bg
     amber: '#F59E0B',           // Official warning (unchanged)
     amberLight: '#FEF3C7',      // Official warning bg
     red: '#DC2626',             // Official error
     redLight: '#FEE2E2',        // Official error bg
-    purple: '#672AEA',          // Official AI purple
+    purple: '#7C3AED',          // Official AI purple
     purpleLight: '#F5F3FF',     // Purple bg (unchanged)
-    slate900: '#111827',        // Primary text (official)
-    slate700: '#374151',        // Semi-dark text
-    slate500: '#6B7280',        // Secondary text (official)
-    slate300: '#D1D5DB',        // Hover border
-    slate100: '#F3F4F6',        // Skeleton loader
-    slate50: '#F7F8FA',         // Secondary background (official)
+    slate900: '#34445A',        // Primary text (official)
+    slate700: '#475569',        // Semi-dark text
+    slate500: '#64748B',        // Secondary text (official)
+    slate300: '#CBD5E1',        // Hover border
+    slate100: '#F1F5F9',        // Skeleton loader
+    slate50: '#F8FAFC',         // Secondary background (official)
     white: '#FFFFFF',
-    border: '#E5E7EB',          // Official border
+    border: '#E2E8F0',          // Official border
     shadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
     shadowMd: '0 4px 12px rgba(0,0,0,0.08)',
     shadowLg: '0 10px 24px rgba(0,0,0,0.06)',
@@ -415,7 +415,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
 
             {/* ── 1. EXECUTIVE COMMAND HEADER (ART-DIRECTED) ────────────────── */}
             <div style={{
-                background: 'linear-gradient(135deg, #091E42 0%, #102A6B 35%, #1E3A8A 70%, #1D4ED8 100%)',
+                background: 'linear-gradient(135deg, #091E42 0%, #102A6B 35%, #0868B2 70%, #1D4ED8 100%)',
                 borderRadius: 24, padding: '36px 44px', marginBottom: 28,
                 position: 'relative', overflow: 'hidden',
                 boxShadow: '0 20px 48px rgba(16,42,107,0.25), 0 1px 3px rgba(0,0,0,0.1)'
@@ -547,14 +547,14 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{
                             width: 36, height: 36, borderRadius: 10,
-                            background: 'linear-gradient(135deg, #672AEA, #2563EB)',
+                            background: 'linear-gradient(135deg, #7C3AED, #0868B2)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFF'
                         }}>
                             <BrainCircuit size={18} />
                         </div>
                         <div>
                             <div style={{ fontSize: 14, fontWeight: 800, color: T.slate900, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                AI Academic Co-Pilot <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 100, background: '#EDE9FE', color: '#672AEA', fontWeight: 800 }}>GPT-4o Engine</span>
+                                AI Academic Co-Pilot <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 100, background: '#EDE9FE', color: '#7C3AED', fontWeight: 800 }}>GPT-4o Engine</span>
                             </div>
                             <div style={{ fontSize: 12, color: T.slate500, fontWeight: 500 }}>
                                 Instant assessment authoring, circular drafting, and curriculum insights for {tenantName}
@@ -566,8 +566,8 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                         <button
                             onClick={() => handleRunAi('Generate 3 conceptual CBSE Class 10 Physics questions on Light Reflection and Refraction with options and explanations', 'generate_quiz')}
                             style={{
-                                padding: '6px 12px', borderRadius: 100, background: '#EFF6FF',
-                                border: '1px solid #BFDBFE', color: T.blue, fontSize: 11, fontWeight: 700,
+                                padding: '6px 12px', borderRadius: 100, background: '#E5F3FB',
+                                border: '1px solid #B6DCF2', color: T.blue, fontSize: 11, fontWeight: 700,
                                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5
                             }}
                         >
@@ -577,7 +577,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                             onClick={() => handleRunAi('Draft an authoritative circular for parents regarding upcoming Class 10 & 12 Pre-Board CBT Examination Schedule and guidelines', 'draft_circular')}
                             style={{
                                 padding: '6px 12px', borderRadius: 100, background: '#F5F3FF',
-                                border: '1px solid #DDD6FE', color: '#672AEA', fontSize: 11, fontWeight: 700,
+                                border: '1px solid #DDD6FE', color: '#7C3AED', fontSize: 11, fontWeight: 700,
                                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5
                             }}
                         >
@@ -617,7 +617,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                                 disabled={aiLoading}
                                 style={{
                                     padding: '12px 22px', borderRadius: 12,
-                                    background: 'linear-gradient(135deg, #1E3A8A, #2563EB)',
+                                    background: 'linear-gradient(135deg, #0868B2, #0868B2)',
                                     color: '#FFF', border: 'none', fontSize: 13, fontWeight: 800,
                                     cursor: aiLoading ? 'not-allowed' : 'pointer',
                                     display: 'flex', alignItems: 'center', gap: 8, opacity: aiLoading ? 0.7 : 1
@@ -681,7 +681,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                                                     {q.options?.map((opt: string, oi: number) => (
                                                         <div key={oi} style={{
                                                             padding: '6px 10px', borderRadius: 8, fontSize: 12,
-                                                            background: oi === q.correct_index ? '#DCFCE7' : '#F8FAFC',
+                                                            background: oi === q.correct_index ? '#DCF7E7' : '#F8FAFC',
                                                             border: `1px solid ${oi === q.correct_index ? '#86EFAC' : '#E2E8F0'}`,
                                                             color: oi === q.correct_index ? '#166534' : T.slate700,
                                                             fontWeight: oi === q.correct_index ? 700 : 500
@@ -736,7 +736,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                                                 </div>
                                             ))}
                                         </div>
-                                        <div style={{ padding: '10px 14px', borderRadius: 8, background: '#DCFCE7', color: '#166534', fontSize: 12, fontWeight: 700 }}>
+                                        <div style={{ padding: '10px 14px', borderRadius: 8, background: '#DCF7E7', color: '#166534', fontSize: 12, fontWeight: 700 }}>
                                             Recommendation: {aiResult.data.recommendation}
                                         </div>
                                     </div>
@@ -795,7 +795,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                                     </div>
                                 </div>
                                 <div style={{ height: 8, borderRadius: 100, background: '#F1F5F9', overflow: 'hidden' }}>
-                                    <div style={{ height: '100%', width: `${studentPct}%`, background: 'linear-gradient(90deg, #2563EB, #1E3A8A)', borderRadius: 100, transition: 'width 0.8s ease' }} />
+                                    <div style={{ height: '100%', width: `${studentPct}%`, background: 'linear-gradient(90deg, #0868B2, #0868B2)', borderRadius: 100, transition: 'width 0.8s ease' }} />
                                 </div>
                             </div>
 
@@ -804,7 +804,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                         <div style={{ width: 28, height: 28, borderRadius: 8, background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <UsersRound size={15} color="#672AEA" />
+                                            <UsersRound size={15} color="#7C3AED" />
                                         </div>
                                         <div>
                                             <span style={{ fontSize: 13, fontWeight: 800, color: T.slate900 }}>Faculty & Staff</span>
@@ -812,11 +812,11 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                                         </div>
                                     </div>
                                     <div style={{ fontSize: 13, fontWeight: 800, color: T.slate900 }}>
-                                        <span style={{ color: '#672AEA' }}>{totalTeachers}</span> / {maxTeachers} Seats
+                                        <span style={{ color: '#7C3AED' }}>{totalTeachers}</span> / {maxTeachers} Seats
                                     </div>
                                 </div>
                                 <div style={{ height: 8, borderRadius: 100, background: '#F1F5F9', overflow: 'hidden' }}>
-                                    <div style={{ height: '100%', width: `${Math.max(teacherPct, totalTeachers > 0 ? 2 : 0)}%`, background: 'linear-gradient(90deg, #672AEA, #4F46E5)', borderRadius: 100, transition: 'width 0.8s ease' }} />
+                                    <div style={{ height: '100%', width: `${Math.max(teacherPct, totalTeachers > 0 ? 2 : 0)}%`, background: 'linear-gradient(90deg, #7C3AED, #4F46E5)', borderRadius: 100, transition: 'width 0.8s ease' }} />
                                 </div>
                             </div>
 
@@ -824,7 +824,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                             <div>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <div style={{ width: 28, height: 28, borderRadius: 8, background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <div style={{ width: 28, height: 28, borderRadius: 8, background: '#DCF7E7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                             <HardDrive size={15} color={T.green} />
                                         </div>
                                         <div>
@@ -837,7 +837,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                                     </div>
                                 </div>
                                 <div style={{ height: 8, borderRadius: 100, background: '#F1F5F9', overflow: 'hidden' }}>
-                                    <div style={{ height: '100%', width: `${storagePct}%`, background: 'linear-gradient(90deg, #0CA35C, #10B981)', borderRadius: 100 }} />
+                                    <div style={{ height: '100%', width: `${storagePct}%`, background: 'linear-gradient(90deg, #09834F, #10B981)', borderRadius: 100 }} />
                                 </div>
                             </div>
 
@@ -907,7 +907,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                                 <div style={{ fontSize: 13, fontWeight: 800, color: T.slate900 }}>Online CBT Exam Server</div>
                                 <div style={{ fontSize: 11, color: T.slate500, fontWeight: 500 }}>Latency 14ms · 99.98% Uptime</div>
                             </div>
-                            <div style={{ padding: '4px 10px', borderRadius: 100, background: '#DCFCE7', color: '#15803D', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em' }}>
+                            <div style={{ padding: '4px 10px', borderRadius: 100, background: '#DCF7E7', color: '#087347', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em' }}>
                                 OPERATIONAL
                             </div>
                         </div>
@@ -918,13 +918,13 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                             border: '1px solid #E2E8F0', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12
                         }}>
                             <div style={{ width: 38, height: 38, borderRadius: 10, background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                <ScanLine size={18} color="#672AEA" />
+                                <ScanLine size={18} color="#7C3AED" />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: 13, fontWeight: 800, color: T.slate900 }}>Optical Sheet Scanner</div>
                                 <div style={{ fontSize: 11, color: T.slate500, fontWeight: 500 }}>Batch Optical Engine Ready · 200/min</div>
                             </div>
-                            <div style={{ padding: '4px 10px', borderRadius: 100, background: '#EDE9FE', color: '#672AEA', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em' }}>
+                            <div style={{ padding: '4px 10px', borderRadius: 100, background: '#EDE9FE', color: '#7C3AED', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em' }}>
                                 READY
                             </div>
                         </div>
@@ -941,7 +941,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                                 <div style={{ fontSize: 13, fontWeight: 800, color: T.slate900 }}>OpenAI GPT-4o Pipeline</div>
                                 <div style={{ fontSize: 11, color: T.slate500, fontWeight: 500 }}>Integrated & Connected for School</div>
                             </div>
-                            <div style={{ padding: '4px 10px', borderRadius: 100, background: '#DCFCE7', color: '#15803D', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em' }}>
+                            <div style={{ padding: '4px 10px', borderRadius: 100, background: '#DCF7E7', color: '#087347', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em' }}>
                                 ONLINE
                             </div>
                         </div>
@@ -958,7 +958,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                                 <div style={{ fontSize: 13, fontWeight: 800, color: T.slate900 }}>AI Anti-Cheat Lockdown</div>
                                 <div style={{ fontSize: 11, color: T.slate500, fontWeight: 500 }}>Window Blur & Tab Switch Blocker</div>
                             </div>
-                            <div style={{ padding: '4px 10px', borderRadius: 100, background: '#DCFCE7', color: '#15803D', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em' }}>
+                            <div style={{ padding: '4px 10px', borderRadius: 100, background: '#DCF7E7', color: '#087347', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em' }}>
                                 ENABLED
                             </div>
                         </div>
@@ -970,13 +970,13 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
             {/* ── 4. INSTITUTIONAL READINESS & ACTIVATION HUB ───────────────── */}
             {totalStudents < 5 && (
                 <div style={{
-                    background: 'linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 60%, #EFF6FF 100%)',
-                    borderRadius: 20, border: '1px solid #BBF7D0', padding: '28px 32px',
+                    background: 'linear-gradient(135deg, #F1FBF5 0%, #FFFFFF 60%, #E5F3FB 100%)',
+                    borderRadius: 20, border: '1px solid #B7E8CC', padding: '28px 32px',
                     marginBottom: 28, boxShadow: T.shadow
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
                         <div>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 100, background: '#DCFCE7', color: '#15803D', fontSize: 11, fontWeight: 800, marginBottom: 8 }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 100, background: '#DCF7E7', color: '#087347', fontSize: 11, fontWeight: 800, marginBottom: 8 }}>
                                 🚀 GETTING STARTED GUIDE
                             </div>
                             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: T.slate900 }}>
@@ -991,7 +991,7 @@ function AdminDashboardView({ data, role, identity }: { data: any; role: string;
                             disabled={seedingRoster}
                             style={{
                                 padding: '12px 22px', borderRadius: 12,
-                                background: 'linear-gradient(135deg, #0CA35C, #15803D)',
+                                background: 'linear-gradient(135deg, #09834F, #087347)',
                                 color: '#FFF', border: 'none', fontSize: 13, fontWeight: 800,
                                 cursor: seedingRoster ? 'not-allowed' : 'pointer',
                                 display: 'flex', alignItems: 'center', gap: 8,
@@ -1258,7 +1258,7 @@ function StudentDashboardView({ data, identity }: { data: any; identity: any }) 
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                         {/* Avatar */}
-                        <div style={{ width: 64, height: 64, borderRadius: 20, background: 'linear-gradient(135deg, #004B93, #0066CC)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, color: '#FFF', border: '2px solid rgba(255,255,255,0.2)', flexShrink: 0 }}>
+                        <div style={{ width: 64, height: 64, borderRadius: 20, background: 'linear-gradient(135deg, #0868B2, #0066CC)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, color: '#FFF', border: '2px solid rgba(255,255,255,0.2)', flexShrink: 0 }}>
                             {initials}
                         </div>
                         <div>
@@ -1632,7 +1632,7 @@ function TeacherDashboardView({ data, identity }: { data: any; identity: any }) 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32, animation: 'float 0.4s ease-out' }}>
             {/* ── 1. HERO BANNER: TEACHER ACADEMIC WORKSPACE ─────────────────── */}
             <div style={{
-                background: 'linear-gradient(135deg, #1E3A8A 0%, #172554 100%)',
+                background: 'linear-gradient(135deg, #0868B2 0%, #172554 100%)',
                 borderRadius: 24,
                 padding: '36px 40px',
                 color: '#fff',
@@ -1768,7 +1768,7 @@ function TeacherDashboardView({ data, identity }: { data: any; identity: any }) 
 
             {/* ── 2. AI FACULTY CO-PILOT BANNER ───────────────────────────────── */}
             <div style={{
-                background: 'linear-gradient(90deg, #F5F3FF 0%, #EFF6FF 100%)',
+                background: 'linear-gradient(90deg, #F5F3FF 0%, #E5F3FB 100%)',
                 borderRadius: 18,
                 padding: '18px 24px',
                 border: '1px solid #DDD6FE',
@@ -1832,7 +1832,7 @@ function TeacherDashboardView({ data, identity }: { data: any; identity: any }) 
                             color: '#065F46', fontSize: 11, fontWeight: 700,
                             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
                         }}>
-                            <Target size={12} color="#059669" />
+                            <Target size={12} color="#09834F" />
                             Weaker Topics Radar
                         </button>
                     </Link>
@@ -1978,7 +1978,7 @@ function TeacherDashboardView({ data, identity }: { data: any; identity: any }) 
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <span style={{
                                                 fontSize: 12, fontWeight: 800, padding: '3px 8px',
-                                                borderRadius: 6, background: '#EFF6FF', color: T.blue,
+                                                borderRadius: 6, background: '#E5F3FB', color: T.blue,
                                                 border: '1px solid #DBEAFE'
                                             }}>
                                                 {c.className}
@@ -2018,7 +2018,7 @@ function TeacherDashboardView({ data, identity }: { data: any; identity: any }) 
                                     }}>
                                         <span style={{
                                             fontSize: 12, fontWeight: 800, padding: '3px 8px',
-                                            borderRadius: 6, background: '#EFF6FF', color: T.blue,
+                                            borderRadius: 6, background: '#E5F3FB', color: T.blue,
                                             border: '1px solid #DBEAFE', width: 'fit-content'
                                         }}>
                                             {clsName}
@@ -2056,7 +2056,7 @@ function TeacherDashboardView({ data, identity }: { data: any; identity: any }) 
                                 <button style={{
                                     display: 'inline-flex', alignItems: 'center', gap: 6,
                                     padding: '7px 14px', borderRadius: 10,
-                                    background: T.blueLight, border: `1px solid #BFDBFE`,
+                                    background: T.blueLight, border: `1px solid #B6DCF2`,
                                     fontSize: 12, fontWeight: 800, color: T.blue, cursor: 'pointer'
                                 }}>
                                     <Edit3 size={13} /> Open Grading Hub
@@ -2173,8 +2173,8 @@ function TeacherDashboardView({ data, identity }: { data: any; identity: any }) 
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                             <span style={{
                                                 fontSize: 10, fontWeight: 800, padding: '3px 8px',
-                                                borderRadius: 6, background: '#DCFCE7', color: '#166534',
-                                                border: '1px solid #BBF7D0'
+                                                borderRadius: 6, background: '#DCF7E7', color: '#166534',
+                                                border: '1px solid #B7E8CC'
                                             }}>
                                                 {ex.status ? ex.status.toUpperCase() : 'ACTIVE'}
                                             </span>
@@ -2247,7 +2247,7 @@ function TeacherDashboardView({ data, identity }: { data: any; identity: any }) 
                         <Link href="/dashboard/faculty/analytics/results-360" style={{ textDecoration: 'none' }}>
                             <button style={{
                                 width: '100%', padding: '10px 16px', borderRadius: 12,
-                                background: `linear-gradient(135deg, ${T.green}, #059669)`,
+                                background: `linear-gradient(135deg, ${T.green}, #09834F)`,
                                 color: '#fff', border: 'none', fontSize: 12, fontWeight: 800,
                                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                                 boxShadow: '0 4px 14px rgba(12, 163, 92, 0.3)'
@@ -2405,7 +2405,7 @@ export default function PortalDashboard() {
                 @keyframes livepin { 0%,100% { box-shadow: 0 0 0 3px rgba(16,185,129,0.3) } 50% { box-shadow: 0 0 0 8px rgba(16,185,129,0.1) } }
                 @keyframes float { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
                 .enterprise-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.10) !important; }
-                .enterprise-row:hover { background: #EEF4FF !important; border-color: #004B93 !important; }
+                .enterprise-row:hover { background: #EEF4FF !important; border-color: #0868B2 !important; }
                 .enterprise-action:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; }
             `}</style>
             <Loader2 size={48} color={T.blue} style={{ animation: 'spin 1s linear infinite' }} />
@@ -2464,7 +2464,7 @@ export default function PortalDashboard() {
                 @keyframes float { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
                 @keyframes spin { to{transform:rotate(360deg)} }
                 .enterprise-card:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.10) !important; }
-                .enterprise-row:hover { background: #EEF4FF !important; border-color: #004B93 !important; }
+                .enterprise-row:hover { background: #EEF4FF !important; border-color: #0868B2 !important; }
                 .enterprise-action:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; }
             `}</style>
             <div style={{ padding: (isAdmin || isTeacher) ? '40px 48px' : '40px 48px', background: T.slate50, minHeight: '100vh', fontFamily: "'Inter', system-ui, sans-serif", animation: 'float 0.4s ease-out' }}>

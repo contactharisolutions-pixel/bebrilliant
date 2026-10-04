@@ -172,12 +172,12 @@ export async function GET(request: NextRequest) {
             if (recentStudents) {
                 recentStudents.forEach((s: any) => {
                     const studentName = [s.first_name, s.last_name].filter(Boolean).join(' ') || 'New Student'
-                    activityFeed.push({ type: 'student', label: `${studentName} enrolled`, time: s.created_at, color: '#10B981' })
+                    activityFeed.push({ type: 'student', label: `${studentName} enrolled`, time: s.created_at, color: '#09834F' })
                 })
             }
             if (recentExams) {
                 recentExams.forEach((e: any) => {
-                    activityFeed.push({ type: 'exam', label: `Exam "${e.name}" created`, time: e.created_at, color: '#004B93' })
+                    activityFeed.push({ type: 'exam', label: `Exam "${e.name}" created`, time: e.created_at, color: '#0868B2' })
                 })
             }
             activityFeed.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
@@ -250,19 +250,19 @@ export async function GET(request: NextRequest) {
                     type: 'system',
                     label: `Institutional license active: ${planName}`,
                     time: subscription?.created_at || new Date().toISOString(),
-                    color: '#0CA35C'
+                    color: '#09834F'
                 },
                 {
                     type: 'system',
                     label: `Dedicated domain allocated: ${subdomain}`,
                     time: tenantInfo?.created_at || new Date().toISOString(),
-                    color: '#2563EB'
+                    color: '#0868B2'
                 },
                 {
                     type: 'system',
                     label: 'School administrator account verified & security synced',
                     time: new Date(Date.now() - 3600000).toISOString(),
-                    color: '#672AEA'
+                    color: '#7C3AED'
                 }
             ]
         }

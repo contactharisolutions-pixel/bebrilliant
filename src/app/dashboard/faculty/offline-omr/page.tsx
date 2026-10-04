@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
     FileText, Printer, UploadCloud, PieChart,
@@ -23,10 +23,10 @@ type OmrExam = {
     created_at: string
 }
 const COLORS = {
-    primary: '#004B93',
-    primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
-    success: '#1FAC63',
-    warning: '#F0A026',
+    primary: '#0868B2',
+    primaryGradient: 'linear-gradient(135deg, #0868B2 0%, #073B73 100%)',
+    success: '#09834F',
+    warning: '#D97706',
     danger: '#EF4444',
     slate: '#64748B',
     background: '#F8FAFC',
@@ -226,7 +226,7 @@ export default function OfflineOmrPage() {
                                         <button style={{ padding: '10px 18px', background: '#FFF', border: '1px solid #F1F5F9', borderRadius: 14, color: '#1E293B', fontSize: 12, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
                                             <Printer size={15} /> Download OMRs
                                         </button>
-                                        <button onClick={() => handleRunChecking(exam.id)} disabled={!!processing} style={{ padding: '10px 24px', background: '#111827', color: '#FFF', border: 'none', borderRadius: 14, fontSize: 12, fontWeight: 1000, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <button onClick={() => handleRunChecking(exam.id)} disabled={!!processing} style={{ padding: '10px 24px', background: '#34445A', color: '#FFF', border: 'none', borderRadius: 14, fontSize: 12, fontWeight: 1000, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
                                             {processing === exam.id ? <Loader2 size={16} className="spin" /> : <><Rocket size={16} /> Start Checking</>}
                                         </button>
                                     </div>

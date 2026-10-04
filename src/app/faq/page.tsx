@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import Link from 'next/link'
@@ -57,10 +57,10 @@ export default function FAQPage() {
                                 onClick={() => setOpenIndex(openIndex === i ? null : i)}
                                 className="w-full text-left px-8 py-8 flex items-center justify-between gap-6"
                             >
-                                <span className="text-xl font-black text-[#191c20] leading-tight group-hover:text-[#00356a] transition-colors font-manrope">
+                                <span className="text-xl font-black text-[#191c20] leading-tight group-hover:text-[#0868B2] transition-colors font-manrope">
                                     {faq.q}
                                 </span>
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${openIndex === i ? 'bg-[#00356a] text-white rotate-180' : 'bg-white/80 text-gray-400 group-hover:bg-[#00356a]/10 group-hover:text-[#00356a]'}`}>
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${openIndex === i ? 'bg-[#0868B2] text-white rotate-180' : 'bg-white/80 text-gray-400 group-hover:bg-[#0868B2]/10 group-hover:text-[#0868B2]'}`}>
                                     {openIndex === i ? <Minus size={20} /> : <Plus size={20} />}
                                 </div>
                             </button>
@@ -88,7 +88,7 @@ export default function FAQPage() {
                                 Whether you need help setting up your first exam or want to discuss a custom plan for your school, our team is just a call away.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-6">
-                                <Link href="/contact" className="inline-flex bg-gradient-to-br from-[#00356a] to-[#004b93] text-white py-5 px-10 rounded-2xl text-lg font-black shadow-xl shadow-blue-900/10 hover:scale-[1.02] transition-all gap-4 items-center justify-center font-manrope">
+                                <Link href="/contact" className="inline-flex bg-gradient-to-br from-[#0868B2] to-[#0868B2] text-white py-5 px-10 rounded-2xl text-lg font-black shadow-xl shadow-blue-900/10 hover:scale-[1.02] transition-all gap-4 items-center justify-center font-manrope">
                                     Contact Support <MessageCircle size={22} />
                                 </Link>
                                 <Link href="/request-demo" className="inline-flex bg-white text-[#191c20] py-5 px-10 rounded-2xl text-lg font-black hover:scale-[1.02] transition-all gap-4 items-center justify-center font-manrope">

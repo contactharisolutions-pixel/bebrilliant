@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import React, { useState, useEffect } from 'react'
 import { 
     ArrowRight, Loader2, Sparkles, BookOpen, AlertCircle, Award, 
@@ -199,7 +199,7 @@ function ExamCard({ exam, onEnroll, onAddToCart, onBuyExam, examLanguages, setEx
                     </div>
                 </div>
                      <div style={{ marginTop: 20, padding: '16px', background: timeLeft === 'LIVE NOW' ? '#ECFDF5' : '#FFF7ED', borderRadius: 16, border: '1px solid', borderColor: timeLeft === 'LIVE NOW' ? '#A7F3D0' : '#FFEDD5', textAlign: 'center' }}>
-                        <div style={{ fontSize: 10, fontWeight: 900, color: timeLeft === 'LIVE NOW' ? '#059669' : '#C2410C', textTransform: 'uppercase', marginBottom: 6 }}>Count Down</div>
+                        <div style={{ fontSize: 10, fontWeight: 900, color: timeLeft === 'LIVE NOW' ? '#09834F' : '#C2410C', textTransform: 'uppercase', marginBottom: 6 }}>Count Down</div>
                         <div style={{ fontSize: 24, fontWeight: 900, color: '#0F172A', letterSpacing: '0.05em' }}>
                             {timeLeft || 'LOADING...'}
                         </div>

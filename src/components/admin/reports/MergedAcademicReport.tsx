@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
@@ -260,7 +260,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
     if (loading && !header) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[70vh] p-12 text-slate-500">
-                <Loader2 className="w-12 h-12 animate-spin text-[#004B93] mb-4" />
+                <Loader2 className="w-12 h-12 animate-spin text-[#0868B2] mb-4" />
                 <h3 className="text-lg font-bold text-slate-800">Loading Report...</h3>
                 <p className="text-sm text-slate-400 mt-1">Please wait while we load the data.</p>
             </div>
@@ -283,7 +283,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm print:hidden">
                 <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-[#004B93]/10 flex items-center justify-center text-[#004B93]">
+                        <div className="w-10 h-10 rounded-2xl bg-[#0868B2]/10 flex items-center justify-center text-[#0868B2]">
                             <SlidersHorizontal className="w-5 h-5" />
                         </div>
                         <div>
@@ -326,7 +326,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                         <select
                             value={filters.academic_year}
                             onChange={e => setFilters(f => ({ ...f, academic_year: e.target.value }))}
-                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                         >
                             <option value="all">Active Session 2026-27</option>
                             {dropdowns.academic_years.map(y => (
@@ -343,7 +343,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                         <select
                             value={filters.class_name}
                             onChange={e => handleClassChange(e.target.value)}
-                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                         >
                             {dropdowns.classes.map(c => (
                                 <option key={c.id} value={c.name}>{c.name}</option>
@@ -359,7 +359,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                         <select
                             value={filters.division}
                             onChange={e => setFilters(f => ({ ...f, division: e.target.value }))}
-                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                         >
                             {dropdowns.divisions.map(d => (
                                 <option key={d.id} value={d.name}>Section {d.name}</option>
@@ -375,7 +375,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                         <select
                             value={filters.subject_name}
                             onChange={e => handleSubjectChange(e.target.value)}
-                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                         >
                             {dropdowns.subjects.map(s => (
                                 <option key={s.id} value={s.name}>{s.name}</option>
@@ -391,7 +391,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                         <select
                             value={filters.exam_id}
                             onChange={e => setFilters(f => ({ ...f, exam_id: e.target.value }))}
-                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]"
+                            className="w-full h-11 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]"
                         >
                             {dropdowns.exams.length === 0 ? (
                                 <option value="all">Standard Evaluation</option>
@@ -407,7 +407,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
 
             {/* ── REPORT CONTEXT HERO BANNER ─────────────────────────────────── */}
             {header && (
-                <div className="relative overflow-hidden bg-gradient-to-br from-[#003364] via-[#004B93] to-[#002850] rounded-3xl p-8 text-white shadow-xl">
+                <div className="relative overflow-hidden bg-gradient-to-br from-[#003364] via-[#0868B2] to-[#002850] rounded-3xl p-8 text-white shadow-xl">
                     <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="flex items-center gap-6">
                             <div className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner">
@@ -472,7 +472,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                         }}
                         className={`flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl text-xs font-black transition-all ${
                             activeTab === 'class'
-                                ? 'bg-white text-[#004B93] shadow-md shadow-slate-200'
+                                ? 'bg-white text-[#0868B2] shadow-md shadow-slate-200'
                                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                         }`}
                     >
@@ -488,7 +488,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                         }}
                         className={`flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl text-xs font-black transition-all ${
                             activeTab === 'subject'
-                                ? 'bg-white text-[#004B93] shadow-md shadow-slate-200'
+                                ? 'bg-white text-[#0868B2] shadow-md shadow-slate-200'
                                 : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
@@ -504,7 +504,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                         }}
                         className={`flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl text-xs font-black transition-all ${
                             activeTab === 'chapter'
-                                ? 'bg-white text-[#004B93] shadow-md shadow-slate-200'
+                                ? 'bg-white text-[#0868B2] shadow-md shadow-slate-200'
                                 : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
@@ -587,8 +587,8 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                                     <BarChart data={classData.score_distribution} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="mergedScoreBarGrad" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stopColor="#004B93" stopOpacity={1} />
-                                                <stop offset="100%" stopColor="#004B93" stopOpacity={0.6} />
+                                                <stop offset="0%" stopColor="#0868B2" stopOpacity={1} />
+                                                <stop offset="100%" stopColor="#0868B2" stopOpacity={0.6} />
                                             </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
@@ -656,7 +656,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                                     placeholder="Search student or roll..."
                                     value={studentSearch}
                                     onChange={e => setStudentSearch(e.target.value)}
-                                    className="h-10 pl-9 pr-3 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#004B93] w-64"
+                                    className="h-10 pl-9 pr-3 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#0868B2] w-64"
                                 />
                             </div>
                         </div>
@@ -702,10 +702,10 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                                                     )}
                                                 </td>
                                                 <td className="py-4 font-bold text-slate-900 flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-xl bg-[#004B93]/10 text-[#004B93] flex items-center justify-center font-bold text-xs group-hover:bg-[#004B93] group-hover:text-white transition">
+                                                    <div className="w-8 h-8 rounded-xl bg-[#0868B2]/10 text-[#0868B2] flex items-center justify-center font-bold text-xs group-hover:bg-[#0868B2] group-hover:text-white transition">
                                                         {st.avatar}
                                                     </div>
-                                                    <span className="group-hover:text-[#004B93] transition">{st.student_name}</span>
+                                                    <span className="group-hover:text-[#0868B2] transition">{st.student_name}</span>
                                                 </td>
                                                 <td className="py-4 text-xs font-semibold text-slate-500">
                                                     Roll #{st.roll_no} • {st.admission_no}
@@ -742,7 +742,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                                                             e.stopPropagation()
                                                             router.push(`/dashboard/reports?type=students&student_id=${st.student_id}`)
                                                         }}
-                                                        className="inline-flex items-center gap-1 text-xs font-bold text-[#004B93] hover:underline"
+                                                        className="inline-flex items-center gap-1 text-xs font-bold text-[#0868B2] hover:underline"
                                                     >
                                                         <span>Student Report</span>
                                                         <ChevronRight className="w-3.5 h-3.5" />
@@ -845,7 +845,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                                     {subjectData.subjects.map((sub: any, idx: number) => (
                                         <tr key={idx} className="hover:bg-slate-50/80 transition">
                                             <td className="py-4 pl-4 font-bold text-slate-900 flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-xl bg-[#004B93]/10 text-[#004B93] flex items-center justify-center font-bold text-xs">
+                                                <div className="w-8 h-8 rounded-xl bg-[#0868B2]/10 text-[#0868B2] flex items-center justify-center font-bold text-xs">
                                                     {sub.subject.slice(0, 2).toUpperCase()}
                                                 </div>
                                                 <span>{sub.subject}</span>
@@ -870,7 +870,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                                                         setFilters(f => ({ ...f, subject_name: sub.subject }))
                                                         setActiveTab('chapter')
                                                     }}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#004B93]/10 hover:bg-[#004B93] text-[#004B93] hover:text-white text-xs font-bold transition"
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0868B2]/10 hover:bg-[#0868B2] text-[#0868B2] hover:text-white text-xs font-bold transition"
                                                 >
                                                     <span>Analyze Chapters</span>
                                                     <ChevronRight className="w-3.5 h-3.5" />
@@ -930,7 +930,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                                     <div className="flex items-start justify-between gap-2 mb-3">
                                         <div className="space-y-1">
                                             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Chapter</span>
-                                            <h4 className="text-base font-black text-slate-900 group-hover:text-[#004B93] transition line-clamp-1">
+                                            <h4 className="text-base font-black text-slate-900 group-hover:text-[#0868B2] transition line-clamp-1">
                                                 {ch.chapter_name}
                                             </h4>
                                         </div>
@@ -978,7 +978,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                                         </div>
                                     </div>
 
-                                    <div className="mt-4 pt-3 border-t border-slate-100/60 flex items-center justify-between text-xs font-bold text-[#004B93]">
+                                    <div className="mt-4 pt-3 border-t border-slate-100/60 flex items-center justify-between text-xs font-bold text-[#0868B2]">
                                         <span>Inspect Topics & Questions</span>
                                         <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition" />
                                     </div>
@@ -1015,7 +1015,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                                         c.students_requiring_intervention.map((intv, idx) => (
                                             <tr key={`${c.id}-${idx}`} className="hover:bg-slate-50/80 transition">
                                                 <td className="py-4 pl-4 font-bold text-slate-900 flex items-center gap-2.5">
-                                                    <div className="w-8 h-8 rounded-xl bg-[#004B93]/10 text-[#004B93] flex items-center justify-center font-bold text-xs">
+                                                    <div className="w-8 h-8 rounded-xl bg-[#0868B2]/10 text-[#0868B2] flex items-center justify-center font-bold text-xs">
                                                         {intv.name.slice(0, 2).toUpperCase()}
                                                     </div>
                                                     <span>{intv.name}</span>
@@ -1033,7 +1033,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                                                 <td className="py-4 text-right pr-4">
                                                     <button
                                                         onClick={() => router.push(`/dashboard/reports?type=students&student_id=${intv.student_id}`)}
-                                                        className="inline-flex items-center gap-1 text-xs font-bold text-[#004B93] hover:underline"
+                                                        className="inline-flex items-center gap-1 text-xs font-bold text-[#0868B2] hover:underline"
                                                     >
                                                         <span>View Student</span>
                                                         <ChevronRight className="w-3.5 h-3.5" />
@@ -1053,7 +1053,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
             {selectedChapterForModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
                     <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-3xl overflow-hidden animate-in zoom-in-95">
-                        <div className="flex items-center justify-between p-6 bg-[#004B93] text-white">
+                        <div className="flex items-center justify-between p-6 bg-[#0868B2] text-white">
                             <div>
                                 <span className="text-[10px] font-black uppercase tracking-wider text-blue-200">
                                     Chapter Topic Mastery
@@ -1081,7 +1081,7 @@ export default function MergedAcademicReport({ initialSubView = 'class' }: Merge
                                 </div>
                                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
                                     <div className="text-[10px] font-black uppercase text-slate-400">Status</div>
-                                    <div className="text-base font-black text-[#004B93] mt-1">{selectedChapterForModal.status}</div>
+                                    <div className="text-base font-black text-[#0868B2] mt-1">{selectedChapterForModal.status}</div>
                                 </div>
                             </div>
 

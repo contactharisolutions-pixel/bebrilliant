@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import Link from 'next/link'
@@ -17,7 +17,7 @@ export default function CaseStudiesPage() {
             <main style={{ flex: 1 }}>
 
                 {/* ── 1. HERO SECTION ── */}
-                <section style={{ position: 'relative', padding: '90px 5% 70px', background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%)', color: '#FFFFFF', overflow: 'hidden', textAlign: 'center' }}>
+                <section style={{ position: 'relative', padding: '90px 5% 70px', background: 'linear-gradient(135deg, #0F172A 0%, #0868B2 100%)', color: '#FFFFFF', overflow: 'hidden', textAlign: 'center' }}>
                     <div style={{ position: 'absolute', top: '-100px', left: '50%', transform: 'translateX(-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 70%)', pointerEvents: 'none' }} />
 
                     <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 10 }}>
@@ -40,7 +40,7 @@ export default function CaseStudiesPage() {
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     gap: 8,
-                                    background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+                                    background: 'linear-gradient(135deg, #0868B2 0%, #1D4ED8 100%)',
                                     color: '#FFFFFF',
                                     padding: '14px 30px',
                                     borderRadius: 14,
@@ -60,7 +60,7 @@ export default function CaseStudiesPage() {
                 <section style={{ padding: '80px 5%', background: '#FFFFFF' }}>
                     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
                         <div style={{ textAlign: 'center', marginBottom: 56 }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: '#0868B2', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
                                 In-Depth Transformations
                             </div>
                             <h2 style={{ fontSize: 'clamp(24px, 3vw, 38px)', fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)' }}>
@@ -80,8 +80,8 @@ export default function CaseStudiesPage() {
                                         'Zero paper leakage with 4-set dynamic shuffling',
                                         'Instant WhatsApp score alerts sent to parents'
                                     ],
-                                    color: '#2563EB',
-                                    bg: '#EFF6FF'
+                                    color: '#0868B2',
+                                    bg: '#E5F3FB'
                                 },
                                 {
                                     name: 'St. Xavier\'s Group of Schools',
@@ -93,7 +93,7 @@ export default function CaseStudiesPage() {
                                         'Custom school domain & branded report cards',
                                         'Automated parent fee payment sync via Razorpay'
                                     ],
-                                    color: '#059669',
+                                    color: '#09834F',
                                     bg: '#ECFDF5'
                                 },
                                 {

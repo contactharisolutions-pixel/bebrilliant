@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import { PageLayout } from '@/components/public/PageLayout'
@@ -18,7 +18,7 @@ export default function RefundPage() {
                     <div className="space-y-16">
                         <section>
                             <div className="flex items-center gap-4 mb-6 font-manrope">
-                                <div className="w-10 h-10 rounded-xl bg-[#00356a]/10 flex items-center justify-center text-[#00356a]">
+                                <div className="w-10 h-10 rounded-xl bg-[#0868B2]/10 flex items-center justify-center text-[#0868B2]">
                                     <RotateCcw size={20} />
                                 </div>
                                 <h2 className="text-2xl font-black text-[#191c20]">1. Subscription Refunds</h2>
@@ -42,7 +42,7 @@ export default function RefundPage() {
 
                         <section>
                             <div className="flex items-center gap-4 mb-6 font-manrope">
-                                <div className="w-10 h-10 rounded-xl bg-[#00356a]/10 flex items-center justify-center text-[#00356a]">
+                                <div className="w-10 h-10 rounded-xl bg-[#0868B2]/10 flex items-center justify-center text-[#0868B2]">
                                     <AlertCircle size={20} />
                                 </div>
                                 <h2 className="text-2xl font-black text-[#191c20]">3. Failed Transactions</h2>
@@ -67,7 +67,7 @@ export default function RefundPage() {
 
                     {/* ── TRUST NOTEOUT ── */}
                     <div className="mt-20 p-10 bg-[#f3f3fa] rounded-[40px] flex items-start gap-6">
-                        <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#00356a] flex-shrink-0">
+                        <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#0868B2] flex-shrink-0">
                             <ShieldCheck size={24} />
                         </div>
                         <div>

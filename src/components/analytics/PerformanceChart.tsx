@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { TrendingUp, TrendingDown, Target } from 'lucide-react'
@@ -27,7 +27,7 @@ export default function PerformanceChart({ data }: PerformanceProps) {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                 <div>
                     <h3 className="text-xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-                        <Target className="w-5 h-5 text-[#672AEA]" /> Accuracy Distribution
+                        <Target className="w-5 h-5 text-[#7C3AED]" /> Accuracy Distribution
                     </h3>
                     <p className="text-gray-500 text-sm mt-1 font-medium">Topic-by-Topic Precision Analysis</p>
                 </div>
@@ -48,7 +48,7 @@ export default function PerformanceChart({ data }: PerformanceProps) {
                         <span className="text-xs font-bold uppercase tracking-wider text-purple-600 mb-1 block">AI Smart Suggestion</span>
                         <p className="font-semibold text-gray-800 text-sm">Your accuracy in <span className="text-purple-700">{data.find(d => d.accuracy < 50)?.subject}</span> is dropping. Our AI generated a 2-day Revision Plan for you!</p>
                     </div>
-                    <button className="whitespace-nowrap bg-[#672AEA] hover:bg-[#5A24CC] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md shadow-purple-500/20 active:scale-95 transition-all">
+                    <button className="whitespace-nowrap bg-[#7C3AED] hover:bg-[#5A24CC] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md shadow-purple-500/20 active:scale-95 transition-all">
                         View Plan
                     </button>
                 </div>
@@ -58,7 +58,7 @@ export default function PerformanceChart({ data }: PerformanceProps) {
             <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} barSize={32}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                         <XAxis
                             dataKey="subject"
                             axisLine={false}
@@ -73,7 +73,7 @@ export default function PerformanceChart({ data }: PerformanceProps) {
                             domain={[0, 100]}
                         />
                         <Tooltip
-                            cursor={{ fill: '#F9FAFB' }}
+                            cursor={{ fill: '#F8FAFC' }}
                             contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.08)', padding: '12px' }}
                             itemStyle={{ fontWeight: 700, fontSize: '15px' }}
                             labelStyle={{ color: '#6B6B6B', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}
@@ -81,7 +81,7 @@ export default function PerformanceChart({ data }: PerformanceProps) {
                         />
                         <Bar dataKey="accuracy" radius={[6, 6, 0, 0]}>
                             {data.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color || '#672AEA'} />
+                                <Cell key={`cell-${index}`} fill={entry.color || '#7C3AED'} />
                             ))}
                         </Bar>
                     </BarChart>

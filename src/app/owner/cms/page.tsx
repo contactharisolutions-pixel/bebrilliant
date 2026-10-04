@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
 import {
@@ -88,12 +88,12 @@ export default function WebsiteThemeManagerPage() {
     // New custom theme form state
     const [customForm, setCustomForm] = useState<Omit<ThemePalette, 'id'>>({
         name: '',
-        primary_color: '#004B93',
+        primary_color: '#0868B2',
         secondary_color: '#002D5B',
         background: '#F8FAFC',
         card_bg: '#FFFFFF',
         text_color: '#0F172A',
-        accent_color: '#2563EB',
+        accent_color: '#0868B2',
         border_color: '#E2E8F0'
     })
 
@@ -179,12 +179,12 @@ export default function WebsiteThemeManagerPage() {
                 setShowCreateModal(false)
                 setCustomForm({
                     name: '',
-                    primary_color: '#004B93',
+                    primary_color: '#0868B2',
                     secondary_color: '#002D5B',
                     background: '#F8FAFC',
                     card_bg: '#FFFFFF',
                     text_color: '#0F172A',
-                    accent_color: '#2563EB',
+                    accent_color: '#0868B2',
                     border_color: '#E2E8F0'
                 })
                 fetchData()
@@ -253,7 +253,7 @@ export default function WebsiteThemeManagerPage() {
             {/* KPI METRICS CARDS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 32 }}>
                 <KpiCard icon={Palette} title="Total Themes" value={String(palettes.length)} color={P.brand} />
-                <KpiCard icon={CheckCircle} title="Active Theme" value={activeTheme?.name || 'Institutional Navy'} color="#059669" />
+                <KpiCard icon={CheckCircle} title="Active Theme" value={activeTheme?.name || 'Institutional Navy'} color="#09834F" />
                 <KpiCard icon={Sparkles} title="Custom Themes" value={String(customCount)} color="#7C3AED" />
                 <KpiCard icon={Layers} title="Preset Templates" value={String(presetCount)} color="#EA580C" />
             </div>
@@ -304,7 +304,7 @@ export default function WebsiteThemeManagerPage() {
                         }}>
                             {/* ACTIVE BADGE */}
                             {isActive && (
-                                <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 10, background: '#059669', color: '#fff', padding: '6px 14px', borderRadius: 20, fontSize: 11, fontWeight: 900, display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(5,150,105,0.4)' }}>
+                                <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 10, background: '#09834F', color: '#fff', padding: '6px 14px', borderRadius: 20, fontSize: 11, fontWeight: 900, display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(5,150,105,0.4)' }}>
                                     <Check size={13} strokeWidth={3} /> ACTIVE THEME
                                 </div>
                             )}
@@ -358,7 +358,7 @@ export default function WebsiteThemeManagerPage() {
                                         disabled={isActive || saving} 
                                         style={{ 
                                             flex: 2, padding: '12px 16px', borderRadius: 12, border: 'none', fontSize: 13, fontWeight: 900, cursor: isActive ? 'default' : 'pointer',
-                                            background: isActive ? '#059669' : P.brand, color: '#fff',
+                                            background: isActive ? '#09834F' : P.brand, color: '#fff',
                                             opacity: isActive ? 0.9 : 1, transition: 'all 0.2s', boxShadow: isActive ? 'none' : `0 6px 16px ${P.brand}25`
                                         }}
                                     >

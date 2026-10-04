@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import Link from 'next/link'
@@ -111,7 +111,7 @@ export default function QuestionBankPage() {
                                         'Support for KaTeX math formulas & chemical equations',
                                         'Automated duplicate question detection'
                                     ],
-                                    color: '#059669',
+                                    color: '#09834F',
                                     bg: '#ECFDF5'
                                 },
                                 {
@@ -124,8 +124,8 @@ export default function QuestionBankPage() {
                                         'Bloom\'s Taxonomy cognitive filters (Remember, Apply, Analyze)',
                                         'Instant key search & usage frequency tracking'
                                     ],
-                                    color: '#2563EB',
-                                    bg: '#EFF6FF'
+                                    color: '#0868B2',
+                                    bg: '#E5F3FB'
                                 },
                                 {
                                     icon: Layers,

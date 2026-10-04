@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
@@ -162,7 +162,7 @@ export default function WithdrawalRequestsPage() {
                 </button>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                        <div style={{ padding: 12, background: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)', borderRadius: 16 }}>
+                        <div style={{ padding: 12, background: 'linear-gradient(135deg, #0868B2 0%, #073B73 100%)', borderRadius: 16 }}>
                             <Landmark size={28} color="#FFF" />
                         </div>
                         <div>
@@ -283,7 +283,7 @@ export default function WithdrawalRequestsPage() {
                                         <td style={{ padding: '22px 28px' }}>
                                             {r.status === 'pending' ? (
                                                 <div style={{ display: 'flex', gap: 10 }}>
-                                                    <button onClick={() => { setActiveRequest(r); setShowSettleModal(true) }} style={{ padding: '10px 18px', borderRadius: 12, background: 'linear-gradient(135deg, #1FAC63 0%, #15803d 100%)', border: 'none', color: '#FFF', fontSize: 13, fontWeight: 900, cursor: 'pointer', boxShadow: '0 8px 20px rgba(31,172,99,0.2)' }}>
+                                                    <button onClick={() => { setActiveRequest(r); setShowSettleModal(true) }} style={{ padding: '10px 18px', borderRadius: 12, background: 'linear-gradient(135deg, #09834F 0%, #087347 100%)', border: 'none', color: '#FFF', fontSize: 13, fontWeight: 900, cursor: 'pointer', boxShadow: '0 8px 20px rgba(31,172,99,0.2)' }}>
                                                         Approve
                                                     </button>
                                                     <button onClick={() => { setActiveRequest(r); setShowRejectModal(true) }} style={{ padding: '10px 18px', borderRadius: 12, background: '#FFF', border: `1px solid ${P.error}30`, color: P.error, fontSize: 13, fontWeight: 900, cursor: 'pointer' }}>

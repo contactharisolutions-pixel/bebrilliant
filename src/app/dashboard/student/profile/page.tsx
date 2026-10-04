@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
 import { 
@@ -186,7 +186,7 @@ export default function StudentProfile() {
                     {/* ACCOUNT SECURITY STATUS */}
                     <div style={{ background: '#0F172A', borderRadius: 32, padding: 32, color: '#FFF' }}>
                         <h4 style={{ margin: '0 0 24px', fontSize: 16, fontWeight: 900, display: 'flex', alignItems: 'center', gap: 12 }}>
-                           <Shield size={20} color="#672AEA" /> Account Security
+                           <Shield size={20} color="#7C3AED" /> Account Security
                         </h4>
                         <div style={{ display: 'grid', gap: 16 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700, color: '#94A3B8' }}>
@@ -213,7 +213,7 @@ export default function StudentProfile() {
                     
                     {/* ACADEMIC INFO */}
                     <div style={{ marginBottom: 48 }}>
-                        <h3 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 900, color: '#111827' }}>Academic Information</h3>
+                        <h3 style={{ margin: '0 0 24px', fontSize: 20, fontWeight: 900, color: '#34445A' }}>Academic Information</h3>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
                             {[
                                 { label: 'First Name', val: firstName, setter: setFirstName, icon: User },
@@ -242,7 +242,7 @@ export default function StudentProfile() {
 
                     {/* PARENT / GUARDIAN DETAILS */}
                     <div style={{ marginBottom: 48, padding: 32, background: '#F8FAFC', borderRadius: 24, border: '1px solid #F1F5F9' }}>
-                        <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 900, color: '#111827' }}>Parent / Guardian Details</h3>
+                        <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 900, color: '#34445A' }}>Parent / Guardian Details</h3>
                         <p style={{ margin: '0 0 24px', fontSize: 13, color: '#64748B', fontWeight: 600 }}>Link your parent's login account so they can view your progress on the Parent Dashboard.</p>
                         
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
@@ -300,7 +300,7 @@ export default function StudentProfile() {
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ fontSize: 15, fontWeight: 900, color: '#065F46' }}>{parentPreview.name}</div>
-                                        <div style={{ fontSize: 13, color: '#059669', fontWeight: 600 }}>{parentPreview.email}</div>
+                                        <div style={{ fontSize: 13, color: '#09834F', fontWeight: 600 }}>{parentPreview.email}</div>
                                     </div>
                                     <div style={{ padding: '6px 14px', background: '#10B981', borderRadius: 8, fontSize: 11, fontWeight: 900, color: '#FFF', textTransform: 'uppercase' }}>
                                         ✓ Verified

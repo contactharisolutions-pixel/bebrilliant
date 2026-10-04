@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
@@ -565,8 +565,8 @@ export default function OMRExamManager() {
         return (
             <div className="w-full min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8">
                 <div className="relative">
-                    <div className="w-16 h-16 border-4 border-sky-200 border-t-[#004B93] rounded-full animate-spin" />
-                    <ScanLine className="absolute inset-0 m-auto text-[#004B93]" size={24} />
+                    <div className="w-16 h-16 border-4 border-sky-200 border-t-[#0868B2] rounded-full animate-spin" />
+                    <ScanLine className="absolute inset-0 m-auto text-[#0868B2]" size={24} />
                 </div>
                 <h3 className="mt-4 font-bold text-slate-800 text-lg">Initializing Exams &amp; OMR Sheets Studio...</h3>
                 <p className="text-slate-500 text-sm mt-1">Grounding optical calibration matrices &amp; curriculum examinations</p>
@@ -657,7 +657,7 @@ export default function OMRExamManager() {
                 {/* 4 EXECUTIVE KPIS */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center gap-3.5 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 rounded-xl bg-sky-50 flex items-center justify-center text-[#004B93] border border-sky-100">
+                        <div className="w-12 h-12 rounded-xl bg-sky-50 flex items-center justify-center text-[#0868B2] border border-sky-100">
                             <Target size={22} />
                         </div>
                         <div>
@@ -727,21 +727,21 @@ export default function OMRExamManager() {
                                     <button
                                         onClick={() => goToStep(s.step)}
                                         className={`flex flex-col items-center gap-1 flex-1 px-2 py-2 rounded-xl transition-all cursor-pointer ${
-                                            isActive ? 'bg-[#004B93]/5' : 'hover:bg-slate-50'
+                                            isActive ? 'bg-[#0868B2]/5' : 'hover:bg-slate-50'
                                         }`}
                                     >
                                         <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-black text-xs sm:text-sm border-2 transition-all ${
                                             isDone
                                                 ? 'bg-emerald-500 border-emerald-500 text-white'
                                                 : isActive
-                                                ? 'bg-[#004B93] border-[#004B93] text-white shadow-md shadow-sky-950/20'
+                                                ? 'bg-[#0868B2] border-[#0868B2] text-white shadow-md shadow-sky-950/20'
                                                 : 'bg-white border-slate-200 text-slate-400'
                                         }`}>
                                             {isDone ? <Check size={16} /> : <Icon size={15} />}
                                         </div>
                                         <div className="text-center">
                                             <div className={`text-[11px] font-black leading-tight ${
-                                                isActive ? 'text-[#004B93]' : isDone ? 'text-emerald-700' : 'text-slate-500'
+                                                isActive ? 'text-[#0868B2]' : isDone ? 'text-emerald-700' : 'text-slate-500'
                                             }`}>{s.label}</div>
                                             <div className="text-[10px] text-slate-400 font-medium hidden md:block">{s.sub}</div>
                                         </div>
@@ -767,7 +767,7 @@ export default function OMRExamManager() {
                         className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer select-none"
                     >
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[#004B93]">
+                            <div className="w-9 h-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[#0868B2]">
                                 <Database size={18} />
                             </div>
                             <div className="text-left">
@@ -794,7 +794,7 @@ export default function OMRExamManager() {
                                         placeholder="Search by exam title, class, or subject..."
                                         value={searchQuery}
                                         onChange={e => setSearchQuery(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#004B93] bg-slate-50/50"
+                                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#0868B2] bg-slate-50/50"
                                     />
                                 </div>
 
@@ -871,7 +871,7 @@ export default function OMRExamManager() {
                                                                         setSelectedExam(ex)
                                                                         goToStep(3)
                                                                     }}
-                                                                    className="px-2.5 py-1 rounded-lg bg-[#004B93] text-white font-bold hover:bg-sky-800 transition-colors cursor-pointer flex items-center gap-1"
+                                                                    className="px-2.5 py-1 rounded-lg bg-[#0868B2] text-white font-bold hover:bg-sky-800 transition-colors cursor-pointer flex items-center gap-1"
                                                                     title="Open in Print Studio"
                                                                 >
                                                                     <Printer size={12} />
@@ -939,7 +939,7 @@ export default function OMRExamManager() {
                                 {/* CARD A: CLASS, SUBJECT & CURRICULUM */}
                                 <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-4">
                                     <div className="border-b border-slate-100 pb-3">
-                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-sky-50 text-[#004B93] font-bold text-xs">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-sky-50 text-[#0868B2] font-bold text-xs">
                                             <BookOpen size={14} />
                                             <span>CURRICULUM &amp; SYLLABUS</span>
                                         </div>
@@ -958,7 +958,7 @@ export default function OMRExamManager() {
                                                 setSelectedBoardId(e.target.value)
                                                 setSelectedChapterIds([])
                                             }}
-                                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-800 bg-white focus:ring-2 focus:ring-[#004B93] focus:outline-none text-xs sm:text-sm"
+                                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-800 bg-white focus:ring-2 focus:ring-[#0868B2] focus:outline-none text-xs sm:text-sm"
                                         >
                                             {availableBoards.map(b => (
                                                 <option key={b.id} value={b.id}>{b.name}</option>
@@ -970,7 +970,7 @@ export default function OMRExamManager() {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1.5">
-                                                <GraduationCap size={14} className="text-[#004B93]" />
+                                                <GraduationCap size={14} className="text-[#0868B2]" />
                                                 <span>Class / Grade</span>
                                             </label>
                                             <select
@@ -1019,7 +1019,7 @@ export default function OMRExamManager() {
                                                 <button
                                                     type="button"
                                                     onClick={handleSelectAllChapters}
-                                                    className="text-[#004B93] hover:underline cursor-pointer"
+                                                    className="text-[#0868B2] hover:underline cursor-pointer"
                                                 >
                                                     Select All
                                                 </button>
@@ -1045,12 +1045,12 @@ export default function OMRExamManager() {
                                                             onClick={() => handleToggleChapter(ch.id)}
                                                             className={`p-2.5 rounded-xl border text-left text-xs font-medium transition-all flex items-start gap-2 cursor-pointer ${
                                                                 isChecked
-                                                                    ? 'bg-sky-50/80 border-[#004B93] text-[#004B93] font-bold shadow-2xs'
+                                                                    ? 'bg-sky-50/80 border-[#0868B2] text-[#0868B2] font-bold shadow-2xs'
                                                                     : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                                                             }`}
                                                         >
                                                             <span className={`w-3.5 h-3.5 rounded mt-0.5 shrink-0 flex items-center justify-center text-[10px] ${
-                                                                isChecked ? 'bg-[#004B93] text-white' : 'border border-slate-300 bg-white'
+                                                                isChecked ? 'bg-[#0868B2] text-white' : 'border border-slate-300 bg-white'
                                                             }`}>
                                                                 {isChecked && <Check size={10} />}
                                                             </span>
@@ -1086,7 +1086,7 @@ export default function OMRExamManager() {
                                             placeholder={resolvedDefaultTitle}
                                             value={setupForm.title}
                                             onChange={e => setSetupForm({ ...setupForm, title: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none text-xs sm:text-sm"
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-900 focus:ring-2 focus:ring-[#0868B2] focus:outline-none text-xs sm:text-sm"
                                         />
                                         <p className="text-[11px] text-slate-400 mt-1">
                                             Leave empty to use: <span className="font-semibold text-slate-600">{resolvedDefaultTitle}</span>
@@ -1164,16 +1164,16 @@ export default function OMRExamManager() {
                                                     }}
                                                     className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                                                         isSelected
-                                                            ? 'border-[#004B93] bg-sky-50/70 shadow-sm ring-2 ring-[#004B93]/20'
+                                                            ? 'border-[#0868B2] bg-sky-50/70 shadow-sm ring-2 ring-[#0868B2]/20'
                                                             : 'border-slate-200 bg-white hover:bg-slate-50'
                                                     }`}
                                                 >
                                                     <div>
                                                         <div className="flex items-center justify-between">
                                                             <span className="font-extrabold text-xs text-slate-900">{tmpl.name}</span>
-                                                            {isSelected && <CheckCircle size={14} className="text-[#004B93]" />}
+                                                            {isSelected && <CheckCircle size={14} className="text-[#0868B2]" />}
                                                         </div>
-                                                        <div className="text-[11px] font-black text-[#004B93] mt-1">
+                                                        <div className="text-[11px] font-black text-[#0868B2] mt-1">
                                                             {tmpl.total_questions} Questions
                                                         </div>
                                                         <div className="text-[10px] text-slate-500 mt-1 line-clamp-2">
@@ -1190,7 +1190,7 @@ export default function OMRExamManager() {
                                 <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-3">
                                     <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                                         <div className="flex items-center gap-1.5 font-bold text-xs text-slate-800">
-                                            <Printer size={15} className="text-[#004B93]" />
+                                            <Printer size={15} className="text-[#0868B2]" />
                                             <span>Live Sheet Preview (A4 Layout)</span>
                                         </div>
                                         <span className="text-[10px] font-bold text-slate-400 font-mono">
@@ -1273,7 +1273,7 @@ export default function OMRExamManager() {
                                 type="button"
                                 onClick={handleProceedToQuestions}
                                 disabled={isGeneratingAi}
-                                className="px-8 py-4 rounded-xl bg-gradient-to-r from-[#004B93] to-sky-700 hover:from-sky-800 hover:to-sky-600 text-white font-extrabold text-sm shadow-xl shadow-sky-950/20 flex items-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer disabled:opacity-50"
+                                className="px-8 py-4 rounded-xl bg-gradient-to-r from-[#0868B2] to-sky-700 hover:from-sky-800 hover:to-sky-600 text-white font-extrabold text-sm shadow-xl shadow-sky-950/20 flex items-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer disabled:opacity-50"
                             >
                                 {isGeneratingAi ? (
                                     <>
@@ -1362,7 +1362,7 @@ export default function OMRExamManager() {
                                         key={opt}
                                         type="button"
                                         onClick={() => handleQuickFillKey(opt)}
-                                        className="px-3.5 py-1.5 rounded-xl border border-sky-200 bg-sky-50 text-[#004B93] font-black text-xs hover:bg-[#004B93] hover:text-white transition-all cursor-pointer shadow-xs"
+                                        className="px-3.5 py-1.5 rounded-xl border border-sky-200 bg-sky-50 text-[#0868B2] font-black text-xs hover:bg-[#0868B2] hover:text-white transition-all cursor-pointer shadow-xs"
                                     >
                                         All {opt}
                                     </button>
@@ -1389,7 +1389,7 @@ export default function OMRExamManager() {
                                     <div key={qIndex} className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                                             <div className="flex items-center gap-2.5">
-                                                <span className="w-8 h-8 rounded-xl bg-[#004B93] text-white flex items-center justify-center font-black text-xs shadow-xs">
+                                                <span className="w-8 h-8 rounded-xl bg-[#0868B2] text-white flex items-center justify-center font-black text-xs shadow-xs">
                                                     {qNo}
                                                 </span>
                                                 <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -1450,7 +1450,7 @@ export default function OMRExamManager() {
                                                 updated[qIndex].text = e.target.value
                                                 setQuestionsList(updated)
                                             }}
-                                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-[#004B93] focus:outline-none"
+                                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-[#0868B2] focus:outline-none"
                                         />
 
                                         {/* 4 EDITABLE OPTIONS */}
@@ -1515,7 +1515,7 @@ export default function OMRExamManager() {
                                     ])
                                     setMasterAnswerKey(prev => ({ ...prev, [nextNo]: 'A' }))
                                 }}
-                                className="px-5 py-2.5 rounded-xl border border-dashed border-slate-300 hover:border-[#004B93] text-slate-700 hover:text-[#004B93] text-xs font-bold transition-all inline-flex items-center gap-2 cursor-pointer bg-white shadow-xs"
+                                className="px-5 py-2.5 rounded-xl border border-dashed border-slate-300 hover:border-[#0868B2] text-slate-700 hover:text-[#0868B2] text-xs font-bold transition-all inline-flex items-center gap-2 cursor-pointer bg-white shadow-xs"
                             >
                                 <PlusCircle size={15} />
                                 <span>Add Another Question</span>
@@ -1599,7 +1599,7 @@ export default function OMRExamManager() {
                             {/* TILE 2: OMR SHEET ONLY */}
                             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
                                 <div>
-                                    <div className="w-12 h-12 rounded-xl bg-sky-50 text-[#004B93] border border-sky-100 flex items-center justify-center">
+                                    <div className="w-12 h-12 rounded-xl bg-sky-50 text-[#0868B2] border border-sky-100 flex items-center justify-center">
                                         <Layers size={22} />
                                     </div>
                                     <h4 className="text-base font-black text-slate-900 mt-3">Candidate OMR Sheet</h4>
@@ -1612,7 +1612,7 @@ export default function OMRExamManager() {
                                         const examId = selectedExam?.id || exams[0]?.id
                                         if (examId) window.open(`/api/dashboard/exams/omr/${examId}/print?mode=omr`, '_blank')
                                     }}
-                                    className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-sky-50 text-slate-800 hover:text-[#004B93] font-bold text-xs border border-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                                    className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-sky-50 text-slate-800 hover:text-[#0868B2] font-bold text-xs border border-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                                 >
                                     <Layers size={14} />
                                     <span>Print OMR Sheet Only</span>
@@ -1679,7 +1679,7 @@ export default function OMRExamManager() {
                             <button
                                 type="button"
                                 onClick={() => goToStep(4)}
-                                className="px-8 py-3.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-extrabold text-sm shadow-xl flex items-center gap-2.5 cursor-pointer transition-all hover:scale-[1.01]"
+                                className="px-8 py-3.5 rounded-xl bg-[#0868B2] hover:bg-sky-800 text-white font-extrabold text-sm shadow-xl flex items-center gap-2.5 cursor-pointer transition-all hover:scale-[1.01]"
                             >
                                 <span>Proceed to Scan &amp; Grade Sheets ➔</span>
                                 <ScanLine size={18} />
@@ -1727,7 +1727,7 @@ export default function OMRExamManager() {
                         {/* FULL-WIDTH SCAN DROPZONE WORKSTATION */}
                         <div className="bg-white rounded-2xl p-8 border border-slate-200/90 shadow-sm space-y-6">
                             <div className="border-2 border-dashed border-sky-300 bg-sky-50/40 rounded-2xl p-10 text-center relative hover:bg-sky-50/70 transition-all">
-                                <div className="w-16 h-16 rounded-2xl bg-white shadow-md flex items-center justify-center text-[#004B93] mx-auto mb-4 border border-sky-100">
+                                <div className="w-16 h-16 rounded-2xl bg-white shadow-md flex items-center justify-center text-[#0868B2] mx-auto mb-4 border border-sky-100">
                                     <UploadCloud size={32} />
                                 </div>
                                 <h3 className="text-lg font-black text-slate-900">Upload Student Answer Sheets (Batch PDF / Photos)</h3>
@@ -1739,14 +1739,14 @@ export default function OMRExamManager() {
                                     <div className="mt-6 space-y-3 max-w-md mx-auto">
                                         <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                                             <span className="flex items-center gap-2">
-                                                <Loader2 size={14} className="animate-spin text-[#004B93]" />
+                                                <Loader2 size={14} className="animate-spin text-[#0868B2]" />
                                                 <span>{scanStage}</span>
                                             </span>
-                                            <span className="text-[#004B93] font-black">{scanProgress}%</span>
+                                            <span className="text-[#0868B2] font-black">{scanProgress}%</span>
                                         </div>
                                         <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
                                             <div
-                                                className="bg-[#004B93] h-full rounded-full transition-all duration-300 ease-out"
+                                                className="bg-[#0868B2] h-full rounded-full transition-all duration-300 ease-out"
                                                 style={{ width: `${scanProgress}%` }}
                                             />
                                         </div>
@@ -1756,7 +1756,7 @@ export default function OMRExamManager() {
                                         <button
                                             type="button"
                                             onClick={handleTriggerBatchScan}
-                                            className="px-6 py-3 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-bold text-xs shadow-md flex items-center gap-2 cursor-pointer transition-transform hover:scale-[1.02]"
+                                            className="px-6 py-3 rounded-xl bg-[#0868B2] hover:bg-sky-800 text-white font-bold text-xs shadow-md flex items-center gap-2 cursor-pointer transition-transform hover:scale-[1.02]"
                                         >
                                             <ScanLine size={16} />
                                             <span>Start Checking 32 Sheets (Batch Scan)</span>
@@ -1785,7 +1785,7 @@ export default function OMRExamManager() {
                                 </div>
                                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
                                     <span className="text-slate-500 block uppercase font-bold text-[10px]">Candidate Identification</span>
-                                    <span className="text-sm font-black text-[#004B93] mt-0.5 block">Barcode + Roll Number Grid</span>
+                                    <span className="text-sm font-black text-[#0868B2] mt-0.5 block">Barcode + Roll Number Grid</span>
                                 </div>
                             </div>
                         </div>
@@ -1803,7 +1803,7 @@ export default function OMRExamManager() {
                             <button
                                 type="button"
                                 onClick={() => goToStep(5)}
-                                className="px-8 py-3.5 rounded-xl bg-[#004B93] hover:bg-sky-800 text-white font-extrabold text-sm shadow-xl flex items-center gap-2.5 cursor-pointer transition-all hover:scale-[1.01]"
+                                className="px-8 py-3.5 rounded-xl bg-[#0868B2] hover:bg-sky-800 text-white font-extrabold text-sm shadow-xl flex items-center gap-2.5 cursor-pointer transition-all hover:scale-[1.01]"
                             >
                                 <span>View Results &amp; Student Marks ➔</span>
                                 <BarChart3 size={18} />
@@ -1829,7 +1829,7 @@ export default function OMRExamManager() {
 
                             <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
                                 <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Highest Score Scored</div>
-                                <div className="text-3xl font-black text-[#004B93] mt-2">98.0%</div>
+                                <div className="text-3xl font-black text-[#0868B2] mt-2">98.0%</div>
                                 <div className="text-xs font-semibold text-slate-500 mt-1">Aarav Sharma &bull; Class 10 Science</div>
                             </div>
 

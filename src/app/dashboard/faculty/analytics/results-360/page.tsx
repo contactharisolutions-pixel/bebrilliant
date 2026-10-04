@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
@@ -155,7 +155,7 @@ const CircularScoreGauge = ({ percent, size = 150, stroke = 12 }: { percent: num
             <svg width={size} height={size} className="-rotate-90">
                 <defs>
                     <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#2563EB" />
+                        <stop offset="0%" stopColor="#0868B2" />
                         <stop offset="100%" stopColor="#10B981" />
                     </linearGradient>
                 </defs>

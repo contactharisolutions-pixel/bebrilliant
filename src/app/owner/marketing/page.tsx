@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
 import {
@@ -29,18 +29,18 @@ type LogItem = {
 }
 
 const CHANNEL_META: Record<string, { label: string; color: string; bg: string; icon: any }> = {
-    email:     { label: 'Email',     color: '#2563EB', bg: '#EFF6FF', icon: Mail },
-    whatsapp:  { label: 'WhatsApp',  color: '#16A34A', bg: '#F0FDF4', icon: MessageCircle },
+    email:     { label: 'Email',     color: '#0868B2', bg: '#E5F3FB', icon: Mail },
+    whatsapp:  { label: 'WhatsApp',  color: '#09834F', bg: '#F1FBF5', icon: MessageCircle },
     push:      { label: 'Push Notification', color: '#9333EA', bg: '#F5F3FF', icon: Bell }
 }
 
 const STATUS_COLORS: Record<string, { label: string; color: string; bg: string }> = {
-    draft:     { label: 'Draft',     color: '#6B7280', bg: '#F3F4F6' },
+    draft:     { label: 'Draft',     color: '#64748B', bg: '#F1F5F9' },
     scheduled: { label: 'Scheduled', color: '#D97706', bg: '#FFF7ED' },
-    sending:   { label: 'Sending...', color: '#2563EB', bg: '#EFF6FF' },
-    sent:      { label: 'Sent',      color: '#059669', bg: '#ECFDF5' },
+    sending:   { label: 'Sending...', color: '#0868B2', bg: '#E5F3FB' },
+    sent:      { label: 'Sent',      color: '#09834F', bg: '#ECFDF5' },
     failed:    { label: 'Failed',    color: '#DC2626', bg: '#FEF2F2' },
-    cancelled: { label: 'Cancelled', color: '#6B7280', bg: '#F3F4F6' }
+    cancelled: { label: 'Cancelled', color: '#64748B', bg: '#F1F5F9' }
 }
 
 const AUDIENCE_TARGETS = [
@@ -449,7 +449,7 @@ export default function MarketingPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
                 <KpiCard icon={BarChart3} title="Total Campaigns" value={String(stats.total || 0)} color="#EA580C" />
                 <KpiCard icon={Clock} title="Scheduled Messages" value={String(stats.scheduled || 0)} color="#D97706" />
-                <KpiCard icon={CheckCircle} title="Sent Successfully" value={String(stats.sent || 0)} color="#059669" />
+                <KpiCard icon={CheckCircle} title="Sent Successfully" value={String(stats.sent || 0)} color="#09834F" />
                 <KpiCard icon={Users} title="Audience Groups" value={String(stats.groups || 0)} color={P.brand} />
             </div>
 
@@ -547,7 +547,7 @@ export default function MarketingPage() {
                                         {c.status === 'sent' && total > 0 && (
                                             <div style={{ marginTop: 10 }}>
                                                 <div style={{ height: 6, background: P.border, borderRadius: 3, overflow: 'hidden', maxWidth: 320 }}>
-                                                    <div style={{ height: '100%', width: `${pct}%`, background: '#059669', borderRadius: 3 }} />
+                                                    <div style={{ height: '100%', width: `${pct}%`, background: '#09834F', borderRadius: 3 }} />
                                                 </div>
                                                 <div style={{ fontSize: 12, color: P.muted, fontWeight: 700, marginTop: 4 }}>
                                                     Sent: {sent}/{total} ({pct}%) • Failed: {c.failed_count || 0}
@@ -565,7 +565,7 @@ export default function MarketingPage() {
                                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                                         {(c.status === 'draft' || c.status === 'scheduled') && (
                                             <button onClick={() => launchCampaign(c.id, c.name)} disabled={isLaunching}
-                                                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#059669', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 12, fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 14px rgba(5,150,105,0.3)' }}>
+                                                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#09834F', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 12, fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 14px rgba(5,150,105,0.3)' }}>
                                                 {isLaunching ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Play size={14} />}
                                                 {isLaunching ? 'Sending...' : 'Launch Now'}
                                             </button>
@@ -683,7 +683,7 @@ export default function MarketingPage() {
                                     <span style={{ background: ch.bg, color: ch.color, padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 800 }}>{c.total_recipients} recipients</span>
                                     {c.status === 'scheduled' && (
                                         <button onClick={() => launchCampaign(c.id, c.name)}
-                                            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#059669', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 16px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+                                            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#09834F', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 16px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
                                             <Play size={14} /> Launch Now
                                         </button>
                                     )}
@@ -842,7 +842,7 @@ export default function MarketingPage() {
                             </div>
                             <div>
                                 <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase' }}>Delivered</div>
-                                <div style={{ fontSize: 20, fontWeight: 950, color: '#059669', marginTop: 2 }}>{selectedCampaignForLogs.sent_count}</div>
+                                <div style={{ fontSize: 20, fontWeight: 950, color: '#09834F', marginTop: 2 }}>{selectedCampaignForLogs.sent_count}</div>
                             </div>
                             <div>
                                 <div style={{ fontSize: 11, fontWeight: 900, color: P.muted, textTransform: 'uppercase' }}>Failed</div>
@@ -875,7 +875,7 @@ export default function MarketingPage() {
                                         )}
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
-                                        <span style={{ background: log.status === 'sent' ? '#ECFDF5' : '#FEF2F2', color: log.status === 'sent' ? '#059669' : '#DC2626', padding: '3px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800 }}>
+                                        <span style={{ background: log.status === 'sent' ? '#ECFDF5' : '#FEF2F2', color: log.status === 'sent' ? '#09834F' : '#DC2626', padding: '3px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800 }}>
                                             {log.status === 'sent' ? 'Delivered' : 'Failed'}
                                         </span>
                                         <div style={{ fontSize: 11, color: P.muted, marginTop: 4 }}>

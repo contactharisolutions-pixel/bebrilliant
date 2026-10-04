@@ -156,7 +156,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             // Milestone 3: Portal & Exam Engine Configuration
             currentSetupState.configuration = {
                 ...currentSetupState.configuration,
-                brand_color: payload?.brand_color || '#2563eb',
+                brand_color: payload?.brand_color || '#0868B2',
                 syllabus: payload?.syllabus || 'CBSE',
                 school_crest_url: payload?.school_crest_url || '',
                 exam_modules: payload?.exam_modules || {

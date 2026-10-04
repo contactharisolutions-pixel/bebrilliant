@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import Link from 'next/link'
@@ -78,7 +78,7 @@ export default function TeacherPlatformPage() {
                 <section style={{ padding: '80px 5%', background: '#FFFFFF' }}>
                     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
                         <div style={{ textAlign: 'center', marginBottom: 56 }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: '#09834F', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
                                 Dedicated Features
                             </div>
                             <h2 style={{ fontSize: 'clamp(24px, 3vw, 38px)', fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)' }}>
@@ -98,7 +98,7 @@ export default function TeacherPlatformPage() {
                                         'One-click automated paper synthesis',
                                         'Export to PDF, Word, or online test format'
                                     ],
-                                    color: '#059669',
+                                    color: '#09834F',
                                     bg: '#ECFDF5'
                                 },
                                 {
@@ -111,8 +111,8 @@ export default function TeacherPlatformPage() {
                                         'Instant step-by-step solution keys for students',
                                         'Automated class rank list generation'
                                     ],
-                                    color: '#2563EB',
-                                    bg: '#EFF6FF'
+                                    color: '#0868B2',
+                                    bg: '#E5F3FB'
                                 },
                                 {
                                     icon: ShieldCheck,
@@ -194,7 +194,7 @@ export default function TeacherPlatformPage() {
                 <section style={{ padding: '60px 5%', background: '#F8FAFC' }}>
                     <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 32, alignItems: 'center' }}>
                         <div style={{ textAlign: 'left' }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: '#09834F', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
                                 Effortless Exam Workflow
                             </div>
                             <h3 style={{ fontSize: 'clamp(22px, 2.5vw, 34px)', fontWeight: 800, color: '#0F172A', lineHeight: 1.3, marginBottom: 16, fontFamily: 'var(--font-manrope, sans-serif)' }}>
@@ -212,7 +212,7 @@ export default function TeacherPlatformPage() {
                                     'Class-wise Average & Percentile Calculation'
                                 ].map((point, i) => (
                                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: 600, color: '#334155' }}>
-                                        <CheckCircle size={16} style={{ color: '#059669' }} /> {point}
+                                        <CheckCircle size={16} style={{ color: '#09834F' }} /> {point}
                                     </div>
                                 ))}
                             </div>

@@ -33,7 +33,7 @@ export default function Student360Analytics() {
         </div>
     )
 
-    const COLORS = ['var(--color-primary)', '#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#06B6D4']
+    const COLORS = ['var(--color-primary)', '#10B981', '#0868B2', '#F59E0B', '#EF4444', '#06B6D4']
 
     return (
         <div style={{ padding: '32px 40px', background: '#F8FAFC', minHeight: '100%' }}>
@@ -55,7 +55,7 @@ export default function Student360Analytics() {
                   {[
                     { label: 'Aggregate Mean Index', val: data.kpi.avg_score + '%', icon: Award, color: 'var(--color-primary)', bg: 'var(--color-primary-bg)' },
                     { label: 'Growth Velocity', val: '+5.2%', icon: TrendingUp, color: '#10B981', bg: '#ECFDF5' },
-                    { label: 'Curriculum Coverage', val: '8.4 Units', icon: BookMarked, color: '#3B82F6', bg: '#EFF6FF' },
+                    { label: 'Curriculum Coverage', val: '8.4 Units', icon: BookMarked, color: '#0868B2', bg: '#E5F3FB' },
                     { label: 'Asymptotic Peak', val: '92%', icon: Target, color: '#EF4444', bg: '#FEF2F2' }
                 ].map((k, i) => (
                     <div key={i} style={{ background: '#FFF', padding: 24, borderRadius: 24, border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 20, boxShadow: '0 4px 15px rgba(0,0,0,0.01)' }}>

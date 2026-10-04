@@ -544,8 +544,8 @@ export async function GET(request: NextRequest) {
 
             // Student Performance Distribution for Selected Teacher
             const studentDistribution = [
-                { range: '90-100% (Distinction)', count: Math.round(selectedTeacher.total_students * 0.22), fill: '#10B981' },
-                { range: '75-89% (First Class)', count: Math.round(selectedTeacher.total_students * 0.42), fill: '#004B93' },
+                { range: '90-100% (Distinction)', count: Math.round(selectedTeacher.total_students * 0.22), fill: '#09834F' },
+                { range: '75-89% (First Class)', count: Math.round(selectedTeacher.total_students * 0.42), fill: '#0868B2' },
                 { range: '50-74% (Second Class)', count: Math.round(selectedTeacher.total_students * 0.24), fill: '#F59E0B' },
                 { range: '< 50% (Needs Remedial)', count: Math.max(1, Math.round(selectedTeacher.total_students * 0.12)), fill: '#EF4444' }
             ]

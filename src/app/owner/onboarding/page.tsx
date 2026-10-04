@@ -18,9 +18,9 @@ export const MILESTONES = [
         stepNumber: 1,
         shortLabel: 'Provisioning',
         title: 'Institutional Kickoff & Provisioning',
-        color: '#2563EB',
-        bg: '#EFF6FF',
-        border: '#BFDBFE',
+        color: '#0868B2',
+        bg: '#E5F3FB',
+        border: '#B6DCF2',
         pct: 25,
         icon: Key,
         summary: 'Tenant DB creation, admin credentials dispatch & stakeholder kickoff.'
@@ -54,7 +54,7 @@ export const MILESTONES = [
         stepNumber: 4,
         shortLabel: 'Training Handover',
         title: 'Readiness Audit & Training Handover',
-        color: '#059669',
+        color: '#09834F',
         bg: '#ECFDF5',
         border: '#A7F3D0',
         pct: 100,
@@ -114,7 +114,7 @@ export default function OnboardingPage() {
     const [credForm, setCredForm] = useState({ admin_email: '', temp_password: '', subdomain: '' })
     const [rosterForm, setRosterForm] = useState({ academic_year: '2026-2027', grades_count: 12, teachers_count: 14, students_count: 140 })
     const [configForm, setConfigForm] = useState({
-        brand_color: '#2563eb',
+        brand_color: '#0868B2',
         syllabus: 'CBSE',
         exam_modules: { online_cbt: true, omr_hybrid: true, proctoring_ai: true, question_bank: true }
     })
@@ -178,7 +178,7 @@ export default function OnboardingPage() {
                 students_count: setup.data_setup?.students_count || 140
             })
             setConfigForm({
-                brand_color: setup.configuration?.brand_color || '#2563eb',
+                brand_color: setup.configuration?.brand_color || '#0868B2',
                 syllabus: setup.configuration?.syllabus || 'CBSE',
                 exam_modules: setup.configuration?.exam_modules || { online_cbt: true, omr_hybrid: true, proctoring_ai: true, question_bank: true }
             })
@@ -422,8 +422,8 @@ export default function OnboardingPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ width: 44, height: 44, borderRadius: 14, background: '#EFF6FF', border: '1px solid #BFDBFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <ShieldCheck size={24} color="#2563EB" />
+                        <div style={{ width: 44, height: 44, borderRadius: 14, background: '#E5F3FB', border: '1px solid #B6DCF2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <ShieldCheck size={24} color="#0868B2" />
                         </div>
                         <div>
                             <h1 style={{ fontSize: 24, fontWeight: 950, color: P.dark, margin: 0, letterSpacing: '-0.02em' }}>
@@ -441,7 +441,7 @@ export default function OnboardingPage() {
                         onClick={() => setShowCreateModal(true)}
                         style={{
                             display: 'flex', alignItems: 'center', gap: 8, padding: '11px 20px',
-                            background: '#2563EB', color: '#fff', border: 'none', borderRadius: 12,
+                            background: '#0868B2', color: '#fff', border: 'none', borderRadius: 12,
                             fontWeight: 900, fontSize: 13, cursor: 'pointer',
                             boxShadow: '0 6px 20px rgba(37,99,235,0.25)', transition: 'all 0.15s'
                         }}
@@ -482,14 +482,14 @@ export default function OnboardingPage() {
                         onClick={() => setStageFilter('all')}
                         style={{
                             display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10,
-                            border: `1px solid ${stageFilter === 'all' ? '#2563EB' : P.border}`,
-                            background: stageFilter === 'all' ? '#EFF6FF' : '#fff',
-                            color: stageFilter === 'all' ? '#2563EB' : P.dark,
+                            border: `1px solid ${stageFilter === 'all' ? '#0868B2' : P.border}`,
+                            background: stageFilter === 'all' ? '#E5F3FB' : '#fff',
+                            color: stageFilter === 'all' ? '#0868B2' : P.dark,
                             fontWeight: 800, fontSize: 12, cursor: 'pointer'
                         }}
                     >
                         <span>All Cases</span>
-                        <span style={{ background: stageFilter === 'all' ? '#2563EB' : P.bg, color: stageFilter === 'all' ? '#fff' : P.muted, padding: '1px 6px', borderRadius: 6, fontSize: 10, fontWeight: 900 }}>
+                        <span style={{ background: stageFilter === 'all' ? '#0868B2' : P.bg, color: stageFilter === 'all' ? '#fff' : P.muted, padding: '1px 6px', borderRadius: 6, fontSize: 10, fontWeight: 900 }}>
                             {totalCases}
                         </span>
                     </button>
@@ -526,15 +526,15 @@ export default function OnboardingPage() {
                         onClick={() => setStageFilter('completed')}
                         style={{
                             display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10,
-                            border: `1px solid ${stageFilter === 'completed' ? '#059669' : P.border}`,
+                            border: `1px solid ${stageFilter === 'completed' ? '#09834F' : P.border}`,
                             background: stageFilter === 'completed' ? '#ECFDF5' : '#fff',
-                            color: stageFilter === 'completed' ? '#059669' : P.dark,
+                            color: stageFilter === 'completed' ? '#09834F' : P.dark,
                             fontWeight: 800, fontSize: 12, cursor: 'pointer'
                         }}
                     >
-                        <CheckCircle size={14} color="#059669" />
+                        <CheckCircle size={14} color="#09834F" />
                         <span>Live / Handed Over</span>
-                        <span style={{ background: stageFilter === 'completed' ? '#059669' : P.bg, color: stageFilter === 'completed' ? '#fff' : P.muted, padding: '1px 6px', borderRadius: 6, fontSize: 10, fontWeight: 900 }}>
+                        <span style={{ background: stageFilter === 'completed' ? '#09834F' : P.bg, color: stageFilter === 'completed' ? '#fff' : P.muted, padding: '1px 6px', borderRadius: 6, fontSize: 10, fontWeight: 900 }}>
                             {completedCases}
                         </span>
                     </button>
@@ -560,7 +560,7 @@ export default function OnboardingPage() {
             {/* Cases List */}
             {loading ? (
                 <div style={{ background: '#fff', border: `1px solid ${P.border}`, borderRadius: 24, padding: 60, textAlign: 'center' }}>
-                    <Loader2 size={32} color="#2563EB" style={{ animation: 'spin 1s linear infinite' }} />
+                    <Loader2 size={32} color="#0868B2" style={{ animation: 'spin 1s linear infinite' }} />
                     <p style={{ color: P.muted, fontWeight: 700, marginTop: 12 }}>Loading institutional onboarding cases...</p>
                 </div>
             ) : filteredCases.length === 0 ? (
@@ -587,7 +587,7 @@ export default function OnboardingPage() {
                                 onClick={() => setSelectedCase(ob)}
                                 style={{
                                     background: '#fff',
-                                    border: `1px solid ${selectedCase?.id === ob.id ? '#2563EB' : P.border}`,
+                                    border: `1px solid ${selectedCase?.id === ob.id ? '#0868B2' : P.border}`,
                                     borderRadius: 20,
                                     padding: '20px 24px',
                                     display: 'flex',
@@ -609,7 +609,7 @@ export default function OnboardingPage() {
                                         {/* Milestone Badge */}
                                         <span style={{
                                             background: isCompleted ? '#ECFDF5' : milestone.bg,
-                                            color: isCompleted ? '#059669' : milestone.color,
+                                            color: isCompleted ? '#09834F' : milestone.color,
                                             border: `1px solid ${isCompleted ? '#A7F3D0' : milestone.border}`,
                                             padding: '4px 10px',
                                             borderRadius: 8,
@@ -619,7 +619,7 @@ export default function OnboardingPage() {
                                             alignItems: 'center',
                                             gap: 5
                                         }}>
-                                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: isCompleted ? '#059669' : milestone.color }} />
+                                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: isCompleted ? '#09834F' : milestone.color }} />
                                             {isCompleted ? 'LIVE: HANDED OVER' : `PHASE ${milestone.stepNumber}/4: ${milestone.shortLabel.toUpperCase()}`}
                                         </span>
 
@@ -639,7 +639,7 @@ export default function OnboardingPage() {
                                     {/* Setup State Micro-Badges */}
                                     <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                                         {setup.provisioning?.credentials_dispatched ? (
-                                            <span style={{ background: '#EFF6FF', color: '#1D4ED8', fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 6 }}>
+                                            <span style={{ background: '#E5F3FB', color: '#1D4ED8', fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 6 }}>
                                                 ✓ Credentials Dispatched
                                             </span>
                                         ) : (
@@ -670,10 +670,10 @@ export default function OnboardingPage() {
                                 <div style={{ flex: 1.2, padding: '0 12px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 800, color: P.muted, marginBottom: 6 }}>
                                         <span>Readiness Progress</span>
-                                        <span style={{ color: isCompleted ? '#059669' : milestone.color, fontWeight: 950 }}>{pct}%</span>
+                                        <span style={{ color: isCompleted ? '#09834F' : milestone.color, fontWeight: 950 }}>{pct}%</span>
                                     </div>
                                     <div style={{ height: 8, background: '#F1F5F9', borderRadius: 4, overflow: 'hidden' }}>
-                                        <div style={{ height: '100%', width: `${pct}%`, background: isCompleted ? '#059669' : milestone.color, borderRadius: 4, transition: 'width 0.4s ease' }} />
+                                        <div style={{ height: '100%', width: `${pct}%`, background: isCompleted ? '#09834F' : milestone.color, borderRadius: 4, transition: 'width 0.4s ease' }} />
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: P.muted, fontWeight: 700, marginTop: 5 }}>
                                         <span>Target: {ob.target_completion_date || 'Within SLA'}</span>
@@ -702,8 +702,8 @@ export default function OnboardingPage() {
                                         style={{
                                             display: 'flex', alignItems: 'center', gap: 6,
                                             padding: '9px 15px', borderRadius: 10,
-                                            background: '#EFF6FF', border: '1px solid #BFDBFE',
-                                            color: '#2563EB', fontWeight: 900, fontSize: 12,
+                                            background: '#E5F3FB', border: '1px solid #B6DCF2',
+                                            color: '#0868B2', fontWeight: 900, fontSize: 12,
                                             cursor: 'pointer'
                                         }}
                                     >
@@ -723,8 +723,8 @@ export default function OnboardingPage() {
                     <div style={{ background: '#fff', borderRadius: 24, width: '100%', maxWidth: 520, padding: 28, boxShadow: '0 40px 120px rgba(0,0,0,0.25)', border: `1px solid ${P.border}` }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <ShieldCheck size={20} color="#2563EB" />
+                                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#E5F3FB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <ShieldCheck size={20} color="#0868B2" />
                                 </div>
                                 <div>
                                     <h3 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: P.dark }}>New Institutional Onboarding</h3>
@@ -793,7 +793,7 @@ export default function OnboardingPage() {
 
                         <div style={{ display: 'flex', gap: 12 }}>
                             <button onClick={() => setShowCreateModal(false)} style={{ flex: 1, padding: 12, background: P.bg, border: `1px solid ${P.border}`, borderRadius: 10, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-                            <button onClick={handleCreateCase} disabled={createSaving} style={{ flex: 2, padding: 12, background: '#2563EB', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 900, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                            <button onClick={handleCreateCase} disabled={createSaving} style={{ flex: 2, padding: 12, background: '#0868B2', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 900, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                                 {createSaving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <CheckCircle2 size={16} />} Initialize Case
                             </button>
                         </div>
@@ -814,7 +814,7 @@ export default function OnboardingPage() {
                                             {selectedCase.organization_name}
                                         </h3>
                                         {selectedCase.stage === 'completed' && (
-                                            <span style={{ background: '#ECFDF5', color: '#059669', fontSize: 11, fontWeight: 900, padding: '2px 8px', borderRadius: 6 }}>
+                                            <span style={{ background: '#ECFDF5', color: '#09834F', fontSize: 11, fontWeight: 900, padding: '2px 8px', borderRadius: 6 }}>
                                                 LIVE
                                             </span>
                                         )}
@@ -875,14 +875,14 @@ export default function OnboardingPage() {
                             {/* TAB 1: PHASE 1 PROVISIONING */}
                             {activeWorkspaceTab === 'provisioning' && (
                                 <div>
-                                    <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 16, padding: '18px 20px', marginBottom: 20 }}>
+                                    <div style={{ background: '#E5F3FB', border: '1px solid #B6DCF2', borderRadius: 16, padding: '18px 20px', marginBottom: 20 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                                            <Key size={20} color="#2563EB" />
+                                            <Key size={20} color="#0868B2" />
                                             <h4 style={{ margin: 0, fontSize: 15, fontWeight: 950, color: '#1E40AF' }}>
                                                 Phase 1: Institutional Kickoff & Account Provisioning
                                             </h4>
                                         </div>
-                                        <p style={{ margin: 0, fontSize: 12, color: '#3B82F6', fontWeight: 600 }}>
+                                        <p style={{ margin: 0, fontSize: 12, color: '#0868B2', fontWeight: 600 }}>
                                             Provision dedicated school tenant sub-routing, set up super-administrator access, and dispatch launch credentials to management.
                                         </p>
                                     </div>
@@ -934,7 +934,7 @@ export default function OnboardingPage() {
                                             disabled={actionLoading}
                                             style={{
                                                 width: '100%', padding: '12px 16px', borderRadius: 12,
-                                                background: '#2563EB', color: '#fff', border: 'none',
+                                                background: '#0868B2', color: '#fff', border: 'none',
                                                 fontWeight: 900, fontSize: 13, cursor: 'pointer',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
                                             }}
@@ -973,7 +973,7 @@ export default function OnboardingPage() {
                                                 </div>
                                             </div>
                                             {selectedCase.setup_state?.data_setup?.roster_status === 'seeded' && (
-                                                <span style={{ background: '#ECFDF5', color: '#059669', fontSize: 11, fontWeight: 900, padding: '3px 8px', borderRadius: 6 }}>
+                                                <span style={{ background: '#ECFDF5', color: '#09834F', fontSize: 11, fontWeight: 900, padding: '3px 8px', borderRadius: 6 }}>
                                                     ✓ Seeded
                                                 </span>
                                             )}
@@ -1120,7 +1120,7 @@ export default function OnboardingPage() {
                                 <div>
                                     <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 16, padding: '18px 20px', marginBottom: 20 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                                            <Award size={20} color="#059669" />
+                                            <Award size={20} color="#09834F" />
                                             <h4 style={{ margin: 0, fontSize: 15, fontWeight: 950, color: '#065F46' }}>
                                                 Phase 4: Readiness Audit & Training Handover
                                             </h4>
@@ -1139,34 +1139,34 @@ export default function OnboardingPage() {
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, background: P.bg }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                    <CheckCircle2 size={16} color="#059669" />
+                                                    <CheckCircle2 size={16} color="#09834F" />
                                                     <span style={{ fontSize: 12, fontWeight: 800, color: P.dark }}>1. Dedicated Tenant Routing & Admin Credentials</span>
                                                 </div>
-                                                <span style={{ fontSize: 11, fontWeight: 900, color: '#059669', background: '#ECFDF5', padding: '2px 8px', borderRadius: 6 }}>PASSED</span>
+                                                <span style={{ fontSize: 11, fontWeight: 900, color: '#09834F', background: '#ECFDF5', padding: '2px 8px', borderRadius: 6 }}>PASSED</span>
                                             </div>
 
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, background: P.bg }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                    <CheckCircle2 size={16} color="#059669" />
+                                                    <CheckCircle2 size={16} color="#09834F" />
                                                     <span style={{ fontSize: 12, fontWeight: 800, color: P.dark }}>2. Academic Structure & Master Roster</span>
                                                 </div>
-                                                <span style={{ fontSize: 11, fontWeight: 900, color: '#059669', background: '#ECFDF5', padding: '2px 8px', borderRadius: 6 }}>PASSED</span>
+                                                <span style={{ fontSize: 11, fontWeight: 900, color: '#09834F', background: '#ECFDF5', padding: '2px 8px', borderRadius: 6 }}>PASSED</span>
                                             </div>
 
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, background: P.bg }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                    <CheckCircle2 size={16} color="#059669" />
+                                                    <CheckCircle2 size={16} color="#09834F" />
                                                     <span style={{ fontSize: 12, fontWeight: 800, color: P.dark }}>3. Curriculum Engine & Assessment Modules</span>
                                                 </div>
-                                                <span style={{ fontSize: 11, fontWeight: 900, color: '#059669', background: '#ECFDF5', padding: '2px 8px', borderRadius: 6 }}>PASSED</span>
+                                                <span style={{ fontSize: 11, fontWeight: 900, color: '#09834F', background: '#ECFDF5', padding: '2px 8px', borderRadius: 6 }}>PASSED</span>
                                             </div>
 
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, background: P.bg }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                    <CheckCircle2 size={16} color="#059669" />
+                                                    <CheckCircle2 size={16} color="#09834F" />
                                                     <span style={{ fontSize: 12, fontWeight: 800, color: P.dark }}>4. Training Department Queue Readiness</span>
                                                 </div>
-                                                <span style={{ fontSize: 11, fontWeight: 900, color: '#059669', background: '#ECFDF5', padding: '2px 8px', borderRadius: 6 }}>READY</span>
+                                                <span style={{ fontSize: 11, fontWeight: 900, color: '#09834F', background: '#ECFDF5', padding: '2px 8px', borderRadius: 6 }}>READY</span>
                                             </div>
                                         </div>
 
@@ -1202,7 +1202,7 @@ export default function OnboardingPage() {
                                                 </div>
                                                 <a
                                                     href="/owner/training"
-                                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 900, color: '#059669', textDecoration: 'none', marginTop: 6 }}
+                                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 900, color: '#09834F', textDecoration: 'none', marginTop: 6 }}
                                                 >
                                                     View Training Pipeline in Staff Manager <ArrowUpRight size={13} />
                                                 </a>
@@ -1213,7 +1213,7 @@ export default function OnboardingPage() {
                                                 disabled={actionLoading}
                                                 style={{
                                                     width: '100%', padding: '13px 18px', borderRadius: 12,
-                                                    background: '#059669', color: '#fff', border: 'none',
+                                                    background: '#09834F', color: '#fff', border: 'none',
                                                     fontWeight: 900, fontSize: 13, cursor: 'pointer',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                                                     boxShadow: '0 6px 20px rgba(5,150,105,0.25)'
@@ -1258,7 +1258,7 @@ export default function OnboardingPage() {
                                                     cursor: 'pointer', transition: 'all 0.1s'
                                                 }}
                                             >
-                                                {chk.is_completed ? <CheckSquare size={17} color="#059669" /> : <Square size={17} color={P.muted} />}
+                                                {chk.is_completed ? <CheckSquare size={17} color="#09834F" /> : <Square size={17} color={P.muted} />}
                                                 <span style={{ fontSize: 13, fontWeight: 700, color: chk.is_completed ? '#065F46' : P.dark, textDecoration: chk.is_completed ? 'line-through' : 'none' }}>
                                                     {chk.task_name}
                                                 </span>
@@ -1281,7 +1281,7 @@ export default function OnboardingPage() {
                                     }}
                                     disabled={actionLoading}
                                     style={{
-                                        flex: 1, padding: 13, background: '#2563EB', color: '#fff', border: 'none',
+                                        flex: 1, padding: 13, background: '#0868B2', color: '#fff', border: 'none',
                                         borderRadius: 12, fontWeight: 900, fontSize: 13, cursor: 'pointer',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
                                     }}

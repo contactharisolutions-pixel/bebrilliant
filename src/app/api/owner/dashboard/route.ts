@@ -236,7 +236,7 @@ export async function GET(request: NextRequest) {
             stateCounts[sName] = (stateCounts[sName] || 0) + 1
         })
 
-        const stateColorPalette = ['#3B82F6', '#84CC16', '#F97316', '#06B6D4', '#EAB308', '#8B5CF6', '#EC4899', '#10B981', '#64748B']
+        const stateColorPalette = ['#0868B2', '#84CC16', '#F97316', '#06B6D4', '#EAB308', '#8B5CF6', '#EC4899', '#09834F', '#64748B']
         const stateDistribution = Object.entries(stateCounts)
             .map(([name, count], idx) => ({
                 name,
@@ -253,7 +253,7 @@ export async function GET(request: NextRequest) {
             planCounts[p] = (planCounts[p] || 0) + 1
         })
 
-        const planColorPalette = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#06B6D4', '#64748B']
+        const planColorPalette = ['#09834F', '#0868B2', '#8B5CF6', '#F59E0B', '#06B6D4', '#64748B']
         const subDistribution = Object.entries(planCounts).map(([name, count], idx) => ({
             name,
             count,
@@ -286,8 +286,8 @@ export async function GET(request: NextRequest) {
                 sub: t.name + (t.settings?.city ? `, ${t.settings.city}` : ''),
                 time: t.created_at,
                 type: 'school',
-                iconColor: '#3B82F6',
-                iconBg: '#EFF6FF'
+                iconColor: '#0868B2',
+                iconBg: '#E5F3FB'
             })
         })
 
@@ -300,7 +300,7 @@ export async function GET(request: NextRequest) {
                 sub: `₹ ${Number(p.amount || 0).toLocaleString('en-IN')} from ${matchTenant?.name || 'Platform Institution'}`,
                 time: p.created_at,
                 type: 'payment',
-                iconColor: '#10B981',
+                iconColor: '#09834F',
                 iconBg: '#ECFDF5'
             })
         })

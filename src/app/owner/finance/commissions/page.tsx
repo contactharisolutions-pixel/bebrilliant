@@ -1,17 +1,17 @@
-'use client'
+﻿'use client'
 import React, { useEffect, useState } from 'react'
 import {
     ShieldCheck, Settings, Save, Percent, IndianRupee, Info, PlusCircle, Trash2,
     Loader2, ArrowLeft, Zap, Layers, Activity, X
 } from 'lucide-react'
 const P = {
-    brand: '#004B93',
-    cta: '#F0A026',
+    brand: '#0868B2',
+    cta: '#D97706',
     dark: '#1B1D21',
     muted: '#A5A2A6',
-    bg: '#F7F8FA',
+    bg: '#F8FAFC',
     border: '#E8E8E8',
-    success: '#1FAC63',
+    success: '#09834F',
     error: '#EF4444',
     white: '#FFFFFF',
     text: '#5A5A5A'

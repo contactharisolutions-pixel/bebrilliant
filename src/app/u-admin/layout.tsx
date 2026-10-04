@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
 
 
@@ -8,7 +8,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Force global light theme override */}
             <style dangerouslySetInnerHTML={{
                 __html: `
-        html, body { background: #F7F8FA !important; color: #1B1D21 !important; margin: 0; padding: 0; }
+        html, body { background: #F8FAFC !important; color: #1B1D21 !important; margin: 0; padding: 0; }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -16,12 +16,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         ::-webkit-scrollbar-thumb:hover { background: #A5A2A6; }
       `}} />
 
-            <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', background: '#F7F8FA' }}>
+            <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', background: '#F8FAFC' }}>
                 {/* SIDEBAR */}
                 {/* <AdminSidebar /> */}
 
                 {/* MAIN SCROLL AREA */}
-                <div style={{ flex: 1, minWidth: 0, height: '100vh', overflowY: 'auto', background: '#F7F8FA' }}>
+                <div style={{ flex: 1, minWidth: 0, height: '100vh', overflowY: 'auto', background: '#F8FAFC' }}>
                     {children}
                 </div>
             </div>

@@ -196,7 +196,7 @@ export default function DashboardPage() {
                     className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
                 >
                     <div className="flex items-center gap-3.5 mb-2.5">
-                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#2563EB] to-[#60A5FA] text-white flex items-center justify-center shadow-xs">
+                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#0868B2] to-[#60A5FA] text-white flex items-center justify-center shadow-xs">
                             <Building2 size={20} strokeWidth={2.4} />
                         </div>
                         <div>
@@ -220,7 +220,7 @@ export default function DashboardPage() {
                     className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
                 >
                     <div className="flex items-center gap-3.5 mb-2.5">
-                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#059669] to-[#34D399] text-white flex items-center justify-center shadow-xs">
+                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#09834F] to-[#34D399] text-white flex items-center justify-center shadow-xs">
                             <Users size={20} strokeWidth={2.4} />
                         </div>
                         <div>
@@ -575,7 +575,7 @@ export default function DashboardPage() {
                                 <div className="flex-1 flex flex-col gap-2">
                                     <div className="flex items-center justify-between text-xs">
                                         <div className="flex items-center gap-1.5">
-                                            <span className="w-2 h-2 rounded-full shrink-0 bg-[#3B82F6]" />
+                                            <span className="w-2 h-2 rounded-full shrink-0 bg-[#0868B2]" />
                                             <span className="text-slate-600 font-medium text-[11px]">Scheduled</span>
                                         </div>
                                         <span className="font-bold text-slate-900 text-xs">
@@ -699,7 +699,7 @@ export default function DashboardPage() {
                                     <div key={act.id} className="flex items-start gap-3">
                                         <div
                                             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-                                            style={{ backgroundColor: act.iconBg || '#EFF6FF', color: act.iconColor || '#3B82F6' }}
+                                            style={{ backgroundColor: act.iconBg || '#E5F3FB', color: act.iconColor || '#0868B2' }}
                                         >
                                             <IconComponent size={18} strokeWidth={2.2} />
                                         </div>

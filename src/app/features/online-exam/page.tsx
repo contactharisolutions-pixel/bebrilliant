@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import Link from 'next/link'
@@ -40,7 +40,7 @@ export default function OnlineExaminationPage() {
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     gap: 8,
-                                    background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+                                    background: 'linear-gradient(135deg, #0868B2 0%, #1D4ED8 100%)',
                                     color: '#FFFFFF',
                                     padding: '14px 30px',
                                     borderRadius: 14,
@@ -78,7 +78,7 @@ export default function OnlineExaminationPage() {
                 <section style={{ padding: '80px 5%', background: '#FFFFFF' }}>
                     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
                         <div style={{ textAlign: 'center', marginBottom: 56 }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: '#0868B2', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
                                 Engine Capabilities
                             </div>
                             <h2 style={{ fontSize: 'clamp(24px, 3vw, 38px)', fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)' }}>
@@ -98,8 +98,8 @@ export default function OnlineExaminationPage() {
                                         'Section-wise navigation & time bounds',
                                         'Supports English, Hindi & regional languages'
                                     ],
-                                    color: '#2563EB',
-                                    bg: '#EFF6FF'
+                                    color: '#0868B2',
+                                    bg: '#E5F3FB'
                                 },
                                 {
                                     icon: Clock,
@@ -111,7 +111,7 @@ export default function OnlineExaminationPage() {
                                         'Auto-save answer drafts every 2 seconds',
                                         'Automated instant submission SLA'
                                     ],
-                                    color: '#059669',
+                                    color: '#09834F',
                                     bg: '#ECFDF5'
                                 },
                                 {

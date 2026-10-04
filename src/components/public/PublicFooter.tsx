@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import Link from 'next/link'
@@ -87,7 +87,7 @@ export const PublicFooter = () => {
                             ].map(({ Icon, text, href }) => {
                                 const content = (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                        <Icon size={14} style={{ color: '#2563EB', flexShrink: 0 }} />
+                                        <Icon size={14} style={{ color: '#0868B2', flexShrink: 0 }} />
                                         <span style={{ fontSize: 13, color: '#CBD5E1' }}>{text}</span>
                                     </div>
                                 )
@@ -122,7 +122,7 @@ export const PublicFooter = () => {
                                         transition: 'all 0.2s ease'
                                     }}
                                     onMouseEnter={e => {
-                                        (e.currentTarget as HTMLElement).style.background = '#2563EB'
+                                        (e.currentTarget as HTMLElement).style.background = '#0868B2'
                                         ;(e.currentTarget as HTMLElement).style.color = '#FFFFFF'
                                     }}
                                     onMouseLeave={e => {

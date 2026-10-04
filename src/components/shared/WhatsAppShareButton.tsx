@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState, useCallback } from 'react'
 import {
     MessageCircle, Link2, X, Loader2, CheckCircle2,
@@ -183,8 +183,8 @@ export function WhatsAppShareButton({
                                             Message Preview
                                         </div>
                                         <div style={{
-                                            background:   '#F0FDF4',
-                                            border:       '1px solid #BBF7D0',
+                                            background:   '#F1FBF5',
+                                            border:       '1px solid #B7E8CC',
                                             borderRadius: 16,
                                             padding:      '16px 20px',
                                             fontSize:     13,
@@ -255,7 +255,7 @@ export function WhatsAppShareButton({
                                                 flex:         1,
                                                 padding:      '14px',
                                                 background:   copied ? '#ECFDF5' : '#F8FAFC',
-                                                color:        copied ? '#059669' : '#0F172A',
+                                                color:        copied ? '#09834F' : '#0F172A',
                                                 border:       `1px solid ${copied ? '#A7F3D0' : '#E2E8F0'}`,
                                                 borderRadius: 14,
                                                 fontSize:     13,

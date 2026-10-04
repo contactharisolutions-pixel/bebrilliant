@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabaseAdmin
         .from('crm_pipeline_stages')
-        .insert({ name, color: color || '#3B82F6', icon, probability: probability ?? 0, is_won: is_won || false, is_lost: is_lost || false, order_index: nextOrder })
+        .insert({ name, color: color || '#0868B2', icon, probability: probability ?? 0, is_won: is_won || false, is_lost: is_lost || false, order_index: nextOrder })
         .select()
         .single()
 

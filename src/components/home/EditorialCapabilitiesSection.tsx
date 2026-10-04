@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState } from 'react'
 import Link from 'next/link'
@@ -164,7 +164,7 @@ export function EditorialCapabilitiesSection() {
                                         </div>
                                         <div className="flex items-center gap-3">
                                             {isActive && (
-                                                <span className="hidden sm:inline-block text-[11px] font-bold uppercase tracking-wider text-[#34D399] bg-[#064E3B]/60 border border-[#059669]/50 px-2.5 py-1 rounded-full">
+                                                <span className="hidden sm:inline-block text-[11px] font-bold uppercase tracking-wider text-[#34D399] bg-[#064E3B]/60 border border-[#09834F]/50 px-2.5 py-1 rounded-full">
                                                     Active Engine
                                                 </span>
                                             )}

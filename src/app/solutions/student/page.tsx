@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import Link from 'next/link'
@@ -17,11 +17,11 @@ export default function StudentPlatformPage() {
             <main style={{ flex: 1 }}>
 
                 {/* ── 1. HERO SECTION ── */}
-                <section style={{ position: 'relative', padding: '90px 5% 70px', background: 'linear-gradient(135deg, #2563EB 0%, #1E3A8A 100%)', color: '#FFFFFF', overflow: 'hidden', textAlign: 'center' }}>
+                <section style={{ position: 'relative', padding: '90px 5% 70px', background: 'linear-gradient(135deg, #0868B2 0%, #0868B2 100%)', color: '#FFFFFF', overflow: 'hidden', textAlign: 'center' }}>
                     <div style={{ position: 'absolute', top: '-100px', left: '50%', transform: 'translateX(-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(147, 197, 253, 0.25), transparent 70%)', pointerEvents: 'none' }} />
 
                     <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 10 }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255, 255, 255, 0.12)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#BFDBFE', marginBottom: 20 }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255, 255, 255, 0.12)', border: '1px solid rgba(255, 255, 255, 0.2)', padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#B6DCF2', marginBottom: 20 }}>
                             <GraduationCap size={14} /> Student Platform & Practice Engine
                         </div>
 
@@ -41,7 +41,7 @@ export default function StudentPlatformPage() {
                                     alignItems: 'center',
                                     gap: 8,
                                     background: '#FFFFFF',
-                                    color: '#1E3A8A',
+                                    color: '#0868B2',
                                     padding: '14px 30px',
                                     borderRadius: 14,
                                     fontSize: 15,
@@ -78,7 +78,7 @@ export default function StudentPlatformPage() {
                 <section style={{ padding: '80px 5%', background: '#FFFFFF' }}>
                     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
                         <div style={{ textAlign: 'center', marginBottom: 56 }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: '#0868B2', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
                                 Student Toolkit
                             </div>
                             <h2 style={{ fontSize: 'clamp(24px, 3vw, 38px)', fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)' }}>
@@ -98,7 +98,7 @@ export default function StudentPlatformPage() {
                                         'Flexible question count & difficulty (Easy, Medium, Hard)',
                                         'Instant AI paper compilation & solution key generation'
                                     ],
-                                    color: '#672AEA',
+                                    color: '#7C3AED',
                                     bg: '#F3E8FF'
                                 },
                                 {
@@ -111,8 +111,8 @@ export default function StudentPlatformPage() {
                                         '10+ years solved previous year board papers',
                                         'JEE Main, NEET UG & Olympiad mock series'
                                     ],
-                                    color: '#2563EB',
-                                    bg: '#EFF6FF'
+                                    color: '#0868B2',
+                                    bg: '#E5F3FB'
                                 },
                                 {
                                     icon: Clock,
@@ -124,7 +124,7 @@ export default function StudentPlatformPage() {
                                         'Instant step-by-step solution explanations',
                                         'Real-time timer & question status indicators'
                                     ],
-                                    color: '#059669',
+                                    color: '#09834F',
                                     bg: '#ECFDF5'
                                 },
                                 {
@@ -150,8 +150,8 @@ export default function StudentPlatformPage() {
                                         'National & institute live leaderboards',
                                         'Peer benchmarking accuracy & speed stats'
                                     ],
-                                    color: '#2563EB',
-                                    bg: '#EFF6FF'
+                                    color: '#0868B2',
+                                    bg: '#E5F3FB'
                                 },
                                 {
                                     icon: Sparkles,
@@ -163,7 +163,7 @@ export default function StudentPlatformPage() {
                                         'Instant concept revision & formula drills',
                                         'Automated re-test on incorrect questions'
                                     ],
-                                    color: '#059669',
+                                    color: '#09834F',
                                     bg: '#ECFDF5'
                                 }
                             ].map((item, i) => {
@@ -219,7 +219,7 @@ export default function StudentPlatformPage() {
                 <section style={{ padding: '60px 5%', background: '#F8FAFC' }}>
                     <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 32, alignItems: 'center' }}>
                         <div style={{ textAlign: 'left' }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: '#0868B2', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
                                 Academic Excellence
                             </div>
                             <h3 style={{ fontSize: 'clamp(22px, 2.5vw, 34px)', fontWeight: 800, color: '#0F172A', lineHeight: 1.3, marginBottom: 16, fontFamily: 'var(--font-manrope, sans-serif)' }}>
@@ -237,7 +237,7 @@ export default function StudentPlatformPage() {
                                     'Instant Score Sharing with Parents & Teachers'
                                 ].map((point, i) => (
                                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: 600, color: '#334155' }}>
-                                        <CheckCircle size={16} style={{ color: '#2563EB' }} /> {point}
+                                        <CheckCircle size={16} style={{ color: '#0868B2' }} /> {point}
                                     </div>
                                 ))}
                             </div>
@@ -270,7 +270,7 @@ export default function StudentPlatformPage() {
                 </section>
 
                 {/* ── 4. CTA BANNER ── */}
-                <section style={{ padding: '70px 5%', background: '#2563EB', color: '#FFFFFF', textAlign: 'center' }}>
+                <section style={{ padding: '70px 5%', background: '#0868B2', color: '#FFFFFF', textAlign: 'center' }}>
                     <div style={{ maxWidth: 750, margin: '0 auto' }}>
                         <h2 style={{ fontSize: 'clamp(26px, 3vw, 38px)', fontWeight: 800, fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 14 }}>
                             Unlock Unlimited Practice Mocks Today
@@ -285,7 +285,7 @@ export default function StudentPlatformPage() {
                                 alignItems: 'center',
                                 gap: 8,
                                 background: '#FFFFFF',
-                                color: '#1E3A8A',
+                                color: '#0868B2',
                                 padding: '15px 34px',
                                 borderRadius: 14,
                                 fontSize: 15,

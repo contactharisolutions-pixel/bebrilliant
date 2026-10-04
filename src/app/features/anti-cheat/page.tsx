@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import Link from 'next/link'
@@ -111,8 +111,8 @@ export default function AntiCheatPage() {
                                         'Dynamic MCQ option permutation',
                                         'Unique set code assignment'
                                     ],
-                                    color: '#2563EB',
-                                    bg: '#EFF6FF'
+                                    color: '#0868B2',
+                                    bg: '#E5F3FB'
                                 },
                                 {
                                     icon: Lock,
@@ -124,7 +124,7 @@ export default function AntiCheatPage() {
                                         'Shortcut key interception (Ctrl+C, Ctrl+V, F12)',
                                         'External display & screen capture prevention'
                                     ],
-                                    color: '#059669',
+                                    color: '#09834F',
                                     bg: '#ECFDF5'
                                 },
                                 {

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState } from 'react'
 import Link from 'next/link'
@@ -92,7 +92,7 @@ export function EditorialSyllabusSection() {
             <div className="max-w-7xl mx-auto">
                 {/* 1. Header with Architectural Hierarchy */}
                 <div className="max-w-3xl mb-12">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1E3A8A]/10 border border-[#1E3A8A]/15 text-[#1E3A8A] text-xs font-bold uppercase tracking-widest mb-4">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0868B2]/10 border border-[#0868B2]/15 text-[#0868B2] text-xs font-bold uppercase tracking-widest mb-4">
                         <BookOpen size={13} />
                         <span>Curricular Architecture & Depth</span>
                     </div>
@@ -144,7 +144,7 @@ export function EditorialSyllabusSection() {
                     {/* Left Column (7 cols): Editorial Curriculum Details */}
                     <div className="lg:col-span-7 flex flex-col justify-between">
                         <div>
-                            <div className="text-xs font-bold uppercase tracking-widest text-[#004B93] mb-2 font-mono">
+                            <div className="text-xs font-bold uppercase tracking-widest text-[#0868B2] mb-2 font-mono">
                                 {item.badge} Blueprint · Class 1 to 12
                             </div>
                             <h3 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] font-manrope mb-4 leading-tight">

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import React, { useState, useEffect } from 'react'
 import {
     GraduationCap, Share2, TrendingUp, Wallet, ShieldCheck,
@@ -8,10 +8,10 @@ import {
 import { WhatsAppShareButton } from '@/components/shared/WhatsAppShareButton'
 // Institutional Palette
 const COLORS = {
-    primary: '#004B93',
-    primaryGradient: 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
-    success: '#1FAC63',
-    warning: '#F0A026',
+    primary: '#0868B2',
+    primaryGradient: 'linear-gradient(135deg, #0868B2 0%, #073B73 100%)',
+    success: '#09834F',
+    warning: '#D97706',
     danger: '#EF4444',
     slate: '#64748B',
     background: '#F8FAFC',
@@ -50,7 +50,7 @@ export default function AffiliateStudentsManagement() {
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 48 }}>
                 <div>
                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                        <div style={{ padding: 10, background: 'linear-gradient(135deg, #F0A026 0%, #B4781C 100%)', borderRadius: 14, boxShadow: '0 8px 16px rgba(240,160,38,0.2)' }}>
+                        <div style={{ padding: 10, background: 'linear-gradient(135deg, #D97706 0%, #B4781C 100%)', borderRadius: 14, boxShadow: '0 8px 16px rgba(240,160,38,0.2)' }}>
                             <GraduationCap size={24} color="#FFF" />
                         </div>
                         <h1 style={{ fontSize: 32, fontWeight: 1000, color: '#0F172A', margin: 0, letterSpacing: '-0.03em' }}>Student Referral Hub</h1>
@@ -149,7 +149,7 @@ export default function AffiliateStudentsManagement() {
                 </table>
             </div>
             <div style={{ marginTop: 32, display: 'flex', gap: 16 }}>
-                 <div style={{ flex: 1, background: '#EFF6FF', border: '1px solid #DBEAFE', borderRadius: 20, padding: 24, display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+                 <div style={{ flex: 1, background: '#E5F3FB', border: '1px solid #DBEAFE', borderRadius: 20, padding: 24, display: 'flex', alignItems: 'flex-start', gap: 16 }}>
                     <div style={{ width: 44, height: 44, borderRadius: 14, background: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', flexShrink: 0 }}>
                         <GraduationCap size={22} color={COLORS.primary} />
                     </div>
@@ -158,7 +158,7 @@ export default function AffiliateStudentsManagement() {
                         <div style={{ fontSize: 12, color: '#60A5FA', fontWeight: 700, lineHeight: 1.5 }}>Students receive exam tokens immediately upon successful purchase by referred users. Tokens can be used for taking mock exams and upgrading study modules.</div>
                     </div>
                  </div>
-                 <div style={{ flex: 1, background: '#F0FDF4', border: '1px solid #DCFCE7', borderRadius: 20, padding: 24, display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+                 <div style={{ flex: 1, background: '#F1FBF5', border: '1px solid #DCF7E7', borderRadius: 20, padding: 24, display: 'flex', alignItems: 'flex-start', gap: 16 }}>
                     <div style={{ width: 44, height: 44, borderRadius: 14, background: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', flexShrink: 0 }}>
                         <ShieldCheck size={22} color={COLORS.success} />
                     </div>

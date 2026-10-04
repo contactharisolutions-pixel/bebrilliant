@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { LayoutTemplate, Eye, MousePointer2, Plus, GripVertical, Settings, Globe, CheckCircle2, ChevronRight, Palette } from 'lucide-react'
@@ -62,7 +62,7 @@ export default function TenantCMSBuilder() {
                                 padding: 24, borderRadius: 24, border: `1px solid ${P.border}`, 
                                 display: 'flex', alignItems: 'center', gap: 20, 
                                 opacity: section.isVisible ? 1 : 0.6,
-                                background: section.isVisible ? P.card : '#F9FAFB'
+                                background: section.isVisible ? P.card : '#F8FAFC'
                             }}>
                                 <div style={{ cursor: 'grab', color: P.muted }}><GripVertical size={20} /></div>
 

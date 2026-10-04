@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import Link from 'next/link'
@@ -17,7 +17,7 @@ export default function HelpCenterPage() {
             <main style={{ flex: 1 }}>
 
                 {/* ── 1. HERO SECTION ── */}
-                <section style={{ position: 'relative', padding: '90px 5% 70px', background: 'linear-gradient(135deg, #1E3A8A 0%, #172554 100%)', color: '#FFFFFF', overflow: 'hidden', textAlign: 'center' }}>
+                <section style={{ position: 'relative', padding: '90px 5% 70px', background: 'linear-gradient(135deg, #0868B2 0%, #172554 100%)', color: '#FFFFFF', overflow: 'hidden', textAlign: 'center' }}>
                     <div style={{ position: 'absolute', top: '-100px', left: '50%', transform: 'translateX(-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(96, 165, 250, 0.2), transparent 70%)', pointerEvents: 'none' }} />
 
                     <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 10 }}>
@@ -29,7 +29,7 @@ export default function HelpCenterPage() {
                             How Can We Help You Today?
                         </h1>
 
-                        <p style={{ fontSize: 17, color: '#BFDBFE', fontWeight: 500, lineHeight: 1.6, maxWidth: 740, margin: '0 auto 32px' }}>
+                        <p style={{ fontSize: 17, color: '#B6DCF2', fontWeight: 500, lineHeight: 1.6, maxWidth: 740, margin: '0 auto 32px' }}>
                             Search setup guides, video tutorials, OMR scanning troubleshooting, and developer API documentations.
                         </p>
 
@@ -58,7 +58,7 @@ export default function HelpCenterPage() {
                 <section style={{ padding: '80px 5%', background: '#FFFFFF' }}>
                     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
                         <div style={{ textAlign: 'center', marginBottom: 56 }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: '#0868B2', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
                                 Knowledge Base Categories
                             </div>
                             <h2 style={{ fontSize: 'clamp(24px, 3vw, 38px)', fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)' }}>
@@ -73,15 +73,15 @@ export default function HelpCenterPage() {
                                     title: "Getting Started Guide",
                                     desc: "Learn how to configure school branding, import student rosters, and assign teacher accounts.",
                                     bullets: ["Account creation & domain setup", "Student CSV roster import", "Teacher role assignment"],
-                                    color: "#2563EB",
-                                    bg: "#EFF6FF"
+                                    color: "#0868B2",
+                                    bg: "#E5F3FB"
                                 },
                                 {
                                     icon: Zap,
                                     title: "Creating Your First Exam",
                                     desc: "Step-by-step guide to generating AI question papers, setting test timers, and publishing exams.",
                                     bullets: ["BeBrilliant AI Agent paper synthesis", "Custom timer & mark allocation", "Batch assignment & publishing"],
-                                    color: "#059669",
+                                    color: "#09834F",
                                     bg: "#ECFDF5"
                                 },
                                 {
@@ -137,12 +137,12 @@ export default function HelpCenterPage() {
                 </section>
 
                 {/* ── 3. CTA BANNER ── */}
-                <section style={{ padding: '70px 5%', background: '#1E3A8A', color: '#FFFFFF', textAlign: 'center' }}>
+                <section style={{ padding: '70px 5%', background: '#0868B2', color: '#FFFFFF', textAlign: 'center' }}>
                     <div style={{ maxWidth: 750, margin: '0 auto' }}>
                         <h2 style={{ fontSize: 'clamp(26px, 3vw, 38px)', fontWeight: 800, fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 14 }}>
                             Need Live Dedicated Technical Support?
                         </h2>
-                        <p style={{ fontSize: 16, color: '#BFDBFE', marginBottom: 28 }}>
+                        <p style={{ fontSize: 16, color: '#B6DCF2', marginBottom: 28 }}>
                             Our technical support team is available Monday through Saturday (9 AM - 7 PM IST).
                         </p>
                         <Link
@@ -152,7 +152,7 @@ export default function HelpCenterPage() {
                                 alignItems: 'center',
                                 gap: 8,
                                 background: '#FFFFFF',
-                                color: '#1E3A8A',
+                                color: '#0868B2',
                                 padding: '15px 34px',
                                 borderRadius: 14,
                                 fontSize: 15,

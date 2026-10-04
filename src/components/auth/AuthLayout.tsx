@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import {
@@ -18,25 +18,25 @@ interface AuthLayoutProps {
 
 // Randomly scattered educational watermark icons to beautify the form background
 const EDU_WATERMARK_ICONS = [
-    { Icon: GraduationCap, top: '3%', left: '5%', size: 42, rotate: -15, opacity: 0.08, color: '#004B93' },
-    { Icon: Atom, top: '6%', right: '7%', size: 46, rotate: 20, opacity: 0.09, color: '#1FAC63' },
+    { Icon: GraduationCap, top: '3%', left: '5%', size: 42, rotate: -15, opacity: 0.08, color: '#0868B2' },
+    { Icon: Atom, top: '6%', right: '7%', size: 46, rotate: 20, opacity: 0.09, color: '#09834F' },
     { Icon: BookOpen, top: '15%', right: '20%', size: 36, rotate: -10, opacity: 0.07, color: '#4F46E5' },
-    { Icon: BrainCircuit, top: '22%', left: '3%', size: 50, rotate: 12, opacity: 0.08, color: '#004B93' },
+    { Icon: BrainCircuit, top: '22%', left: '3%', size: 50, rotate: 12, opacity: 0.08, color: '#0868B2' },
     { Icon: Award, top: '32%', right: '5%', size: 40, rotate: -18, opacity: 0.09, color: '#F59E0B' },
     { Icon: Calculator, top: '40%', left: '6%', size: 38, rotate: 8, opacity: 0.07, color: '#475569' },
     { Icon: FlaskConical, top: '49%', right: '6%', size: 44, rotate: -22, opacity: 0.08, color: '#10B981' },
     { Icon: Compass, top: '60%', left: '4%', size: 46, rotate: 28, opacity: 0.08, color: '#0284C7' },
     { Icon: Scroll, top: '69%', right: '10%', size: 38, rotate: -14, opacity: 0.08, color: '#7C3AED' },
     { Icon: Lightbulb, top: '80%', left: '6%', size: 42, rotate: 16, opacity: 0.09, color: '#F59E0B' },
-    { Icon: Library, top: '89%', right: '6%', size: 46, rotate: -8, opacity: 0.08, color: '#004B93' },
+    { Icon: Library, top: '89%', right: '6%', size: 46, rotate: -8, opacity: 0.08, color: '#0868B2' },
     { Icon: Pencil, top: '11%', left: '36%', size: 30, rotate: 45, opacity: 0.06, color: '#64748B' },
     { Icon: Shapes, top: '86%', left: '34%', size: 36, rotate: -15, opacity: 0.07, color: '#0EA5E9' },
     { Icon: Sparkles, top: '56%', right: '22%', size: 34, rotate: 15, opacity: 0.09, color: '#F59E0B' },
-    { Icon: FileText, top: '28%', right: '26%', size: 36, rotate: -12, opacity: 0.07, color: '#004B93' },
+    { Icon: FileText, top: '28%', right: '26%', size: 36, rotate: -12, opacity: 0.07, color: '#0868B2' },
     { Icon: Bookmark, top: '2%', left: '44%', size: 30, rotate: -6, opacity: 0.07, color: '#10B981' },
     { Icon: Trophy, top: '74%', left: '24%', size: 38, rotate: 14, opacity: 0.08, color: '#D97706' },
-    { Icon: Binary, top: '42%', right: '32%', size: 34, rotate: -5, opacity: 0.06, color: '#059669' },
-    { Icon: Percent, top: '63%', right: '34%', size: 32, rotate: 18, opacity: 0.06, color: '#2563EB' },
+    { Icon: Binary, top: '42%', right: '32%', size: 34, rotate: -5, opacity: 0.06, color: '#09834F' },
+    { Icon: Percent, top: '63%', right: '34%', size: 32, rotate: 18, opacity: 0.06, color: '#0868B2' },
     { Icon: Clock, top: '93%', left: '56%', size: 32, rotate: -12, opacity: 0.06, color: '#64748B' },
 ]
 
@@ -90,8 +90,8 @@ export function AuthLayout({ children, title, subtitle, tenantName, tenantSubdom
                 <div className="edu-bg" />
 
                 {/* Ambient Soft Glows */}
-                <div style={{ position: 'absolute', top: '5%', right: '-5%', width: 380, height: 380, background: '#004B93', filter: 'blur(160px)', opacity: 0.3, borderRadius: '50%' }} />
-                <div style={{ position: 'absolute', bottom: '10%', left: '-5%', width: 380, height: 380, background: '#1FAC63', filter: 'blur(160px)', opacity: 0.25, borderRadius: '50%' }} />
+                <div style={{ position: 'absolute', top: '5%', right: '-5%', width: 380, height: 380, background: '#0868B2', filter: 'blur(160px)', opacity: 0.3, borderRadius: '50%' }} />
+                <div style={{ position: 'absolute', bottom: '10%', left: '-5%', width: 380, height: 380, background: '#09834F', filter: 'blur(160px)', opacity: 0.25, borderRadius: '50%' }} />
 
                 {/* Top Branding Section */}
                 <div style={{ position: 'relative', zIndex: 10 }}>
@@ -114,7 +114,7 @@ export function AuthLayout({ children, title, subtitle, tenantName, tenantSubdom
                             </div>
                         ) : (
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 100, background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.15)', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', color: '#E2E8F0' }}>
-                                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#1FAC63', boxShadow: '0 0 8px #1FAC63' }} />
+                                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#09834F', boxShadow: '0 0 8px #09834F' }} />
                                 SOVEREIGN CAMPUS NETWORK
                             </div>
                         )}

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import Link from 'next/link'
@@ -17,7 +17,7 @@ export default function InstitutePlatformPage() {
             <main style={{ flex: 1 }}>
 
                 {/* ── 1. HERO SECTION ── */}
-                <section style={{ position: 'relative', padding: '90px 5% 70px', background: 'linear-gradient(135deg, #1E3A8A 0%, #0F172A 100%)', color: '#FFFFFF', overflow: 'hidden', textAlign: 'center' }}>
+                <section style={{ position: 'relative', padding: '90px 5% 70px', background: 'linear-gradient(135deg, #0868B2 0%, #0F172A 100%)', color: '#FFFFFF', overflow: 'hidden', textAlign: 'center' }}>
                     <div style={{ position: 'absolute', top: '-100px', left: '50%', transform: 'translateX(-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37, 99, 235, 0.25), transparent 70%)', pointerEvents: 'none' }} />
 
                     <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 10 }}>
@@ -40,7 +40,7 @@ export default function InstitutePlatformPage() {
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     gap: 8,
-                                    background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+                                    background: 'linear-gradient(135deg, #0868B2 0%, #1D4ED8 100%)',
                                     color: '#FFFFFF',
                                     padding: '14px 30px',
                                     borderRadius: 14,
@@ -78,7 +78,7 @@ export default function InstitutePlatformPage() {
                 <section style={{ padding: '80px 5%', background: '#FFFFFF' }}>
                     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
                         <div style={{ textAlign: 'center', marginBottom: 56 }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: '#0868B2', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
                                 Institutional Suite
                             </div>
                             <h2 style={{ fontSize: 'clamp(24px, 3vw, 38px)', fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)' }}>
@@ -98,8 +98,8 @@ export default function InstitutePlatformPage() {
                                         'Instant paper checking & rank calculation',
                                         'Custom negative marking & sectional timers'
                                     ],
-                                    color: '#1E3A8A',
-                                    bg: '#EFF6FF'
+                                    color: '#0868B2',
+                                    bg: '#E5F3FB'
                                 },
                                 {
                                     icon: MessageSquare,
@@ -111,8 +111,8 @@ export default function InstitutePlatformPage() {
                                         'Real-time lead conversion & payout tracking',
                                         'Zero customer acquisition marketing spend'
                                     ],
-                                    color: '#0CA35C',
-                                    bg: '#DCFCE7'
+                                    color: '#09834F',
+                                    bg: '#DCF7E7'
                                 },
                                 {
                                     icon: Wallet,
@@ -216,7 +216,7 @@ export default function InstitutePlatformPage() {
                         </div>
 
                         <div style={{ textAlign: 'left' }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: '#0868B2', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
                                 Operations Management
                             </div>
                             <h3 style={{ fontSize: 'clamp(22px, 2.5vw, 34px)', fontWeight: 800, color: '#0F172A', lineHeight: 1.3, marginBottom: 16, fontFamily: 'var(--font-manrope, sans-serif)' }}>
@@ -234,7 +234,7 @@ export default function InstitutePlatformPage() {
                                     'Integrated WhatsApp Communication Suite'
                                 ].map((point, i) => (
                                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: 600, color: '#334155' }}>
-                                        <CheckCircle size={16} style={{ color: '#2563EB' }} /> {point}
+                                        <CheckCircle size={16} style={{ color: '#0868B2' }} /> {point}
                                     </div>
                                 ))}
                             </div>
@@ -243,7 +243,7 @@ export default function InstitutePlatformPage() {
                 </section>
 
                 {/* ── 4. CTA BANNER ── */}
-                <section style={{ padding: '70px 5%', background: '#1E3A8A', color: '#FFFFFF', textAlign: 'center' }}>
+                <section style={{ padding: '70px 5%', background: '#0868B2', color: '#FFFFFF', textAlign: 'center' }}>
                     <div style={{ maxWidth: 750, margin: '0 auto' }}>
                         <h2 style={{ fontSize: 'clamp(26px, 3vw, 38px)', fontWeight: 800, fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 14 }}>
                             Transform Your Institute's Examination Engine
@@ -258,7 +258,7 @@ export default function InstitutePlatformPage() {
                                 alignItems: 'center',
                                 gap: 8,
                                 background: '#FFFFFF',
-                                color: '#1E3A8A',
+                                color: '#0868B2',
                                 padding: '15px 34px',
                                 borderRadius: 14,
                                 fontSize: 15,

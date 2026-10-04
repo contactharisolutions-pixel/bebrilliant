@@ -236,7 +236,7 @@ export async function GET(request: NextRequest) {
 
         // Pass/Fail distribution
         const passFailDistribution = [
-            { name: 'Pass', value: passCount, percentage: passPct, fill: '#10B981' },
+            { name: 'Pass', value: passCount, percentage: passPct, fill: '#09834F' },
             { name: 'Fail', value: failCount, percentage: appearedCount > 0 ? Math.round((failCount / appearedCount) * 1000) / 10 : 0, fill: '#EF4444' },
             { name: 'Absent', value: absentCount, percentage: 0, fill: '#F59E0B' }
         ]

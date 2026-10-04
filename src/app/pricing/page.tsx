@@ -26,8 +26,8 @@ const CATEGORY_PLANS: Record<string, any[]> = {
             price: '9,999',
             annual: '8,499',
             period: 'month',
-            color: '#1E3A8A',
-            accent: '#2563EB',
+            color: '#0868B2',
+            accent: '#0868B2',
             popular: false,
             features: [
                 'Custom Domain (exams.school.edu.in)',
@@ -49,7 +49,7 @@ const CATEGORY_PLANS: Record<string, any[]> = {
             price: 'Custom',
             annual: 'Custom',
             period: 'quote',
-            color: '#672AEA',
+            color: '#7C3AED',
             accent: '#9333EA',
             popular: true,
             features: [
@@ -73,8 +73,8 @@ const CATEGORY_PLANS: Record<string, any[]> = {
             price: '999',
             annual: '799',
             period: 'month',
-            color: '#0CA35C',
-            accent: '#16A34A',
+            color: '#09834F',
+            accent: '#09834F',
             popular: true,
             features: [
                 '1 Teacher Account',
@@ -95,8 +95,8 @@ const CATEGORY_PLANS: Record<string, any[]> = {
             price: '1,999',
             annual: '1,599',
             period: 'month',
-            color: '#1E3A8A',
-            accent: '#2563EB',
+            color: '#0868B2',
+            accent: '#0868B2',
             popular: false,
             features: [
                 'Up to 3 Teacher Accounts',
@@ -118,7 +118,7 @@ const CATEGORY_PLANS: Record<string, any[]> = {
             price: '3,999',
             annual: '3,299',
             period: 'month',
-            color: '#F0A026',
+            color: '#D97706',
             accent: '#D97706',
             popular: false,
             features: [
@@ -140,8 +140,8 @@ const CATEGORY_PLANS: Record<string, any[]> = {
             price: '7,999',
             annual: '6,499',
             period: 'month',
-            color: '#0CA35C',
-            accent: '#16A34A',
+            color: '#09834F',
+            accent: '#09834F',
             popular: true,
             features: [
                 '15 Teacher Logins',
@@ -164,8 +164,8 @@ const CATEGORY_PLANS: Record<string, any[]> = {
             price: '299',
             annual: '199',
             period: 'month',
-            color: '#2563EB',
-            accent: '#3B82F6',
+            color: '#0868B2',
+            accent: '#0868B2',
             popular: true,
             features: [
                 'Unlimited Self-Practice Mocks',
@@ -212,15 +212,15 @@ export default function PricingPage() {
                                     borderRadius: 999,
                                     fontSize: 14,
                                     fontWeight: 700,
-                                    border: isActive ? '2px solid #1E3A8A' : '1px solid #E2E8F0',
-                                    background: isActive ? '#1E3A8A' : '#FFFFFF',
+                                    border: isActive ? '2px solid #0868B2' : '1px solid #E2E8F0',
+                                    background: isActive ? '#0868B2' : '#FFFFFF',
                                     color: isActive ? '#FFFFFF' : '#475569',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s ease',
                                     boxShadow: isActive ? '0 10px 25px -5px rgba(30,58,138,0.3)' : '0 2px 6px rgba(0,0,0,0.02)'
                                 }}
                             >
-                                <Icon size={18} style={{ color: isActive ? '#FFFFFF' : '#1E3A8A' }} />
+                                <Icon size={18} style={{ color: isActive ? '#FFFFFF' : '#0868B2' }} />
                                 <span>{cat.label}</span>
                             </button>
                         )
@@ -233,7 +233,7 @@ export default function PricingPage() {
                     <button
                         onClick={() => setIsAnnual(v => !v)}
                         className="relative w-14 h-7 rounded-full transition-all duration-300 cursor-pointer"
-                        style={{ background: isAnnual ? '#1E3A8A' : '#E5E7EB' }}
+                        style={{ background: isAnnual ? '#0868B2' : '#E2E8F0' }}
                     >
                         <span
                             className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300"
@@ -298,7 +298,7 @@ export default function PricingPage() {
                                     <div className="space-y-3.5 mb-8">
                                         {plan.features.map((feat: string, j: number) => (
                                             <div key={j} className="flex items-start gap-3">
-                                                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: '#DCFCE7', color: '#15803D' }}>
+                                                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: '#DCF7E7', color: '#087347' }}>
                                                     <Check size={11} strokeWidth={3} />
                                                 </div>
                                                 <span className="text-sm font-medium" style={{ color: plan.popular ? '#E2E8F0' : '#334155' }}>
@@ -314,7 +314,7 @@ export default function PricingPage() {
                                     href={plan.ctaHref}
                                     className="flex items-center justify-center gap-2 py-4 rounded-2xl text-sm font-extrabold transition-all font-manrope text-center"
                                     style={{
-                                        background: plan.popular ? 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' : '#1E3A8A',
+                                        background: plan.popular ? 'linear-gradient(135deg, #0868B2 0%, #1D4ED8 100%)' : '#0868B2',
                                         color: '#FFFFFF',
                                         boxShadow: plan.popular ? '0 10px 20px rgba(37, 99, 235, 0.35)' : 'none'
                                     }}
@@ -329,7 +329,7 @@ export default function PricingPage() {
                 {/* ── 4. ENTERPRISE SECURITY BANNER ── */}
                 <section
                     className="relative rounded-[36px] overflow-hidden p-10 md:p-14"
-                    style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%)', color: '#FFFFFF' }}
+                    style={{ background: 'linear-gradient(135deg, #0F172A 0%, #0868B2 100%)', color: '#FFFFFF' }}
                 >
                     <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                         <div>
@@ -346,7 +346,7 @@ export default function PricingPage() {
 
                         <Link
                             href="/request-demo"
-                            className="inline-flex items-center gap-2 bg-white text-[#1E3A8A] px-8 py-4 rounded-2xl text-sm font-extrabold font-manrope hover:bg-slate-100 transition-all flex-shrink-0"
+                            className="inline-flex items-center gap-2 bg-white text-[#0868B2] px-8 py-4 rounded-2xl text-sm font-extrabold font-manrope hover:bg-slate-100 transition-all flex-shrink-0"
                         >
                             Book a Demo <ArrowRight size={16} />
                         </Link>

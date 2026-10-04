@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState } from 'react'
 import Link from 'next/link'
@@ -84,7 +84,7 @@ function StatCard({ icon: Icon, val, label, bgImage }: { icon: React.ElementType
             )}
             <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.90) 0%, rgba(255,255,255,0.75) 100%)' }} />
             <div className="relative z-10 w-10 h-10 rounded-2xl mx-auto mb-3 flex items-center justify-center"
-                style={{ background: '#004B9312', color: '#004B93' }}>
+                style={{ background: '#0868B212', color: '#0868B2' }}>
                 <Icon size={18} />
             </div>
             <div className="relative z-10 text-xl font-black text-slate-900 font-manrope">{val}</div>
@@ -112,14 +112,14 @@ export default function AboutPage() {
             title: 'Built Ground-Up for Indian Education',
             desc: 'BeBrilliant is not an adapted foreign product. It is engineered from day one for the CBSE, ICSE, State Board, IIT-JEE, NEET, and competitive exam ecosystems of India — with local payment rails, Hindi UI support, and Tier 2-3 network optimization.',
             proof: ['UPI & Razorpay-native payments', 'Board-specific syllabus support', 'Vernacular language ready'],
-            color: '#004B93', accent: '#38BDF8', accentBg: 'rgba(56,189,248,0.08)',
+            color: '#0868B2', accent: '#38BDF8', accentBg: 'rgba(56,189,248,0.08)',
         },
         {
             number: '02',
             title: 'AI Capabilities Without Vendor Lock-In',
             desc: 'Our BeBrilliant AI Agent paper generation engine delivers exam-ready MCQ, assertion-reasoning, and numerical questions from any topic in < 2 seconds. Your question bank belongs to you — fully exportable, always.',
             proof: ['< 2s paper generation', "Bloom's Taxonomy difficulty AI", '500K+ question heritage bank'],
-            color: '#1FAC63', accent: '#34D399', accentBg: 'rgba(52,211,153,0.08)',
+            color: '#09834F', accent: '#34D399', accentBg: 'rgba(52,211,153,0.08)',
         },
         {
             number: '03',
@@ -133,7 +133,7 @@ export default function AboutPage() {
             title: 'Enterprise Security at Startup Speed',
             desc: 'SOC 2-ready architecture, DPDP Act 2023 compliance, mTLS certificate pinning, and Row-Level Security in PostgreSQL — institutional-grade protection shipped with your first login, not after a compliance audit.',
             proof: ['DPDP Act 2023 compliant', 'AES-256 encryption at rest', 'SOC 2 Type II ready'],
-            color: '#F0A026', accent: '#FB923C', accentBg: 'rgba(251,146,60,0.08)',
+            color: '#D97706', accent: '#FB923C', accentBg: 'rgba(251,146,60,0.08)',
         },
     ]
 
@@ -202,7 +202,7 @@ export default function AboutPage() {
                                 </blockquote>
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-white text-sm font-manrope"
-                                        style={{ background: 'linear-gradient(135deg, #004B93, #1FAC63)' }}>
+                                        style={{ background: 'linear-gradient(135deg, #0868B2, #09834F)' }}>
                                         BB
                                     </div>
                                     <div>
@@ -247,7 +247,7 @@ export default function AboutPage() {
                 {/* ─── VALUES SECTION ─────────────────────────────────────── */}
                 <div className="mb-24">
                     <div className="text-center mb-12">
-                        <span className="text-xs font-extrabold uppercase tracking-widest text-[#004B93] bg-[#004B93]/08 px-4 py-1.5 rounded-full border border-[#004B93]/20">
+                        <span className="text-xs font-extrabold uppercase tracking-widest text-[#0868B2] bg-[#0868B2]/08 px-4 py-1.5 rounded-full border border-[#0868B2]/20">
                             CORE VALUES
                         </span>
                         <h3 className="text-3xl md:text-4xl font-extrabold text-slate-900 font-manrope mt-5 mb-2" style={{ letterSpacing: '-0.02em' }}>
@@ -304,7 +304,7 @@ export default function AboutPage() {
                 {/* ─── WHY US — INTERACTIVE PANEL ─────────────────────────── */}
                 <div className="mb-24">
                     <div className="text-center mb-12">
-                        <span className="text-xs font-extrabold uppercase tracking-widest text-[#1FAC63] bg-[#1FAC63]/08 px-4 py-1.5 rounded-full border border-[#1FAC63]/20">
+                        <span className="text-xs font-extrabold uppercase tracking-widest text-[#09834F] bg-[#09834F]/08 px-4 py-1.5 rounded-full border border-[#09834F]/20">
                             WHY BEBRILLIANT
                         </span>
                         <h3 className="text-3xl md:text-4xl font-extrabold text-slate-900 font-manrope mt-5 mb-2" style={{ letterSpacing: '-0.02em' }}>
@@ -426,7 +426,7 @@ export default function AboutPage() {
                         </p>
                         <div className="flex flex-wrap items-center justify-center gap-4">
                             <Link href="/request-demo"
-                                className="inline-flex items-center gap-3 bg-[#1FAC63] text-white px-8 py-4 rounded-2xl text-sm font-extrabold hover:bg-[#199453] hover:scale-105 transition-all font-manrope shadow-xl shadow-emerald-900/30">
+                                className="inline-flex items-center gap-3 bg-[#09834F] text-white px-8 py-4 rounded-2xl text-sm font-extrabold hover:bg-[#087347] hover:scale-105 transition-all font-manrope shadow-xl shadow-emerald-900/30">
                                 Schedule Institutional Demo <ArrowRight size={16} />
                             </Link>
                             <Link href="/contact"

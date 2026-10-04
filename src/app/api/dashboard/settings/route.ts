@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
                 subdomain: 'platform',
                 logo_url: '/logo-master.png',
                 favicon_url: '',
-                primary_color: '#004B93',
-                secondary_color: '#10B981',
+                primary_color: '#0868B2',
+                secondary_color: '#09834F',
                 accent_color: '#F59E0B',
                 subscription_plan: 'enterprise_master',
                 tenant_type: 'platform',
@@ -53,8 +53,8 @@ export async function GET(request: NextRequest) {
                         tagline: 'Leading AI-Powered Educational Infrastructure',
                         logo_url: '/logo-master.png',
                         favicon_url: '',
-                        primary_color: '#004B93',
-                        secondary_color: '#10B981',
+                        primary_color: '#0868B2',
+                        secondary_color: '#09834F',
                         accent_color: '#F59E0B'
                     },
                     contact: {
@@ -122,8 +122,8 @@ export async function GET(request: NextRequest) {
             tagline: rawSettings.branding?.tagline || 'Excellence in Modern Education & Mentorship',
             logo_url: tenant.logo_url || tenant.logo || rawSettings.branding?.logo_url || '',
             favicon_url: rawSettings.branding?.favicon_url || '',
-            primary_color: tenant.primary_color || rawSettings.branding?.primary_color || '#004B93',
-            secondary_color: tenant.secondary_color || rawSettings.branding?.secondary_color || '#10B981',
+            primary_color: tenant.primary_color || rawSettings.branding?.primary_color || '#0868B2',
+            secondary_color: tenant.secondary_color || rawSettings.branding?.secondary_color || '#09834F',
             accent_color: rawSettings.branding?.accent_color || '#F59E0B'
         }
 

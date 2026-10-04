@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { verifyPlatformAccess } from '@/lib/platform-auth'
 
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
                 roster_status: 'pending'
             },
             configuration: {
-                brand_color: '#2563eb',
+                brand_color: '#0868B2',
                 syllabus: 'CBSE',
                 exam_modules: {
                     online_cbt: true,

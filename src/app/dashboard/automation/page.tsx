@@ -96,7 +96,7 @@ export default function AutomatedWorkflows() {
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: 8 }}>
-                                    <button onClick={() => toggleStatus(flow.id)} style={{ width: 32, height: 32, borderRadius: '50%', background: isActive ? '#FEF2F2' : '#EFF6FF', border: 'none', color: isActive ? '#EF4444' : '#3B82F6', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <button onClick={() => toggleStatus(flow.id)} style={{ width: 32, height: 32, borderRadius: '50%', background: isActive ? '#FEF2F2' : '#E5F3FB', border: 'none', color: isActive ? '#EF4444' : '#0868B2', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         {isActive ? <PauseCircle size={18} /> : <PlayCircle size={18} />}
                                     </button>
                                     <button onClick={() => deleteFlow(flow.id)} style={{ width: 32, height: 32, borderRadius: '50%', background: '#F8FAFC', border: 'none', color: '#64748B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

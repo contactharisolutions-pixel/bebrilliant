@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
@@ -85,7 +85,7 @@ function StudentReceiptModal({
             <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl max-h-[92vh] flex flex-col border border-slate-200">
                 <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/70 print:hidden">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-50 text-[#004B93] rounded-xl">
+                        <div className="p-2 bg-blue-50 text-[#0868B2] rounded-xl">
                             <Receipt size={20} />
                         </div>
                         <div>
@@ -113,7 +113,7 @@ function StudentReceiptModal({
                     {/* Receipt Header */}
                     <div className="flex justify-between items-start border-b border-slate-200 pb-6">
                         <div>
-                            <div className="text-2xl font-black text-[#004B93] tracking-tight">{schoolName || 'Silver Bells School'}</div>
+                            <div className="text-2xl font-black text-[#0868B2] tracking-tight">{schoolName || 'Silver Bells School'}</div>
                             <div className="text-xs text-slate-500 mt-1 font-semibold">Institutional Assessment & Fee Collection Voucher</div>
                             <div className="text-xs text-slate-600 mt-2 space-y-0.5">
                                 <p>Mansarovar Institutional Area, Jaipur, Rajasthan</p>
@@ -169,7 +169,7 @@ function StudentReceiptModal({
                         </div>
                         <div className="text-right">
                             <div className="text-xs text-slate-500 font-bold uppercase">Total Settled Amount</div>
-                            <div className="text-2xl font-black text-[#004B93]">₹{item.amount.toLocaleString()}</div>
+                            <div className="text-2xl font-black text-[#0868B2]">₹{item.amount.toLocaleString()}</div>
                         </div>
                     </div>
                 </div>
@@ -223,7 +223,7 @@ function WithdrawalModal({
             <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl max-h-[92vh] flex flex-col border border-slate-200">
                 <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/70">
                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-blue-50 text-[#004B93] rounded-xl">
+                        <div className="p-2.5 bg-blue-50 text-[#0868B2] rounded-xl">
                             <Landmark size={20} />
                         </div>
                         <div>
@@ -281,7 +281,7 @@ function WithdrawalModal({
 
                     {/* Target Bank Card */}
                     <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-1 text-slate-700">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#004B93]">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#0868B2]">
                             <Building2 size={15} /> Target Disbursement Account
                         </div>
                         <div className="font-black text-slate-900 text-sm">{bankDetails.bank_name} •••• {bankDetails.account_no.slice(-4)}</div>
@@ -323,7 +323,7 @@ function WithdrawalModal({
                             type="checkbox"
                             checked={agree}
                             onChange={e => setAgree(e.target.checked)}
-                            className="mt-0.5 rounded text-[#004B93] focus:ring-0"
+                            className="mt-0.5 rounded text-[#0868B2] focus:ring-0"
                         />
                         <span>I verify the target bank account credentials and authorize statutory 10% TDS withholding.</span>
                     </label>
@@ -339,7 +339,7 @@ function WithdrawalModal({
                         <button
                             type="submit"
                             disabled={saving || !agree || amount < 1000 || amount > availableBalance}
-                            className="px-6 py-2.5 bg-[#004B93] hover:bg-[#003870] disabled:bg-slate-300 text-white rounded-xl font-bold flex items-center gap-2 shadow-md shadow-blue-900/15 transition"
+                            className="px-6 py-2.5 bg-[#0868B2] hover:bg-[#07549A] disabled:bg-slate-300 text-white rounded-xl font-bold flex items-center gap-2 shadow-md shadow-blue-900/15 transition"
                         >
                             {saving && <Loader2 size={14} className="animate-spin" />}
                             Submit Payout Request
@@ -522,7 +522,7 @@ function CreateFeeModal({
             <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl max-h-[92vh] flex flex-col border border-slate-200">
                 <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/70">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-50 text-[#004B93] rounded-xl">
+                        <div className="p-2 bg-blue-50 text-[#0868B2] rounded-xl">
                             <Plus size={18} />
                         </div>
                         <h3 className="text-base font-black text-slate-900">Add New Fee Structure</h3>
@@ -578,7 +578,7 @@ function CreateFeeModal({
                         <button
                             type="submit"
                             disabled={saving || !name.trim() || !amount}
-                            className="px-5 py-2 bg-[#004B93] hover:bg-[#003870] text-white rounded-xl font-bold flex items-center gap-2"
+                            className="px-5 py-2 bg-[#0868B2] hover:bg-[#07549A] text-white rounded-xl font-bold flex items-center gap-2"
                         >
                             {saving && <Loader2 size={14} className="animate-spin" />}
                             Create Structure
@@ -768,7 +768,7 @@ export default function WalletPayouts() {
     if (loading) {
         return (
             <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-8">
-                <Loader2 size={42} className="animate-spin text-[#004B93] mb-4" />
+                <Loader2 size={42} className="animate-spin text-[#0868B2] mb-4" />
                 <div className="text-xs font-black text-slate-500 uppercase tracking-widest">
                     Loading Fee Collections & Bank Balances...
                 </div>
@@ -850,7 +850,7 @@ export default function WalletPayouts() {
                 {/* 4 EXECUTIVE KPI METRICS (FULL WIDTH GRID) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     {/* Card 1: Available Balance */}
-                    <div className="bg-gradient-to-br from-[#004B93] to-[#002D58] text-white p-6 rounded-3xl shadow-lg shadow-blue-900/15 relative overflow-hidden flex flex-col justify-between">
+                    <div className="bg-gradient-to-br from-[#0868B2] to-[#073B73] text-white p-6 rounded-3xl shadow-lg shadow-blue-900/15 relative overflow-hidden flex flex-col justify-between">
                         <div>
                             <div className="flex justify-between items-start mb-3">
                                 <span className="text-[11px] font-bold text-white/70 uppercase tracking-wider">Available Balance</span>
@@ -897,7 +897,7 @@ export default function WalletPayouts() {
                         <div>
                             <div className="flex justify-between items-start mb-3">
                                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Settled to Bank</span>
-                                <div className="p-2 bg-blue-50 text-[#004B93] rounded-xl">
+                                <div className="p-2 bg-blue-50 text-[#0868B2] rounded-xl">
                                     <Landmark size={18} />
                                 </div>
                             </div>
@@ -906,7 +906,7 @@ export default function WalletPayouts() {
                             </div>
                         </div>
                         <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-500 font-medium">
-                            <Building2 size={13} className="text-[#004B93]" />
+                            <Building2 size={13} className="text-[#0868B2]" />
                             <span>HDFC Bank •••• 4281</span>
                         </div>
                     </div>
@@ -947,7 +947,7 @@ export default function WalletPayouts() {
                                 onClick={() => setActiveTab(tab.id as any)}
                                 className={`px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center gap-2 ${
                                     isActive
-                                        ? 'bg-[#004B93] text-white shadow-md shadow-blue-900/15'
+                                        ? 'bg-[#0868B2] text-white shadow-md shadow-blue-900/15'
                                         : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
                                 }`}
                             >
@@ -977,7 +977,7 @@ export default function WalletPayouts() {
                                         subtitle: 'CBSE, State Board & Term Assessment Fees',
                                         amount: 24000,
                                         icon: FileText,
-                                        color: '#004B93',
+                                        color: '#0868B2',
                                         bg: 'bg-blue-50'
                                     },
                                     {
@@ -1042,7 +1042,7 @@ export default function WalletPayouts() {
                                 {/* Clearing Schedule Box */}
                                 <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2.5 bg-blue-50 text-[#004B93] rounded-xl">
+                                        <div className="p-2.5 bg-blue-50 text-[#0868B2] rounded-xl">
                                             <Clock size={20} />
                                         </div>
                                         <div>
@@ -1077,7 +1077,7 @@ export default function WalletPayouts() {
                                         value={collectionSearch}
                                         onChange={e => setCollectionSearch(e.target.value)}
                                         placeholder="Search student or order..."
-                                        className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                        className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                     />
                                     <div className="flex items-center gap-1 p-1 bg-white border border-slate-200 rounded-xl">
                                         {[
@@ -1091,7 +1091,7 @@ export default function WalletPayouts() {
                                                 onClick={() => setCollectionTypeFilter(f.id)}
                                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition ${
                                                     collectionTypeFilter === f.id
-                                                        ? 'bg-[#004B93] text-white'
+                                                        ? 'bg-[#0868B2] text-white'
                                                         : 'text-slate-600 hover:text-slate-900'
                                                 }`}
                                             >
@@ -1154,7 +1154,7 @@ export default function WalletPayouts() {
                                                     <td className="py-4 px-6 text-right">
                                                         <button
                                                             onClick={() => setSelectedReceipt(c)}
-                                                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#004B93] rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition"
+                                                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0868B2] rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition"
                                                         >
                                                             <Printer size={13} /> View Receipt
                                                         </button>
@@ -1178,7 +1178,7 @@ export default function WalletPayouts() {
                                 </div>
                                 <button
                                     onClick={() => setShowWithdrawalModal(true)}
-                                    className="px-5 py-2.5 bg-[#004B93] hover:bg-[#003870] text-white rounded-2xl text-xs font-black flex items-center gap-2 transition"
+                                    className="px-5 py-2.5 bg-[#0868B2] hover:bg-[#07549A] text-white rounded-2xl text-xs font-black flex items-center gap-2 transition"
                                 >
                                     <Landmark size={15} /> Request Payout
                                 </button>
@@ -1269,7 +1269,7 @@ export default function WalletPayouts() {
                                             required
                                             value={bankDetails.account_name}
                                             onChange={e => setBankDetails(prev => ({ ...prev, account_name: e.target.value }))}
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                         />
                                     </div>
 
@@ -1280,7 +1280,7 @@ export default function WalletPayouts() {
                                             required
                                             value={bankDetails.bank_name}
                                             onChange={e => setBankDetails(prev => ({ ...prev, bank_name: e.target.value }))}
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                         />
                                     </div>
 
@@ -1291,7 +1291,7 @@ export default function WalletPayouts() {
                                             required
                                             value={bankDetails.account_no}
                                             onChange={e => setBankDetails(prev => ({ ...prev, account_no: e.target.value }))}
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                         />
                                     </div>
 
@@ -1303,7 +1303,7 @@ export default function WalletPayouts() {
                                             maxLength={11}
                                             value={bankDetails.ifsc}
                                             onChange={e => setBankDetails(prev => ({ ...prev, ifsc: e.target.value.toUpperCase() }))}
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                         />
                                     </div>
 
@@ -1313,7 +1313,7 @@ export default function WalletPayouts() {
                                             type="text"
                                             value={bankDetails.branch}
                                             onChange={e => setBankDetails(prev => ({ ...prev, branch: e.target.value }))}
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                         />
                                     </div>
 
@@ -1324,7 +1324,7 @@ export default function WalletPayouts() {
                                             maxLength={10}
                                             value={bankDetails.pan}
                                             onChange={e => setBankDetails(prev => ({ ...prev, pan: e.target.value.toUpperCase() }))}
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                         />
                                     </div>
                                 </div>
@@ -1338,7 +1338,7 @@ export default function WalletPayouts() {
                                         type="checkbox"
                                         checked={bankDetails.auto_settle}
                                         onChange={e => setBankDetails(prev => ({ ...prev, auto_settle: e.target.checked }))}
-                                        className="h-5 w-5 rounded text-[#004B93] focus:ring-0 cursor-pointer"
+                                        className="h-5 w-5 rounded text-[#0868B2] focus:ring-0 cursor-pointer"
                                     />
                                 </div>
 
@@ -1346,7 +1346,7 @@ export default function WalletPayouts() {
                                     <button
                                         type="submit"
                                         disabled={saving}
-                                        className="px-6 py-2.5 bg-[#004B93] hover:bg-[#003870] disabled:bg-slate-300 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-900/10 transition"
+                                        className="px-6 py-2.5 bg-[#0868B2] hover:bg-[#07549A] disabled:bg-slate-300 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-900/10 transition"
                                     >
                                         {saving && <Loader2 size={14} className="animate-spin" />}
                                         Save & Verify Banking Credentials
@@ -1366,7 +1366,7 @@ export default function WalletPayouts() {
                                 </div>
                                 <button
                                     onClick={() => setShowCreateFeeModal(true)}
-                                    className="px-5 py-2.5 bg-[#004B93] hover:bg-[#003870] text-white rounded-2xl text-xs font-black flex items-center gap-2 transition"
+                                    className="px-5 py-2.5 bg-[#0868B2] hover:bg-[#07549A] text-white rounded-2xl text-xs font-black flex items-center gap-2 transition"
                                 >
                                     <Plus size={15} /> Add Fee Structure
                                 </button>

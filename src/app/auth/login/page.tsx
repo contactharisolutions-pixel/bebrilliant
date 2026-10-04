@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useCallback, useEffect, Suspense } from 'react'
 import Link from 'next/link'
@@ -152,7 +152,7 @@ function LoginFormContent() {
                                 placeholder="name@school.edu.in"
                                 autoComplete="email"
                                 autoFocus
-                                className={`w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 focus:border-[#004B93] transition ${
+                                className={`w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 focus:border-[#0868B2] transition ${
                                     errors.email ? 'border-red-400 bg-red-50/20' : 'border-slate-200'
                                 }`}
                                 {...register('email')}
@@ -173,7 +173,7 @@ function LoginFormContent() {
                             </label>
                             <Link
                                 href="/auth/forgot-password"
-                                className="text-[11px] font-bold text-[#004B93] hover:underline"
+                                className="text-[11px] font-bold text-[#0868B2] hover:underline"
                             >
                                 Forgot password?
                             </Link>
@@ -185,7 +185,7 @@ function LoginFormContent() {
                                 type={showPassword ? 'text' : 'password'}
                                 placeholder="••••••••••••"
                                 autoComplete="current-password"
-                                className={`w-full pl-10 pr-10 py-2.5 bg-slate-50 border rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 focus:border-[#004B93] transition ${
+                                className={`w-full pl-10 pr-10 py-2.5 bg-slate-50 border rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 focus:border-[#0868B2] transition ${
                                     errors.password ? 'border-red-400 bg-red-50/20' : 'border-slate-200'
                                 }`}
                                 {...register('password')}
@@ -211,7 +211,7 @@ function LoginFormContent() {
                         id="login-submit"
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-3 bg-[#004B93] hover:bg-[#003870] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mt-4 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3 bg-[#0868B2] hover:bg-[#07549A] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mt-4 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isLoading ? (
                             <span className="flex items-center gap-2">
@@ -231,7 +231,7 @@ function LoginFormContent() {
                 <div className="mt-8 pt-5 border-t border-slate-100 space-y-3 text-center">
                     <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-left">
                         <div className="flex items-start gap-2.5">
-                            <ShieldCheck size={16} className="text-[#004B93] shrink-0 mt-0.5" />
+                            <ShieldCheck size={16} className="text-[#0868B2] shrink-0 mt-0.5" />
                             <div className="text-[11px] text-slate-600 leading-relaxed">
                                 <strong className="text-slate-800 font-bold block mb-0.5">Authorized Institutional Access Only</strong>
                                 Student, teacher, and administrative accounts are provisioned directly by institution administrators. If you do not have login credentials, please contact your school management.
@@ -241,7 +241,7 @@ function LoginFormContent() {
 
                     <p className="text-xs text-slate-500 font-medium">
                         Looking to onboard your school or institute?{' '}
-                        <Link href="/request-demo" className="text-[#004B93] hover:underline font-bold">
+                        <Link href="/request-demo" className="text-[#0868B2] hover:underline font-bold">
                             Request Institutional Demo
                         </Link>
                     </p>

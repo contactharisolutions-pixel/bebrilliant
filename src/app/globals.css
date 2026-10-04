@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -52,143 +52,210 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ─── Official BeBrilliant Brand Design Tokens ──────────────────────────────── */
-/* Color Theme.docx + Web UI Core Design Strategy for BeBrilliant.docx         */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   BeBrilliant Enterprise Design Token System
+   Source: assets/bebrilliant_enterprise_color_palette_theme.md
+   Single source of truth — consumed by all modules:
+   Public Website · ERP · Analytics · Reports · Auth
+═══════════════════════════════════════════════════════════════════════════════ */
 :root {
-  /* ── Brand Gradient (Official 2-stop spec) ─────────────────────── */
-  --color-primary: #1E3A8A;                               /* Deep Navy — primary blue */
-  --color-primary-dark: #152A6E;                          /* Deeper navy */
-  --color-primary-light: #2563EB;                         /* Interactive / accent blue */
-  --color-brand-green: #0CA35C;                           /* Official brand green */
-  --color-brand-green-light: #DCFCE7;                     /* Brand green bg */
-  --color-primary-gradient: linear-gradient(135deg, #1E3A8A 0%, #0CA35C 100%);
-  --color-primary-glow: rgba(30, 58, 138, 0.15);
+  /* ── Primary Brand Blue Scale ──────────────────────────────────────── */
+  --brand-900: #073B73;
+  --brand-800: #07549A;
+  --brand-700: #0868B2;           /* PRIMARY — all primary actions */
+  --brand-600: #0B78C5;
+  --brand-500: #1687D1;
+  --brand-400: #3A9BDA;
+  --brand-300: #72B9E6;
+  --brand-200: #B6DCF2;
+  --brand-100: #E5F3FB;
+  --brand-50:  #F2F9FD;
 
-  /* ── Backgrounds ────────────────────────────────────────────────── */
-  --color-bg: #FFFFFF;                                    /* Main background */
-  --color-bg-alt: #F7F8FA;                                /* Secondary background */
-  --color-bg-card: #FFFFFF;                               /* Card background */
-  --color-bg-card2: #F7F8FA;                              /* Subtle card variant */
+  /* ── Brand Green Scale ──────────────────────────────────────────────── */
+  --green-900: #05603A;
+  --green-800: #087347;
+  --green-700: #09834F;           /* SUCCESS GREEN — not a default CTA */
+  --green-600: #0A9859;
+  --green-500: #12A866;
+  --green-400: #36B978;
+  --green-300: #72D09B;
+  --green-200: #B7E8CC;
+  --green-100: #DCF7E7;
+  --green-50:  #F1FBF5;
 
-  /* ── Borders ────────────────────────────────────────────────────── */
-  --color-border: #E5E7EB;                                /* Official border */
-  --color-border-hover: #D1D5DB;                          /* Hover border */
-  --color-border-focus: rgba(30, 58, 138, 0.30);          /* Focus ring color */
+  /* ── Brand Navy Scale ───────────────────────────────────────────────── */
+  --navy-950: #071C33;
+  --navy-900: #092746;            /* H1 / dashboard titles / KPI values */
+  --navy-800: #0C345B;
+  --navy-700: #10456F;
 
-  /* ── Typography ─────────────────────────────────────────────────── */
-  --color-text-primary: #111827;                          /* Almost black */
-  --color-text-secondary: #6B7280;                        /* Secondary text */
-  --color-text-muted: #9CA3AF;                            /* Muted / placeholder */
+  /* ── Enterprise Neutral Slate ───────────────────────────────────────── */
+  --slate-950: #0F172A;
+  --slate-900: #172033;
+  --slate-800: #253247;
+  --slate-700: #34445A;
+  --slate-600: #475569;
+  --slate-500: #64748B;
+  --slate-400: #94A3B8;
+  --slate-300: #CBD5E1;
+  --slate-200: #E2E8F0;
+  --slate-100: #F1F5F9;
+  --slate-50:  #F8FAFC;
 
-  /* ── Functional Colors ───────────────────────────────────────────── */
-  --color-success: #16A34A;                               /* Official success */
-  --color-success-dark: #15803D;
-  --color-success-bg: #DCFCE7;
-  --color-error: #DC2626;                                 /* Official error */
-  --color-error-bg: #FEE2E2;
-  --color-warning: #F59E0B;                               /* Official warning */
-  --color-warning-dark: #D97706;
-  --color-warning-bg: #FEF3C7;
+  /* ── Semantic Brand Tokens ──────────────────────────────────────────── */
+  --brand-primary:          #0868B2;
+  --brand-primary-hover:    #07549A;
+  --brand-primary-active:   #073B73;
+  --brand-primary-tint:     #E5F3FB;
+  --brand-primary-pale:     #F2F9FD;
 
-  /* ── Accent Colors ───────────────────────────────────────────────── */
-  --color-accent: #2563EB;                                /* Interactive blue */
-  --color-purple: #672AEA;                                /* AI purple (official) */
-  --color-purple-light: #F5F3FF;
-  --color-gold: #FFD486;                                  /* Soft gold (badges only) */
+  --brand-success:          #09834F;
+  --brand-success-hover:    #087347;
+  --brand-success-active:   #05603A;
+  --brand-success-tint:     #DCF7E7;
+  --brand-success-pale:     #F1FBF5;
 
-  /* ── AI Block ───────────────────────────────────────────────────── */
-  --color-ai-bg: #EFF6FF;                                 /* AI block background */
-  --color-ai-border: #BFDBFE;                             /* AI block border */
+  /* ── Backgrounds ────────────────────────────────────────────────────── */
+  --color-bg:              #F8FAFC;     /* App / page background */
+  --color-bg-alt:          #F8FAFC;     /* Secondary background (same) */
+  --color-surface:         #FFFFFF;     /* Card / table surface */
+  --color-bg-card:         #FFFFFF;     /* Alias for card surface */
+  --color-bg-card2:        #F1F5F9;     /* Subtle card variant */
+  --color-surface-subtle:  #F1F5F9;
+  --color-bg-primary-tint: #F2F9FD;
+  --color-bg-success-tint: #F1FBF5;
+  --color-bg-warning-tint: #FFFBEB;
+  --color-bg-danger-tint:  #FEF2F2;
 
-  /* ── Skeleton Loader ─────────────────────────────────────────────── */
-  --color-skeleton: #F3F4F6;
-  --color-skeleton-shine: #E5E7EB;
+  /* ── Typography ─────────────────────────────────────────────────────── */
+  --color-heading:          #092746;   /* H1 / dashboard titles / KPI values */
+  --color-heading-2:        #0C345B;
+  --color-heading-3:        #253247;
+  --color-heading-4:        #34445A;
+  --color-text-primary:     #34445A;   /* Body text */
+  --color-text-secondary:   #475569;
+  --color-text-muted:       #64748B;
+  --color-text-disabled:    #94A3B8;
+  --color-text-link:        #0868B2;
+  --color-text-link-hover:  #07549A;
+  --color-text-link-visited:#0C345B;
 
-  /* ── Role Accent Colors ─────────────────────────────────────────── */
-  --color-role-student: #2563EB;                          /* Student — blue */
-  --color-role-teacher: #0CA35C;                          /* Teacher — brand green */
-  --color-role-admin: #672AEA;                            /* Admin/Owner — purple */
-  --color-role-parent: #F59E0B;                           /* Parent — warm amber */
+  /* ── Borders ────────────────────────────────────────────────────────── */
+  --color-border:           #E2E8F0;   /* Default border */
+  --color-border-hover:     #CBD5E1;
+  --color-border-strong:    #CBD5E1;
+  --color-border-brand:     #B6DCF2;
+  --color-border-focus:     #B6DCF2;   /* Focus ring */
+  --color-border-success:   #B7E8CC;
+  --color-border-warning:   #FDE68A;
+  --color-border-error:     #FCA5A5;
 
-  /* ── Shadows ─────────────────────────────────────────────────────── */
-  --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-  --shadow-lg: 0 10px 24px rgba(0,0,0,0.06);
-  --shadow-primary: 0 10px 15px -3px rgba(30, 58, 138, 0.20);
+  /* ── Functional / Semantic ──────────────────────────────────────────── */
+  --color-success:          #09834F;
+  --color-success-dark:     #087347;
+  --color-success-text:     #05603A;
+  --color-success-bg:       #DCF7E7;
 
-  /* ── Radii ───────────────────────────────────────────────────────── */
-  --btn-radius: 10px;
-  --card-radius: 12px;
-  --card-radius-lg: 16px;
-  --card-radius-xl: 20px;
+  --color-warning:          #D97706;
+  --color-warning-dark:     #B45309;
+  --color-warning-bg:       #FEF3C7;
 
-  /* ── shadcn/ui Design Tokens ────────────────────────────────────────── */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #1E3A8A;
-  --primary-foreground: #FFFFFF;
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #1E3A8A;
+  --color-error:            #DC2626;
+  --color-error-dark:       #B91C1C;
+  --color-error-bg:         #FEF2F2;
+  --color-error-text:       #B91C1C;
+
+  --color-info:             #0284C7;
+  --color-info-dark:        #0369A1;
+  --color-info-bg:          #E0F2FE;
+  --color-info-border:      #BAE6FD;
+
+  /* ── Interaction Tokens ─────────────────────────────────────────────── */
+  --color-primary:          #0868B2;   /* shadcn compat + accent-color */
+  --color-primary-dark:     #07549A;
+  --color-primary-active:   #073B73;
+  --color-primary-light:    #1687D1;
+  --color-primary-glow:     rgba(8, 104, 178, 0.15);
+  --color-primary-gradient: linear-gradient(135deg, #F2F9FD, #F1FBF5); /* hero only */
+  --gradient-brand:         linear-gradient(135deg, #0868B2, #09834F); /* marketing only */
+  --gradient-hero:          linear-gradient(135deg, #F2F9FD, #F1FBF5);
+
+  /* ── Accent / Chart ─────────────────────────────────────────────────── */
+  --color-brand-green:      #09834F;
+  --color-brand-green-light:#DCF7E7;
+  --color-purple:           #7C3AED;   /* chart / AI context only */
+  --color-purple-light:     #F5F3FF;
+  --color-role-student:     #0868B2;
+  --color-role-teacher:     #09834F;
+  --color-role-admin:       #7C3AED;
+  --color-role-parent:      #D97706;
+  --color-ai-bg:            #F2F9FD;
+  --color-ai-border:        #B6DCF2;
+
+  /* ── Shadows ─────────────────────────────────────────────────────────── */
+  --shadow-card:   0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-sm:     0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md:     0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg:     0 12px 30px rgba(15, 23, 42, 0.10);
+  --shadow-primary:0 10px 15px -3px rgba(8, 104, 178, 0.20);
+
+  /* ── Radii ───────────────────────────────────────────────────────────── */
+  --btn-radius:    8px;
+  --card-radius:   12px;
+  --card-radius-lg:16px;
+  --card-radius-xl:20px;
+  --radius:        0.5rem;
+
+  /* ── Skeleton ────────────────────────────────────────────────────────── */
+  --color-skeleton:       #F1F5F9;    /* neutral slate only — never brand colors */
+  --color-skeleton-shine: #E2E8F0;
+
+  /* ── Overlay ─────────────────────────────────────────────────────────── */
+  --color-overlay: rgba(7, 28, 51, 0.35);
+
+  /* ── Footer ──────────────────────────────────────────────────────────── */
+  --color-footer-bg:        #092746;
+  --color-footer-text:      #CBD5E1;
+  --color-footer-link:      #E5F3FB;
+  --color-footer-link-hover:#72B9E6;
+
+  /* ── shadcn/ui Semantic Tokens ──────────────────────────────────────── */
+  --background:             #F8FAFC;
+  --foreground:             #34445A;
+  --card:                   #FFFFFF;
+  --card-foreground:        #34445A;
+  --popover:                #FFFFFF;
+  --popover-foreground:     #34445A;
+  --primary:                #0868B2;
+  --primary-foreground:     #FFFFFF;
+  --secondary:              #F1F5F9;
+  --secondary-foreground:   #34445A;
+  --muted:                  #F1F5F9;
+  --muted-foreground:       #64748B;
+  --accent:                 #F2F9FD;
+  --accent-foreground:      #0868B2;
+  --destructive:            #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border:                 #E2E8F0;
+  --input:                  #CBD5E1;
+  --ring:                   #B6DCF2;
+
+  /* ── Chart Tokens — official brand sequence ─────────────────────────── */
+  --chart-1: #0868B2;   /* Primary Blue */
+  --chart-2: #09834F;   /* Success Green */
+  --chart-3: #7C3AED;   /* Purple */
+  --chart-4: #D97706;   /* Amber */
+  --chart-5: #0891B2;   /* Cyan */
+
+  /* ── Sidebar Tokens ─────────────────────────────────────────────────── */
+  --sidebar:                    #FFFFFF;
+  --sidebar-foreground:         #475569;
+  --sidebar-primary:            #0868B2;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-accent:             #E5F3FB;
+  --sidebar-accent-foreground:  #0868B2;
+  --sidebar-border:             #E2E8F0;
+  --sidebar-ring:               #B6DCF2;
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────────────── */
@@ -355,7 +422,7 @@
 }
 .pub-logo-item:hover {
   opacity: 1;
-  color: #1E3A8A;                                        /* official primary */
+  color: #0868B2;                                        /* brand primary */
 }
 
 /* ── Infinite Scrolling Testimonials Marquee ── */
@@ -393,7 +460,7 @@
   text-align: left;
 }
 .pub-testimonial-card:hover {
-  border-color: #1E3A8A;                                 /* official primary */
+  border-color: #0868B2;                                 /* official primary */
   box-shadow: 0 12px 30px rgba(30,58,138,0.06);
 }
 
@@ -416,9 +483,9 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.02);
 }
 .pub-trust-card:hover {
-  border-color: #1E3A8A;                                 /* official primary */
+  border-color: #0868B2;                                 /* brand primary */
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(30,58,138,0.08);
+  box-shadow: 0 12px 24px rgba(8, 104, 178, 0.08);
 }
 @media (max-width: 1200px) {
   .pub-trust-grid {
@@ -780,9 +847,9 @@
 }
 
 .form-input:focus {
-  border-color: #1E3A8A;                                 /* official primary */
-  box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.12);
-  background: #fff;
+  border-color: #0868B2;                                 /* brand primary */
+  box-shadow: 0 0 0 4px rgba(8, 104, 178, 0.10);
+  background: #FFFFFF;
 }
 
 .form-input.error {
@@ -981,15 +1048,15 @@
 }
 
 .alert-success {
-  background: #DCFCE7;                                   /* official success-bg */
-  border: 1px solid #BBF7D0;
-  color: #16A34A;                                        /* official success */
+  background: #F1FBF5;                                   /* brand success-bg */
+  border: 1px solid #B7E8CC;
+  color: #05603A;                                        /* brand success text */
 }
 
 .alert-warning {
-  background: #FEF3C7;                                   /* official warning-bg */
+  background: #FFFBEB;                                   /* brand warning-bg */
   border: 1px solid #FDE68A;
-  color: #F59E0B;                                        /* official warning */
+  color: #B45309;                                        /* brand warning dark */
 }
 
 /* ─── Divider ────────────────────────────────────────────────────────────────── */
@@ -1036,9 +1103,9 @@
 }
 
 .tab-btn.active {
-  background: var(--color-primary-gradient);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(30, 58, 138, 0.30);        /* official primary glow */
+  background: #0868B2;
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(8, 104, 178, 0.30);        /* brand primary glow */
 }
 
 /* ─── Password Strength ──────────────────────────────────────────────────────── */
@@ -1065,19 +1132,19 @@
 }
 
 .strength-bar.filled-strong {
-  background: #16A34A;                                   /* official success */
+  background: #09834F;                                   /* brand success */
 }
 
 /* ─── Links ──────────────────────────────────────────────────────────────────── */
 .auth-link {
-  color: #2563EB;                                        /* official accent blue */
+  color: #0868B2;                                        /* brand primary */
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s;
 }
 
 .auth-link:hover {
-  color: #1E3A8A;                                        /* darken to primary */
+  color: #07549A;                                        /* brand primary hover */
   text-decoration: underline;
 }
 
@@ -1101,21 +1168,21 @@
 }
 
 .role-badge-admin {
-  background: #F5F3FF;                                   /* official purple-light */
-  color: #672AEA;                                        /* official AI purple */
+  background: #F5F3FF;                                   /* purple light */
+  color: #7C3AED;                                        /* brand purple (chart/AI) */
   border: 1px solid #DDD6FE;
 }
 
 .role-badge-teacher {
-  background: #DCFCE7;                                   /* official brand-green-light */
-  color: #0CA35C;                                        /* official brand-green */
-  border: 1px solid #BBF7D0;
+  background: #DCF7E7;                                   /* brand success tint */
+  color: #09834F;                                        /* brand success */
+  border: 1px solid #B7E8CC;
 }
 
 .role-badge-student {
-  background: #EFF6FF;                                   /* official ai-bg */
-  color: #2563EB;                                        /* official accent blue */
-  border: 1px solid #BFDBFE;
+  background: #E5F3FB;                                   /* brand primary tint */
+  color: #0868B2;                                        /* brand primary */
+  border: 1px solid #B6DCF2;
 }
 
 .role-badge-parent {
@@ -1150,8 +1217,8 @@
 
 .hover-lift:hover {
   transform: translateY(-8px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-  border-color: var(--color-primary-light) !important;
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.10), 0 10px 10px -5px rgba(15, 23, 42, 0.05) !important;
+  border-color: var(--brand-200) !important;
 }
 
 .shimmer {

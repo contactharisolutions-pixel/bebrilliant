@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState, useEffect } from 'react'
 import {
     Share2, TrendingUp, Users, CreditCard, Award,
@@ -65,7 +65,7 @@ export default function AffiliateDashboard() {
             {/* KPI GRID */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 20, marginBottom: 48 }}>
                 {[
-                    { label: 'Total Shares',        value: totals.shares,        icon: Share2,     color: '#25D366', bg: '#F0FDF4' },
+                    { label: 'Total Shares',        value: totals.shares,        icon: Share2,     color: '#25D366', bg: '#F1FBF5' },
                     { label: 'Link Clicks',          value: totals.clicks,        icon: Link2,      color: '#0EA5E9', bg: '#F0F9FF' },
                     { label: 'Registrations',        value: totals.registrations, icon: Users,      color: '#8B5CF6', bg: '#F5F3FF' },
                     { label: 'Paid Conversions',     value: totals.payments,      icon: CreditCard, color: '#F59E0B', bg: '#FFFBEB' },
@@ -156,7 +156,7 @@ export default function AffiliateDashboard() {
                             ) : referrals.slice(0, 8).map(r => (
                                 <div key={r.ref_code} style={{ padding: '12px 16px', background: '#F8FAFC', borderRadius: 14, border: '1px solid #F1F5F9' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                        <div style={{ padding: '3px 10px', borderRadius: 8, background: r.type === 'teacher' ? '#EFF6FF' : '#F0FDF4', color: r.type === 'teacher' ? '#2563EB' : '#059669', fontSize: 11, fontWeight: 900, textTransform: 'uppercase' }}>
+                                        <div style={{ padding: '3px 10px', borderRadius: 8, background: r.type === 'teacher' ? '#E5F3FB' : '#F1FBF5', color: r.type === 'teacher' ? '#0868B2' : '#09834F', fontSize: 11, fontWeight: 900, textTransform: 'uppercase' }}>
                                             {r.ref_code}
                                         </div>
                                         <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -178,7 +178,7 @@ export default function AffiliateDashboard() {
                                         ))}
                                     </div>
                                     {r.total_rewards > 0 && (
-                                        <div style={{ marginTop: 10, padding: '6px 12px', background: '#F0FDF4', borderRadius: 8, fontSize: 12, fontWeight: 800, color: '#059669', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <div style={{ marginTop: 10, padding: '6px 12px', background: '#F1FBF5', borderRadius: 8, fontSize: 12, fontWeight: 800, color: '#09834F', display: 'flex', alignItems: 'center', gap: 6 }}>
                                             <CheckCircle2 size={13} /> ₡{r.total_rewards} rewards earned
                                         </div>
                                     )}

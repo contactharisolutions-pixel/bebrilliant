@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { P } from '@/styles/tokens';
@@ -22,7 +22,7 @@ export function HealthScoreGauge({
     const dash = (validScore / 100) * circumference;
 
     const getColor = (s: number) => {
-        if (s >= 75) return '#059669'; // success (green)
+        if (s >= 75) return '#09834F'; // success (green)
         if (s >= 50) return '#D97706'; // warning (yellow/orange)
         return '#DC2626'; // error (red)
     };

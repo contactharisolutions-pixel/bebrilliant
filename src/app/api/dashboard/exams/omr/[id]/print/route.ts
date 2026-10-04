@@ -223,7 +223,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             .school-emblem {
                 font-size: 36px;
                 font-weight: 900;
-                color: #004B93;
+                color: #0868B2;
                 line-height: 1;
             }
             .school-info {
@@ -250,7 +250,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             .exam-heading {
                 font-size: 15px;
                 font-weight: 800;
-                color: #004B93;
+                color: #0868B2;
                 margin-top: 5px;
                 letter-spacing: 0.5px;
             }
@@ -296,13 +296,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             /* INSTRUCTIONS */
             .inst-box {
                 background: #F8FAFC;
-                border-left: 3px solid #004B93;
+                border-left: 3px solid #0868B2;
                 padding: 8px 12px;
                 font-size: 11px;
                 margin-bottom: 20px;
                 border-radius: 0 4px 4px 0;
             }
-            .inst-box strong { color: #004B93; }
+            .inst-box strong { color: #0868B2; }
             .inst-box ol { margin: 4px 0 0 16px; padding: 0; }
 
             /* QUESTIONS LAYOUT */
@@ -353,7 +353,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             }
             .opt-key {
                 font-weight: 800;
-                color: #004B93;
+                color: #0868B2;
             }
 
             /* PAGE BREAK FOR COMBINED PRINT */
@@ -560,7 +560,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 height: 24px;
                 line-height: 24px;
                 border-radius: 50%;
-                background: #004B93;
+                background: #0868B2;
                 color: #fff;
                 font-weight: 900;
                 text-align: center;

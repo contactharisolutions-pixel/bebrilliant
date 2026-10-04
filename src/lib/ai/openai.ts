@@ -1,4 +1,4 @@
-import OpenAI from 'openai'
+﻿import OpenAI from 'openai'
 
 /**
  * Server-side OpenAI Service & Central AI Client
@@ -65,7 +65,7 @@ export async function generateUILayout(options: UILayoutOptions): Promise<UILayo
 
     const systemPrompt = `You are a Principal UI/UX Architect for EduBrilliant, an enterprise institutional education SaaS platform.
 Follow these mandatory design rules:
-1. Palette & Tone: Brand Navy (#004B93), Slate Background (#F8F9FA), Border (#E5E7EB), Dark Charcoal Text (#111827). High trust, academic prestige, clean modern whitespace.
+1. Palette & Tone: Brand Navy (#0868B2), Slate Background (#F8F9FA), Border (#E2E8F0), Dark Charcoal Text (#34445A). High trust, academic prestige, clean modern whitespace.
 2. Typography & Hierarchy: Inter or system sans-serif. Clear weights (700/800 for headers, 500/600 for labels). Sentence case for all buttons and labels. Active verbs ("Save changes", "View notes", "Create school"). No generic AI clichés.
 3. Micro-interactions: Tactile feedback, crisp states, smooth hover and focus transitions.
 4. Output Format: Provide a structured response with:
@@ -93,9 +93,9 @@ ${designTokens ? `Design Tokens: ${JSON.stringify(designTokens, null, 2)}` : ''}
         layoutCode: content,
         rationale: 'Generated layout compliant with EduBrilliant enterprise UI/UX specifications.',
         tokensUsed: designTokens || {
-            brand: '#004B93',
+            brand: '#0868B2',
             bg: '#F8F9FA',
-            border: '#E5E7EB'
+            border: '#E2E8F0'
         }
     }
 }

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import React, { useState, useEffect } from 'react'
 import { 
     Wallet, Package, Zap, Award, 
@@ -222,8 +222,8 @@ export default function StudentWalletRecharge() {
                                             </div>
                                             {/* Credit type badge */}
                                             <div style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 900, textTransform: 'uppercase',
-                                                background: t.credit_type === 'free' ? '#ECFDF5' : '#EFF6FF',
-                                                color: t.credit_type === 'free' ? '#059669' : '#2563EB'
+                                                background: t.credit_type === 'free' ? '#ECFDF5' : '#E5F3FB',
+                                                color: t.credit_type === 'free' ? '#09834F' : '#0868B2'
                                             }}>
                                                 {t.credit_type === 'free' ? '🎁 Free' : '💳 Paid'}
                                             </div>

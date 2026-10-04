@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import React, { useState, useEffect } from 'react'
 import { 
     Layers, BookOpen, UserCheck, Plus, 
@@ -152,7 +152,7 @@ export default function AcademicStructureHub() {
                                     </div>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
                                         {cls.divisions?.map((div: any) => (
-                                            <div key={div.id} style={{ background: '#FFF', padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 800, color: '#672AEA', border: '1px solid #E2E8F0' }}>
+                                            <div key={div.id} style={{ background: '#FFF', padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 800, color: '#7C3AED', border: '1px solid #E2E8F0' }}>
                                                  Div {div.name}
                                             </div>
                                         ))}
@@ -197,7 +197,7 @@ export default function AcademicStructureHub() {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
                                 {subjects.map((sub: any) => (
                                     <div key={sub.id} style={{ padding: 20, background: '#F8FAFC', borderRadius: 18, border: '1px solid #F1F5F9', textAlign: 'center' }}>
-                                        <BookOpen size={24} color="#672AEA" style={{ marginBottom: 12 }} />
+                                        <BookOpen size={24} color="#7C3AED" style={{ marginBottom: 12 }} />
                                         <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A' }}>{sub.name}</div>
                                          <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', marginTop: 4 }}>Standard</div>
                                     </div>

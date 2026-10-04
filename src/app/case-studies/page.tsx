@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState } from 'react'
 import Link from 'next/link'
@@ -99,10 +99,10 @@ const CASE_STUDIES = [
 
 /* ─── INDUSTRY BREAKDOWN ─────────────────────────────────────────── */
 const INDUSTRIES = [
-    { title: 'IIT-JEE & NEET Institutes', impact: 'Sub-second AIR rank publishing & 32-variant anti-cheat papers', icon: GraduationCap, color: '#004B93' },
-    { title: 'K-12 CBSE/ICSE Schools', impact: 'Automated WhatsApp fee collection & DPDP Act compliance', icon: Building2, color: '#1FAC63' },
+    { title: 'IIT-JEE & NEET Institutes', impact: 'Sub-second AIR rank publishing & 32-variant anti-cheat papers', icon: GraduationCap, color: '#0868B2' },
+    { title: 'K-12 CBSE/ICSE Schools', impact: 'Automated WhatsApp fee collection & DPDP Act compliance', icon: Building2, color: '#09834F' },
     { title: 'State Board & UPSC Centers', impact: 'Vernacular question generator & multi-tenant teacher portals', icon: Award, color: '#7C3AED' },
-    { title: 'University & College Chains', impact: 'Row-level security, SOC 2 compliance & API analytics pipelines', icon: ShieldCheck, color: '#F0A026' },
+    { title: 'University & College Chains', impact: 'Row-level security, SOC 2 compliance & API analytics pipelines', icon: ShieldCheck, color: '#D97706' },
 ]
 
 export default function CaseStudiesPage() {
@@ -127,7 +127,7 @@ export default function CaseStudiesPage() {
                         { val: '3.4x', label: 'Avg Enrolment Growth', sub: 'Via WhatsApp referral engine' },
                     ].map((stat, i) => (
                         <div key={i} className="relative rounded-3xl bg-white border border-slate-200 p-6 text-center shadow-sm hover:shadow-md transition-all">
-                            <div className="text-3xl md:text-4xl font-black text-slate-900 font-manrope mb-1" style={{ color: i === 0 ? '#004B93' : i === 1 ? '#1FAC63' : i === 2 ? '#7C3AED' : '#F0A026' }}>
+                            <div className="text-3xl md:text-4xl font-black text-slate-900 font-manrope mb-1" style={{ color: i === 0 ? '#0868B2' : i === 1 ? '#09834F' : i === 2 ? '#7C3AED' : '#D97706' }}>
                                 {stat.val}
                             </div>
                             <div className="text-xs font-extrabold text-slate-800 font-manrope mb-0.5">{stat.label}</div>
@@ -145,7 +145,7 @@ export default function CaseStudiesPage() {
                             className="flex items-center gap-3 px-6 py-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer flex-shrink-0"
                             style={{
                                 background: selectedTab === idx ? '#0F172A' : '#FFFFFF',
-                                borderColor: selectedTab === idx ? '#004B93' : '#E2E8F0',
+                                borderColor: selectedTab === idx ? '#0868B2' : '#E2E8F0',
                                 boxShadow: selectedTab === idx ? '0 10px 30px -10px rgba(15,23,42,0.35)' : 'none',
                                 transform: selectedTab === idx ? 'translateY(-2px)' : 'none'
                             }}
@@ -260,7 +260,7 @@ export default function CaseStudiesPage() {
                 {/* ─── INDUSTRY IMPACT GRID ───────────────────────────────── */}
                 <div className="mb-24">
                     <div className="text-center mb-12">
-                        <span className="text-xs font-extrabold uppercase tracking-widest text-[#004B93] bg-[#004B93]/08 px-4 py-1.5 rounded-full border border-[#004B93]/20">
+                        <span className="text-xs font-extrabold uppercase tracking-widest text-[#0868B2] bg-[#0868B2]/08 px-4 py-1.5 rounded-full border border-[#0868B2]/20">
                             PROVEN ACROSS ECOSYSTEMS
                         </span>
                         <h3 className="text-3xl md:text-4xl font-extrabold text-slate-900 font-manrope mt-5 mb-2">
@@ -306,7 +306,7 @@ export default function CaseStudiesPage() {
                             Book a 1-on-1 personalized demo tailored to your institution's specific student volume and operational workflow.
                         </p>
                         <div className="flex flex-wrap items-center justify-center gap-4">
-                            <Link href="/request-demo" className="inline-flex items-center gap-3 bg-[#1FAC63] text-white px-8 py-4 rounded-2xl text-sm font-extrabold hover:bg-[#199453] hover:scale-105 transition-all font-manrope shadow-xl shadow-emerald-900/30">
+                            <Link href="/request-demo" className="inline-flex items-center gap-3 bg-[#09834F] text-white px-8 py-4 rounded-2xl text-sm font-extrabold hover:bg-[#087347] hover:scale-105 transition-all font-manrope shadow-xl shadow-emerald-900/30">
                                 Schedule Custom Demo <ArrowRight size={16} />
                             </Link>
                             <Link href="/contact" className="inline-flex items-center gap-3 bg-white/08 text-slate-300 px-8 py-4 rounded-2xl text-sm font-extrabold border border-white/12 hover:bg-white/12 transition-all font-manrope">

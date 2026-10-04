@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
@@ -106,21 +106,21 @@ export const SYSTEM_TENANT_TYPES = [
     {
         value: 'school',
         label: 'School (K-12)',
-        badgeColor: '#2563EB',
-        badgeBg: '#EFF6FF',
-        border: '#BFDBFE',
+        badgeColor: '#0868B2',
+        badgeBg: '#E5F3FB',
+        border: '#B6DCF2',
         icon: 'GraduationCap',
-        gradient: 'linear-gradient(90deg, #2563EB 0%, #60A5FA 100%)',
+        gradient: 'linear-gradient(90deg, #0868B2 0%, #60A5FA 100%)',
         description: 'Comprehensive K-12 Academics, Multi-Branch & OMR'
     },
     {
         value: 'institute',
         label: 'Institute / Coaching',
-        badgeColor: '#059669',
+        badgeColor: '#09834F',
         badgeBg: '#ECFDF5',
         border: '#A7F3D0',
         icon: 'Building2',
-        gradient: 'linear-gradient(90deg, #059669 0%, #34D399 100%)',
+        gradient: 'linear-gradient(90deg, #09834F 0%, #34D399 100%)',
         description: 'Test Prep, Competitive Batches & Coaching Centers'
     },
     {
@@ -543,7 +543,7 @@ export default function SubscriptionPlansManager() {
         return (
             <div style={{
                 background: '#FFFFFF',
-                border: `1.5px solid ${plan.is_active ? '#E2E8F0' : '#E5E7EB'}`,
+                border: `1.5px solid ${plan.is_active ? '#E2E8F0' : '#E2E8F0'}`,
                 borderRadius: 22,
                 display: 'flex',
                 flexDirection: 'column',
@@ -695,7 +695,7 @@ export default function SubscriptionPlansManager() {
                                             alignItems: 'center',
                                             gap: 4
                                         }}>
-                                            <Sparkles size={11} color="#059669" />
+                                            <Sparkles size={11} color="#09834F" />
                                             Save ₹{annualSavings.toLocaleString('en-IN')} ({savingsPercent}% OFF)
                                         </span>
                                     )}
@@ -728,7 +728,7 @@ export default function SubscriptionPlansManager() {
                                             alignItems: 'center',
                                             gap: 4
                                         }}>
-                                            <Sparkles size={11} color="#059669" />
+                                            <Sparkles size={11} color="#09834F" />
                                             Save {savingsPercent}% yearly
                                         </span>
                                     )}
@@ -768,14 +768,14 @@ export default function SubscriptionPlansManager() {
                                     width: 32,
                                     height: 32,
                                     borderRadius: 9,
-                                    background: '#EFF6FF',
+                                    background: '#E5F3FB',
                                     border: '1px solid #DBEAFE',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     flexShrink: 0
                                 }}>
-                                    <Users size={15} color="#2563EB" />
+                                    <Users size={15} color="#0868B2" />
                                 </div>
                                 <div style={{ minWidth: 0 }}>
                                     <div style={{ fontSize: 13, fontWeight: 950, color: '#0F172A', lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -839,7 +839,7 @@ export default function SubscriptionPlansManager() {
                                     justifyContent: 'center',
                                     flexShrink: 0
                                 }}>
-                                    <Database size={15} color="#059669" />
+                                    <Database size={15} color="#09834F" />
                                 </div>
                                 <div style={{ minWidth: 0 }}>
                                     <div style={{ fontSize: 13, fontWeight: 950, color: '#0F172A', lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -1137,7 +1137,7 @@ export default function SubscriptionPlansManager() {
             {/* ── KPI ─────────────────────────────────────────────────────────── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 18, marginBottom: 32 }}>
                 <KpiCard icon={CreditCard} title="Active Plans" value={String(plans.filter(p => p.is_active).length)} color={P.brand} />
-                <KpiCard icon={Users} title="Active Institutes" value={String(subscriptions.filter(s => s.status === 'active').length)} color="#059669" />
+                <KpiCard icon={Users} title="Active Institutes" value={String(subscriptions.filter(s => s.status === 'active').length)} color="#09834F" />
                 <KpiCard icon={FileText} title="Paid Invoices" value={String(invoices.filter(i => i.status === 'paid').length)} color="#7C3AED" />
                 <KpiCard icon={Package} title="Add-On Packs" value={String(addons.filter(a => a.is_active).length)} color="#EA580C" />
                 <KpiCard icon={Boxes} title="Feature Modules" value={String(featureRegistry.length)} color="#0EA5E9" />
@@ -1347,19 +1347,19 @@ export default function SubscriptionPlansManager() {
                                         gap: 6,
                                         padding: '5px 12px',
                                         borderRadius: 10,
-                                        border: `1.5px solid ${planScopeFilter === 'school' ? '#2563EB' : '#E2E8F0'}`,
-                                        background: planScopeFilter === 'school' ? '#EFF6FF' : '#FFFFFF',
-                                        color: planScopeFilter === 'school' ? '#2563EB' : '#475569',
+                                        border: `1.5px solid ${planScopeFilter === 'school' ? '#0868B2' : '#E2E8F0'}`,
+                                        background: planScopeFilter === 'school' ? '#E5F3FB' : '#FFFFFF',
+                                        color: planScopeFilter === 'school' ? '#0868B2' : '#475569',
                                         fontSize: 12,
                                         fontWeight: 800,
                                         cursor: 'pointer',
                                         transition: 'all 0.15s ease'
                                     }}
                                 >
-                                    <GraduationCap size={13} color={planScopeFilter === 'school' ? '#2563EB' : '#64748B'} />
+                                    <GraduationCap size={13} color={planScopeFilter === 'school' ? '#0868B2' : '#64748B'} />
                                     <span>Schools (K-12)</span>
                                     <span style={{
-                                        background: planScopeFilter === 'school' ? '#2563EB' : '#F1F5F9',
+                                        background: planScopeFilter === 'school' ? '#0868B2' : '#F1F5F9',
                                         color: planScopeFilter === 'school' ? '#FFFFFF' : '#64748B',
                                         fontSize: 10,
                                         fontWeight: 900,
@@ -1380,19 +1380,19 @@ export default function SubscriptionPlansManager() {
                                         gap: 6,
                                         padding: '5px 12px',
                                         borderRadius: 10,
-                                        border: `1.5px solid ${planScopeFilter === 'institute' ? '#059669' : '#E2E8F0'}`,
+                                        border: `1.5px solid ${planScopeFilter === 'institute' ? '#09834F' : '#E2E8F0'}`,
                                         background: planScopeFilter === 'institute' ? '#ECFDF5' : '#FFFFFF',
-                                        color: planScopeFilter === 'institute' ? '#059669' : '#475569',
+                                        color: planScopeFilter === 'institute' ? '#09834F' : '#475569',
                                         fontSize: 12,
                                         fontWeight: 800,
                                         cursor: 'pointer',
                                         transition: 'all 0.15s ease'
                                     }}
                                 >
-                                    <Building2 size={13} color={planScopeFilter === 'institute' ? '#059669' : '#64748B'} />
+                                    <Building2 size={13} color={planScopeFilter === 'institute' ? '#09834F' : '#64748B'} />
                                     <span>Institutes</span>
                                     <span style={{
-                                        background: planScopeFilter === 'institute' ? '#059669' : '#F1F5F9',
+                                        background: planScopeFilter === 'institute' ? '#09834F' : '#F1F5F9',
                                         color: planScopeFilter === 'institute' ? '#FFFFFF' : '#64748B',
                                         fontSize: 10,
                                         fontWeight: 900,
@@ -1512,7 +1512,7 @@ export default function SubscriptionPlansManager() {
                                             <td style={{ padding: '16px 20px' }}>
                                                 <span style={{
                                                     background: item.status === 'active' ? '#ECFDF5' : '#FEF2F2',
-                                                    color: item.status === 'active' ? '#059669' : '#DC2626',
+                                                    color: item.status === 'active' ? '#09834F' : '#DC2626',
                                                     padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 900
                                                 }}>{item.status.toUpperCase()}</span>
                                             </td>
@@ -1591,14 +1591,14 @@ export default function SubscriptionPlansManager() {
                                             <td style={{ padding: '16px 20px' }}>
                                                 <span style={{
                                                     background: item.status === 'paid' ? '#ECFDF5' : item.status === 'failed' ? '#FEF2F2' : '#FFFBEB',
-                                                    color: item.status === 'paid' ? '#059669' : item.status === 'failed' ? '#DC2626' : '#D97706',
+                                                    color: item.status === 'paid' ? '#09834F' : item.status === 'failed' ? '#DC2626' : '#D97706',
                                                     padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 900
                                                 }}>{item.status.toUpperCase()}</span>
                                             </td>
                                             <td style={{ padding: '16px 20px' }}>
                                                 {item.status === 'pending' && (
                                                     <button onClick={() => handleConfirmPayment(item.id)}
-                                                        style={{ padding: '7px 12px', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 8, color: '#059669', fontWeight: 800, fontSize: 11, cursor: 'pointer' }}>
+                                                        style={{ padding: '7px 12px', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 8, color: '#09834F', fontWeight: 800, fontSize: 11, cursor: 'pointer' }}>
                                                         Mark Paid
                                                     </button>
                                                 )}
@@ -1633,7 +1633,7 @@ export default function SubscriptionPlansManager() {
                                         +{item.resource_value.toLocaleString()} {item.resource_type === 'teachers' ? 'Teachers' : item.resource_type === 'students' ? 'Students' : item.resource_type === 'storage_gb' ? 'GB Storage' : 'AI Tokens'}
                                     </td>
                                     <td style={{ padding: '16px 22px' }}>
-                                        <span style={{ background: item.is_active ? '#ECFDF5' : P.bg, color: item.is_active ? '#059669' : P.muted, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 900 }}>
+                                        <span style={{ background: item.is_active ? '#ECFDF5' : P.bg, color: item.is_active ? '#09834F' : P.muted, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 900 }}>
                                             {item.is_active ? 'ACTIVE' : 'INACTIVE'}
                                         </span>
                                     </td>
@@ -1646,7 +1646,7 @@ export default function SubscriptionPlansManager() {
                                             <button onClick={async () => {
                                                 const r = await fetch('/api/owner/finance/plans/addons', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: item.id, is_active: !item.is_active }) })
                                                 if (r.ok) { showToast(item.is_active ? 'Pack deactivated.' : 'Pack activated.', 'success'); fetchData(true) }
-                                            }} style={{ padding: '7px 14px', background: item.is_active ? '#FEF2F2' : '#ECFDF5', border: `1px solid ${item.is_active ? '#FECACA' : '#A7F3D0'}`, borderRadius: 8, color: item.is_active ? '#DC2626' : '#059669', fontWeight: 800, fontSize: 11, cursor: 'pointer' }}>
+                                            }} style={{ padding: '7px 14px', background: item.is_active ? '#FEF2F2' : '#ECFDF5', border: `1px solid ${item.is_active ? '#FECACA' : '#A7F3D0'}`, borderRadius: 8, color: item.is_active ? '#DC2626' : '#09834F', fontWeight: 800, fontSize: 11, cursor: 'pointer' }}>
                                                 {item.is_active ? 'Deactivate' : 'Activate'}
                                             </button>
                                         </div>
@@ -1663,11 +1663,11 @@ export default function SubscriptionPlansManager() {
             ───────────────────────────────────────────────────────────────── */}
             {activeTab === 'features' && (
                 <div>
-                    <div style={{ background: '#EFF6FF', border: '1.5px solid #BFDBFE', borderRadius: 14, padding: '14px 20px', marginBottom: 24, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ background: '#E5F3FB', border: '1.5px solid #B6DCF2', borderRadius: 14, padding: '14px 20px', marginBottom: 24, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                         <Settings size={18} color="#1D4ED8" style={{ flexShrink: 0, marginTop: 1 }} />
                         <div>
                             <div style={{ fontSize: 13, fontWeight: 900, color: '#1D4ED8', marginBottom: 3 }}>Dynamic Feature Registry</div>
-                            <div style={{ fontSize: 12, color: '#1E3A8A', fontWeight: 600 }}>
+                            <div style={{ fontSize: 12, color: '#0868B2', fontWeight: 600 }}>
                                 Every module listed here becomes available as a toggle in your plan configuration drawer. Add new platform capabilities here and instantly assign them to any plan — no code changes required.
                             </div>
                         </div>
@@ -1689,11 +1689,11 @@ export default function SubscriptionPlansManager() {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                                                 <span style={{ fontSize: 14, fontWeight: 900, color: P.dark }}>{feat.label}</span>
                                                 {feat.is_system && (
-                                                    <span style={{ background: '#F0FDF4', color: '#15803D', borderRadius: 6, padding: '2px 7px', fontSize: 10, fontWeight: 800 }}>SYSTEM</span>
+                                                    <span style={{ background: '#F1FBF5', color: '#087347', borderRadius: 6, padding: '2px 7px', fontSize: 10, fontWeight: 800 }}>SYSTEM</span>
                                                 )}
                                             </div>
                                             <div style={{ fontSize: 11, color: P.muted, fontWeight: 600, marginBottom: 6, wordBreak: 'break-word' }}>{feat.description || '—'}</div>
-                                            <code style={{ fontSize: 10, background: P.bg, color: '#6B7280', padding: '2px 7px', borderRadius: 5, fontFamily: 'monospace' }}>{feat.key}</code>
+                                            <code style={{ fontSize: 10, background: P.bg, color: '#64748B', padding: '2px 7px', borderRadius: 5, fontFamily: 'monospace' }}>{feat.key}</code>
                                         </div>
                                         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                                             <button onClick={() => { setCurrentFeat(feat); setEditFeatMode(true); setFeatDrawerOpen(true) }}
@@ -1812,11 +1812,11 @@ export default function SubscriptionPlansManager() {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5, fontWeight: 800, color: '#065F46' }}>
                                     <span>Regular 12-Month Total: ₹{(Number(currentPlan.price) * 12).toLocaleString('en-IN')}</span>
                                     {Number(currentPlan.yearly_price) > 0 && Number(currentPlan.yearly_price) < Number(currentPlan.price) * 12 ? (
-                                        <span style={{ background: '#059669', color: '#fff', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 900 }}>
+                                        <span style={{ background: '#09834F', color: '#fff', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 900 }}>
                                             Save ₹{((Number(currentPlan.price) * 12) - Number(currentPlan.yearly_price)).toLocaleString('en-IN')} ({Math.round((((Number(currentPlan.price) * 12) - Number(currentPlan.yearly_price)) / (Number(currentPlan.price) * 12)) * 100)}% OFF)
                                         </span>
                                     ) : (
-                                        <span style={{ color: '#6B7280', fontSize: 11 }}>No discount on yearly</span>
+                                        <span style={{ color: '#64748B', fontSize: 11 }}>No discount on yearly</span>
                                     )}
                                 </div>
                                 {Number(currentPlan.yearly_price) > 0 && (

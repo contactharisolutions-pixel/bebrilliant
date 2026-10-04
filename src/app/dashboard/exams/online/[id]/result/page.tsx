@@ -6,10 +6,10 @@ import { TrendingUp, Award, Target, LayoutDashboard, Share2, Printer, Loader2, C
 
 // —— PALETTE ————————————————————————————————————
 const P = {
-    bg: '#F7F8FA', card: '#FEFEFE', border: '#E8E8E8',
-    brand: '#004B93', brandBg: '#004B9315',
+    bg: '#F8FAFC', card: '#FEFEFE', border: '#E8E8E8',
+    brand: '#0868B2', brandBg: '#0868B215',
     cta: '#F0A026', ctaBg: '#FFF4E5',
-    success: '#1FAC63', successBg: '#1FAC6310',
+    success: '#09834F', successBg: '#09834F10',
     error: '#EF4444', errorBg: '#FEF2F2',
     dark: '#1B1D21', text: '#5A5A5A', muted: '#A5A2A6'
 }

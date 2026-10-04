@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
 import {
@@ -227,7 +227,7 @@ export default function PartnerRewardsPage() {
                 <div style={{ fontSize: 14, fontWeight: 900, color: P.dark }}>{label}</div>
                 {desc && <div style={{ fontSize: 12, color: P.muted, fontWeight: 600, marginTop: 4 }}>{desc}</div>}
             </div>
-            <button onClick={() => onChange(!val)} style={{ width: 44, height: 24, borderRadius: 12, background: val ? '#059669' : P.border, border: 'none', position: 'relative', cursor: 'pointer', transition: '0.2s' }}>
+            <button onClick={() => onChange(!val)} style={{ width: 44, height: 24, borderRadius: 12, background: val ? '#09834F' : P.border, border: 'none', position: 'relative', cursor: 'pointer', transition: '0.2s' }}>
                 <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#FFF', position: 'absolute', top: 3, left: val ? 23 : 3, transition: '0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
             </button>
         </div>
@@ -277,10 +277,10 @@ export default function PartnerRewardsPage() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 32 }}>
-                <KpiCard icon={Users} title="Active Partners" value={String(activePartnersCount)} color="#004B93" />
+                <KpiCard icon={Users} title="Active Partners" value={String(activePartnersCount)} color="#0868B2" />
                 <KpiCard icon={ShieldCheck} title="Pending KYC" value={String(pendingKycCount)} color="#D97706" />
                 <KpiCard icon={Clock} title="Pending Payouts" value={String(pendingPayoutsCount)} color="#EA580C" />
-                <KpiCard icon={Banknote} title="Total Paid Out" value={`Rs. ${totalPaidAmount.toLocaleString('en-IN')}`} color="#059669" />
+                <KpiCard icon={Banknote} title="Total Paid Out" value={`Rs. ${totalPaidAmount.toLocaleString('en-IN')}`} color="#09834F" />
             </div>
 
             <div style={{ display: 'flex', gap: 8, background: '#fff', border: `1px solid ${P.border}`, borderRadius: 18, padding: 6, marginBottom: 28, width: 'fit-content', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
@@ -318,8 +318,8 @@ export default function PartnerRewardsPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
                         <div style={cardStyle}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-                                <div style={{ width: 38, height: 38, borderRadius: 10, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Users size={18} color="#2563EB" />
+                                <div style={{ width: 38, height: 38, borderRadius: 10, background: '#E5F3FB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Users size={18} color="#0868B2" />
                                 </div>
                                 <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: P.dark }}>Teacher Referral Program</h3>
                             </div>
@@ -445,14 +445,14 @@ export default function PartnerRewardsPage() {
                                             <td style={{ padding: '18px 24px' }}>
                                                 <span style={{
                                                     background: t.kyc_status === 'approved' ? '#ECFDF5' : t.kyc_status === 'rejected' ? '#FEF2F2' : '#FFF7ED',
-                                                    color: t.kyc_status === 'approved' ? '#059669' : t.kyc_status === 'rejected' ? '#DC2626' : '#D97706',
+                                                    color: t.kyc_status === 'approved' ? '#09834F' : t.kyc_status === 'rejected' ? '#DC2626' : '#D97706',
                                                     padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800, textTransform: 'uppercase'
                                                 }}>{t.kyc_status}</span>
                                             </td>
                                             <td style={{ padding: '18px 24px' }}>
                                                 <span style={{
-                                                    background: t.status === 'active' ? '#ECFDF5' : '#F3F4F6',
-                                                    color: t.status === 'active' ? '#059669' : '#6B7280',
+                                                    background: t.status === 'active' ? '#ECFDF5' : '#F1F5F9',
+                                                    color: t.status === 'active' ? '#09834F' : '#64748B',
                                                     padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800, textTransform: 'uppercase'
                                                 }}>{t.status}</span>
                                             </td>
@@ -518,7 +518,7 @@ export default function PartnerRewardsPage() {
                                             <td style={{ padding: '18px 24px' }}>
                                                 <span style={{
                                                     background: w.status === 'paid' ? '#ECFDF5' : w.status === 'rejected' ? '#FEF2F2' : '#FFF7ED',
-                                                    color: w.status === 'paid' ? '#059669' : w.status === 'rejected' ? '#DC2626' : '#D97706',
+                                                    color: w.status === 'paid' ? '#09834F' : w.status === 'rejected' ? '#DC2626' : '#D97706',
                                                     padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800, textTransform: 'uppercase'
                                                 }}>{w.status}</span>
                                             </td>
@@ -603,7 +603,7 @@ export default function PartnerRewardsPage() {
                             <button onClick={() => handleUpdateKycStatus(selectedTeacher.id, 'rejected', 'suspended')} disabled={saving} style={{ flex: 1, padding: 14, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 12, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
                                 Reject KYC Profile
                             </button>
-                            <button onClick={() => handleUpdateKycStatus(selectedTeacher.id, 'approved', 'active')} disabled={saving} style={{ flex: 2, padding: 14, background: '#059669', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
+                            <button onClick={() => handleUpdateKycStatus(selectedTeacher.id, 'approved', 'active')} disabled={saving} style={{ flex: 2, padding: 14, background: '#09834F', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
                                 Approve KYC Application
                             </button>
                         </div>
@@ -653,7 +653,7 @@ export default function PartnerRewardsPage() {
                             <button onClick={() => handleProcessWithdrawal(selectedWithdrawal.id, 'rejected')} disabled={saving} style={{ flex: 1, padding: 14, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 12, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
                                 Reject Request
                             </button>
-                            <button onClick={() => handleProcessWithdrawal(selectedWithdrawal.id, 'paid')} disabled={saving} style={{ flex: 2, padding: 14, background: '#059669', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
+                            <button onClick={() => handleProcessWithdrawal(selectedWithdrawal.id, 'paid')} disabled={saving} style={{ flex: 2, padding: 14, background: '#09834F', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
                                 Approve & Record Payout
                             </button>
                         </div>

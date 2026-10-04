@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState } from 'react'
 import Link from 'next/link'
@@ -59,7 +59,7 @@ export default function RequestDemoPage() {
             <main style={{ flex: 1 }}>
 
                 {/* ── HERO SECTION ── */}
-                <section style={{ position: 'relative', padding: '80px 5% 60px', background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%)', color: '#FFFFFF', overflow: 'hidden', textAlign: 'center' }}>
+                <section style={{ position: 'relative', padding: '80px 5% 60px', background: 'linear-gradient(135deg, #0F172A 0%, #0868B2 100%)', color: '#FFFFFF', overflow: 'hidden', textAlign: 'center' }}>
                     <div style={{ position: 'absolute', top: '-100px', left: '50%', transform: 'translateX(-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 70%)', pointerEvents: 'none' }} />
 
                     <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative', zIndex: 10 }}>
@@ -85,7 +85,7 @@ export default function RequestDemoPage() {
 
                             {submitted ? (
                                 <div style={{ textAlign: 'center', padding: '32px 16px' }}>
-                                    <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#DCFCE7', color: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                    <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#DCF7E7', color: '#09834F', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
                                         <CheckCircle2 size={40} />
                                     </div>
                                     <h2 style={{ fontSize: 28, fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 12 }}>
@@ -100,7 +100,7 @@ export default function RequestDemoPage() {
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             gap: 8,
-                                            background: '#004B93',
+                                            background: '#0868B2',
                                             color: '#FFFFFF',
                                             padding: '14px 32px',
                                             borderRadius: 14,
@@ -304,7 +304,7 @@ export default function RequestDemoPage() {
                                             padding: '16px',
                                             borderRadius: 16,
                                             border: 'none',
-                                            background: 'linear-gradient(135deg, #004B93 0%, #1FAC63 100%)',
+                                            background: 'linear-gradient(135deg, #0868B2 0%, #09834F 100%)',
                                             color: '#FFFFFF',
                                             fontSize: 16,
                                             fontWeight: 800,

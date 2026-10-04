@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import Link from 'next/link'
@@ -188,14 +188,14 @@ export function AdminSidebar() {
                     }}>
                         <div style={{
                             width: 32, height: 32, borderRadius: 10,
-                            background: 'linear-gradient(135deg, #004B93 0%, #0066CC 100%)',
+                            background: 'linear-gradient(135deg, #0868B2 0%, #0066CC 100%)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontSize: 12, fontWeight: 800, color: '#FFFFFF', flexShrink: 0
                         }}>
                             {initials}
                         </div>
                         <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: '#004B93', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: '#0868B2', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {instituteName}
                             </div>
                             <div style={{ fontSize: 10, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 1 }}>
@@ -207,7 +207,7 @@ export function AdminSidebar() {
                 {collapsed && (
                     <div style={{
                         width: 40, height: 40, borderRadius: 12, margin: '0 auto',
-                        background: 'linear-gradient(135deg, #004B93 0%, #0066CC 100%)',
+                        background: 'linear-gradient(135deg, #0868B2 0%, #0066CC 100%)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 13, fontWeight: 800, color: '#FFFFFF'
                     }}>
@@ -289,7 +289,7 @@ export function AdminSidebar() {
                                                     borderRadius: 10,
                                                     textDecoration: 'none',
                                                     background: active
-                                                        ? 'linear-gradient(135deg, #004B93 0%, #0055AA 100%)'
+                                                        ? 'linear-gradient(135deg, #0868B2 0%, #0055AA 100%)'
                                                         : 'transparent',
                                                     color: active ? '#FFFFFF' : '#475569',
                                                     fontWeight: active ? 700 : 500,
@@ -306,7 +306,7 @@ export function AdminSidebar() {
                                                 {active && !collapsed && (
                                                     <div style={{
                                                         position: 'absolute', left: 0, top: '15%', bottom: '15%',
-                                                        width: 3, background: '#F0A026', borderRadius: '0 3px 3px 0'
+                                                        width: 3, background: '#D97706', borderRadius: '0 3px 3px 0'
                                                     }} />
                                                 )}
                                                 <item.icon
@@ -357,9 +357,9 @@ export function AdminSidebar() {
             <style>{`
                 .admin-nav-item:hover {
                     background: #F8FAFC !important;
-                    color: #004B93 !important;
+                    color: #0868B2 !important;
                 }
-                .admin-nav-item:hover svg { color: #004B93 !important; stroke: #004B93 !important; }
+                .admin-nav-item:hover svg { color: #0868B2 !important; stroke: #0868B2 !important; }
             `}</style>
         </aside>
     )

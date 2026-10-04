@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -384,17 +384,17 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     identityLocal?.fullName || (identityLocal ? "Member" : "Loading...");
   const userRole = (identityLocal?.role || role || "admin").toLowerCase();
   const roleBadgeConfig: Record<string, { label: string; bg: string; color: string; border: string }> = {
-    teacher: { label: "TEACHER", bg: "#ECFDF5", color: "#059669", border: "#A7F3D0" },
+    teacher: { label: "TEACHER", bg: "#ECFDF5", color: "#09834F", border: "#A7F3D0" },
     student: { label: "STUDENT", bg: "#FFFBEB", color: "#D97706", border: "#FDE68A" },
     parent: { label: "PARENT", bg: "#F0FDFA", color: "#0D9488", border: "#99F6E4" },
     owner: { label: "OWNER", bg: "#EEF2FF", color: "#4F46E5", border: "#E0E7FF" },
-    tenant_admin: { label: "ADMIN", bg: "#EFF6FF", color: "#2563EB", border: "#DBEAFE" },
-    admin: { label: "ADMIN", bg: "#EFF6FF", color: "#2563EB", border: "#DBEAFE" },
+    tenant_admin: { label: "ADMIN", bg: "#E5F3FB", color: "#0868B2", border: "#DBEAFE" },
+    admin: { label: "ADMIN", bg: "#E5F3FB", color: "#0868B2", border: "#DBEAFE" },
   };
   const currentBadge = roleBadgeConfig[userRole] || {
     label: userRole.toUpperCase(),
-    bg: "#EFF6FF",
-    color: "#2563EB",
+    bg: "#E5F3FB",
+    color: "#0868B2",
     border: "#DBEAFE",
   };
   return (
@@ -458,7 +458,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 style={{
                   fontSize: 13,
                   fontWeight: 800,
-                  color: C.primaryBlue,                  /* official: #1E3A8A */
+                  color: C.primaryBlue,                  /* official: #0868B2 */
                   textAlign: "left",
                   lineHeight: 1.3,
                 }}

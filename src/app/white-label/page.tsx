@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import Link from 'next/link'
@@ -18,7 +18,7 @@ export default function WhiteLabelPage() {
             <main style={{ flex: 1 }}>
 
                 {/* ── 1. HERO SECTION ── */}
-                <section style={{ position: 'relative', padding: '100px 5% 80px', background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%)', color: '#FFFFFF', overflow: 'hidden', textAlign: 'center' }}>
+                <section style={{ position: 'relative', padding: '100px 5% 80px', background: 'linear-gradient(135deg, #0F172A 0%, #0868B2 100%)', color: '#FFFFFF', overflow: 'hidden', textAlign: 'center' }}>
                     
                     {/* Glowing Accent Blobs */}
                     <div style={{ position: 'absolute', top: '-100px', left: '50%', transform: 'translateX(-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37, 99, 235, 0.25), transparent 70%)', pointerEvents: 'none' }} />
@@ -44,7 +44,7 @@ export default function WhiteLabelPage() {
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     gap: 8,
-                                    background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+                                    background: 'linear-gradient(135deg, #0868B2 0%, #1D4ED8 100%)',
                                     color: '#FFFFFF',
                                     padding: '14px 32px',
                                     borderRadius: 14,
@@ -82,14 +82,14 @@ export default function WhiteLabelPage() {
                 <section style={{ padding: '80px 5%', background: '#FFFFFF' }}>
                     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
                         <div style={{ textAlign: 'center', marginBottom: 56 }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: '#0868B2', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
                                 Institutional Identity
                             </div>
                             <h2 style={{ fontSize: 'clamp(26px, 3vw, 40px)', fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)' }}>
                                 What is BeBrilliant White-Label?
                             </h2>
                             <p style={{ fontSize: 16, color: '#64748B', maxWidth: 680, margin: '12px auto 0', lineHeight: 1.6 }}>
-                                A turnkey digital examination ecosystem engineered to run on your custom web domain (e.g. <code style={{ background: '#F1F5F9', color: '#1E3A8A', padding: '2px 8px', borderRadius: 6, fontSize: 14 }}>exams.yourschool.edu.in</code>) with your custom logo, colors, and official seals.
+                                A turnkey digital examination ecosystem engineered to run on your custom web domain (e.g. <code style={{ background: '#F1F5F9', color: '#0868B2', padding: '2px 8px', borderRadius: 6, fontSize: 14 }}>exams.yourschool.edu.in</code>) with your custom logo, colors, and official seals.
                             </p>
                         </div>
 
@@ -100,15 +100,15 @@ export default function WhiteLabelPage() {
                                     icon: Globe,
                                     title: 'Custom Domain & Branding',
                                     desc: 'Use your own domain, custom logo, theme colors, and email sender signatures across all student communications.',
-                                    color: '#2563EB',
-                                    bg: '#EFF6FF'
+                                    color: '#0868B2',
+                                    bg: '#E5F3FB'
                                 },
                                 {
                                     icon: ShieldCheck,
                                     title: '100% Data Sovereignty',
                                     desc: 'Isolated institution database storage with strict DPDP compliance and full ownership of your exam question banks.',
-                                    color: '#0CA35C',
-                                    bg: '#DCFCE7'
+                                    color: '#09834F',
+                                    bg: '#DCF7E7'
                                 },
                                 {
                                     icon: Smartphone,
@@ -155,7 +155,7 @@ export default function WhiteLabelPage() {
                 <section style={{ padding: '80px 5%', background: '#F8FAFC' }}>
                     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
                         <div style={{ textAlign: 'center', marginBottom: 56 }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: '#0868B2', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
                                 Complete Ecosystem
                             </div>
                             <h2 style={{ fontSize: 'clamp(26px, 3vw, 40px)', fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)' }}>
@@ -209,7 +209,7 @@ export default function WhiteLabelPage() {
                                         <span style={{ position: 'absolute', top: 20, right: 20, fontSize: 12, fontWeight: 900, color: '#CBD5E1', fontFamily: 'monospace' }}>
                                             {p.step}
                                         </span>
-                                        <div style={{ width: 42, height: 42, borderRadius: 12, background: '#EFF6FF', color: '#1E3A8A', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                                        <div style={{ width: 42, height: 42, borderRadius: 12, background: '#E5F3FB', color: '#0868B2', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                                             <Icon size={20} />
                                         </div>
                                         <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', marginBottom: 8, fontFamily: 'var(--font-manrope, sans-serif)' }}>
@@ -221,7 +221,7 @@ export default function WhiteLabelPage() {
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                             {p.perks.map((prk, j) => (
                                                 <span key={j} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#334155' }}>
-                                                    <Check size={12} style={{ color: '#0CA35C' }} /> {prk}
+                                                    <Check size={12} style={{ color: '#09834F' }} /> {prk}
                                                 </span>
                                             ))}
                                         </div>
@@ -236,7 +236,7 @@ export default function WhiteLabelPage() {
                 <section style={{ padding: '80px 5%', background: '#FFFFFF' }}>
                     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
                         <div style={{ textAlign: 'center', marginBottom: 56 }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: '#0868B2', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
                                 Institutional Advantages
                             </div>
                             <h2 style={{ fontSize: 'clamp(26px, 3vw, 40px)', fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-manrope, sans-serif)' }}>
@@ -264,7 +264,7 @@ export default function WhiteLabelPage() {
                                         border: '1px solid #E2E8F0'
                                     }}
                                 >
-                                    <CheckCircle2 size={20} style={{ color: '#2563EB', flexShrink: 0, marginTop: 2 }} />
+                                    <CheckCircle2 size={20} style={{ color: '#0868B2', flexShrink: 0, marginTop: 2 }} />
                                     <div>
                                         <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', marginBottom: 6, fontFamily: 'var(--font-manrope, sans-serif)' }}>
                                             {b.title}
@@ -280,7 +280,7 @@ export default function WhiteLabelPage() {
                 </section>
 
                 {/* ── 5. REQUEST DEMO CTA BANNER ── */}
-                <section style={{ padding: '80px 5%', background: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%)', color: '#FFFFFF', textAlign: 'center' }}>
+                <section style={{ padding: '80px 5%', background: 'linear-gradient(135deg, #0868B2 0%, #0868B2 100%)', color: '#FFFFFF', textAlign: 'center' }}>
                     <div style={{ maxWidth: 800, margin: '0 auto' }}>
                         <h2 style={{ fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, fontFamily: 'var(--font-manrope, sans-serif)', marginBottom: 16 }}>
                             Ready to Launch Your White-Label Examination Portal?
@@ -295,7 +295,7 @@ export default function WhiteLabelPage() {
                                 alignItems: 'center',
                                 gap: 8,
                                 background: '#FFFFFF',
-                                color: '#1E3A8A',
+                                color: '#0868B2',
                                 padding: '16px 36px',
                                 borderRadius: 14,
                                 fontSize: 16,

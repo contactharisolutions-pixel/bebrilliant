@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -209,8 +209,8 @@ export default function SchoolPerformanceReport() {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2.5">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-blue-50 text-[#004B93] border border-blue-100">
-                                <School className="w-3.5 h-3.5 text-[#004B93]" />
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-blue-50 text-[#0868B2] border border-blue-100">
+                                <School className="w-3.5 h-3.5 text-[#0868B2]" />
                                 School-Wide Report
                             </span>
                         </div>
@@ -230,7 +230,7 @@ export default function SchoolPerformanceReport() {
                             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-sm"
                             title="Refresh live data"
                         >
-                            <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#004B93]' : ''}`} />
+                            <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#0868B2]' : ''}`} />
                             <span>Refresh</span>
                         </button>
                         <button
@@ -242,7 +242,7 @@ export default function SchoolPerformanceReport() {
                         </button>
                         <button
                             onClick={handlePrint}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#004B93] text-white text-xs font-black hover:bg-[#003870] transition shadow-md shadow-blue-900/10"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0868B2] text-white text-xs font-black hover:bg-[#07549A] transition shadow-md shadow-blue-900/10"
                         >
                             <Printer className="w-3.5 h-3.5" />
                             <span>Print Report</span>
@@ -255,7 +255,7 @@ export default function SchoolPerformanceReport() {
             <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4 print:hidden">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Filter className="w-4 h-4 text-[#004B93]" />
+                        <Filter className="w-4 h-4 text-[#0868B2]" />
                         <span className="text-xs font-black uppercase tracking-wider text-slate-700">Filters</span>
                     </div>
                     <button
@@ -272,7 +272,7 @@ export default function SchoolPerformanceReport() {
                         <select
                             value={filters.academic_year}
                             onChange={e => setFilters(prev => ({ ...prev, academic_year: e.target.value }))}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 focus:border-[#004B93] transition"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 focus:border-[#0868B2] transition"
                         >
                             <option value="all">All Academic Sessions</option>
                             {data?.filters?.academic_years?.map(y => (
@@ -286,7 +286,7 @@ export default function SchoolPerformanceReport() {
                         <select
                             value={filters.term}
                             onChange={e => setFilters(prev => ({ ...prev, term: e.target.value }))}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 focus:border-[#004B93] transition"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 focus:border-[#0868B2] transition"
                         >
                             {data?.filters?.terms?.map(t => (
                                 <option key={t} value={t === 'All Terms' ? 'all' : t}>{t}</option>
@@ -299,7 +299,7 @@ export default function SchoolPerformanceReport() {
                         <select
                             value={filters.exam_type}
                             onChange={e => setFilters(prev => ({ ...prev, exam_type: e.target.value }))}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 focus:border-[#004B93] transition"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 focus:border-[#0868B2] transition"
                         >
                             {data?.filters?.exam_types?.map(et => (
                                 <option key={et} value={et === 'All Assessment Modes' ? 'all' : et}>{et}</option>
@@ -315,7 +315,7 @@ export default function SchoolPerformanceReport() {
                             placeholder="Filter class (e.g. Class 10)..."
                             value={filters.search}
                             onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                            className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 focus:border-[#004B93] transition"
+                            className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 focus:border-[#0868B2] transition"
                         />
                     </div>
                 </div>
@@ -327,7 +327,7 @@ export default function SchoolPerformanceReport() {
                     onClick={() => setActiveTab('overview')}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
                         activeTab === 'overview'
-                            ? 'bg-white text-[#004B93] shadow-md shadow-[#004B93]/5'
+                            ? 'bg-white text-[#0868B2] shadow-md shadow-[#0868B2]/5'
                             : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
@@ -338,7 +338,7 @@ export default function SchoolPerformanceReport() {
                     onClick={() => setActiveTab('classes')}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
                         activeTab === 'classes'
-                            ? 'bg-white text-[#004B93] shadow-md shadow-[#004B93]/5'
+                            ? 'bg-white text-[#0868B2] shadow-md shadow-[#0868B2]/5'
                             : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
@@ -349,7 +349,7 @@ export default function SchoolPerformanceReport() {
                     onClick={() => setActiveTab('subjects')}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
                         activeTab === 'subjects'
-                            ? 'bg-white text-[#004B93] shadow-md shadow-[#004B93]/5'
+                            ? 'bg-white text-[#0868B2] shadow-md shadow-[#0868B2]/5'
                             : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
@@ -360,7 +360,7 @@ export default function SchoolPerformanceReport() {
                     onClick={() => setActiveTab('support')}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
                         activeTab === 'support'
-                            ? 'bg-white text-[#004B93] shadow-md shadow-[#004B93]/5'
+                            ? 'bg-white text-[#0868B2] shadow-md shadow-[#0868B2]/5'
                             : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
@@ -396,7 +396,7 @@ export default function SchoolPerformanceReport() {
 
                         <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
                             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Average School Score</span>
-                            <div className="text-2xl font-black text-[#004B93]">{data?.kpis?.average_school_score || 71.4}%</div>
+                            <div className="text-2xl font-black text-[#0868B2]">{data?.kpis?.average_school_score || 71.4}%</div>
                             <span className="text-[10px] font-bold text-emerald-600 mt-1 flex items-center gap-0.5">
                                 <ArrowUpRight className="w-3 h-3" /> +2.1 pp vs Term 1
                             </span>
@@ -422,7 +422,7 @@ export default function SchoolPerformanceReport() {
                     {/* Secondary Metrics Bar (Operational Delivery) */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
                         <div className="p-4 bg-slate-50 border border-slate-200/70 rounded-2xl flex items-center gap-3.5">
-                            <div className="p-2.5 bg-blue-100/70 text-[#004B93] rounded-xl">
+                            <div className="p-2.5 bg-blue-100/70 text-[#0868B2] rounded-xl">
                                 <Zap className="w-5 h-5" />
                             </div>
                             <div>
@@ -464,7 +464,7 @@ export default function SchoolPerformanceReport() {
 
                     {/* Executive AI Academic Digest Card (Section 52 & 53) */}
                     {data?.executive_summary && (
-                        <div className="bg-gradient-to-br from-blue-900 to-[#002D58] rounded-3xl p-6 lg:p-8 text-white shadow-xl shadow-blue-950/10 space-y-5">
+                        <div className="bg-gradient-to-br from-blue-900 to-[#073B73] rounded-3xl p-6 lg:p-8 text-white shadow-xl shadow-blue-950/10 space-y-5">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2.5">
                                     <div className="p-2 bg-white/10 rounded-xl backdrop-blur-sm">
@@ -538,7 +538,7 @@ export default function SchoolPerformanceReport() {
                                             formatter={(val: any) => [`${val}%`, 'Cohort Average']}
                                             contentStyle={{ backgroundColor: '#0f172a', borderRadius: '12px', color: '#fff', fontSize: '11px', fontWeight: 700 }}
                                         />
-                                        <Bar dataKey="average_percentage" name="Class Average %" fill="#004B93" radius={[6, 6, 0, 0]} />
+                                        <Bar dataKey="average_percentage" name="Class Average %" fill="#0868B2" radius={[6, 6, 0, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
@@ -564,8 +564,8 @@ export default function SchoolPerformanceReport() {
                                     >
                                         <defs>
                                             <linearGradient id="gradScore" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#004B93" stopOpacity={0.3}/>
-                                                <stop offset="95%" stopColor="#004B93" stopOpacity={0}/>
+                                                <stop offset="5%" stopColor="#0868B2" stopOpacity={0.3}/>
+                                                <stop offset="95%" stopColor="#0868B2" stopOpacity={0}/>
                                             </linearGradient>
                                             <linearGradient id="gradPass" x1="0" y1="0" x2="0" y2="1">
                                                 <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
@@ -579,7 +579,7 @@ export default function SchoolPerformanceReport() {
                                             contentStyle={{ backgroundColor: '#0f172a', borderRadius: '12px', color: '#fff', fontSize: '11px', fontWeight: 700 }}
                                         />
                                         <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 700, paddingTop: '8px' }} />
-                                        <Area type="monotone" dataKey="average" name="School Average %" stroke="#004B93" strokeWidth={2.5} fillOpacity={1} fill="url(#gradScore)" />
+                                        <Area type="monotone" dataKey="average" name="School Average %" stroke="#0868B2" strokeWidth={2.5} fillOpacity={1} fill="url(#gradScore)" />
                                         <Area type="monotone" dataKey="pass_rate" name="Pass Rate %" stroke="#10B981" strokeWidth={2.5} fillOpacity={1} fill="url(#gradPass)" />
                                     </AreaChart>
                                 </ResponsiveContainer>
@@ -626,7 +626,7 @@ export default function SchoolPerformanceReport() {
                                     {filteredClasses.map((c, idx) => (
                                         <tr key={idx} className="hover:bg-blue-50/40 transition group">
                                             <td className="py-3.5 px-4 font-black text-slate-900 flex items-center gap-2">
-                                                <Layers className="w-4 h-4 text-[#004B93]" />
+                                                <Layers className="w-4 h-4 text-[#0868B2]" />
                                                 <span>{c.class_name}</span>
                                             </td>
 
@@ -685,7 +685,7 @@ export default function SchoolPerformanceReport() {
                                             <td className="py-3.5 px-4 text-right">
                                                 <button
                                                     onClick={() => router.push(`/dashboard/reports?type=class&class_name=${encodeURIComponent(c.class_name)}`)}
-                                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:text-[#004B93] hover:border-[#004B93] hover:bg-white transition text-[11px] font-bold shadow-sm"
+                                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:text-[#0868B2] hover:border-[#0868B2] hover:bg-white transition text-[11px] font-bold shadow-sm"
                                                 >
                                                     <span>Class Report</span>
                                                     <ExternalLink className="w-3 h-3" />
@@ -733,7 +733,7 @@ export default function SchoolPerformanceReport() {
                                     {data?.subject_benchmarks?.map((sb, idx) => (
                                         <tr key={idx} className="hover:bg-slate-50/60 transition">
                                             <td className="py-3.5 px-4 font-black text-slate-900 flex items-center gap-2">
-                                                <BookOpen className="w-4 h-4 text-[#004B93]" />
+                                                <BookOpen className="w-4 h-4 text-[#0868B2]" />
                                                 <span>{sb.subject}</span>
                                             </td>
 
@@ -776,7 +776,7 @@ export default function SchoolPerformanceReport() {
                                             <td className="py-3.5 px-4 text-right">
                                                 <button
                                                     onClick={() => router.push(`/dashboard/reports?type=subject&subject_name=${encodeURIComponent(sb.subject)}`)}
-                                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#004B93] hover:underline"
+                                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0868B2] hover:underline"
                                                 >
                                                     <span>Subject Report</span>
                                                     <ExternalLink className="w-3 h-3" />
@@ -805,7 +805,7 @@ export default function SchoolPerformanceReport() {
                             {data?.top_learning_gaps?.map((gap) => (
                                 <div key={gap.id} className="p-4 rounded-2xl border border-slate-200/70 bg-slate-50/50 space-y-3">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-bold text-[#004B93] uppercase tracking-wider">{gap.subject}</span>
+                                        <span className="text-[10px] font-bold text-[#0868B2] uppercase tracking-wider">{gap.subject}</span>
                                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
                                             gap.severity === 'Critical' ? 'bg-rose-100 text-rose-800' :
                                             gap.severity === 'High' ? 'bg-amber-100 text-amber-800' :

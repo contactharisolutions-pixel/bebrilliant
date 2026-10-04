@@ -12,14 +12,14 @@ import {
 
 // ── COLOR PALETTE ────────────────────────────────────────────────────────────
 const P = {
-    bg: '#F7F8FA', card: '#FEFEFE', border: '#E8E8E8',
-    brand: '#004B93', brandBg: '#004B9310', brandLight: '#004B9325',
-    cta: '#F0A026', ctaBg: '#FFF4E5',
+    bg: '#F8FAFC', card: '#FEFEFE', border: '#E8E8E8',
+    brand: '#0868B2', brandBg: '#0868B210', brandLight: '#0868B225',
+    cta: '#D97706', ctaBg: '#FFF4E5',
     dark: '#1B1D21', text: '#5A5A5A', muted: '#A5A2A6', hover: '#F1F2F4',
-    success: '#1FAC63', successBg: '#1FAC6312',
+    success: '#09834F', successBg: '#09834F12',
     warning: '#F59E0B', warningBg: '#FFFBEB',
     error: '#EF4444', errorBg: '#FEF2F2',
-    info: '#3B82F6', infoBg: '#EFF6FF',
+    info: '#0868B2', infoBg: '#E5F3FB',
 }
 
 // ── TYPES ────────────────────────────────────────────────────────────────────

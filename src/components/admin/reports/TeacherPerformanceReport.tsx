@@ -288,8 +288,8 @@ export default function TeacherPerformanceReport() {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2.5">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-blue-50 text-[#004B93] border border-blue-100">
-                                <UsersRound className="w-3.5 h-3.5 text-[#004B93]" />
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-blue-50 text-[#0868B2] border border-blue-100">
+                                <UsersRound className="w-3.5 h-3.5 text-[#0868B2]" />
                                 Teacher Report
                             </span>
                         </div>
@@ -309,7 +309,7 @@ export default function TeacherPerformanceReport() {
                             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-sm"
                             title="Refresh live data"
                         >
-                            <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#004B93]' : ''}`} />
+                            <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#0868B2]' : ''}`} />
                             <span>Refresh</span>
                         </button>
                         <button
@@ -321,7 +321,7 @@ export default function TeacherPerformanceReport() {
                         </button>
                         <button
                             onClick={handlePrint}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#004B93] text-white text-xs font-black hover:bg-[#003870] transition shadow-md shadow-blue-900/10"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0868B2] text-white text-xs font-black hover:bg-[#07549A] transition shadow-md shadow-blue-900/10"
                         >
                             <Printer className="w-3.5 h-3.5" />
                             <span>Print Report</span>
@@ -334,7 +334,7 @@ export default function TeacherPerformanceReport() {
             <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4 print:hidden">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Filter className="w-4 h-4 text-[#004B93]" />
+                        <Filter className="w-4 h-4 text-[#0868B2]" />
                         <span className="text-xs font-black uppercase tracking-wider text-slate-700">Filters</span>
                     </div>
                     <button
@@ -355,7 +355,7 @@ export default function TeacherPerformanceReport() {
                             placeholder="Search teacher, employee ID, subject..."
                             value={filters.search}
                             onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                            className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 focus:border-[#004B93] transition"
+                            className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 focus:border-[#0868B2] transition"
                         />
                     </div>
 
@@ -364,7 +364,7 @@ export default function TeacherPerformanceReport() {
                         <select
                             value={filters.academic_year}
                             onChange={e => setFilters(prev => ({ ...prev, academic_year: e.target.value }))}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 focus:border-[#004B93] transition"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 focus:border-[#0868B2] transition"
                         >
                             <option value="all">All Academic Sessions</option>
                             {data?.filters?.academic_years?.map(y => (
@@ -381,7 +381,7 @@ export default function TeacherPerformanceReport() {
                                 setSelectedTeacherId(e.target.value)
                                 setFilters(prev => ({ ...prev, teacher_id: e.target.value }))
                             }}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 focus:border-[#004B93] transition"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 focus:border-[#0868B2] transition"
                         >
                             <option value="all">All Teachers ({data?.teachers?.length || 0})</option>
                             {data?.filters?.teachers?.map(t => (
@@ -395,7 +395,7 @@ export default function TeacherPerformanceReport() {
                         <select
                             value={filters.class_name}
                             onChange={e => setFilters(prev => ({ ...prev, class_name: e.target.value }))}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 focus:border-[#004B93] transition"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 focus:border-[#0868B2] transition"
                         >
                             <option value="all">All Classes</option>
                             {data?.filters?.classes?.map(c => (
@@ -409,7 +409,7 @@ export default function TeacherPerformanceReport() {
                         <select
                             value={filters.subject_name}
                             onChange={e => setFilters(prev => ({ ...prev, subject_name: e.target.value }))}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]/20 focus:border-[#004B93] transition"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20 focus:border-[#0868B2] transition"
                         >
                             <option value="all">All Subjects</option>
                             {data?.filters?.subjects?.map(s => (
@@ -426,7 +426,7 @@ export default function TeacherPerformanceReport() {
                     onClick={() => setActiveTab('overview')}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
                         activeTab === 'overview'
-                            ? 'bg-white text-[#004B93] shadow-md shadow-[#004B93]/5'
+                            ? 'bg-white text-[#0868B2] shadow-md shadow-[#0868B2]/5'
                             : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
@@ -437,14 +437,14 @@ export default function TeacherPerformanceReport() {
                     onClick={() => setActiveTab('detail')}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
                         activeTab === 'detail'
-                            ? 'bg-white text-[#004B93] shadow-md shadow-[#004B93]/5'
+                            ? 'bg-white text-[#0868B2] shadow-md shadow-[#0868B2]/5'
                             : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
                     <BookOpen className="w-4 h-4" />
                     <span>Teacher Details</span>
                     {selectedTeacherDetail && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-blue-100 text-[#004B93]">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-blue-100 text-[#0868B2]">
                             {selectedTeacherDetail.profile.first_name}
                         </span>
                     )}
@@ -453,7 +453,7 @@ export default function TeacherPerformanceReport() {
                     onClick={() => setActiveTab('workload')}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
                         activeTab === 'workload'
-                            ? 'bg-white text-[#004B93] shadow-md shadow-[#004B93]/5'
+                            ? 'bg-white text-[#0868B2] shadow-md shadow-[#0868B2]/5'
                             : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
@@ -464,7 +464,7 @@ export default function TeacherPerformanceReport() {
                     onClick={() => setActiveTab('alerts')}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
                         activeTab === 'alerts'
-                            ? 'bg-white text-[#004B93] shadow-md shadow-[#004B93]/5'
+                            ? 'bg-white text-[#0868B2] shadow-md shadow-[#0868B2]/5'
                             : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
@@ -528,7 +528,7 @@ export default function TeacherPerformanceReport() {
 
                         <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
                             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Class Avg %</span>
-                            <div className="text-2xl font-black text-[#004B93]">{data?.kpis?.average_performance || 0}%</div>
+                            <div className="text-2xl font-black text-[#0868B2]">{data?.kpis?.average_performance || 0}%</div>
                             <span className="text-[10px] font-bold text-slate-400 mt-1 block">Cohort Outcome</span>
                         </div>
                     </div>
@@ -572,11 +572,11 @@ export default function TeacherPerformanceReport() {
                                         >
                                             <td className="py-3.5 px-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-full bg-blue-100/70 text-[#004B93] flex items-center justify-center font-black text-xs">
+                                                    <div className="w-9 h-9 rounded-full bg-blue-100/70 text-[#0868B2] flex items-center justify-center font-black text-xs">
                                                         {t.first_name[0]}{t.last_name ? t.last_name[0] : ''}
                                                     </div>
                                                     <div>
-                                                        <div className="font-black text-slate-900 group-hover:text-[#004B93] transition flex items-center gap-1.5">
+                                                        <div className="font-black text-slate-900 group-hover:text-[#0868B2] transition flex items-center gap-1.5">
                                                             <span>{t.full_name}</span>
                                                             {t.status === 'Active' ? (
                                                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
@@ -639,7 +639,7 @@ export default function TeacherPerformanceReport() {
                                                 <div className="flex items-center justify-center gap-1.5">
                                                     <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                                         <div
-                                                            className="h-full bg-[#004B93] rounded-full"
+                                                            className="h-full bg-[#0868B2] rounded-full"
                                                             style={{ width: `${t.syllabus_coverage_pct}%` }}
                                                         />
                                                     </div>
@@ -665,7 +665,7 @@ export default function TeacherPerformanceReport() {
                                                         e.stopPropagation()
                                                         handleDrillDownTeacher(t.id)
                                                     }}
-                                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:text-[#004B93] hover:border-[#004B93] hover:bg-white transition text-[11px] font-bold shadow-sm"
+                                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:text-[#0868B2] hover:border-[#0868B2] hover:bg-white transition text-[11px] font-bold shadow-sm"
                                                 >
                                                     <span>Deep Dive</span>
                                                     <ChevronRight className="w-3.5 h-3.5" />
@@ -687,7 +687,7 @@ export default function TeacherPerformanceReport() {
                     <div className="bg-white border border-slate-200/80 rounded-3xl p-6 lg:p-8 shadow-sm">
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
                             <div className="flex items-center gap-4">
-                                <div className="w-16 h-16 rounded-2xl bg-[#004B93] text-white flex items-center justify-center font-black text-xl shadow-md shadow-blue-900/10">
+                                <div className="w-16 h-16 rounded-2xl bg-[#0868B2] text-white flex items-center justify-center font-black text-xl shadow-md shadow-blue-900/10">
                                     {selectedTeacherDetail.profile.first_name[0]}{selectedTeacherDetail.profile.last_name ? selectedTeacherDetail.profile.last_name[0] : ''}
                                 </div>
                                 <div className="space-y-1">
@@ -725,7 +725,7 @@ export default function TeacherPerformanceReport() {
                                 <select
                                     value={selectedTeacherDetail.profile.id}
                                     onChange={e => handleDrillDownTeacher(e.target.value)}
-                                    className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                    className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                 >
                                     {data?.teachers?.map(t => (
                                         <option key={t.id} value={t.id}>{t.full_name}</option>
@@ -742,7 +742,7 @@ export default function TeacherPerformanceReport() {
                             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
                                 <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4">
                                     <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-bold mb-1">
-                                        <FileText className="w-3.5 h-3.5 text-[#004B93]" />
+                                        <FileText className="w-3.5 h-3.5 text-[#0868B2]" />
                                         <span>Exams Created</span>
                                     </div>
                                     <div className="text-2xl font-black text-slate-900">
@@ -856,7 +856,7 @@ export default function TeacherPerformanceReport() {
                                                 {ch.class_name}-{ch.section}
                                             </td>
                                             <td className="py-3.5 px-3">
-                                                <span className="px-2.5 py-0.5 rounded-lg bg-blue-50 text-[#004B93] font-bold text-[11px]">
+                                                <span className="px-2.5 py-0.5 rounded-lg bg-blue-50 text-[#0868B2] font-bold text-[11px]">
                                                     {ch.subject}
                                                 </span>
                                             </td>
@@ -897,7 +897,7 @@ export default function TeacherPerformanceReport() {
                                             <td className="py-3.5 px-4 text-right">
                                                 <button
                                                     onClick={() => router.push(`/dashboard/reports?type=class&class_name=${encodeURIComponent(ch.class_name)}`)}
-                                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#004B93] hover:underline"
+                                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0868B2] hover:underline"
                                                 >
                                                     <span>Class Report</span>
                                                     <ExternalLink className="w-3 h-3" />
@@ -916,7 +916,7 @@ export default function TeacherPerformanceReport() {
                         <div className="bg-white border border-slate-200/80 rounded-3xl p-6 lg:p-7 shadow-sm space-y-4">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <BookOpen className="w-4 h-4 text-[#004B93]" />
+                                    <BookOpen className="w-4 h-4 text-[#0868B2]" />
                                     <h4 className="text-sm font-black text-slate-900">Academic Syllabus Coverage</h4>
                                 </div>
                                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
@@ -998,7 +998,7 @@ export default function TeacherPerformanceReport() {
                         <div className="divide-y divide-slate-100 pt-2">
                             {selectedTeacherDetail.timeline.map((ev) => (
                                 <div key={ev.id} className="py-3.5 flex items-start gap-3.5">
-                                    <div className="mt-1 w-7 h-7 rounded-xl bg-blue-50 text-[#004B93] flex items-center justify-center shrink-0">
+                                    <div className="mt-1 w-7 h-7 rounded-xl bg-blue-50 text-[#0868B2] flex items-center justify-center shrink-0">
                                         <CheckCircle2 className="w-4 h-4" />
                                     </div>
                                     <div className="flex-1 space-y-0.5">
@@ -1058,8 +1058,8 @@ export default function TeacherPerformanceReport() {
                                         }}
                                     />
                                     <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 700, paddingTop: '10px' }} />
-                                    <Bar dataKey="exams" name="Exams Created" fill="#004B93" radius={[6, 6, 0, 0]} />
-                                    <Bar dataKey="papers" name="Papers Generated" fill="#3B82F6" radius={[6, 6, 0, 0]} />
+                                    <Bar dataKey="exams" name="Exams Created" fill="#0868B2" radius={[6, 6, 0, 0]} />
+                                    <Bar dataKey="papers" name="Papers Generated" fill="#0868B2" radius={[6, 6, 0, 0]} />
                                     <Bar dataKey="results" name="Results Completed" fill="#10B981" radius={[6, 6, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -1113,7 +1113,7 @@ export default function TeacherPerformanceReport() {
                                                         const matchedT = data?.teachers?.find(t => t.full_name === w.name)
                                                         if (matchedT) handleDrillDownTeacher(matchedT.id)
                                                     }}
-                                                    className="text-[#004B93] hover:underline font-bold text-[11px]"
+                                                    className="text-[#0868B2] hover:underline font-bold text-[11px]"
                                                 >
                                                     Inspect
                                                 </button>

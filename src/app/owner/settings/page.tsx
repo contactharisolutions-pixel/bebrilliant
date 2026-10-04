@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
 import {
@@ -22,7 +22,7 @@ function Toggle({ checked, onChange, label, sub }: { checked: boolean; onChange:
                 {sub && <div style={{ fontSize: 12, color: P.muted, marginTop: 4, fontWeight: 600 }}>{sub}</div>}
             </div>
             <button onClick={() => onChange(!checked)}
-                style={{ width: 48, height: 26, borderRadius: 99, background: checked ? '#059669' : P.border, border: 'none', position: 'relative', cursor: 'pointer', transition: 'all 0.25s' }}>
+                style={{ width: 48, height: 26, borderRadius: 99, background: checked ? '#09834F' : P.border, border: 'none', position: 'relative', cursor: 'pointer', transition: 'all 0.25s' }}>
                 <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', position: 'absolute', top: 4, left: checked ? 26 : 4, transition: 'all 0.25s', boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }} />
             </button>
         </div>
@@ -344,7 +344,7 @@ export default function SystemSettingsPage() {
 
             {/* KPI OVERVIEW CARDS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 32 }}>
-                <KpiCard icon={CheckCircle} title="System Status" value="Online" color="#059669" />
+                <KpiCard icon={CheckCircle} title="System Status" value="Online" color="#09834F" />
                 <KpiCard icon={Clock} title="Last Saved" value={lastSaved} color={P.brand} />
                 <KpiCard icon={Cpu} title="Active Integrations" value="4 Active" color="#7C3AED" />
                 <KpiCard icon={Server} title="Maintenance Mode" value={maintenance.maintenance_mode ? 'ACTIVE' : 'Disabled'} color={maintenance.maintenance_mode ? '#DC2626' : P.muted} />
@@ -487,7 +487,7 @@ export default function SystemSettingsPage() {
                                         </div>
                                     </div>
                                     <div style={{ padding: '12px 20px', background: P.bg, borderTop: `1px solid ${P.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontSize: 12, fontWeight: 700, color: testStatuses.razorpay.state === 'success' ? '#059669' : testStatuses.razorpay.state === 'failed' ? '#DC2626' : P.muted }}>
+                                        <span style={{ fontSize: 12, fontWeight: 700, color: testStatuses.razorpay.state === 'success' ? '#09834F' : testStatuses.razorpay.state === 'failed' ? '#DC2626' : P.muted }}>
                                             {testStatuses.razorpay.state === 'idle' ? 'Status: Connection untested' : testStatuses.razorpay.msg}
                                         </span>
                                         <button type="button" onClick={() => runConnectionTest('razorpay')} style={{ padding: '6px 14px', background: P.brandBg, border: `1px solid ${P.brand}20`, borderRadius: 8, color: P.brand, fontSize: 11, fontWeight: 900, cursor: 'pointer' }}>
@@ -512,7 +512,7 @@ export default function SystemSettingsPage() {
                                         <InputField type="text" label="Authorized From Email" value={integrations.smtp_from} onChange={(v: string) => setIntegrations({ ...integrations, smtp_from: v })} icon={Mail} placeholder="noreply@bebrilliant.in" />
                                     </div>
                                     <div style={{ padding: '12px 20px', background: P.bg, borderTop: `1px solid ${P.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontSize: 12, fontWeight: 700, color: testStatuses.smtp.state === 'success' ? '#059669' : testStatuses.smtp.state === 'failed' ? '#DC2626' : P.muted }}>
+                                        <span style={{ fontSize: 12, fontWeight: 700, color: testStatuses.smtp.state === 'success' ? '#09834F' : testStatuses.smtp.state === 'failed' ? '#DC2626' : P.muted }}>
                                             {testStatuses.smtp.state === 'idle' ? 'Status: Connection untested' : testStatuses.smtp.msg}
                                         </span>
                                         <button type="button" onClick={() => runConnectionTest('smtp')} style={{ padding: '6px 14px', background: P.brandBg, border: `1px solid ${P.brand}20`, borderRadius: 8, color: P.brand, fontSize: 11, fontWeight: 900, cursor: 'pointer' }}>
@@ -535,7 +535,7 @@ export default function SystemSettingsPage() {
                                         <InputField type="text" label="Twilio WhatsApp Phone Number" value={integrations.twilio_whatsapp_number} onChange={(v: string) => setIntegrations({ ...integrations, twilio_whatsapp_number: v })} icon={Globe} placeholder="whatsapp:+14155238886" />
                                     </div>
                                     <div style={{ padding: '12px 20px', background: P.bg, borderTop: `1px solid ${P.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontSize: 12, fontWeight: 700, color: testStatuses.twilio.state === 'success' ? '#059669' : testStatuses.twilio.state === 'failed' ? '#DC2626' : P.muted }}>
+                                        <span style={{ fontSize: 12, fontWeight: 700, color: testStatuses.twilio.state === 'success' ? '#09834F' : testStatuses.twilio.state === 'failed' ? '#DC2626' : P.muted }}>
                                             {testStatuses.twilio.state === 'idle' ? 'Status: Connection untested' : testStatuses.twilio.msg}
                                         </span>
                                         <button type="button" onClick={() => runConnectionTest('twilio')} style={{ padding: '6px 14px', background: P.brandBg, border: `1px solid ${P.brand}20`, borderRadius: 8, color: P.brand, fontSize: 11, fontWeight: 900, cursor: 'pointer' }}>

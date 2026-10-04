@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -9,7 +9,7 @@ import TeacherPerformanceReport from '@/components/admin/reports/TeacherPerforma
 import SchoolPerformanceReport from '@/components/admin/reports/SchoolPerformanceReport'
 
 const COLORS = {
-    primary: '#004B93',
+    primary: '#0868B2',
     background: '#F8FAFC',
     border: '#E2E8F0',
 }
@@ -40,7 +40,7 @@ function ReportsContent() {
                         onClick={() => router.push('/dashboard/reports?type=students')}
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
                             isStudentReport
-                                ? 'bg-white text-[#004B93] shadow-md shadow-[#004B93]/5'
+                                ? 'bg-white text-[#0868B2] shadow-md shadow-[#0868B2]/5'
                                 : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
@@ -51,7 +51,7 @@ function ReportsContent() {
                         onClick={() => router.push('/dashboard/reports?type=teachers')}
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
                             isTeacherReport
-                                ? 'bg-white text-[#004B93] shadow-md shadow-[#004B93]/5'
+                                ? 'bg-white text-[#0868B2] shadow-md shadow-[#0868B2]/5'
                                 : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
@@ -62,7 +62,7 @@ function ReportsContent() {
                         onClick={() => router.push('/dashboard/reports?type=class')}
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
                             isMergedAcademicReport
-                                ? 'bg-white text-[#004B93] shadow-md shadow-[#004B93]/5'
+                                ? 'bg-white text-[#0868B2] shadow-md shadow-[#0868B2]/5'
                                 : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
@@ -73,7 +73,7 @@ function ReportsContent() {
                         onClick={() => router.push('/dashboard/reports?type=performance')}
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
                             isSchoolReport
-                                ? 'bg-white text-[#004B93] shadow-md shadow-[#004B93]/5'
+                                ? 'bg-white text-[#0868B2] shadow-md shadow-[#0868B2]/5'
                                 : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >

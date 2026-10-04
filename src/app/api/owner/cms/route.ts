@@ -7,24 +7,24 @@ const PRESET_PALETTES = [
     {
         id: 'preset-navy',
         name: 'Institutional Navy',
-        primary_color: '#004B93',
+        primary_color: '#0868B2',
         secondary_color: '#002D5B',
         background: '#F8FAFC',
         card_bg: '#FFFFFF',
         text_color: '#0F172A',
-        accent_color: '#2563EB',
+        accent_color: '#0868B2',
         border_color: '#E2E8F0',
         is_preset: true
     },
     {
         id: 'preset-emerald',
         name: 'Emerald Excellence',
-        primary_color: '#059669',
+        primary_color: '#09834F',
         secondary_color: '#064E3B',
-        background: '#F0FDF4',
+        background: '#F1FBF5',
         card_bg: '#FFFFFF',
         text_color: '#064E3B',
-        accent_color: '#10B981',
+        accent_color: '#09834F',
         border_color: '#D1FAE5',
         is_preset: true
     },
@@ -79,7 +79,7 @@ const PRESET_PALETTES = [
     {
         id: 'preset-cyber',
         name: 'Cyber Obsidian',
-        primary_color: '#3B82F6',
+        primary_color: '#0868B2',
         secondary_color: '#1E40AF',
         background: '#0F172A',
         card_bg: '#1E293B',
@@ -115,12 +115,12 @@ const PRESET_PALETTES = [
     {
         id: 'preset-sapphire',
         name: 'Sapphire Corporate',
-        primary_color: '#1E3A8A',
+        primary_color: '#0868B2',
         secondary_color: '#172554',
-        background: '#EFF6FF',
+        background: '#E5F3FB',
         card_bg: '#FFFFFF',
         text_color: '#1E293B',
-        accent_color: '#3B82F6',
+        accent_color: '#0868B2',
         border_color: '#DBEAFE',
         is_preset: true
     }
@@ -149,12 +149,12 @@ export async function GET(request: NextRequest) {
         const customMapped = (customPalettes || []).map((p: any) => ({
             id: p.id,
             name: p.name,
-            primary_color: p.primary_color || '#004B93',
+            primary_color: p.primary_color || '#0868B2',
             secondary_color: p.secondary_color || '#002D5B',
             background: p.background || '#F8FAFC',
             card_bg: p.card_bg || '#FFFFFF',
             text_color: p.text_color || '#0F172A',
-            accent_color: p.accent_color || p.primary_color || '#2563EB',
+            accent_color: p.accent_color || p.primary_color || '#0868B2',
             border_color: p.border_color || '#E2E8F0',
             is_preset: false,
             created_at: p.created_at

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
@@ -1029,15 +1029,15 @@ export default function OnlineExamsPage() {
 
     if (loading) {
         return (
-            <div className="w-full min-h-screen bg-[#F7F8FA] flex flex-col items-center justify-center gap-4">
-                <Loader2 className="w-12 h-12 text-[#004B93] animate-spin" />
-                <div className="text-sm font-bold tracking-widest text-[#004B93] uppercase">Loading Online Exam Studio...</div>
+            <div className="w-full min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center gap-4">
+                <Loader2 className="w-12 h-12 text-[#0868B2] animate-spin" />
+                <div className="text-sm font-bold tracking-widest text-[#0868B2] uppercase">Loading Online Exam Studio...</div>
             </div>
         )
     }
 
     return (
-        <div className="w-full min-h-screen bg-[#F7F8FA] text-[#0F172A] px-4 sm:px-8 py-6 space-y-6 font-sans">
+        <div className="w-full min-h-screen bg-[#F8FAFC] text-[#0F172A] px-4 sm:px-8 py-6 space-y-6 font-sans">
             {toast && <Toast msg={toast.msg} ok={toast.ok} onClose={() => setToast(null)} />}
 
             {/* ── 1. HERO BANNER ───────────────────────────────────────────── */}
@@ -1074,7 +1074,7 @@ export default function OnlineExamsPage() {
                         <div className="flex flex-wrap items-center gap-3">
                             <button
                                 onClick={handleNewExam}
-                                className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[#004B93] hover:bg-blue-700 text-white shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                                className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[#0868B2] hover:bg-blue-700 text-white shadow-lg transition-all flex items-center gap-2 cursor-pointer"
                             >
                                 <Plus size={16} /> Create New Exam
                             </button>
@@ -1108,7 +1108,7 @@ export default function OnlineExamsPage() {
             {/* ── 2. KPI METRICS ───────────────────────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: 'Total Exams', value: metrics.total_exams, sub: `${metrics.total_questions} questions active`, icon: FileText, iconBg: 'bg-blue-50 text-[#004B93]' },
+                    { label: 'Total Exams', value: metrics.total_exams, sub: `${metrics.total_questions} questions active`, icon: FileText, iconBg: 'bg-blue-50 text-[#0868B2]' },
                     { label: 'Students Taking Exam Now', value: metrics.live_sessions, sub: 'Active live sessions', icon: Users, iconBg: 'bg-emerald-50 text-emerald-600', pulse: true },
                     { label: 'Exam Fee Income', value: `₹${metrics.exam_revenue.toLocaleString('en-IN')}`, sub: 'From paid tests', icon: DollarSign, iconBg: 'bg-amber-50 text-amber-600' },
                     { label: 'Security Score', value: `${metrics.integrity_score}%`, sub: 'Anti-cheat integrity rating', icon: Shield, iconBg: 'bg-purple-50 text-purple-600' }
@@ -1138,13 +1138,13 @@ export default function OnlineExamsPage() {
                     className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/70 border-b border-slate-100"
                 >
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#004B93] flex items-center justify-center font-bold">
+                        <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#0868B2] flex items-center justify-center font-bold">
                             <Layers size={18} />
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
                                 <h3 className="text-base font-extrabold text-slate-900">Online Exams Repository</h3>
-                                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-100 text-[#004B93]">
+                                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-100 text-[#0868B2]">
                                     {exams.length}
                                 </span>
                             </div>
@@ -1158,7 +1158,7 @@ export default function OnlineExamsPage() {
                         <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); handleNewExam() }}
-                            className="px-4 py-2 rounded-xl text-xs font-bold bg-[#004B93] text-white hover:bg-blue-700 flex items-center gap-1.5 shadow-sm"
+                            className="px-4 py-2 rounded-xl text-xs font-bold bg-[#0868B2] text-white hover:bg-blue-700 flex items-center gap-1.5 shadow-sm"
                         >
                             <Plus size={14} /> New Exam
                         </button>
@@ -1180,7 +1180,7 @@ export default function OnlineExamsPage() {
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
                                     placeholder="Search by exam name, class, subject..."
-                                    className="w-full pl-9 pr-4 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                    className="w-full pl-9 pr-4 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                 />
                             </div>
                             <div className="flex items-center gap-1.5 bg-slate-200/70 p-1 rounded-xl text-xs font-bold overflow-x-auto">
@@ -1247,7 +1247,7 @@ export default function OnlineExamsPage() {
                                                         <SchedulePill start={ex.scheduled_start} end={ex.scheduled_end} schedStatus={ex.schedule_status} />
                                                         {Array.isArray(ex.blueprint?.schedule_slots) && ex.blueprint.schedule_slots.length > 1 ? (
                                                             <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-[#004B93]">
+                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-[#0868B2]">
                                                                     {ex.blueprint.schedule_slots.length} Slots
                                                                 </span>
                                                                 <span className="text-[10px] text-slate-400 font-semibold">
@@ -1265,7 +1265,7 @@ export default function OnlineExamsPage() {
                                                             <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 flex items-center gap-1">
                                                                 <Clock size={10} /> {ex.duration}m
                                                             </span>
-                                                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#004B93] border border-blue-100">
+                                                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#0868B2] border border-blue-100">
                                                                 {ex.question_count} Qs
                                                             </span>
                                                             <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600">
@@ -1306,7 +1306,7 @@ export default function OnlineExamsPage() {
                                                     <td className="py-3.5 px-4 text-right">
                                                         <div className="flex items-center justify-end gap-1">
                                                             <Link href={`/dashboard/exams/online/${ex.id}/play`} target="_blank"
-                                                                className="p-1.5 rounded-lg bg-blue-50 text-[#004B93] hover:bg-blue-100 text-xs font-bold flex items-center gap-1"
+                                                                className="p-1.5 rounded-lg bg-blue-50 text-[#0868B2] hover:bg-blue-100 text-xs font-bold flex items-center gap-1"
                                                                 title="Test exam as student">
                                                                 <Play size={12} /> Test
                                                             </Link>
@@ -1404,7 +1404,7 @@ export default function OnlineExamsPage() {
                                 onClick={() => setActiveStep(st.step)}
                                 className={`flex items-center gap-3 p-3.5 rounded-2xl text-left transition-all cursor-pointer border ${
                                     isActive
-                                        ? 'bg-[#004B93] text-white border-[#004B93] shadow-md ring-2 ring-[#004B93]/20'
+                                        ? 'bg-[#0868B2] text-white border-[#0868B2] shadow-md ring-2 ring-[#0868B2]/20'
                                         : isDone
                                             ? 'bg-emerald-50/80 text-emerald-900 border-emerald-200 hover:bg-emerald-100/60'
                                             : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100/80'
@@ -1437,7 +1437,7 @@ export default function OnlineExamsPage() {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                         <div>
                             <div className="flex items-center gap-2">
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#004B93]">Step 1 of 5</span>
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#0868B2]">Step 1 of 5</span>
                                 <h2 className="text-xl font-black text-slate-900">Exam Blueprint & Anti-Cheat Suite</h2>
                             </div>
                             <p className="text-xs text-slate-500 mt-1">
@@ -1448,7 +1448,7 @@ export default function OnlineExamsPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowPatternsModal(true)}
-                                className="px-4 py-2 rounded-xl text-xs font-bold border border-[#004B93] text-[#004B93] hover:bg-blue-50 transition-all flex items-center gap-1.5"
+                                className="px-4 py-2 rounded-xl text-xs font-bold border border-[#0868B2] text-[#0868B2] hover:bg-blue-50 transition-all flex items-center gap-1.5"
                             >
                                 <Globe size={13} /> Patterns Gallery
                             </button>
@@ -1458,7 +1458,7 @@ export default function OnlineExamsPage() {
                     {/* Syllabus Picker */}
                     <div className="space-y-4">
                         <div className="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                            <BookOpen size={14} className="text-[#004B93]" />
+                            <BookOpen size={14} className="text-[#0868B2]" />
                             Institutional Curriculum Selection
                         </div>
                         <ExamSyllabusPatternPicker
@@ -1484,13 +1484,13 @@ export default function OnlineExamsPage() {
                     {selectedPatternObj && (
                         <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-[#004B93] text-white flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-[#0868B2] text-white flex items-center justify-center">
                                     <LockKeyhole size={18} />
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs font-black text-blue-900">Pattern Locked:</span>
-                                        <span className="text-xs font-extrabold text-[#004B93] underline">{selectedPatternObj.name}</span>
+                                        <span className="text-xs font-extrabold text-[#0868B2] underline">{selectedPatternObj.name}</span>
                                     </div>
                                     <p className="text-[11px] text-blue-700">
                                         Duration and Marks are automatically synchronized with this pattern template.
@@ -1526,7 +1526,7 @@ export default function OnlineExamsPage() {
                                     value={s1.name}
                                     onChange={e => setS1({ ...s1, name: e.target.value })}
                                     placeholder="e.g. Class 10 Mathematics — Term 1 Grand Mock"
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-sm font-semibold outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-sm font-semibold outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                 />
                             </div>
 
@@ -1553,7 +1553,7 @@ export default function OnlineExamsPage() {
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 uppercase mb-2 flex items-center justify-between">
                                         <span>Duration (mins)</span>
-                                        {selectedPatternObj && <Lock size={10} className="text-[#004B93]" />}
+                                        {selectedPatternObj && <Lock size={10} className="text-[#0868B2]" />}
                                     </label>
                                     <input
                                         type="number"
@@ -1573,7 +1573,7 @@ export default function OnlineExamsPage() {
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 uppercase mb-2 flex items-center justify-between">
                                         <span>Total Marks</span>
-                                        {selectedPatternObj && <Lock size={10} className="text-[#004B93]" />}
+                                        {selectedPatternObj && <Lock size={10} className="text-[#0868B2]" />}
                                     </label>
                                     <input
                                         type="number"
@@ -1605,7 +1605,7 @@ export default function OnlineExamsPage() {
                                             type="button"
                                             onClick={() => setS1({ ...s1, pricing_type: 'free', price: 0 })}
                                             className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                                                s1.pricing_type === 'free' ? 'bg-[#004B93] text-white shadow-sm' : 'text-slate-600'
+                                                s1.pricing_type === 'free' ? 'bg-[#0868B2] text-white shadow-sm' : 'text-slate-600'
                                             }`}
                                         >
                                             Free Access
@@ -1614,7 +1614,7 @@ export default function OnlineExamsPage() {
                                             type="button"
                                             onClick={() => setS1({ ...s1, pricing_type: 'paid', price: 199 })}
                                             className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                                                s1.pricing_type === 'paid' ? 'bg-[#004B93] text-white shadow-sm' : 'text-slate-600'
+                                                s1.pricing_type === 'paid' ? 'bg-[#0868B2] text-white shadow-sm' : 'text-slate-600'
                                             }`}
                                         >
                                             Paid Exam
@@ -1656,7 +1656,7 @@ export default function OnlineExamsPage() {
                         <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-4">
                             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                                 <div className="flex items-center gap-2">
-                                    <Shield size={16} className="text-[#004B93]" />
+                                    <Shield size={16} className="text-[#0868B2]" />
                                     <h4 className="text-xs font-black uppercase text-slate-900 tracking-wide">Anti-Cheat Controls</h4>
                                 </div>
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
@@ -1681,7 +1681,7 @@ export default function OnlineExamsPage() {
                                             type="checkbox"
                                             checked={(security as any)[rule.key]}
                                             onChange={e => setSecurity({ ...security, [rule.key]: e.target.checked })}
-                                            className="mt-0.5 w-4 h-4 text-[#004B93] rounded"
+                                            className="mt-0.5 w-4 h-4 text-[#0868B2] rounded"
                                         />
                                     </label>
                                 ))}
@@ -1716,7 +1716,7 @@ export default function OnlineExamsPage() {
                         <button
                             type="button"
                             onClick={() => setActiveStep(2)}
-                            className="px-8 py-3 rounded-xl bg-[#004B93] hover:bg-blue-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                            className="px-8 py-3 rounded-xl bg-[#0868B2] hover:bg-blue-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
                         >
                             Next: Questions Engine <ArrowRight size={15} />
                         </button>
@@ -1732,7 +1732,7 @@ export default function OnlineExamsPage() {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                         <div>
                             <div className="flex items-center gap-2">
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#004B93]">Step 2 of 5</span>
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#0868B2]">Step 2 of 5</span>
                                 <h2 className="text-xl font-black text-slate-900">Questions Engine & Section Architecture</h2>
                             </div>
                             <p className="text-xs text-slate-500 mt-1">
@@ -1745,13 +1745,13 @@ export default function OnlineExamsPage() {
                                 onClick={() => openQBankPicker()}
                                 className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-1.5"
                             >
-                                <BookOpen size={13} className="text-[#004B93]" /> Import from Question Bank
+                                <BookOpen size={13} className="text-[#0868B2]" /> Import from Question Bank
                             </button>
                             <button
                                 type="button"
                                 onClick={handleGenerateAI}
                                 disabled={saving}
-                                className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[#004B93] to-blue-700 hover:to-blue-800 text-white shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[#0868B2] to-blue-700 hover:to-blue-800 text-white shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                             >
                                 {saving ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
                                 Generate Questions with AI
@@ -1763,7 +1763,7 @@ export default function OnlineExamsPage() {
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h3 className="text-xs font-black uppercase text-slate-700 tracking-wide flex items-center gap-1.5">
-                                <Target size={14} className="text-[#004B93]" /> Exam Sections Breakdown
+                                <Target size={14} className="text-[#0868B2]" /> Exam Sections Breakdown
                             </h3>
                             <button
                                 type="button"
@@ -1774,7 +1774,7 @@ export default function OnlineExamsPage() {
                                         { name: `Section ${String.fromCharCode(65 + s2.sections.length)}`, qCount: 10, mark: 1, negMark: 0 }
                                     ]
                                 })}
-                                className="px-3 py-1.5 rounded-lg border border-[#004B93] text-[#004B93] font-bold text-xs hover:bg-blue-50 transition-all flex items-center gap-1 cursor-pointer"
+                                className="px-3 py-1.5 rounded-lg border border-[#0868B2] text-[#0868B2] font-bold text-xs hover:bg-blue-50 transition-all flex items-center gap-1 cursor-pointer"
                             >
                                 <Plus size={13} /> Add Section
                             </button>
@@ -1861,7 +1861,7 @@ export default function OnlineExamsPage() {
                         {s2.sections.length > 0 && (
                             <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200 text-xs font-bold text-blue-900 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <Target size={15} className="text-[#004B93]" />
+                                    <Target size={15} className="text-[#0868B2]" />
                                     <span>Blueprint Target: {s2.sections.reduce((a, s) => a + Number(s.qCount || 0), 0)} Questions · {s2.sections.reduce((a, s) => a + (Number(s.qCount || 0) * Number(s.mark || 1)), 0)} Total Marks</span>
                                 </div>
                                 <span className="text-[11px] font-semibold text-blue-700">
@@ -1918,7 +1918,7 @@ export default function OnlineExamsPage() {
                                         onClick={() => setStudioFilterSection('all')}
                                         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                                             studioFilterSection === 'all'
-                                                ? 'bg-[#004B93] text-white shadow-sm'
+                                                ? 'bg-[#0868B2] text-white shadow-sm'
                                                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                         }`}
                                     >
@@ -1933,7 +1933,7 @@ export default function OnlineExamsPage() {
                                                 onClick={() => setStudioFilterSection(secName)}
                                                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                                                     studioFilterSection === secName
-                                                        ? 'bg-[#004B93] text-white shadow-sm'
+                                                        ? 'bg-[#0868B2] text-white shadow-sm'
                                                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                                 }`}
                                             >
@@ -1949,7 +1949,7 @@ export default function OnlineExamsPage() {
                         <div className="space-y-3 max-h-[580px] overflow-y-auto pr-2">
                             {studioQuestions.length === 0 ? (
                                 <div className="py-12 text-center text-slate-400 space-y-2 border-2 border-dashed border-slate-200 rounded-2xl">
-                                    <Sparkles size={32} className="mx-auto opacity-30 text-[#004B93]" />
+                                    <Sparkles size={32} className="mx-auto opacity-30 text-[#0868B2]" />
                                     <div className="font-bold text-sm text-slate-700">Question Pool is Empty</div>
                                     <div className="text-xs max-w-md mx-auto">
                                         Use the buttons at the top right to generate high-quality questions using AI or pull existing questions from your Question Bank.
@@ -1977,12 +1977,12 @@ export default function OnlineExamsPage() {
                                                         n.has(idx) ? n.delete(idx) : n.add(idx)
                                                         setApprovedQs(n)
                                                     }}
-                                                    className="mt-1 w-4 h-4 text-[#004B93] rounded cursor-pointer"
+                                                    className="mt-1 w-4 h-4 text-[#0868B2] rounded cursor-pointer"
                                                 />
                                                 <div className="space-y-2.5 flex-1">
                                                     {/* Badges */}
                                                     <div className="flex flex-wrap items-center gap-2">
-                                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-50 text-[#004B93] border border-blue-200">
+                                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-50 text-[#0868B2] border border-blue-200">
                                                             {q.section || q.section_name || 'Section A'}
                                                         </span>
                                                         <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600">
@@ -2057,7 +2057,7 @@ export default function OnlineExamsPage() {
                                 type="button"
                                 onClick={() => handleSaveExam()}
                                 disabled={saving}
-                                className="px-5 py-2.5 rounded-xl border border-[#004B93] text-[#004B93] font-bold text-xs hover:bg-blue-50 transition-all cursor-pointer"
+                                className="px-5 py-2.5 rounded-xl border border-[#0868B2] text-[#0868B2] font-bold text-xs hover:bg-blue-50 transition-all cursor-pointer"
                             >
                                 Save Changes
                             </button>
@@ -2065,7 +2065,7 @@ export default function OnlineExamsPage() {
                                 type="button"
                                 onClick={() => handleSaveExam(3)}
                                 disabled={saving}
-                                className="px-8 py-3 rounded-xl bg-[#004B93] hover:bg-blue-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                                className="px-8 py-3 rounded-xl bg-[#0868B2] hover:bg-blue-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                             >
                                 Save & Proceed to Schedule <ArrowRight size={15} />
                             </button>
@@ -2082,7 +2082,7 @@ export default function OnlineExamsPage() {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                         <div>
                             <div className="flex items-center gap-2">
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#004B93]">Step 3 of 5</span>
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#0868B2]">Step 3 of 5</span>
                                 <h2 className="text-xl font-black text-slate-900">Multi-Slot Scheduling & Audience Distribution</h2>
                             </div>
                             <p className="text-xs text-slate-500 mt-1">
@@ -2092,7 +2092,7 @@ export default function OnlineExamsPage() {
                         <button
                             type="button"
                             onClick={addSlot}
-                            className="px-4 py-2 rounded-xl text-xs font-bold bg-[#004B93] text-white hover:bg-blue-700 shadow-sm flex items-center gap-1.5 cursor-pointer"
+                            className="px-4 py-2 rounded-xl text-xs font-bold bg-[#0868B2] text-white hover:bg-blue-700 shadow-sm flex items-center gap-1.5 cursor-pointer"
                         >
                             <Plus size={14} /> Add Schedule Slot
                         </button>
@@ -2102,10 +2102,10 @@ export default function OnlineExamsPage() {
                     <div className="space-y-4">
                         {scheduleSlots.length === 0 ? (
                             <div className="py-10 rounded-2xl border-2 border-dashed border-slate-200 text-center text-slate-400 space-y-2">
-                                <Calendar size={32} className="mx-auto opacity-30 text-[#004B93]" />
+                                <Calendar size={32} className="mx-auto opacity-30 text-[#0868B2]" />
                                 <div className="text-sm font-bold text-slate-700">No Schedule Slots Configured</div>
                                 <div className="text-xs max-w-sm mx-auto">
-                                    Click <span className="font-bold text-[#004B93]">"+ Add Schedule Slot"</span> to define when this exam will be open for student attempts.
+                                    Click <span className="font-bold text-[#0868B2]">"+ Add Schedule Slot"</span> to define when this exam will be open for student attempts.
                                 </div>
                             </div>
                         ) : (
@@ -2114,7 +2114,7 @@ export default function OnlineExamsPage() {
                                     <div key={slot.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <span className="w-6 h-6 rounded-full bg-[#004B93] text-white text-[11px] font-black flex items-center justify-center">
+                                                <span className="w-6 h-6 rounded-full bg-[#0868B2] text-white text-[11px] font-black flex items-center justify-center">
                                                     {idx + 1}
                                                 </span>
                                                 <span className="text-xs font-black text-slate-900 uppercase tracking-wide">
@@ -2135,12 +2135,12 @@ export default function OnlineExamsPage() {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-3 border-b border-slate-200/60">
                                             <div>
                                                 <label className="block text-[10px] text-slate-600 font-bold uppercase mb-1 flex items-center gap-1">
-                                                    <GraduationCap size={13} className="text-[#004B93]" /> Assigned Class
+                                                    <GraduationCap size={13} className="text-[#0868B2]" /> Assigned Class
                                                 </label>
                                                 <select
                                                     value={slot.class_name || s1.targetClass || 'All Classes'}
                                                     onChange={e => updateSlot(slot.id, 'class_name', e.target.value)}
-                                                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                                 >
                                                     <option value="All Classes">All Classes</option>
                                                     {availableClasses.map(cls => (
@@ -2150,12 +2150,12 @@ export default function OnlineExamsPage() {
                                             </div>
                                             <div>
                                                 <label className="block text-[10px] text-slate-600 font-bold uppercase mb-1 flex items-center gap-1">
-                                                    <Users size={13} className="text-[#004B93]" /> Assigned Section
+                                                    <Users size={13} className="text-[#0868B2]" /> Assigned Section
                                                 </label>
                                                 <select
                                                     value={slot.section_name || 'All Sections'}
                                                     onChange={e => updateSlot(slot.id, 'section_name', e.target.value)}
-                                                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                                 >
                                                     {STANDARD_SECTIONS.map(sec => (
                                                         <option key={sec} value={sec}>{sec}</option>
@@ -2174,7 +2174,7 @@ export default function OnlineExamsPage() {
                                                     type="datetime-local"
                                                     value={slot.start}
                                                     onChange={e => updateSlot(slot.id, 'start', e.target.value)}
-                                                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold outline-none focus:ring-2 focus:ring-[#004B93]/20"
+                                                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold outline-none focus:ring-2 focus:ring-[#0868B2]/20"
                                                 />
                                             </div>
                                             <div>
@@ -2206,11 +2206,11 @@ export default function OnlineExamsPage() {
                                         {/* Preview Banner */}
                                         {slot.start && slot.end && (
                                             <div className="flex items-center gap-2 text-[11px] text-slate-600 font-semibold bg-white rounded-xl px-3.5 py-2 border border-slate-100 flex-wrap">
-                                                <Clock size={12} className="text-[#004B93]" />
+                                                <Clock size={12} className="text-[#0868B2]" />
                                                 <span>{new Date(slot.start).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                                                 <span className="text-slate-400">→</span>
                                                 <span>{new Date(slot.end).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-[#004B93] border border-blue-100">
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-[#0868B2] border border-blue-100">
                                                     {slot.class_name || 'All Classes'} · {slot.section_name || 'All Sections'}
                                                 </span>
                                                 <span className="ml-auto text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
@@ -2228,14 +2228,14 @@ export default function OnlineExamsPage() {
                     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 space-y-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <Share2 size={16} className="text-[#004B93]" />
+                                <Share2 size={16} className="text-[#0868B2]" />
                                 <h4 className="text-xs font-black uppercase text-slate-900 tracking-wide">Student Test Access Hub</h4>
                             </div>
                             {editExamId && (
                                 <Link
                                     href={`/dashboard/exams/online/${editExamId}/play`}
                                     target="_blank"
-                                    className="px-3.5 py-1.5 rounded-xl bg-blue-50 text-[#004B93] hover:bg-blue-100 font-bold text-xs flex items-center gap-1.5 transition-all"
+                                    className="px-3.5 py-1.5 rounded-xl bg-blue-50 text-[#0868B2] hover:bg-blue-100 font-bold text-xs flex items-center gap-1.5 transition-all"
                                 >
                                     <Play size={13} /> Test Exam Player
                                 </Link>
@@ -2256,7 +2256,7 @@ export default function OnlineExamsPage() {
                                         <button
                                             type="button"
                                             onClick={() => copyLink(activeTestUrl, editExamId)}
-                                            className="px-4 py-2.5 rounded-xl bg-[#004B93] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                            className="px-4 py-2.5 rounded-xl bg-[#0868B2] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm"
                                         >
                                             <Copy size={13} /> Copy Link
                                         </button>
@@ -2265,7 +2265,7 @@ export default function OnlineExamsPage() {
                                 <div className="p-3.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between">
                                     <div>
                                         <div className="text-[10px] font-bold text-slate-500 uppercase">Exam Access Code</div>
-                                        <div className="text-xl font-black font-mono text-[#004B93] tracking-widest mt-0.5">
+                                        <div className="text-xl font-black font-mono text-[#0868B2] tracking-widest mt-0.5">
                                             {editExamId.slice(0, 6).toUpperCase()}
                                         </div>
                                     </div>
@@ -2295,7 +2295,7 @@ export default function OnlineExamsPage() {
                                 type="button"
                                 onClick={() => handleSaveExam()}
                                 disabled={saving}
-                                className="px-5 py-2.5 rounded-xl border border-[#004B93] text-[#004B93] font-bold text-xs hover:bg-blue-50 transition-all cursor-pointer"
+                                className="px-5 py-2.5 rounded-xl border border-[#0868B2] text-[#0868B2] font-bold text-xs hover:bg-blue-50 transition-all cursor-pointer"
                             >
                                 Save Schedule
                             </button>
@@ -2303,7 +2303,7 @@ export default function OnlineExamsPage() {
                                 type="button"
                                 onClick={() => handleSaveExam(4)}
                                 disabled={saving}
-                                className="px-8 py-3 rounded-xl bg-[#004B93] hover:bg-blue-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                                className="px-8 py-3 rounded-xl bg-[#0868B2] hover:bg-blue-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                             >
                                 Save & Proceed to Live Monitor <ArrowRight size={15} />
                             </button>
@@ -2320,9 +2320,9 @@ export default function OnlineExamsPage() {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                         <div>
                             <div className="flex items-center gap-2">
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#004B93]">Step 4 of 5</span>
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#0868B2]">Step 4 of 5</span>
                                 <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                                    <Monitor size={20} className="text-[#004B93]" /> Live Student Proctor & Telemetry
+                                    <Monitor size={20} className="text-[#0868B2]" /> Live Student Proctor & Telemetry
                                 </h2>
                             </div>
                             <p className="text-xs text-slate-500 mt-1">
@@ -2427,7 +2427,7 @@ export default function OnlineExamsPage() {
                         <button
                             type="button"
                             onClick={() => setActiveStep(5)}
-                            className="px-8 py-3 rounded-xl bg-[#004B93] hover:bg-blue-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                            className="px-8 py-3 rounded-xl bg-[#0868B2] hover:bg-blue-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
                         >
                             Next: Results & Analytics <ArrowRight size={15} />
                         </button>
@@ -2443,9 +2443,9 @@ export default function OnlineExamsPage() {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                         <div>
                             <div className="flex items-center gap-2">
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#004B93]">Step 5 of 5</span>
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#0868B2]">Step 5 of 5</span>
                                 <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                                    <BarChart2 size={20} className="text-[#004B93]" /> Exam Results & Performance Analytics
+                                    <BarChart2 size={20} className="text-[#0868B2]" /> Exam Results & Performance Analytics
                                 </h2>
                             </div>
                             <p className="text-xs text-slate-500 mt-1">
@@ -2469,7 +2469,7 @@ export default function OnlineExamsPage() {
 
                     {analyticsLoading ? (
                         <div className="py-14 text-center text-slate-400 flex flex-col items-center gap-2">
-                            <Loader2 size={28} className="animate-spin text-[#004B93]" />
+                            <Loader2 size={28} className="animate-spin text-[#0868B2]" />
                             <div className="text-sm font-semibold">Compiling real performance metrics...</div>
                         </div>
                     ) : !analytics || analytics.summary.totalAttempts === 0 ? (
@@ -2488,7 +2488,7 @@ export default function OnlineExamsPage() {
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div className="p-5 rounded-2xl bg-blue-50/70 border border-blue-200">
                                     <div className="text-xs font-bold text-blue-700 uppercase">Average Score</div>
-                                    <div className="text-3xl font-black text-[#004B93] mt-2">{analytics.summary.avgScore}</div>
+                                    <div className="text-3xl font-black text-[#0868B2] mt-2">{analytics.summary.avgScore}</div>
                                     <div className="text-xs text-blue-600 mt-1 font-semibold">Across all student submissions</div>
                                 </div>
                                 <div className="p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200">
@@ -2593,7 +2593,7 @@ export default function OnlineExamsPage() {
                         <button
                             type="button"
                             onClick={handleNewExam}
-                            className="px-8 py-3 rounded-xl bg-[#004B93] hover:bg-blue-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                            className="px-8 py-3 rounded-xl bg-[#0868B2] hover:bg-blue-800 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
                         >
                             <Plus size={15} /> Create Another Exam
                         </button>
@@ -2609,7 +2609,7 @@ export default function OnlineExamsPage() {
                     <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#004B93] flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0868B2] flex items-center justify-center">
                                     <Globe size={20} />
                                 </div>
                                 <div>
@@ -2632,9 +2632,9 @@ export default function OnlineExamsPage() {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {patterns.map(tmpl => (
-                                        <div key={tmpl.id} className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-[#004B93] hover:shadow-md transition-all flex flex-col justify-between space-y-3">
+                                        <div key={tmpl.id} className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-[#0868B2] hover:shadow-md transition-all flex flex-col justify-between space-y-3">
                                             <div className="space-y-1.5">
-                                                <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-blue-50 text-[#004B93] border border-blue-100">
+                                                <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-blue-50 text-[#0868B2] border border-blue-100">
                                                     {tmpl.category || 'Standard Pattern'}
                                                 </span>
                                                 <h4 className="font-extrabold text-sm text-slate-900 leading-snug">{tmpl.name}</h4>
@@ -2646,7 +2646,7 @@ export default function OnlineExamsPage() {
                                                 </div>
                                                 <button
                                                     onClick={() => handlePatternSelected(tmpl)}
-                                                    className="w-full py-2 rounded-xl bg-[#004B93] hover:bg-blue-800 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                                                    className="w-full py-2 rounded-xl bg-[#0868B2] hover:bg-blue-800 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
                                                 >
                                                     Use This Pattern →
                                                 </button>
@@ -2668,7 +2668,7 @@ export default function OnlineExamsPage() {
                     <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-200">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div className="flex items-center gap-2.5">
-                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#004B93] flex items-center justify-center"><Share2 size={18} /></div>
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0868B2] flex items-center justify-center"><Share2 size={18} /></div>
                                 <div>
                                     <h3 className="font-extrabold text-sm text-slate-900">Share Exam Link</h3>
                                     <p className="text-xs text-slate-500">{showShareModal.title}</p>
@@ -2687,7 +2687,7 @@ export default function OnlineExamsPage() {
                                 />
                                 <button
                                     onClick={() => copyLink(`${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard/exams/online/${showShareModal.id}/play`, showShareModal.id)}
-                                    className="px-4 py-2 rounded-xl bg-[#004B93] text-white font-bold text-xs flex items-center gap-1 cursor-pointer"
+                                    className="px-4 py-2 rounded-xl bg-[#0868B2] text-white font-bold text-xs flex items-center gap-1 cursor-pointer"
                                 >
                                     <Copy size={13} /> Copy
                                 </button>
@@ -2696,7 +2696,7 @@ export default function OnlineExamsPage() {
                         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
                             <div>
                                 <div className="text-xs font-bold text-slate-700 uppercase">Exam Access Code</div>
-                                <div className="text-2xl font-black font-mono text-[#004B93] tracking-widest mt-1">{showShareModal.id.slice(0, 6).toUpperCase()}</div>
+                                <div className="text-2xl font-black font-mono text-[#0868B2] tracking-widest mt-1">{showShareModal.id.slice(0, 6).toUpperCase()}</div>
                             </div>
                             <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">Active</span>
                         </div>
@@ -2715,13 +2715,13 @@ export default function OnlineExamsPage() {
                     <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div className="flex items-center gap-2.5">
-                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#004B93] flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0868B2] flex items-center justify-center">
                                     <Calendar size={18} />
                                 </div>
                                 <div>
                                     <h3 className="font-extrabold text-sm text-slate-900">Set Exam Schedule Slots</h3>
                                     <p className="text-xs text-slate-500">
-                                        {showScheduleModal.title} · <span className="font-bold text-[#004B93]">{showScheduleModal.duration} mins</span> per attempt
+                                        {showScheduleModal.title} · <span className="font-bold text-[#0868B2]">{showScheduleModal.duration} mins</span> per attempt
                                     </p>
                                 </div>
                             </div>
@@ -2729,7 +2729,7 @@ export default function OnlineExamsPage() {
                                 <button
                                     type="button"
                                     onClick={addModalSlot}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#004B93] text-[#004B93] text-xs font-bold hover:bg-blue-50 transition-all cursor-pointer"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#0868B2] text-[#0868B2] text-xs font-bold hover:bg-blue-50 transition-all cursor-pointer"
                                 >
                                     <Plus size={13} /> Add Slot
                                 </button>
@@ -2744,7 +2744,7 @@ export default function OnlineExamsPage() {
 
                         <div className="flex-1 overflow-y-auto space-y-3 pr-1">
                             <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center gap-2">
-                                <Clock size={14} className="text-[#004B93] shrink-0" />
+                                <Clock size={14} className="text-[#0868B2] shrink-0" />
                                 <span>
                                     End Date & Time is <span className="font-bold text-slate-700">automatically calculated</span> as Start Date & Time + {showScheduleModal.duration} mins.
                                 </span>
@@ -2760,7 +2760,7 @@ export default function OnlineExamsPage() {
                                 <div key={slot.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <span className="w-5 h-5 rounded-full bg-[#004B93] text-white text-[10px] font-black flex items-center justify-center">
+                                            <span className="w-5 h-5 rounded-full bg-[#0868B2] text-white text-[10px] font-black flex items-center justify-center">
                                                 {idx + 1}
                                             </span>
                                             <span className="text-xs font-black text-slate-800 uppercase tracking-wide">
@@ -2780,7 +2780,7 @@ export default function OnlineExamsPage() {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-slate-200/60">
                                         <div>
                                             <label className="block text-[10px] text-slate-600 font-bold uppercase mb-1 flex items-center gap-1">
-                                                <GraduationCap size={12} className="text-[#004B93]" /> Assigned Class
+                                                <GraduationCap size={12} className="text-[#0868B2]" /> Assigned Class
                                             </label>
                                             <select
                                                 value={slot.class_name || showScheduleModal?.class_name || 'All Classes'}
@@ -2795,7 +2795,7 @@ export default function OnlineExamsPage() {
                                         </div>
                                         <div>
                                             <label className="block text-[10px] text-slate-600 font-bold uppercase mb-1 flex items-center gap-1">
-                                                <Users size={12} className="text-[#004B93]" /> Assigned Section
+                                                <Users size={12} className="text-[#0868B2]" /> Assigned Section
                                             </label>
                                             <select
                                                 value={slot.section_name || 'All Sections'}
@@ -2860,7 +2860,7 @@ export default function OnlineExamsPage() {
                             <button
                                 type="button"
                                 onClick={handleSchedule}
-                                className="flex-1 py-2.5 rounded-xl bg-[#004B93] text-white font-bold text-xs cursor-pointer shadow-sm hover:bg-blue-800 transition-all"
+                                className="flex-1 py-2.5 rounded-xl bg-[#0868B2] text-white font-bold text-xs cursor-pointer shadow-sm hover:bg-blue-800 transition-all"
                             >
                                 Save Schedule Slots
                             </button>
@@ -2877,7 +2877,7 @@ export default function OnlineExamsPage() {
                     <div className="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-5 shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div className="flex items-center gap-2.5">
-                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#004B93] flex items-center justify-center"><BookOpen size={18} /></div>
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0868B2] flex items-center justify-center"><BookOpen size={18} /></div>
                                 <div>
                                     <h3 className="font-extrabold text-sm text-slate-900">Add Questions from Question Bank</h3>
                                     <p className="text-xs text-slate-500">{selectedQBankIds.size} selected</p>
@@ -2904,7 +2904,7 @@ export default function OnlineExamsPage() {
                         <div className="flex-1 overflow-y-auto space-y-2 pr-1">
                             {qbankLoading ? (
                                 <div className="py-8 text-center text-slate-400">
-                                    <Loader2 size={24} className="animate-spin mx-auto mb-2 text-[#004B93]" />
+                                    <Loader2 size={24} className="animate-spin mx-auto mb-2 text-[#0868B2]" />
                                     <div className="text-sm">Loading questions...</div>
                                 </div>
                             ) : qbankQuestions.length === 0 ? (
@@ -2930,7 +2930,7 @@ export default function OnlineExamsPage() {
                                             }`}
                                         >
                                             <div className="flex items-start gap-3">
-                                                <input type="checkbox" checked={isSelected} onChange={() => {}} className="mt-0.5 w-4 h-4 text-[#004B93] rounded" />
+                                                <input type="checkbox" checked={isSelected} onChange={() => {}} className="mt-0.5 w-4 h-4 text-[#0868B2] rounded" />
                                                 <div className="flex-1">
                                                     <div className="text-xs font-bold text-slate-900 leading-snug">{qText}</div>
                                                     <div className="flex items-center gap-2 mt-1">
@@ -2954,7 +2954,7 @@ export default function OnlineExamsPage() {
                             <button
                                 onClick={handleAddFromBank}
                                 disabled={selectedQBankIds.size === 0}
-                                className="flex-1 py-2.5 rounded-xl bg-[#004B93] text-white font-bold text-xs cursor-pointer disabled:opacity-40 shadow-sm"
+                                className="flex-1 py-2.5 rounded-xl bg-[#0868B2] text-white font-bold text-xs cursor-pointer disabled:opacity-40 shadow-sm"
                             >
                                 Add {selectedQBankIds.size > 0 ? `${selectedQBankIds.size} ` : ''}Questions
                             </button>
@@ -2972,7 +2972,7 @@ export default function OnlineExamsPage() {
                         <div className="space-y-6">
                             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                                 <div className="flex items-center gap-2.5">
-                                    <Shield size={20} className="text-[#004B93]" />
+                                    <Shield size={20} className="text-[#0868B2]" />
                                     <div>
                                         <h3 className="font-extrabold text-sm text-slate-900">Exam Security Suite</h3>
                                         <p className="text-xs text-slate-500">Global proctoring rules applied to online exams</p>
@@ -2998,7 +2998,7 @@ export default function OnlineExamsPage() {
                                             type="checkbox"
                                             checked={(security as any)[setting.key]}
                                             onChange={e => setSecurity({ ...security, [setting.key]: e.target.checked })}
-                                            className="w-5 h-5 text-[#004B93] rounded"
+                                            className="w-5 h-5 text-[#0868B2] rounded"
                                         />
                                     </div>
                                 ))}
@@ -3023,7 +3023,7 @@ export default function OnlineExamsPage() {
                         <div className="pt-6 border-t border-slate-100">
                             <button
                                 onClick={() => { setShowSecurityDrawer(false); showToast('Security rules saved!', true) }}
-                                className="w-full py-3 rounded-xl bg-[#004B93] text-white font-bold text-xs cursor-pointer shadow-md"
+                                className="w-full py-3 rounded-xl bg-[#0868B2] text-white font-bold text-xs cursor-pointer shadow-md"
                             >
                                 Save Security Rules
                             </button>
@@ -3064,8 +3064,8 @@ export default function OnlineExamsPage() {
                     <div className="bg-white rounded-3xl max-w-lg w-full p-7 space-y-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#004B93]">
-                                    <Sparkles size={24} className={aiGenError ? '' : 'animate-pulse text-[#004B93]'} />
+                                <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#0868B2]">
+                                    <Sparkles size={24} className={aiGenError ? '' : 'animate-pulse text-[#0868B2]'} />
                                 </div>
                                 <div>
                                     <h3 className="font-extrabold text-base text-slate-900">AI Curriculum Question Engine</h3>
@@ -3082,13 +3082,13 @@ export default function OnlineExamsPage() {
                         {/* Progress Bar & Percentage */}
                         <div className="space-y-2">
                             <div className="flex items-center justify-between text-xs font-black">
-                                <span className={aiGenError ? 'text-red-600 font-bold' : 'text-[#004B93]'}>{aiGenStatus}</span>
+                                <span className={aiGenError ? 'text-red-600 font-bold' : 'text-[#0868B2]'}>{aiGenStatus}</span>
                                 <span className="text-slate-700 font-extrabold text-sm">{aiGenProgress}%</span>
                             </div>
                             <div className="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden p-0.5 border border-slate-200">
                                 <div
                                     className={`h-full rounded-full transition-all duration-500 ${
-                                        aiGenError ? 'bg-red-500' : 'bg-gradient-to-r from-[#004B93] via-blue-600 to-emerald-500'
+                                        aiGenError ? 'bg-red-500' : 'bg-gradient-to-r from-[#0868B2] via-blue-600 to-emerald-500'
                                     }`}
                                     style={{ width: `${aiGenProgress}%` }}
                                 />
@@ -3105,7 +3105,7 @@ export default function OnlineExamsPage() {
                                             {sec.status === 'completed' ? (
                                                 <CheckCircle2 size={16} className="text-emerald-600" />
                                             ) : sec.status === 'generating' ? (
-                                                <Loader2 size={16} className="text-[#004B93] animate-spin" />
+                                                <Loader2 size={16} className="text-[#0868B2] animate-spin" />
                                             ) : sec.status === 'error' ? (
                                                 <AlertCircle size={16} className="text-red-500" />
                                             ) : (
@@ -3119,7 +3119,7 @@ export default function OnlineExamsPage() {
                                             </span>
                                             <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
                                                 sec.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                                                sec.status === 'generating' ? 'bg-blue-50 text-[#004B93] border border-blue-200' :
+                                                sec.status === 'generating' ? 'bg-blue-50 text-[#0868B2] border border-blue-200' :
                                                 sec.status === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
                                                 'bg-slate-100 text-slate-500'
                                             }`}>
@@ -3148,13 +3148,13 @@ export default function OnlineExamsPage() {
                                 <button onClick={() => setAiGenModalOpen(false)} className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs cursor-pointer hover:bg-slate-50">
                                     Close
                                 </button>
-                                <button onClick={handleGenerateAI} className="flex-1 py-3 rounded-xl bg-[#004B93] text-white font-bold text-xs cursor-pointer hover:bg-blue-800 flex items-center justify-center gap-2 shadow-md">
+                                <button onClick={handleGenerateAI} className="flex-1 py-3 rounded-xl bg-[#0868B2] text-white font-bold text-xs cursor-pointer hover:bg-blue-800 flex items-center justify-center gap-2 shadow-md">
                                     <RefreshCw size={14} /> Retry Generation
                                 </button>
                             </div>
                         ) : (
                             <div className="flex items-center justify-center gap-2 text-xs text-slate-400 font-medium pt-1">
-                                <Loader2 size={13} className="animate-spin text-[#004B93]" />
+                                <Loader2 size={13} className="animate-spin text-[#0868B2]" />
                                 <span>Generating syllabus-aligned questions in clean, natural English...</span>
                             </div>
                         )}

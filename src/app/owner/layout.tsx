@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar'
 import { OwnerHeader } from '@/components/owner/OwnerHeader'
 
@@ -8,7 +8,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
             {/* Force global light theme override */}
             <style dangerouslySetInnerHTML={{
                 __html: `
-        html, body { background: #F7F8FA !important; color: #1B1D21 !important; margin: 0; padding: 0; }
+        html, body { background: #F8FAFC !important; color: #1B1D21 !important; margin: 0; padding: 0; }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -16,7 +16,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
         ::-webkit-scrollbar-thumb:hover { background: #A5A2A6; }
       `}} />
 
-            <div className="flex flex-col w-screen h-screen overflow-hidden bg-[#F7F8FA]">
+            <div className="flex flex-col w-screen h-screen overflow-hidden bg-[#F8FAFC]">
                 {/* GLOBAL SUPER ADMIN HEADER */}
                 <OwnerHeader />
 
@@ -26,7 +26,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
                     <OwnerSidebar />
 
                     {/* MAIN SCROLL AREA */}
-                    <main className="flex-1 min-w-0 h-full overflow-y-auto bg-[#F7F8FA]">
+                    <main className="flex-1 min-w-0 h-full overflow-y-auto bg-[#F8FAFC]">
                         {children}
                     </main>
                 </div>

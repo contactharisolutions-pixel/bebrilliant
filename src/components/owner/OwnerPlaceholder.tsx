@@ -1,12 +1,12 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Construction } from 'lucide-react'
 
 const P = {
-    bg: '#F7F8FA', card: '#FEFEFE', border: '#E8E8E8',
-    brand: '#004B93', brandBg: '#EFE9FF', dark: '#1B1D21', muted: '#A5A2A6',
+    bg: '#F8FAFC', card: '#FEFEFE', border: '#E8E8E8',
+    brand: '#0868B2', brandBg: '#EFE9FF', dark: '#1B1D21', muted: '#A5A2A6',
     success: '#22C55E', successBg: '#ECFDF5',
 }
 

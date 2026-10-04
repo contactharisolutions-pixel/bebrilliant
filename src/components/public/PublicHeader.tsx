@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
@@ -118,7 +118,7 @@ export const PublicHeader = () => {
                                 padding: '8px 14px',
                                 fontSize: 13.5,
                                 fontWeight: 600,
-                                color: activeDropdown === 'solutions' ? '#00356a' : '#191c20',
+                                color: activeDropdown === 'solutions' ? '#0868B2' : '#191c20',
                                 background: activeDropdown === 'solutions' ? '#f3f3fa' : 'transparent',
                                 border: 'none',
                                 borderRadius: 8,
@@ -166,14 +166,14 @@ export const PublicHeader = () => {
                                             onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
                                             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                         >
-                                            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#EFF6FF', color: '#1E3A8A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                                            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#E5F3FB', color: '#0868B2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
                                                 <Icon size={18} />
                                             </div>
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                                     <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0F172A' }}>{item.title}</span>
                                                     {item.badge && (
-                                                        <span style={{ fontSize: 10, fontWeight: 800, background: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: 999 }}>{item.badge}</span>
+                                                        <span style={{ fontSize: 10, fontWeight: 800, background: '#DCF7E7', color: '#087347', padding: '2px 8px', borderRadius: 999 }}>{item.badge}</span>
                                                     )}
                                                 </div>
                                                 <p style={{ fontSize: 12, color: '#64748B', margin: '2px 0 0', lineHeight: 1.4 }}>{item.desc}</p>
@@ -199,7 +199,7 @@ export const PublicHeader = () => {
                                 padding: '8px 14px',
                                 fontSize: 13.5,
                                 fontWeight: 600,
-                                color: activeDropdown === 'features' ? '#00356a' : '#191c20',
+                                color: activeDropdown === 'features' ? '#0868B2' : '#191c20',
                                 background: activeDropdown === 'features' ? '#f3f3fa' : 'transparent',
                                 border: 'none',
                                 borderRadius: 8,
@@ -248,7 +248,7 @@ export const PublicHeader = () => {
                                             onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
                                             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                         >
-                                            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#F1F5F9', color: '#004B93', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                                            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#F1F5F9', color: '#0868B2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
                                                 <Icon size={18} />
                                             </div>
                                             <div style={{ flex: 1, minWidth: 0 }}>
@@ -274,7 +274,7 @@ export const PublicHeader = () => {
                             padding: '8px 14px',
                             fontSize: 13.5,
                             fontWeight: 700,
-                            color: '#1E3A8A',
+                            color: '#0868B2',
                             textDecoration: 'none',
                             borderRadius: 8,
                             display: 'inline-flex',
@@ -282,7 +282,7 @@ export const PublicHeader = () => {
                             gap: 6
                         }}
                     >
-                        <Sparkles size={13} style={{ color: '#2563EB' }} /> White-Label
+                        <Sparkles size={13} style={{ color: '#0868B2' }} /> White-Label
                     </Link>
 
                     {/* 4. Resources Dropdown */}
@@ -299,7 +299,7 @@ export const PublicHeader = () => {
                                 padding: '8px 14px',
                                 fontSize: 13.5,
                                 fontWeight: 600,
-                                color: activeDropdown === 'resources' ? '#00356a' : '#191c20',
+                                color: activeDropdown === 'resources' ? '#0868B2' : '#191c20',
                                 background: activeDropdown === 'resources' ? '#f3f3fa' : 'transparent',
                                 border: 'none',
                                 borderRadius: 8,
@@ -346,7 +346,7 @@ export const PublicHeader = () => {
                                             onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
                                             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                         >
-                                            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#EFF6FF', color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                                            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#E5F3FB', color: '#0868B2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
                                                 <Icon size={16} />
                                             </div>
                                             <div>
@@ -445,7 +445,7 @@ export const PublicHeader = () => {
                                                 textDecoration: 'none',
                                                 transition: 'all 0.15s ease'
                                             }}
-                                            onMouseEnter={(e) => { e.currentTarget.style.background = '#EFF6FF'; e.currentTarget.style.color = '#1E3A8A' }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.background = '#E5F3FB'; e.currentTarget.style.color = '#0868B2' }}
                                             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#334155' }}
                                         >
                                             <Icon size={14} /> {portal.label}
@@ -465,7 +465,7 @@ export const PublicHeader = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: 6,
-                            background: 'linear-gradient(135deg, #00356a 0%, #004b93 100%)',
+                            background: 'linear-gradient(135deg, #0868B2 0%, #0868B2 100%)',
                             color: '#fff',
                             padding: '9px 20px',
                             borderRadius: 12,
@@ -510,7 +510,7 @@ export const PublicHeader = () => {
                     
                     {/* Mobile Navigation Links */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <Link href="/white-label" onClick={() => setOpen(false)} style={{ padding: '10px 4px', fontSize: 15, fontWeight: 700, color: '#1E3A8A', textDecoration: 'none', borderBottom: '1px solid #f3f3fa' }}>
+                        <Link href="/white-label" onClick={() => setOpen(false)} style={{ padding: '10px 4px', fontSize: 15, fontWeight: 700, color: '#0868B2', textDecoration: 'none', borderBottom: '1px solid #f3f3fa' }}>
                             ✨ White-Label Platform
                         </Link>
                         <Link href="/features" onClick={() => setOpen(false)} style={{ padding: '10px 4px', fontSize: 15, fontWeight: 700, color: '#191c20', textDecoration: 'none', borderBottom: '1px solid #f3f3fa' }}>
@@ -551,7 +551,7 @@ export const PublicHeader = () => {
                         <button
                             type="button"
                             onClick={() => { setOpen(false); setIsDemoModalOpen(true); }}
-                            style={{ textAlign: 'center', padding: '12px', fontSize: 14, fontWeight: 800, background: 'linear-gradient(135deg, #00356a 0%, #004b93 100%)', color: '#ffffff', borderRadius: 12, border: 'none', cursor: 'pointer' }}
+                            style={{ textAlign: 'center', padding: '12px', fontSize: 14, fontWeight: 800, background: 'linear-gradient(135deg, #0868B2 0%, #0868B2 100%)', color: '#ffffff', borderRadius: 12, border: 'none', cursor: 'pointer' }}
                         >
                             Book a Free Demo
                         </button>

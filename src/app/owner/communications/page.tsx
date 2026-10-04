@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
 import {
@@ -31,8 +31,8 @@ const TRIGGER_EVENT_OPTIONS = [
 ]
 
 const CHANNEL_META: Record<string, { label: string; color: string; bg: string; icon: any }> = {
-    email: { label: 'Email', color: '#2563EB', bg: '#EFF6FF', icon: Mail },
-    whatsapp: { label: 'WhatsApp', color: '#16A34A', bg: '#F0FDF4', icon: MessageCircle },
+    email: { label: 'Email', color: '#0868B2', bg: '#E5F3FB', icon: Mail },
+    whatsapp: { label: 'WhatsApp', color: '#09834F', bg: '#F1FBF5', icon: MessageCircle },
     push: { label: 'Push Notification', color: '#9333EA', bg: '#F5F3FF', icon: Bell }
 }
 
@@ -338,7 +338,7 @@ export default function CommunicationsPage() {
                     <button onClick={fetchData} style={{ display: 'flex', alignItems: 'center', gap: 8, background: P.card, border: `1px solid ${P.border}`, borderRadius: 12, padding: '12px 20px', fontSize: 13, fontWeight: 800, color: P.dark, cursor: 'pointer' }}>
                         <RefreshCw size={16} color={P.brand} /> Refresh
                     </button>
-                    <button onClick={seedDefaults} disabled={seeding} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F0FDF4', border: '1px solid #A7F3D0', borderRadius: 12, padding: '12px 20px', fontSize: 13, fontWeight: 800, color: '#059669', cursor: 'pointer', opacity: seeding ? 0.7 : 1 }}>
+                    <button onClick={seedDefaults} disabled={seeding} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F1FBF5', border: '1px solid #A7F3D0', borderRadius: 12, padding: '12px 20px', fontSize: 13, fontWeight: 800, color: '#09834F', cursor: 'pointer', opacity: seeding ? 0.7 : 1 }}>
                         {seeding ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Database size={16} />}
                         {seeding ? 'Seeding...' : 'Seed Default Templates'}
                     </button>
@@ -347,8 +347,8 @@ export default function CommunicationsPage() {
 
             {/* KPI CARDS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
-                <KpiCard icon={Mail} title="Email Templates" value={String(stats.emailTemplates || 0)} color="#2563EB" />
-                <KpiCard icon={MessageCircle} title="WhatsApp Messages" value={String(stats.waTemplates || 0)} color="#16A34A" />
+                <KpiCard icon={Mail} title="Email Templates" value={String(stats.emailTemplates || 0)} color="#0868B2" />
+                <KpiCard icon={MessageCircle} title="WhatsApp Messages" value={String(stats.waTemplates || 0)} color="#09834F" />
                 <KpiCard icon={Bell} title="Push Notifications" value={String(stats.pushTemplates || pushTpls.length || 0)} color="#9333EA" />
                 <KpiCard icon={Zap} title="Automatic Rules" value={`${stats.activeRules || 0} / ${stats.totalRules || 0}`} color="#EA580C" />
             </div>
@@ -401,8 +401,8 @@ export default function CommunicationsPage() {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '20px 28px' }}>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-                                            <div style={{ width: 40, height: 40, borderRadius: 12, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <Mail size={20} color="#2563EB" />
+                                            <div style={{ width: 40, height: 40, borderRadius: 12, background: '#E5F3FB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <Mail size={20} color="#0868B2" />
                                             </div>
                                             <div>
                                                 <div style={{ fontWeight: 900, fontSize: 16, color: P.dark }}>{tpl.name}</div>
@@ -419,7 +419,7 @@ export default function CommunicationsPage() {
                                             <Eye size={14} /> Preview
                                         </button>
                                         <button onClick={() => testEmail(tpl.id)} disabled={testingId === tpl.id}
-                                            style={actionBtn('#059669', '#ECFDF5')}>
+                                            style={actionBtn('#09834F', '#ECFDF5')}>
                                             {testingId === tpl.id ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={14} />}
                                             {testingId === tpl.id ? 'Sending...' : 'Test Send'}
                                         </button>
@@ -455,7 +455,7 @@ export default function CommunicationsPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: P.dark }}>WhatsApp Messages</h2>
                         <button onClick={() => { setWaForm({ id: '', template_key: '', template_text: '', is_active: true }); setWaDrawer(true) }}
-                            style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#16A34A', color: '#fff', border: 'none', borderRadius: 12, padding: '12px 22px', fontSize: 13, fontWeight: 800, cursor: 'pointer', boxShadow: '0 6px 20px rgba(22,163,74,0.3)' }}>
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#09834F', color: '#fff', border: 'none', borderRadius: 12, padding: '12px 22px', fontSize: 13, fontWeight: 800, cursor: 'pointer', boxShadow: '0 6px 20px rgba(22,163,74,0.3)' }}>
                             <Plus size={18} strokeWidth={3} /> New WhatsApp Template
                         </button>
                     </div>
@@ -479,10 +479,10 @@ export default function CommunicationsPage() {
                                                 </div>
                                                 <button onClick={() => toggleWaActive(tpl)} style={{
                                                     display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px',
-                                                    background: tpl.is_active ? '#F0FDF4' : P.bg,
+                                                    background: tpl.is_active ? '#F1FBF5' : P.bg,
                                                     border: `1px solid ${tpl.is_active ? '#A7F3D0' : P.border}`,
                                                     borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 800,
-                                                    color: tpl.is_active ? '#059669' : P.muted
+                                                    color: tpl.is_active ? '#09834F' : P.muted
                                                 }}>
                                                     {tpl.is_active ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
                                                     {tpl.is_active ? 'Active' : 'Inactive'}
@@ -492,7 +492,7 @@ export default function CommunicationsPage() {
                                                 <button onClick={() => setWaPreview(waPreview === tpl.id ? null : tpl.id)} style={actionBtn('#6366F1', '#EEF2FF')}>
                                                     <Eye size={14} /> Preview
                                                 </button>
-                                                <button onClick={() => testWa(tpl.id)} disabled={testingId === tpl.id} style={actionBtn('#059669', '#ECFDF5')}>
+                                                <button onClick={() => testWa(tpl.id)} disabled={testingId === tpl.id} style={actionBtn('#09834F', '#ECFDF5')}>
                                                     {testingId === tpl.id ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={14} />}
                                                     {testingId === tpl.id ? 'Sending...' : 'Test Send'}
                                                 </button>
@@ -640,7 +640,7 @@ export default function CommunicationsPage() {
                                             </div>
                                         </div>
                                         <div style={{ display: 'flex', gap: 8 }}>
-                                            <button onClick={() => toggleRule(rule)} style={actionBtn(rule.active_status ? '#059669' : P.muted, rule.active_status ? '#ECFDF5' : P.bg)}>
+                                            <button onClick={() => toggleRule(rule)} style={actionBtn(rule.active_status ? '#09834F' : P.muted, rule.active_status ? '#ECFDF5' : P.bg)}>
                                                 {rule.active_status ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
                                                 {rule.active_status ? 'Active' : 'Paused'}
                                             </button>
@@ -699,7 +699,7 @@ export default function CommunicationsPage() {
                     
                     <div style={{ marginBottom: 16 }}>
                         <FieldLabel>Available Dynamic Variables</FieldLabel>
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', background: '#F0FDF4', padding: 12, borderRadius: 12, border: '1px solid #A7F3D0' }}>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', background: '#F1FBF5', padding: 12, borderRadius: 12, border: '1px solid #A7F3D0' }}>
                             {['{student_name}', '{exam_name}', '{institute_name}', '{exam_fee}', '{referral_link}', '{exam_date}', '{exam_time}'].map(p => (
                                 <button key={p} onClick={() => setWaForm(f => ({ ...f, template_text: f.template_text + ' ' + p }))} 
                                     style={{ background: '#fff', border: '1px solid #A7F3D0', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 800, color: '#166534', cursor: 'pointer' }}>
@@ -717,7 +717,7 @@ export default function CommunicationsPage() {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-                        <button onClick={() => setWaForm(f => ({ ...f, is_active: !f.is_active }))} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: waForm.is_active ? '#F0FDF4' : P.bg, border: `1px solid ${waForm.is_active ? '#A7F3D0' : P.border}`, borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 800, color: waForm.is_active ? '#059669' : P.muted }}>
+                        <button onClick={() => setWaForm(f => ({ ...f, is_active: !f.is_active }))} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: waForm.is_active ? '#F1FBF5' : P.bg, border: `1px solid ${waForm.is_active ? '#A7F3D0' : P.border}`, borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 800, color: waForm.is_active ? '#09834F' : P.muted }}>
                             {waForm.is_active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                             {waForm.is_active ? 'Active Status' : 'Inactive Status'}
                         </button>
@@ -725,7 +725,7 @@ export default function CommunicationsPage() {
 
                     <div style={{ display: 'flex', gap: 12 }}>
                         <button onClick={() => setWaDrawer(false)} style={{ flex: 1, padding: 14, borderRadius: 12, background: P.bg, border: `1px solid ${P.border}`, fontWeight: 700, cursor: 'pointer', fontSize: 14 }}>Cancel</button>
-                        <button onClick={saveWa} disabled={saving} style={{ flex: 2, padding: 14, borderRadius: 12, background: '#16A34A', color: '#fff', border: 'none', fontWeight: 800, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 6px 20px rgba(22,163,74,0.3)', opacity: saving ? 0.7 : 1 }}>
+                        <button onClick={saveWa} disabled={saving} style={{ flex: 2, padding: 14, borderRadius: 12, background: '#09834F', color: '#fff', border: 'none', fontWeight: 800, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 6px 20px rgba(22,163,74,0.3)', opacity: saving ? 0.7 : 1 }}>
                             {saving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={16} />}
                             {saving ? 'Saving...' : 'Save WhatsApp Message'}
                         </button>
@@ -796,7 +796,7 @@ export default function CommunicationsPage() {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-                        <button onClick={() => setRuleForm(f => ({ ...f, active_status: !f.active_status }))} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: ruleForm.active_status ? '#F0FDF4' : P.bg, border: `1px solid ${ruleForm.active_status ? '#A7F3D0' : P.border}`, borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 800, color: ruleForm.active_status ? '#059669' : P.muted }}>
+                        <button onClick={() => setRuleForm(f => ({ ...f, active_status: !f.active_status }))} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: ruleForm.active_status ? '#F1FBF5' : P.bg, border: `1px solid ${ruleForm.active_status ? '#A7F3D0' : P.border}`, borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 800, color: ruleForm.active_status ? '#09834F' : P.muted }}>
                             {ruleForm.active_status ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                             {ruleForm.active_status ? 'Active Rule' : 'Paused Rule'}
                         </button>

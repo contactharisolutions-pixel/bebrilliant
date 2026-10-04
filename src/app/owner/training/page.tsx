@@ -14,11 +14,11 @@ import { KpiCard } from '@/components/shared/institutional/KpiCard'
 
 const TRAINING_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
     pending_trainer:  { label: 'Pending Trainer', color: '#D97706', bg: '#FFFBEB', icon: AlertTriangle },
-    trainer_assigned: { label: 'Trainer Assigned',color: '#2563EB', bg: '#EFF6FF', icon: UserCheck },
-    in_progress:      { label: 'In Delivery',      color: '#004B93', bg: '#EEF4FF', icon: PlayCircle },
+    trainer_assigned: { label: 'Trainer Assigned',color: '#0868B2', bg: '#E5F3FB', icon: UserCheck },
+    in_progress:      { label: 'In Delivery',      color: '#0868B2', bg: '#EEF4FF', icon: PlayCircle },
     dry_run:          { label: 'Dry-Run & Sign-Off',color: '#7C3AED', bg: '#F5F3FF', icon: ShieldCheck },
-    completed:        { label: 'Go-Live Certified',color: '#059669', bg: '#ECFDF5', icon: Rocket },
-    cancelled:        { label: 'Cancelled',        color: '#6B7280', bg: '#F3F4F6', icon: X },
+    completed:        { label: 'Go-Live Certified',color: '#09834F', bg: '#ECFDF5', icon: Rocket },
+    cancelled:        { label: 'Cancelled',        color: '#64748B', bg: '#F1F5F9', icon: X },
 }
 
 const TRAINING_PACKAGES = [
@@ -333,7 +333,7 @@ export default function TrainingManagementPage() {
             {toast && (
                 <div style={{
                     position: 'fixed', bottom: 28, right: 36, zIndex: 99999,
-                    background: toast.type === 'success' ? '#059669' : '#DC2626',
+                    background: toast.type === 'success' ? '#09834F' : '#DC2626',
                     color: '#fff', padding: '12px 22px', borderRadius: 14,
                     fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8,
                     boxShadow: '0 20px 40px rgba(0,0,0,0.25)', animation: 'fadeIn 0.3s ease-out'
@@ -402,20 +402,20 @@ export default function TrainingManagementPage() {
             {/* Candidate Intake Alert Banner if any completed onboarding schools need training */}
             {onboardedCandidates.length > 0 && (
                 <div style={{
-                    background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
-                    border: '1px solid #BFDBFE', borderRadius: 16, padding: '14px 20px',
+                    background: 'linear-gradient(135deg, #E5F3FB 0%, #DBEAFE 100%)',
+                    border: '1px solid #B6DCF2', borderRadius: 16, padding: '14px 20px',
                     marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     gap: 16, flexWrap: 'wrap'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#0868B2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
                             <Sparkles size={18} />
                         </div>
                         <div>
-                            <div style={{ fontSize: 14, fontWeight: 900, color: '#1E3A8A' }}>
+                            <div style={{ fontSize: 14, fontWeight: 900, color: '#0868B2' }}>
                                 {onboardedCandidates.length} Institutional Client{onboardedCandidates.length > 1 ? 's' : ''} Ready for Training Intake
                             </div>
-                            <div style={{ fontSize: 12, color: '#3B82F6', fontWeight: 600 }}>
+                            <div style={{ fontSize: 12, color: '#0868B2', fontWeight: 600 }}>
                                 Onboarding setup is verified. Ready to designate specialist trainer and schedule curriculum.
                             </div>
                         </div>
@@ -438,7 +438,7 @@ export default function TrainingManagementPage() {
                                     setShowNewCaseModal(true)
                                 }}
                                 style={{
-                                    padding: '7px 14px', background: '#2563EB', color: '#fff',
+                                    padding: '7px 14px', background: '#0868B2', color: '#fff',
                                     border: 'none', borderRadius: 10, fontSize: 12, fontWeight: 800,
                                     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
                                 }}
@@ -696,7 +696,7 @@ export default function TrainingManagementPage() {
                                                     setDrawerTab('golive')
                                                 }}
                                                 style={{
-                                                    padding: '9px 16px', background: '#ECFDF5', color: '#059669',
+                                                    padding: '9px 16px', background: '#ECFDF5', color: '#09834F',
                                                     border: '1px solid #A7F3D0', borderRadius: 10, fontWeight: 900,
                                                     fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
                                                 }}
@@ -714,15 +714,15 @@ export default function TrainingManagementPage() {
                                 }}>
                                     {/* Stage 1: Trainer Assignment */}
                                     <div style={{
-                                        background: trainer ? '#F0FDF4' : '#FFFBEB',
-                                        border: `1px solid ${trainer ? '#BBF7D0' : '#FDE68A'}`,
+                                        background: trainer ? '#F1FBF5' : '#FFFBEB',
+                                        border: `1px solid ${trainer ? '#B7E8CC' : '#FDE68A'}`,
                                         borderRadius: 12, padding: '10px 12px'
                                     }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                                             <span style={{ fontSize: 11, fontWeight: 900, color: trainer ? '#166534' : '#92400E' }}>
                                                 1. Trainer Setup
                                             </span>
-                                            {trainer ? <CheckCircle2 size={14} color="#16a34a" /> : <Clock size={14} color="#d97706" />}
+                                            {trainer ? <CheckCircle2 size={14} color="#09834F" /> : <Clock size={14} color="#d97706" />}
                                         </div>
                                         <div style={{ fontSize: 12, fontWeight: 800, color: P.dark }}>
                                             {trainer ? `${trainer.first_name}` : 'Pending'}
@@ -732,7 +732,7 @@ export default function TrainingManagementPage() {
                                     {/* Stage 2: Curriculum Sessions */}
                                     <div style={{
                                         background: conductedCount > 0 ? '#EEF4FF' : '#F8FAFC',
-                                        border: `1px solid ${conductedCount > 0 ? '#BFDBFE' : '#E2E8F0'}`,
+                                        border: `1px solid ${conductedCount > 0 ? '#B6DCF2' : '#E2E8F0'}`,
                                         borderRadius: 12, padding: '10px 12px'
                                     }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -780,12 +780,12 @@ export default function TrainingManagementPage() {
                                             <span style={{ fontSize: 11, fontWeight: 900, color: tc.status === 'completed' ? '#065F46' : P.muted }}>
                                                 4. Go-Live
                                             </span>
-                                            {tc.status === 'completed' ? <Rocket size={14} color="#059669" /> : <Clock size={14} color={P.muted} />}
+                                            {tc.status === 'completed' ? <Rocket size={14} color="#09834F" /> : <Clock size={14} color={P.muted} />}
                                         </div>
                                         <div style={{ fontSize: 12, fontWeight: 800, color: P.dark, display: 'flex', alignItems: 'center', gap: 4 }}>
                                             {tc.status === 'completed' ? (
                                                 <>
-                                                    <span style={{ color: '#059669' }}>Certified</span>
+                                                    <span style={{ color: '#09834F' }}>Certified</span>
                                                     {tc.feedback_rating && <span style={{ color: P.warning }}>({tc.feedback_rating}★)</span>}
                                                 </>
                                             ) : (
@@ -939,7 +939,7 @@ export default function TrainingManagementPage() {
                                                         key={sess.id}
                                                         style={{
                                                             background: isConducted ? '#FAFCFF' : '#fff',
-                                                            border: `1px solid ${isConducted ? '#BFDBFE' : P.border}`,
+                                                            border: `1px solid ${isConducted ? '#B6DCF2' : P.border}`,
                                                             borderRadius: 16, padding: '18px 20px', transition: 'all 0.2s ease',
                                                             position: 'relative'
                                                         }}
@@ -1017,9 +1017,9 @@ export default function TrainingManagementPage() {
                                                                     rel="noreferrer"
                                                                     style={{
                                                                         display: 'inline-flex', alignItems: 'center', gap: 6,
-                                                                        padding: '6px 12px', background: '#EFF6FF', color: '#2563EB',
+                                                                        padding: '6px 12px', background: '#E5F3FB', color: '#0868B2',
                                                                         borderRadius: 8, fontSize: 12, fontWeight: 800, textDecoration: 'none',
-                                                                        border: '1px solid #BFDBFE'
+                                                                        border: '1px solid #B6DCF2'
                                                                     }}
                                                                 >
                                                                     <Video size={13} /> Join Meeting URL <ExternalLink size={11} />
@@ -1051,7 +1051,7 @@ export default function TrainingManagementPage() {
                                                                     </div>
                                                                 )}
                                                                 {sess.key_learnings && (
-                                                                    <div style={{ fontSize: 12, color: '#059669', fontWeight: 700 }}>
+                                                                    <div style={{ fontSize: 12, color: '#09834F', fontWeight: 700 }}>
                                                                         <strong>Key Milestone:</strong> {sess.key_learnings}
                                                                     </div>
                                                                 )}
@@ -1103,13 +1103,13 @@ export default function TrainingManagementPage() {
 
                                     {/* Sign-Off Status Card */}
                                     <div style={{
-                                        background: activeCase.dry_run_status === 'passed' ? '#F0FDF4' : '#FFFBEB',
-                                        border: `1px solid ${activeCase.dry_run_status === 'passed' ? '#BBF7D0' : '#FDE68A'}`,
+                                        background: activeCase.dry_run_status === 'passed' ? '#F1FBF5' : '#FFFBEB',
+                                        border: `1px solid ${activeCase.dry_run_status === 'passed' ? '#B7E8CC' : '#FDE68A'}`,
                                         borderRadius: 16, padding: '20px 22px', marginBottom: 20
                                     }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                <ShieldCheck size={22} color={activeCase.dry_run_status === 'passed' ? '#16A34A' : '#D97706'} />
+                                                <ShieldCheck size={22} color={activeCase.dry_run_status === 'passed' ? '#09834F' : '#D97706'} />
                                                 <div>
                                                     <h4 style={{ fontSize: 15, fontWeight: 950, color: P.dark, margin: 0 }}>
                                                         {activeCase.dry_run_status === 'passed' ? 'Institutional Sign-Off Approved' : 'Sign-Off Pending Verification'}
@@ -1131,7 +1131,7 @@ export default function TrainingManagementPage() {
                                                     })
                                                 }}
                                                 style={{
-                                                    padding: '8px 14px', background: activeCase.dry_run_status === 'passed' ? '#16A34A' : P.brand,
+                                                    padding: '8px 14px', background: activeCase.dry_run_status === 'passed' ? '#09834F' : P.brand,
                                                     color: '#fff', border: 'none', borderRadius: 10, fontWeight: 900, fontSize: 12, cursor: 'pointer'
                                                 }}
                                             >
@@ -1179,10 +1179,10 @@ export default function TrainingManagementPage() {
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                                 <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(240,160,38,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(240,160,38,0.5)' }}>
-                                                    <Award size={24} color="#F0A026" />
+                                                    <Award size={24} color="#D97706" />
                                                 </div>
                                                 <div>
-                                                    <div style={{ fontSize: 11, fontWeight: 900, color: '#F0A026', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+                                                    <div style={{ fontSize: 11, fontWeight: 900, color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
                                                         Official Certificate of Institutional Go-Live
                                                     </div>
                                                     <div style={{ fontSize: 18, fontWeight: 950, color: '#fff', letterSpacing: '-0.02em' }}>
@@ -1192,7 +1192,7 @@ export default function TrainingManagementPage() {
                                             </div>
 
                                             <div style={{
-                                                background: activeCase.status === 'completed' ? '#059669' : '#D97706',
+                                                background: activeCase.status === 'completed' ? '#09834F' : '#D97706',
                                                 padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 900, textTransform: 'uppercase'
                                             }}>
                                                 {activeCase.status === 'completed' ? 'Certified Live' : 'Cutover Pending'}
@@ -1210,7 +1210,7 @@ export default function TrainingManagementPage() {
                                         }}>
                                             <div>
                                                 <div style={{ fontSize: 10, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>Certificate Code</div>
-                                                <div style={{ fontSize: 13, fontWeight: 900, color: '#F0A026', marginTop: 2 }}>
+                                                <div style={{ fontSize: 13, fontWeight: 900, color: '#D97706', marginTop: 2 }}>
                                                     {activeCase.certificate_id || 'GL-CERT-PENDING'}
                                                 </div>
                                             </div>

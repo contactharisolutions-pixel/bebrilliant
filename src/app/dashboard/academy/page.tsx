@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
@@ -87,10 +87,10 @@ type AcademyStats = {
 
 // ── COLOR TOKENS (OpenAI Inspired) ──────────────────────────────
 const PALETTE = {
-    primary: '#004B93',
+    primary: '#0868B2',
     primaryHover: '#003B73',
-    primaryLight: '#EFF6FF',
-    accent: '#2563EB',
+    primaryLight: '#E5F3FB',
+    accent: '#0868B2',
     emerald: '#10B981',
     emeraldLight: '#ECFDF5',
     amber: '#F59E0B',
@@ -132,7 +132,7 @@ function Toast({ msg, ok, onClose }: { msg: string; ok: boolean; onClose: () => 
         }}>
             {ok ? <CheckCircle2 size={18} color="#34D399" /> : <AlertCircle size={18} color="#F87171" />}
             <span>{msg}</span>
-            <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: 2, display: 'flex' }}>
+            <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 2, display: 'flex' }}>
                 <X size={16} />
             </button>
         </div>
@@ -748,7 +748,7 @@ export default function AcademySetupPage() {
                     }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                             <span style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>Student Intake Capacity</span>
-                            <div style={{ width: 34, height: 34, borderRadius: 10, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB' }}>
+                            <div style={{ width: 34, height: 34, borderRadius: 10, background: '#E5F3FB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0868B2' }}>
                                 <Users size={18} />
                             </div>
                         </div>
@@ -1481,7 +1481,7 @@ export default function AcademySetupPage() {
                                                                 key={sub.id}
                                                                 style={{
                                                                     borderBottom: '1px solid #F1F5F9',
-                                                                    background: isSelected ? '#EFF6FF' : '#FFFFFF',
+                                                                    background: isSelected ? '#E5F3FB' : '#FFFFFF',
                                                                     transition: '0.1s'
                                                                 }}
                                                             >

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
@@ -16,64 +16,64 @@ import {
 const P = {
     bg: '#F8F9FA',
     card: '#FFFFFF',
-    border: '#E5E7EB',
+    border: '#E2E8F0',
     borderLight: '#F1F3F5',
-    brand: '#004B93',
+    brand: '#0868B2',
     brandLight: '#0A62BD',
     brandBg: '#EEF4FF',
     brandHover: '#003A72',
-    cta: '#F0A026',
+    cta: '#D97706',
     ctaBg: '#FFF7E6',
-    dark: '#111827',
-    text: '#374151',
-    muted: '#6B7280',
-    subtle: '#9CA3AF',
-    hover: '#F9FAFB',
-    success: '#059669',
+    dark: '#34445A',
+    text: '#475569',
+    muted: '#64748B',
+    subtle: '#94A3B8',
+    hover: '#F8FAFC',
+    success: '#09834F',
     successBg: '#ECFDF5',
     warning: '#D97706',
     warningBg: '#FFFBEB',
     error: '#DC2626',
     errorBg: '#FEF2F2',
-    info: '#2563EB',
-    infoBg: '#EFF6FF',
+    info: '#0868B2',
+    infoBg: '#E5F3FB',
     purple: '#7C3AED',
     purpleBg: '#F5F3FF',
 }
 
 // ── PIPELINE STAGES ───────────────────────────────────────────────────────────
 const DEFAULT_STAGES = [
-    { key: 'new',            label: 'New Inquiry',    color: '#059669', bg: '#ECFDF5', icon: Sparkles },
+    { key: 'new',            label: 'New Inquiry',    color: '#09834F', bg: '#ECFDF5', icon: Sparkles },
     { key: 'contacted',      label: 'Contacted',      color: '#D97706', bg: '#FFFBEB', icon: PhoneCall },
-    { key: 'demo_scheduled', label: 'Demo Scheduled', color: '#2563EB', bg: '#EFF6FF', icon: Calendar },
+    { key: 'demo_scheduled', label: 'Demo Scheduled', color: '#0868B2', bg: '#E5F3FB', icon: Calendar },
     { key: 'demo_completed', label: 'Demo Completed', color: '#7C3AED', bg: '#F5F3FF', icon: Video },
-    { key: 'onboarding',     label: 'Onboarding',     color: '#004B93', bg: '#EEF4FF', icon: ShieldCheck },
-    { key: 'converted',      label: 'Enrolled',       color: '#059669', bg: '#ECFDF5', icon: Trophy },
+    { key: 'onboarding',     label: 'Onboarding',     color: '#0868B2', bg: '#EEF4FF', icon: ShieldCheck },
+    { key: 'converted',      label: 'Enrolled',       color: '#09834F', bg: '#ECFDF5', icon: Trophy },
     { key: 'lost',           label: 'Closed',         color: '#DC2626', bg: '#FEF2F2', icon: Ban },
 ]
 
 const SOURCES = ['Website', 'Referral', 'Phone Call', 'Social Media', 'Conference', 'Google Search', 'Manual', 'Import', 'Other']
 const PRIORITY_CONFIG = {
-    low:    { label: 'Low',    color: '#6B7280', bg: '#F3F4F6' },
+    low:    { label: 'Low',    color: '#64748B', bg: '#F1F5F9' },
     medium: { label: 'Medium', color: '#D97706', bg: '#FFFBEB' },
     high:   { label: 'High',   color: '#DC2626', bg: '#FEF2F2' },
     urgent: { label: 'Urgent', color: '#7C3AED', bg: '#F5F3FF' },
 }
 
 const NOTE_TYPES = [
-    { key: 'note',        label: 'General Note',    icon: StickyNote,    color: '#2563EB', bg: '#EFF6FF' },
+    { key: 'note',        label: 'General Note',    icon: StickyNote,    color: '#0868B2', bg: '#E5F3FB' },
     { key: 'requirement', label: 'Requirement',     icon: Sparkles,      color: '#7C3AED', bg: '#F5F3FF' },
-    { key: 'call',        label: 'Call Summary',    icon: PhoneCall,     color: '#059669', bg: '#ECFDF5' },
+    { key: 'call',        label: 'Call Summary',    icon: PhoneCall,     color: '#09834F', bg: '#ECFDF5' },
     { key: 'insight',     label: 'Deal Strategy',   icon: Target,        color: '#D97706', bg: '#FFFBEB' },
     { key: 'urgent',      label: 'Critical Alert',  icon: AlertCircle,   color: '#DC2626', bg: '#FEF2F2' },
 ]
 
 const AVATAR_COLORS = [
-    { bg: '#EEF4FF', text: '#004B93' },
-    { bg: '#ECFDF5', text: '#059669' },
+    { bg: '#EEF4FF', text: '#0868B2' },
+    { bg: '#ECFDF5', text: '#09834F' },
     { bg: '#F5F3FF', text: '#7C3AED' },
     { bg: '#FFF7E6', text: '#D97706' },
-    { bg: '#EFF6FF', text: '#2563EB' },
+    { bg: '#E5F3FB', text: '#0868B2' },
     { bg: '#FEF2F2', text: '#DC2626' },
 ]
 
@@ -529,9 +529,9 @@ function LeadDetailDrawer({
                                             textDecoration: 'none'
                                         }}
                                     >
-                                        <ShieldCheck size={12} color="#059669" />
+                                        <ShieldCheck size={12} color="#09834F" />
                                         <span>Onboarding Process</span>
-                                        <ArrowRight size={10} color="#059669" />
+                                        <ArrowRight size={10} color="#09834F" />
                                     </a>
                                 )}
                             </div>
@@ -748,8 +748,8 @@ function LeadDetailDrawer({
                                         const noteTypeConfig = NOTE_TYPES.find(n => n.key === act.type) || {
                                             label: act.type?.replace('_', ' ') || 'Activity',
                                             icon: Activity,
-                                            color: '#6B7280',
-                                            bg: '#F3F4F6'
+                                            color: '#64748B',
+                                            bg: '#F1F5F9'
                                         }
                                         const author = act.created_by_profile
                                         const authorName = author ? `${author.first_name || ''} ${author.last_name || ''}`.trim() || author.email : 'System Staff'
@@ -1502,7 +1502,7 @@ export default function CRMPage() {
                 @keyframes spin { to { transform: rotate(360deg); } }
                 @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
                 * { box-sizing: border-box; }
-                .crm-table-row:hover { background-color: #F9FAFB !important; }
+                .crm-table-row:hover { background-color: #F8FAFC !important; }
                 .custom-select {
                     appearance: none;
                     -webkit-appearance: none;
@@ -1669,7 +1669,7 @@ export default function CRMPage() {
                             <div style={{ overflowX: 'auto' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1000 }}>
                                     <thead>
-                                        <tr style={{ background: '#F9FAFB', borderBottom: '1px solid ' + P.border }}>
+                                        <tr style={{ background: '#F8FAFC', borderBottom: '1px solid ' + P.border }}>
                                             <th style={{ padding: '12px 14px', width: 38, textAlign: 'center' }}>
                                                 <input
                                                     type="checkbox"
@@ -1928,7 +1928,7 @@ export default function CRMPage() {
                                                                         padding: '6px 12px',
                                                                         borderRadius: 7,
                                                                         border: 'none',
-                                                                        background: '#059669',
+                                                                        background: '#09834F',
                                                                         color: '#fff',
                                                                         cursor: 'pointer',
                                                                         display: 'inline-flex',
@@ -2087,7 +2087,7 @@ export default function CRMPage() {
                     bottom: 24,
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    background: '#1F2937',
+                    background: '#34445A',
                     color: '#fff',
                     borderRadius: 12,
                     padding: '10px 20px',
@@ -2102,7 +2102,7 @@ export default function CRMPage() {
                         {selectedIds.length} {selectedIds.length === 1 ? 'lead' : 'leads'} selected
                     </span>
 
-                    <div style={{ height: 18, width: 1, background: '#374151' }} />
+                    <div style={{ height: 18, width: 1, background: '#475569' }} />
 
                     {/* Change Status */}
                     <select
@@ -2111,7 +2111,7 @@ export default function CRMPage() {
                         }}
                         defaultValue=""
                         style={{
-                            background: '#374151',
+                            background: '#475569',
                             color: '#fff',
                             border: '1px solid #4B5563',
                             borderRadius: 6,
@@ -2133,7 +2133,7 @@ export default function CRMPage() {
                         }}
                         defaultValue=""
                         style={{
-                            background: '#374151',
+                            background: '#475569',
                             color: '#fff',
                             border: '1px solid #4B5563',
                             borderRadius: 6,
@@ -2176,7 +2176,7 @@ export default function CRMPage() {
                         onClick={() => setSelectedIds([])}
                         style={{
                             background: 'transparent',
-                            color: '#9CA3AF',
+                            color: '#94A3B8',
                             border: 'none',
                             cursor: 'pointer',
                             padding: 4,

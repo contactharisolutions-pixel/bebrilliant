@@ -104,7 +104,7 @@ function Toast({ msg, ok, onClose }: { msg: string; ok: boolean; onClose: () => 
         }}>
             {ok ? <CheckCircle2 size={18} color="#34D399" /> : <AlertCircle size={18} color="#F87171" />}
             <span>{msg}</span>
-            <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: 2, display: 'flex' }}>
+            <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 2, display: 'flex' }}>
                 <X size={16} />
             </button>
         </div>
@@ -212,8 +212,8 @@ function Modal({
                             padding: '10px 18px',
                             borderRadius: 10,
                             background: '#FFFFFF',
-                            border: '1px solid #D1D5DB',
-                            color: '#374151',
+                            border: '1px solid #CBD5E1',
+                            color: '#475569',
                             fontSize: 13,
                             fontWeight: 600,
                             cursor: 'pointer',
@@ -230,7 +230,7 @@ function Modal({
                             style={{
                                 padding: '10px 22px',
                                 borderRadius: 10,
-                                background: '#004B93',
+                                background: '#0868B2',
                                 border: '1px solid #003B73',
                                 color: '#FFFFFF',
                                 fontSize: 13,
@@ -243,7 +243,7 @@ function Modal({
                                 transition: '0.15s'
                             }}
                             onMouseEnter={e => { if (!saving) e.currentTarget.style.background = '#003B73' }}
-                            onMouseLeave={e => { if (!saving) e.currentTarget.style.background = '#004B93' }}
+                            onMouseLeave={e => { if (!saving) e.currentTarget.style.background = '#0868B2' }}
                         >
                             {saving && <Loader2 size={15} className="spin" />}
                             {submitText}
@@ -687,7 +687,7 @@ export default function FacultyManagement() {
                                     🏢 Institute Tenant • Multiple Teachers Allowed ({teachers.length}/{stats.max_teachers || 50} Slots)
                                 </span>
                             ) : (
-                                <span style={{ padding: '4px 12px', background: '#EFF6FF', color: '#1E40AF', border: '1px solid #DBEAFE', borderRadius: 9999, fontSize: 11, fontWeight: 700 }}>
+                                <span style={{ padding: '4px 12px', background: '#E5F3FB', color: '#1E40AF', border: '1px solid #DBEAFE', borderRadius: 9999, fontSize: 11, fontWeight: 700 }}>
                                     🏫 School Tenant • Multiple Teachers Allowed ({teachers.length}/{stats.max_teachers || 60} Slots)
                                 </span>
                             )}
@@ -732,7 +732,7 @@ export default function FacultyManagement() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 8,
-                                background: '#004B93',
+                                background: '#0868B2',
                                 border: '1px solid #003B73',
                                 borderRadius: 10,
                                 padding: '10px 20px',
@@ -744,7 +744,7 @@ export default function FacultyManagement() {
                                 transition: '0.15s'
                             }}
                             onMouseEnter={e => e.currentTarget.style.background = '#003B73'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#004B93'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#0868B2'}
                         >
                             <UserPlus size={16} /> Add Faculty Member
                         </button>
@@ -758,7 +758,7 @@ export default function FacultyManagement() {
                 <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 14, padding: '20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>Total Faculty</span>
-                        <div style={{ width: 32, height: 32, borderRadius: 8, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#004B93' }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0868B2' }}>
                             <Users size={16} />
                         </div>
                     </div>
@@ -811,7 +811,7 @@ export default function FacultyManagement() {
                 <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 14, padding: '20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>Subject Coverage</span>
-                        <div style={{ width: 32, height: 32, borderRadius: 8, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB' }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: '#E5F3FB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0868B2' }}>
                             <BookOpen size={16} />
                         </div>
                     </div>
@@ -1044,7 +1044,7 @@ export default function FacultyManagement() {
             }}>
                 {loading ? (
                     <div style={{ padding: '80px 20px', textAlign: 'center' }}>
-                        <Loader2 size={36} color="#004B93" className="spin" style={{ margin: '0 auto 16px' }} />
+                        <Loader2 size={36} color="#0868B2" className="spin" style={{ margin: '0 auto 16px' }} />
                         <p style={{ fontSize: 14, fontWeight: 600, color: '#64748B', margin: 0 }}>
                             Loading faculty roster...
                         </p>
@@ -1057,13 +1057,13 @@ export default function FacultyManagement() {
                                 width: 72,
                                 height: 72,
                                 borderRadius: 20,
-                                background: '#EFF6FF',
+                                background: '#E5F3FB',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 margin: '0 auto 20px',
                                 border: '1px solid #DBEAFE',
-                                color: '#004B93'
+                                color: '#0868B2'
                             }}>
                                 <GraduationCap size={36} />
                             </div>
@@ -1083,7 +1083,7 @@ export default function FacultyManagement() {
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     gap: 8,
-                                    background: '#004B93',
+                                    background: '#0868B2',
                                     border: 'none',
                                     borderRadius: 10,
                                     padding: '11px 22px',
@@ -1121,7 +1121,7 @@ export default function FacultyManagement() {
                                     type="checkbox"
                                     checked={isAllSelected}
                                     onChange={toggleSelectAll}
-                                    style={{ cursor: 'pointer', accentColor: '#004B93' }}
+                                    style={{ cursor: 'pointer', accentColor: '#0868B2' }}
                                 />
                             </div>
                             <div
@@ -1184,7 +1184,7 @@ export default function FacultyManagement() {
                                             type="checkbox"
                                             checked={isSelected}
                                             onChange={() => toggleSelectRow(teacher.id)}
-                                            style={{ cursor: 'pointer', accentColor: '#004B93' }}
+                                            style={{ cursor: 'pointer', accentColor: '#0868B2' }}
                                         />
                                     </div>
 
@@ -1194,7 +1194,7 @@ export default function FacultyManagement() {
                                             width: 42,
                                             height: 42,
                                             borderRadius: 12,
-                                            background: teacher.is_active ? 'linear-gradient(135deg, #004B93 0%, #002D58 100%)' : '#E2E8F0',
+                                            background: teacher.is_active ? 'linear-gradient(135deg, #0868B2 0%, #073B73 100%)' : '#E2E8F0',
                                             color: teacher.is_active ? '#FFFFFF' : '#64748B',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -1243,12 +1243,12 @@ export default function FacultyManagement() {
                                                 fontSize: 12,
                                                 fontWeight: 600,
                                                 border: 'none',
-                                                background: teacher.is_active ? '#DCFCE7' : '#FEF3C7',
-                                                color: teacher.is_active ? '#15803D' : '#B45309',
+                                                background: teacher.is_active ? '#DCF7E7' : '#FEF3C7',
+                                                color: teacher.is_active ? '#087347' : '#B45309',
                                                 cursor: 'pointer'
                                             }}
                                         >
-                                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: teacher.is_active ? '#16A34A' : '#F59E0B' }} />
+                                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: teacher.is_active ? '#09834F' : '#F59E0B' }} />
                                             {teacher.is_active ? 'Active' : 'Pending'}
                                         </button>
                                     </div>
@@ -1263,7 +1263,7 @@ export default function FacultyManagement() {
                                                         style={{
                                                             fontSize: 11,
                                                             fontWeight: 600,
-                                                            background: '#EFF6FF',
+                                                            background: '#E5F3FB',
                                                             color: '#1D4ED8',
                                                             border: '1px solid #DBEAFE',
                                                             borderRadius: 6,
@@ -1346,7 +1346,7 @@ export default function FacultyManagement() {
                                                 borderRadius: 8,
                                                 background: '#F8FAFC',
                                                 border: '1px solid #E2E8F0',
-                                                color: '#004B93',
+                                                color: '#0868B2',
                                                 fontSize: 12,
                                                 fontWeight: 600,
                                                 cursor: 'pointer',
@@ -1355,7 +1355,7 @@ export default function FacultyManagement() {
                                                 gap: 4,
                                                 transition: '0.15s'
                                             }}
-                                            onMouseEnter={e => { e.currentTarget.style.background = '#EFF6FF'; e.currentTarget.style.borderColor = '#BFDBFE' }}
+                                            onMouseEnter={e => { e.currentTarget.style.background = '#E5F3FB'; e.currentTarget.style.borderColor = '#B6DCF2' }}
                                             onMouseLeave={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.borderColor = '#E2E8F0' }}
                                         >
                                             <BookOpen size={13} /> Assign
@@ -1485,7 +1485,7 @@ export default function FacultyManagement() {
                                                         borderRadius: 6,
                                                         fontSize: 12,
                                                         fontWeight: 600,
-                                                        color: teacher.is_active ? '#B45309' : '#15803D',
+                                                        color: teacher.is_active ? '#B45309' : '#087347',
                                                         cursor: 'pointer',
                                                         textAlign: 'left'
                                                     }}
@@ -1547,15 +1547,15 @@ export default function FacultyManagement() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                         {/* Status Notice */}
                         <div style={{
-                            background: '#F0FDF4',
-                            border: '1px solid #BBF7D0',
+                            background: '#F1FBF5',
+                            border: '1px solid #B7E8CC',
                             borderRadius: 12,
                             padding: '12px 16px',
                             display: 'flex',
                             gap: 12,
                             alignItems: 'flex-start'
                         }}>
-                            <ShieldCheck size={18} color="#16A34A" style={{ marginTop: 2, flexShrink: 0 }} />
+                            <ShieldCheck size={18} color="#09834F" style={{ marginTop: 2, flexShrink: 0 }} />
                             <p style={{ margin: 0, fontSize: 13, color: '#166534', lineHeight: 1.4 }}>
                                 The teacher account will be created instantly and provisioned for online testing, offline grading, and curriculum management.
                             </p>
@@ -1572,7 +1572,7 @@ export default function FacultyManagement() {
                                     value={teacherForm.first_name}
                                     onChange={e => setTeacherForm({ ...teacherForm, first_name: e.target.value })}
                                     placeholder="e.g. Marie"
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, outline: 'none' }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }}
                                 />
                             </div>
                             <div>
@@ -1584,7 +1584,7 @@ export default function FacultyManagement() {
                                     value={teacherForm.last_name}
                                     onChange={e => setTeacherForm({ ...teacherForm, last_name: e.target.value })}
                                     placeholder="e.g. Curie"
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, outline: 'none' }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }}
                                 />
                             </div>
                         </div>
@@ -1600,7 +1600,7 @@ export default function FacultyManagement() {
                                     value={teacherForm.email}
                                     onChange={e => setTeacherForm({ ...teacherForm, email: e.target.value })}
                                     placeholder="marie.curie@institute.org"
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, outline: 'none' }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }}
                                 />
                             </div>
                             <div>
@@ -1612,7 +1612,7 @@ export default function FacultyManagement() {
                                     value={teacherForm.phone}
                                     onChange={e => setTeacherForm({ ...teacherForm, phone: e.target.value })}
                                     placeholder="+91 98765 43210"
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, outline: 'none' }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }}
                                 />
                             </div>
                         </div>
@@ -1634,7 +1634,7 @@ export default function FacultyManagement() {
                                         width: '100%',
                                         padding: '10px 14px',
                                         borderRadius: 8,
-                                        border: '1px solid #D1D5DB',
+                                        border: '1px solid #CBD5E1',
                                         fontSize: 13,
                                         outline: 'none',
                                         background: '#FFFFFF',
@@ -1678,7 +1678,7 @@ export default function FacultyManagement() {
                                             gap: 4,
                                             background: 'none',
                                             border: 'none',
-                                            color: '#004B93',
+                                            color: '#0868B2',
                                             fontSize: 11,
                                             fontWeight: 600,
                                             cursor: 'pointer',
@@ -1694,7 +1694,7 @@ export default function FacultyManagement() {
                                     value={teacherForm.employee_id}
                                     onChange={e => setTeacherForm({ ...teacherForm, employee_id: e.target.value })}
                                     placeholder="e.g. EMP-1042"
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, outline: 'none' }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }}
                                 />
                             </div>
                         </div>
@@ -1711,7 +1711,7 @@ export default function FacultyManagement() {
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: '#1E293B' }}>
-                                    <KeyRound size={14} color="#004B93" /> Initial Login Password <span style={{ color: '#EF4444' }}>*</span>
+                                    <KeyRound size={14} color="#0868B2" /> Initial Login Password <span style={{ color: '#EF4444' }}>*</span>
                                 </label>
                                 <button
                                     type="button"
@@ -1720,8 +1720,8 @@ export default function FacultyManagement() {
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: 4,
-                                        background: '#EFF6FF',
-                                        border: '1px solid #BFDBFE',
+                                        background: '#E5F3FB',
+                                        border: '1px solid #B6DCF2',
                                         color: '#1D4ED8',
                                         fontSize: 11,
                                         fontWeight: 600,
@@ -1797,7 +1797,7 @@ export default function FacultyManagement() {
                                     type="text"
                                     value={editForm.first_name}
                                     onChange={e => setEditForm({ ...editForm, first_name: e.target.value })}
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
                                 />
                             </div>
                             <div>
@@ -1806,7 +1806,7 @@ export default function FacultyManagement() {
                                     type="text"
                                     value={editForm.last_name}
                                     onChange={e => setEditForm({ ...editForm, last_name: e.target.value })}
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
                                 />
                             </div>
                         </div>
@@ -1817,7 +1817,7 @@ export default function FacultyManagement() {
                                 type="tel"
                                 value={editForm.phone}
                                 onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
-                                style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
+                                style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
                             />
                         </div>
 
@@ -1838,7 +1838,7 @@ export default function FacultyManagement() {
                                         width: '100%',
                                         padding: '10px 14px',
                                         borderRadius: 8,
-                                        border: '1px solid #D1D5DB',
+                                        border: '1px solid #CBD5E1',
                                         fontSize: 13,
                                         outline: 'none',
                                         background: '#FFFFFF',
@@ -1882,7 +1882,7 @@ export default function FacultyManagement() {
                                             gap: 4,
                                             background: 'none',
                                             border: 'none',
-                                            color: '#004B93',
+                                            color: '#0868B2',
                                             fontSize: 11,
                                             fontWeight: 600,
                                             cursor: 'pointer',
@@ -1898,7 +1898,7 @@ export default function FacultyManagement() {
                                     value={editForm.employee_id}
                                     onChange={e => setEditForm({ ...editForm, employee_id: e.target.value })}
                                     placeholder="e.g. EMP-1042"
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
                                 />
                             </div>
                         </div>
@@ -1953,8 +1953,8 @@ export default function FacultyManagement() {
                                             style={{
                                                 padding: '10px 14px',
                                                 borderRadius: 8,
-                                                background: active ? '#EFF6FF' : '#FFFFFF',
-                                                border: '1px solid ' + (active ? '#3B82F6' : '#E2E8F0'),
+                                                background: active ? '#E5F3FB' : '#FFFFFF',
+                                                border: '1px solid ' + (active ? '#0868B2' : '#E2E8F0'),
                                                 cursor: 'pointer',
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -1965,7 +1965,7 @@ export default function FacultyManagement() {
                                             <span style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? '#1D4ED8' : '#334155' }}>
                                                 {s.name} {s.code ? `(${s.code})` : ''}
                                             </span>
-                                            {active && <Check size={16} color="#2563EB" />}
+                                            {active && <Check size={16} color="#0868B2" />}
                                         </div>
                                     )
                                 })}
@@ -2000,7 +2000,7 @@ export default function FacultyManagement() {
                                     style={{
                                         padding: '8px 14px',
                                         borderRadius: 8,
-                                        background: '#004B93',
+                                        background: '#0868B2',
                                         border: 'none',
                                         color: '#FFFFFF',
                                         fontSize: 12,
@@ -2066,8 +2066,8 @@ export default function FacultyManagement() {
                                                             borderRadius: 6,
                                                             fontSize: 11,
                                                             fontWeight: 600,
-                                                            border: '1px solid ' + (isClassActive ? '#2563EB' : '#D1D5DB'),
-                                                            background: isClassActive ? '#EFF6FF' : '#FFFFFF',
+                                                            border: '1px solid ' + (isClassActive ? '#0868B2' : '#CBD5E1'),
+                                                            background: isClassActive ? '#E5F3FB' : '#FFFFFF',
                                                             color: isClassActive ? '#1D4ED8' : '#64748B',
                                                             cursor: 'pointer'
                                                         }}
@@ -2101,8 +2101,8 @@ export default function FacultyManagement() {
                                                                         borderRadius: 6,
                                                                         fontSize: 11,
                                                                         fontWeight: 600,
-                                                                        border: '1px solid ' + (isDivActive ? '#004B93' : '#E2E8F0'),
-                                                                        background: isDivActive ? '#004B93' : '#F8FAFC',
+                                                                        border: '1px solid ' + (isDivActive ? '#0868B2' : '#E2E8F0'),
+                                                                        background: isDivActive ? '#0868B2' : '#F8FAFC',
                                                                         color: isDivActive ? '#FFFFFF' : '#475569',
                                                                         cursor: 'pointer'
                                                                     }}
@@ -2147,7 +2147,7 @@ export default function FacultyManagement() {
                             <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>{credentialModal.name}</div>
 
                             <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>Login Email</div>
-                            <div style={{ fontSize: 14, fontWeight: 600, color: '#004B93', marginBottom: 12, fontFamily: 'monospace' }}>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: '#0868B2', marginBottom: 12, fontFamily: 'monospace' }}>
                                 {credentialModal.email}
                             </div>
 
@@ -2161,7 +2161,7 @@ export default function FacultyManagement() {
                                         navigator.clipboard.writeText(`BeBrilliant Portal Login:\nEmail: ${credentialModal.email}\nPassword: ${credentialModal.pass}\nURL: ${window.location.origin}/login`)
                                         setToast({ msg: 'Credentials copied to clipboard!', ok: true })
                                     }}
-                                    style={{ background: 'transparent', border: 'none', color: '#004B93', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700 }}
+                                    style={{ background: 'transparent', border: 'none', color: '#0868B2', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700 }}
                                 >
                                     <Copy size={14} /> Copy
                                 </button>
@@ -2250,7 +2250,7 @@ export default function FacultyManagement() {
                                     padding: '10px 20px',
                                     borderRadius: 10,
                                     border: 'none',
-                                    background: '#004B93',
+                                    background: '#0868B2',
                                     color: '#FFFFFF',
                                     fontSize: 13,
                                     fontWeight: 700,

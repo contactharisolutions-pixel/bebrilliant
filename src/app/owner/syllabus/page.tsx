@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import {
@@ -42,7 +42,7 @@ type AIConfig = { id: string; parameter: string; value: any; updated_at: string 
 
 // ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const NODE_TYPES: { value: NodeType; label: string; color: string; bg: string; icon: any }[] = [
-    { value: 'category', label: 'Curriculum Type', color: '#2563EB', bg: '#EFF6FF', icon: Folder },
+    { value: 'category', label: 'Curriculum Type', color: '#0868B2', bg: '#E5F3FB', icon: Folder },
     { value: 'board', label: 'Board / Exam', color: '#D97706', bg: '#FEF3C7', icon: Folder },
     { value: 'class', label: 'Class / Level', color: '#0284C7', bg: '#E0F2FE', icon: Layers },
     { value: 'subject', label: 'Subject', color: '#10B981', bg: '#ECFDF5', icon: BookOpen },
@@ -100,7 +100,7 @@ function Modal({ title, onClose, onSubmit, loading, children, saveLabel = 'Save'
                         {cancelLabel}
                     </button>
                     {!hideSave && (
-                        <button onClick={onSubmit} disabled={loading} className="px-5 py-2 rounded-xl bg-[#004B93] hover:bg-[#003870] text-white font-bold text-xs shadow-sm flex items-center gap-2 transition-all disabled:opacity-60">
+                        <button onClick={onSubmit} disabled={loading} className="px-5 py-2 rounded-xl bg-[#0868B2] hover:bg-[#07549A] text-white font-bold text-xs shadow-sm flex items-center gap-2 transition-all disabled:opacity-60">
                             {loading && <Loader2 size={14} className="animate-spin" />} {saveLabel}
                         </button>
                     )}
@@ -195,7 +195,7 @@ function TreeNode({ node, nodes, plans, onEdit, onDelete, onAddChild, onToggle, 
                 <div
                     onClick={e => { e.stopPropagation(); onSelect(node, true) }}
                     className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
-                        isSelected ? 'bg-[#004B93] border-[#004B93]' : 'border-slate-300 hover:border-slate-400 bg-white'
+                        isSelected ? 'bg-[#0868B2] border-[#0868B2]' : 'border-slate-300 hover:border-slate-400 bg-white'
                     }`}
                 >
                     {isSelected && <Check size={11} className="text-white" strokeWidth={3} />}
@@ -239,7 +239,7 @@ function TreeNode({ node, nodes, plans, onEdit, onDelete, onAddChild, onToggle, 
                         <div className="flex items-baseline gap-2">
                             <span
                                 onDoubleClick={e => { e.stopPropagation(); setInlineEdit(true) }}
-                                className="text-xs font-bold text-slate-900 tracking-tight truncate hover:text-[#004B93]"
+                                className="text-xs font-bold text-slate-900 tracking-tight truncate hover:text-[#0868B2]"
                                 title={node.name}
                             >
                                 {node.name}
@@ -409,7 +409,7 @@ function NodeInspector({ nodeId, nodes, plans, onClose, apiCall, showToast, savi
                         onClick={() => setInspectorTab(tabKey)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all ${
                             inspectorTab === tabKey
-                                ? 'bg-blue-50 text-[#004B93] border border-blue-200/60'
+                                ? 'bg-blue-50 text-[#0868B2] border border-blue-200/60'
                                 : 'text-slate-500 hover:text-slate-800'
                         }`}
                     >
@@ -421,7 +421,7 @@ function NodeInspector({ nodeId, nodes, plans, onClose, apiCall, showToast, savi
             {/* Content */}
             <div className="p-4 overflow-y-auto flex-1 text-xs">
                 {detailLoading ? (
-                    <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-[#004B93]" /></div>
+                    <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-[#0868B2]" /></div>
                 ) : inspectorTab === 'overview' ? (
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
@@ -440,7 +440,7 @@ function NodeInspector({ nodeId, nodes, plans, onClose, apiCall, showToast, savi
                                 <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100">{detail.node.description}</p>
                             </div>
                         )}
-                        <button onClick={handleSaveMeta} disabled={saving} className="w-full py-2 bg-[#004B93] hover:bg-[#003870] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all">
+                        <button onClick={handleSaveMeta} disabled={saving} className="w-full py-2 bg-[#0868B2] hover:bg-[#07549A] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all">
                             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save Changes
                         </button>
                     </div>
@@ -462,7 +462,7 @@ function NodeInspector({ nodeId, nodes, plans, onClose, apiCall, showToast, savi
                                 <input type="number" value={editForm.exam_weightage || 0} onChange={e => setEditForm({ ...editForm, exam_weightage: e.target.value })} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold" />
                             </Field>
                         </div>
-                        <button onClick={handleSaveMeta} disabled={saving} className="w-full py-2 bg-[#004B93] hover:bg-[#003870] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm">
+                        <button onClick={handleSaveMeta} disabled={saving} className="w-full py-2 bg-[#0868B2] hover:bg-[#07549A] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm">
                             {saving && <Loader2 size={14} className="animate-spin" />} Save Metadata
                         </button>
                     </div>
@@ -470,7 +470,7 @@ function NodeInspector({ nodeId, nodes, plans, onClose, apiCall, showToast, savi
                     <div className="space-y-3">
                         <div className="flex gap-2">
                             <input placeholder="Add concept tag..." value={newConceptTag} onChange={e => setNewConceptTag(e.target.value)} className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-xs" />
-                            <button onClick={handleAddConceptTag} className="px-3 py-1.5 bg-[#004B93] text-white font-bold rounded-lg text-xs">Add</button>
+                            <button onClick={handleAddConceptTag} className="px-3 py-1.5 bg-[#0868B2] text-white font-bold rounded-lg text-xs">Add</button>
                         </div>
                         <div className="flex flex-wrap gap-1.5 mt-2">
                             {(detail?.conceptTags || []).map((t: any) => (
@@ -492,7 +492,7 @@ function BulkActionBar({ selectedIds, onDeactivate, onActivate, onDelete, onClea
     if (selectedIds.length === 0) return null
     return (
         <div className="sticky bottom-3 left-0 right-0 z-40 bg-slate-900 text-white rounded-2xl p-3.5 flex items-center gap-3 shadow-2xl border border-slate-800 animate-in slide-in-from-bottom-3 mt-4">
-            <div className="w-7 h-7 rounded-lg bg-[#004B93] flex items-center justify-center shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-[#0868B2] flex items-center justify-center shrink-0">
                 <CheckSquare size={14} className="text-white" />
             </div>
             <span className="text-xs font-bold flex-1">{selectedIds.length} node{selectedIds.length > 1 ? 's' : ''} selected</span>
@@ -681,7 +681,7 @@ function AIGenerateModal({ onClose, onDone, showToast }: { onClose: () => void; 
 
             {step === 'saving' && (
                 <div className="py-8 text-center">
-                    <Loader2 size={44} className="animate-spin text-[#004B93] mx-auto mb-3" />
+                    <Loader2 size={44} className="animate-spin text-[#0868B2] mx-auto mb-3" />
                     <h4 className="font-bold text-sm text-slate-900">Saving Curriculum</h4>
                     <p className="text-xs text-slate-400 mt-1">Populating nodes into database…</p>
                 </div>
@@ -829,7 +829,7 @@ function PlanWizard({ planForm, setPlanForm, planModal, onClose, onSave, saving,
             {/* Steps indicator */}
             <div className="flex gap-2 mb-5">
                 {['Details', 'Pricing', 'Features'].map((s, i) => (
-                    <div key={s} className={`flex-1 h-1.5 rounded-full transition-colors ${i + 1 <= step ? 'bg-[#004B93]' : 'bg-slate-200'}`} />
+                    <div key={s} className={`flex-1 h-1.5 rounded-full transition-colors ${i + 1 <= step ? 'bg-[#0868B2]' : 'bg-slate-200'}`} />
                 ))}
             </div>
 
@@ -861,7 +861,7 @@ function PlanWizard({ planForm, setPlanForm, planModal, onClose, onSave, saving,
                                     onClick={() => setPlanForm({ ...planForm, pricing_type: pt })}
                                     className={`py-2 rounded-xl text-xs font-bold capitalize border transition-all ${
                                         planForm.pricing_type === pt
-                                            ? 'bg-blue-50 border-[#004B93] text-[#004B93]'
+                                            ? 'bg-blue-50 border-[#0868B2] text-[#0868B2]'
                                             : 'bg-white border-slate-200 text-slate-600'
                                     }`}
                                 >
@@ -900,7 +900,7 @@ function PlanWizard({ planForm, setPlanForm, planModal, onClose, onSave, saving,
                                 <div className="text-xs font-bold">{f.label}</div>
                                 <div className="text-[11px] text-slate-400">{f.desc}</div>
                             </div>
-                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center ${planForm.features?.[f.key] ? 'bg-[#004B93] border-[#004B93] text-white' : 'border-slate-300'}`}>
+                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center ${planForm.features?.[f.key] ? 'bg-[#0868B2] border-[#0868B2] text-white' : 'border-slate-300'}`}>
                                 {planForm.features?.[f.key] && <Check size={12} strokeWidth={3} />}
                             </div>
                         </div>
@@ -927,7 +927,7 @@ function DistributeWizard({ distForm, setDistForm, onClose, onSave, saving, node
         >
             <div className="flex gap-2 mb-5">
                 {['Syllabus', 'Tenant', 'Access'].map((s, i) => (
-                    <div key={s} className={`flex-1 h-1.5 rounded-full transition-colors ${i + 1 <= step ? 'bg-[#004B93]' : 'bg-slate-200'}`} />
+                    <div key={s} className={`flex-1 h-1.5 rounded-full transition-colors ${i + 1 <= step ? 'bg-[#0868B2]' : 'bg-slate-200'}`} />
                 ))}
             </div>
 
@@ -939,11 +939,11 @@ function DistributeWizard({ distForm, setDistForm, onClose, onSave, saving, node
                             key={n.id}
                             onClick={() => setDistForm({ ...distForm, syllabus_id: n.id })}
                             className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
-                                distForm.syllabus_id === n.id ? 'bg-blue-50 border-[#004B93] text-blue-900 font-bold' : 'bg-white border-slate-200 text-slate-700'
+                                distForm.syllabus_id === n.id ? 'bg-blue-50 border-[#0868B2] text-blue-900 font-bold' : 'bg-white border-slate-200 text-slate-700'
                             }`}
                         >
                             <span className="text-xs font-bold">{n.name}</span>
-                            {distForm.syllabus_id === n.id && <Check size={16} className="text-[#004B93]" strokeWidth={3} />}
+                            {distForm.syllabus_id === n.id && <Check size={16} className="text-[#0868B2]" strokeWidth={3} />}
                         </div>
                     ))}
                 </div>
@@ -957,11 +957,11 @@ function DistributeWizard({ distForm, setDistForm, onClose, onSave, saving, node
                             key={t.id}
                             onClick={() => setDistForm({ ...distForm, tenant_id: t.id })}
                             className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
-                                distForm.tenant_id === t.id ? 'bg-blue-50 border-[#004B93] text-blue-900 font-bold' : 'bg-white border-slate-200 text-slate-700'
+                                distForm.tenant_id === t.id ? 'bg-blue-50 border-[#0868B2] text-blue-900 font-bold' : 'bg-white border-slate-200 text-slate-700'
                             }`}
                         >
                             <span className="text-xs font-bold">{t.name}</span>
-                            {distForm.tenant_id === t.id && <Check size={16} className="text-[#004B93]" strokeWidth={3} />}
+                            {distForm.tenant_id === t.id && <Check size={16} className="text-[#0868B2]" strokeWidth={3} />}
                         </div>
                     ))}
                 </div>
@@ -1003,7 +1003,7 @@ function AnalyticsPanel({ stats, plans, distributions, nodes }: any) {
             {/* Sub-KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <TopKpiCard label="Topic Coverage" value={`${topicCoverage}%`} sub={`${topicCount} topics documented`} icon={Target} bgClass="bg-emerald-500" subClass="text-emerald-600" />
-                <TopKpiCard label="Marketplace GMV" value={`₹${totalRevenue.toLocaleString()}`} sub={`${activePlanCount} active revenue plans`} icon={TrendingUp} bgClass="bg-[#004B93]" subClass="text-blue-600" />
+                <TopKpiCard label="Marketplace GMV" value={`₹${totalRevenue.toLocaleString()}`} sub={`${activePlanCount} active revenue plans`} icon={TrendingUp} bgClass="bg-[#0868B2]" subClass="text-blue-600" />
                 <TopKpiCard label="Tenant Adoption" value={`${stats.adoptionRate ?? 0}%`} sub={`${activeDistributions} active deployments`} icon={Globe} bgClass="bg-indigo-600" subClass="text-indigo-600" />
             </div>
 
@@ -1056,7 +1056,7 @@ function AnalyticsPanel({ stats, plans, distributions, nodes }: any) {
                     </div>
                     <div className="pt-4 border-t border-slate-100 flex justify-between items-center text-xs">
                         <span className="text-slate-500 font-medium">Gross Tracked Volume</span>
-                        <span className="text-base font-black text-[#004B93]">₹{totalRevenue.toLocaleString()}</span>
+                        <span className="text-base font-black text-[#0868B2]">₹{totalRevenue.toLocaleString()}</span>
                     </div>
                 </div>
             </div>
@@ -1298,7 +1298,7 @@ export default function SyllabusPage() {
                     <button
                         onClick={fetchAll}
                         disabled={loading}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#004B93] hover:bg-[#003870] text-white font-bold text-xs shadow-sm transition-all"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0868B2] hover:bg-[#07549A] text-white font-bold text-xs shadow-sm transition-all"
                     >
                         <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
                     </button>
@@ -1328,7 +1328,7 @@ export default function SyllabusPage() {
                     value={((stats.nodesByType?.board ?? 0) + (stats.nodesByType?.category ?? 0)) || 2}
                     sub="CBSE, Gujarat Board"
                     icon={Landmark}
-                    bgClass="bg-[#004B93]"
+                    bgClass="bg-[#0868B2]"
                     subClass="text-blue-600"
                 />
                 <TopKpiCard
@@ -1372,7 +1372,7 @@ export default function SyllabusPage() {
                             onClick={() => setTab(t.id as any)}
                             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                                 tab === t.id
-                                    ? 'text-[#004B93] bg-blue-50/80 shadow-xs border border-blue-100'
+                                    ? 'text-[#0868B2] bg-blue-50/80 shadow-xs border border-blue-100'
                                     : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/60'
                             }`}
                         >
@@ -1389,7 +1389,7 @@ export default function SyllabusPage() {
                         value={treeSearch}
                         onChange={e => setTreeSearch(e.target.value)}
                         placeholder="Search nodes, subjects, chapters..."
-                        className="w-full pl-9 pr-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-[#004B93] shadow-xs transition-all"
+                        className="w-full pl-9 pr-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-[#0868B2] shadow-xs transition-all"
                     />
                 </div>
 
@@ -1399,7 +1399,7 @@ export default function SyllabusPage() {
                         onClick={() => setViewMode('tree')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                             viewMode === 'tree'
-                                ? 'bg-[#004B93] text-white shadow-sm'
+                                ? 'bg-[#0868B2] text-white shadow-sm'
                                 : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                         }`}
                     >
@@ -1409,7 +1409,7 @@ export default function SyllabusPage() {
                         onClick={() => setViewMode('list')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                             viewMode === 'list'
-                                ? 'bg-[#004B93] text-white shadow-sm'
+                                ? 'bg-[#0868B2] text-white shadow-sm'
                                 : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                         }`}
                     >
@@ -1419,7 +1419,7 @@ export default function SyllabusPage() {
                         onClick={() => setViewMode('card')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                             viewMode === 'card'
-                                ? 'bg-[#004B93] text-white shadow-sm'
+                                ? 'bg-[#0868B2] text-white shadow-sm'
                                 : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                         }`}
                     >
@@ -1431,7 +1431,7 @@ export default function SyllabusPage() {
             {/* ── TAB CONTENT ── */}
             {loading ? (
                 <div className="flex items-center justify-center min-h-[360px]">
-                    <Loader2 size={36} className="animate-spin text-[#004B93]" />
+                    <Loader2 size={36} className="animate-spin text-[#0868B2]" />
                 </div>
             ) : (
                 <>
@@ -1673,7 +1673,7 @@ export default function SyllabusPage() {
                                         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4">
                                             <div className="flex items-center justify-between mb-3">
                                                 <div className="flex items-center gap-2">
-                                                    <PlusCircle size={16} className="text-[#004B93]" />
+                                                    <PlusCircle size={16} className="text-[#0868B2]" />
                                                     <h3 className="text-xs font-black text-slate-900">Node Actions</h3>
                                                 </div>
                                                 <button className="text-slate-400 hover:text-slate-600"><MoreVertical size={14} /></button>
@@ -1836,7 +1836,7 @@ export default function SyllabusPage() {
                                     </div>
                                     <button
                                         onClick={() => setDistModal(true)}
-                                        className="px-4 py-2 bg-[#004B93] hover:bg-[#003870] text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm transition-all"
+                                        className="px-4 py-2 bg-[#0868B2] hover:bg-[#07549A] text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm transition-all"
                                     >
                                         <Send size={13} /> Deploy Payload
                                     </button>

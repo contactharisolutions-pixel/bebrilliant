@@ -20,10 +20,10 @@ type Lead = {
 }
 
 const STAGES = [
-    { id: 'lead', title: 'New Inquiries', icon: Inbox, color: '#3B82F6', bg: '#EFF6FF', badgeBg: 'bg-blue-50 text-blue-700 border-blue-200' },
+    { id: 'lead', title: 'New Inquiries', icon: Inbox, color: '#0868B2', bg: '#E5F3FB', badgeBg: 'bg-blue-50 text-blue-700 border-blue-200' },
     { id: 'inquiry', title: 'Follow-ups & Counseling', icon: Headset, color: '#F59E0B', bg: '#FFFBEB', badgeBg: 'bg-amber-50 text-amber-700 border-amber-200' },
     { id: 'enrolled', title: 'Fee & Admission Ready', icon: Target, color: '#10B981', bg: '#ECFDF5', badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    { id: 'student', title: 'Confirmed Students', icon: ShieldCheck, color: '#1FAC63', bg: '#F5F3FF', badgeBg: 'bg-green-50 text-green-700 border-green-200' }
+    { id: 'student', title: 'Confirmed Students', icon: ShieldCheck, color: '#09834F', bg: '#F5F3FF', badgeBg: 'bg-green-50 text-green-700 border-green-200' }
 ]
 
 // ── MODAL COMPONENT ───────────────────────────────────────────────────

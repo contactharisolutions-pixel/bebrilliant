@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
@@ -48,11 +48,11 @@ const PERMISSION_OPTIONS = [
 ]
 
 const DEPARTMENT_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-    'Administration': { bg: '#EFF6FF', text: '#1D4ED8', border: '#DBEAFE' },
+    'Administration': { bg: '#E5F3FB', text: '#1D4ED8', border: '#DBEAFE' },
     'Finance & Accounts': { bg: '#ECFDF5', text: '#047857', border: '#A7F3D0' },
     'Student Admissions': { bg: '#FDF4FF', text: '#9333EA', border: '#F0ABFC' },
     'Library & Resources': { bg: '#FFFBEB', text: '#B45309', border: '#FDE68A' },
-    'IT & Technical Support': { bg: '#F0FDF4', text: '#15803D', border: '#BBF7D0' },
+    'IT & Technical Support': { bg: '#F1FBF5', text: '#087347', border: '#B7E8CC' },
     'Academic Operations': { bg: '#EEF2FF', text: '#4338CA', border: '#C7D2FE' },
     'Laboratory & Science': { bg: '#F8FAFC', text: '#475569', border: '#E2E8F0' },
     'Campus Management': { bg: '#FFF7ED', text: '#C2410C', border: '#FFEDD5' }
@@ -85,7 +85,7 @@ function Toast({ msg, ok, onClose }: { msg: string; ok: boolean; onClose: () => 
         }}>
             {ok ? <CheckCircle2 size={18} color="#34D399" /> : <AlertCircle size={18} color="#F87171" />}
             <span>{msg}</span>
-            <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: 2, display: 'flex' }}>
+            <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 2, display: 'flex' }}>
                 <X size={16} />
             </button>
         </div>
@@ -191,8 +191,8 @@ function Modal({
                             padding: '10px 18px',
                             borderRadius: 10,
                             background: '#FFFFFF',
-                            border: '1px solid #D1D5DB',
-                            color: '#374151',
+                            border: '1px solid #CBD5E1',
+                            color: '#475569',
                             fontSize: 13,
                             fontWeight: 600,
                             cursor: 'pointer'
@@ -208,7 +208,7 @@ function Modal({
                             style={{
                                 padding: '10px 22px',
                                 borderRadius: 10,
-                                background: '#004B93',
+                                background: '#0868B2',
                                 border: '1px solid #003B73',
                                 color: '#FFFFFF',
                                 fontSize: 13,
@@ -574,7 +574,7 @@ export default function StaffDirectoryPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 8,
-                                background: '#004B93',
+                                background: '#0868B2',
                                 border: '1px solid #003B73',
                                 borderRadius: 10,
                                 padding: '10px 20px',
@@ -598,7 +598,7 @@ export default function StaffDirectoryPage() {
                 <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 14, padding: '20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>Total Staff</span>
-                        <div style={{ width: 32, height: 32, borderRadius: 8, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#004B93' }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0868B2' }}>
                             <Users size={16} />
                         </div>
                     </div>
@@ -635,7 +635,7 @@ export default function StaffDirectoryPage() {
                 <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 14, padding: '20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>Departments</span>
-                        <div style={{ width: 32, height: 32, borderRadius: 8, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB' }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: '#E5F3FB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0868B2' }}>
                             <Building2 size={16} />
                         </div>
                     </div>
@@ -850,7 +850,7 @@ export default function StaffDirectoryPage() {
             }}>
                 {loading ? (
                     <div style={{ padding: '80px 20px', textAlign: 'center' }}>
-                        <Loader2 size={36} color="#004B93" className="spin" style={{ margin: '0 auto 16px' }} />
+                        <Loader2 size={36} color="#0868B2" className="spin" style={{ margin: '0 auto 16px' }} />
                         <p style={{ fontSize: 14, fontWeight: 600, color: '#64748B', margin: 0 }}>
                             Loading staff roster...
                         </p>
@@ -863,13 +863,13 @@ export default function StaffDirectoryPage() {
                                 width: 72,
                                 height: 72,
                                 borderRadius: 20,
-                                background: '#EFF6FF',
+                                background: '#E5F3FB',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 margin: '0 auto 20px',
                                 border: '1px solid #DBEAFE',
-                                color: '#004B93'
+                                color: '#0868B2'
                             }}>
                                 <Building2 size={36} />
                             </div>
@@ -889,7 +889,7 @@ export default function StaffDirectoryPage() {
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     gap: 8,
-                                    background: '#004B93',
+                                    background: '#0868B2',
                                     border: 'none',
                                     borderRadius: 10,
                                     padding: '11px 22px',
@@ -925,7 +925,7 @@ export default function StaffDirectoryPage() {
                                     type="checkbox"
                                     checked={isAllSelected}
                                     onChange={toggleSelectAll}
-                                    style={{ cursor: 'pointer', accentColor: '#004B93' }}
+                                    style={{ cursor: 'pointer', accentColor: '#0868B2' }}
                                 />
                             </div>
                             <div
@@ -982,7 +982,7 @@ export default function StaffDirectoryPage() {
                                             type="checkbox"
                                             checked={isSelected}
                                             onChange={() => toggleSelectRow(staff.id)}
-                                            style={{ cursor: 'pointer', accentColor: '#004B93' }}
+                                            style={{ cursor: 'pointer', accentColor: '#0868B2' }}
                                         />
                                     </div>
 
@@ -994,7 +994,7 @@ export default function StaffDirectoryPage() {
                                             borderRadius: 12,
                                             background: staff.role === 'tenant_admin'
                                                 ? 'linear-gradient(135deg, #1E1B4B 0%, #312E81 100%)'
-                                                : 'linear-gradient(135deg, #004B93 0%, #002D58 100%)',
+                                                : 'linear-gradient(135deg, #0868B2 0%, #073B73 100%)',
                                             color: '#FFFFFF',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -1011,7 +1011,7 @@ export default function StaffDirectoryPage() {
                                                     {staff.first_name} {staff.last_name}
                                                 </span>
                                                 {staff.is_self && (
-                                                    <span style={{ fontSize: 10, fontWeight: 800, color: '#004B93', background: '#EFF6FF', padding: '2px 6px', borderRadius: 6, flexShrink: 0 }}>
+                                                    <span style={{ fontSize: 10, fontWeight: 800, color: '#0868B2', background: '#E5F3FB', padding: '2px 6px', borderRadius: 6, flexShrink: 0 }}>
                                                         You
                                                     </span>
                                                 )}
@@ -1087,13 +1087,13 @@ export default function StaffDirectoryPage() {
                                                 fontSize: 12,
                                                 fontWeight: 600,
                                                 border: 'none',
-                                                background: staff.is_active ? '#DCFCE7' : '#FEE2E2',
-                                                color: staff.is_active ? '#15803D' : '#B91C1C',
+                                                background: staff.is_active ? '#DCF7E7' : '#FEE2E2',
+                                                color: staff.is_active ? '#087347' : '#B91C1C',
                                                 cursor: staff.is_self ? 'default' : 'pointer',
                                                 opacity: staff.is_self ? 0.8 : 1
                                             }}
                                         >
-                                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: staff.is_active ? '#16A34A' : '#EF4444' }} />
+                                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: staff.is_active ? '#09834F' : '#EF4444' }} />
                                             {staff.is_active ? 'Active' : 'Suspended'}
                                         </button>
                                     </div>
@@ -1115,7 +1115,7 @@ export default function StaffDirectoryPage() {
                                                 borderRadius: 8,
                                                 background: '#F8FAFC',
                                                 border: '1px solid #E2E8F0',
-                                                color: '#004B93',
+                                                color: '#0868B2',
                                                 fontSize: 12,
                                                 fontWeight: 600,
                                                 cursor: 'pointer',
@@ -1244,7 +1244,7 @@ export default function StaffDirectoryPage() {
                                                             borderRadius: 6,
                                                             fontSize: 12,
                                                             fontWeight: 600,
-                                                            color: staff.is_active ? '#B91C1C' : '#15803D',
+                                                            color: staff.is_active ? '#B91C1C' : '#087347',
                                                             cursor: 'pointer',
                                                             textAlign: 'left'
                                                         }}
@@ -1314,7 +1314,7 @@ export default function StaffDirectoryPage() {
                                     value={staffForm.first_name}
                                     onChange={e => setStaffForm({ ...staffForm, first_name: e.target.value })}
                                     placeholder="e.g. Rachel"
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, outline: 'none' }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }}
                                 />
                             </div>
                             <div>
@@ -1326,7 +1326,7 @@ export default function StaffDirectoryPage() {
                                     value={staffForm.last_name}
                                     onChange={e => setStaffForm({ ...staffForm, last_name: e.target.value })}
                                     placeholder="e.g. Zane"
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, outline: 'none' }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }}
                                 />
                             </div>
                         </div>
@@ -1341,7 +1341,7 @@ export default function StaffDirectoryPage() {
                                     value={staffForm.email}
                                     onChange={e => setStaffForm({ ...staffForm, email: e.target.value })}
                                     placeholder="rachel.zane@institute.org"
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, outline: 'none' }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }}
                                 />
                             </div>
                             <div>
@@ -1353,7 +1353,7 @@ export default function StaffDirectoryPage() {
                                     value={staffForm.phone}
                                     onChange={e => setStaffForm({ ...staffForm, phone: e.target.value })}
                                     placeholder="+91 98765 43210"
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, outline: 'none' }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }}
                                 />
                             </div>
                         </div>
@@ -1366,7 +1366,7 @@ export default function StaffDirectoryPage() {
                                 <select
                                     value={staffForm.department}
                                     onChange={e => setStaffForm({ ...staffForm, department: e.target.value })}
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, background: '#FFFFFF', outline: 'none' }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, background: '#FFFFFF', outline: 'none' }}
                                 >
                                     {departments.map(d => (
                                         <option key={d} value={d}>{d}</option>
@@ -1380,7 +1380,7 @@ export default function StaffDirectoryPage() {
                                 <select
                                     value={staffForm.role}
                                     onChange={e => setStaffForm({ ...staffForm, role: e.target.value as any })}
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, background: '#FFFFFF', outline: 'none' }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, background: '#FFFFFF', outline: 'none' }}
                                 >
                                     <option value="platform_staff">Staff Officer</option>
                                     <option value="tenant_admin">Administrator</option>
@@ -1398,7 +1398,7 @@ export default function StaffDirectoryPage() {
                                     value={staffForm.designation}
                                     onChange={e => setStaffForm({ ...staffForm, designation: e.target.value })}
                                     placeholder="e.g. Senior Accountant, Admissions In-Charge"
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, outline: 'none' }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }}
                                 />
                             </div>
                             <div>
@@ -1410,7 +1410,7 @@ export default function StaffDirectoryPage() {
                                     value={staffForm.employee_id}
                                     onChange={e => setStaffForm({ ...staffForm, employee_id: e.target.value })}
                                     placeholder="e.g. STF-2010"
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, outline: 'none' }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }}
                                 />
                             </div>
                         </div>
@@ -1437,7 +1437,7 @@ export default function StaffDirectoryPage() {
                                     type="text"
                                     value={editForm.first_name}
                                     onChange={e => setEditForm({ ...editForm, first_name: e.target.value })}
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
                                 />
                             </div>
                             <div>
@@ -1446,7 +1446,7 @@ export default function StaffDirectoryPage() {
                                     type="text"
                                     value={editForm.last_name}
                                     onChange={e => setEditForm({ ...editForm, last_name: e.target.value })}
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
                                 />
                             </div>
                         </div>
@@ -1457,7 +1457,7 @@ export default function StaffDirectoryPage() {
                                 type="tel"
                                 value={editForm.phone}
                                 onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
-                                style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
+                                style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
                             />
                         </div>
 
@@ -1467,7 +1467,7 @@ export default function StaffDirectoryPage() {
                                 <select
                                     value={editForm.department}
                                     onChange={e => setEditForm({ ...editForm, department: e.target.value })}
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, background: '#FFFFFF' }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, background: '#FFFFFF' }}
                                 >
                                     {departments.map(d => (
                                         <option key={d} value={d}>{d}</option>
@@ -1480,7 +1480,7 @@ export default function StaffDirectoryPage() {
                                     value={editForm.role}
                                     onChange={e => setEditForm({ ...editForm, role: e.target.value as any })}
                                     disabled={editingStaff.is_self}
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, background: '#FFFFFF' }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, background: '#FFFFFF' }}
                                 >
                                     <option value="platform_staff">Staff Officer</option>
                                     <option value="tenant_admin">Administrator</option>
@@ -1495,7 +1495,7 @@ export default function StaffDirectoryPage() {
                                     type="text"
                                     value={editForm.designation}
                                     onChange={e => setEditForm({ ...editForm, designation: e.target.value })}
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
                                 />
                             </div>
                             <div>
@@ -1504,7 +1504,7 @@ export default function StaffDirectoryPage() {
                                     type="text"
                                     value={editForm.employee_id}
                                     onChange={e => setEditForm({ ...editForm, employee_id: e.target.value })}
-                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
+                                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
                                 />
                             </div>
                         </div>
@@ -1537,8 +1537,8 @@ export default function StaffDirectoryPage() {
                                     style={{
                                         padding: '14px 18px',
                                         borderRadius: 12,
-                                        border: '1px solid ' + (active ? '#2563EB' : '#E2E8F0'),
-                                        background: active ? '#EFF6FF' : '#FFFFFF',
+                                        border: '1px solid ' + (active ? '#0868B2' : '#E2E8F0'),
+                                        background: active ? '#E5F3FB' : '#FFFFFF',
                                         cursor: 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
@@ -1558,8 +1558,8 @@ export default function StaffDirectoryPage() {
                                         width: 20,
                                         height: 20,
                                         borderRadius: 6,
-                                        border: '2px solid ' + (active ? '#2563EB' : '#CBD5E1'),
-                                        background: active ? '#2563EB' : 'transparent',
+                                        border: '2px solid ' + (active ? '#0868B2' : '#CBD5E1'),
+                                        background: active ? '#0868B2' : 'transparent',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center'
@@ -1587,7 +1587,7 @@ export default function StaffDirectoryPage() {
                             <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>{credentialModal.name}</div>
 
                             <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>Login Email</div>
-                            <div style={{ fontSize: 14, fontWeight: 600, color: '#004B93', marginBottom: 12, fontFamily: 'monospace' }}>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: '#0868B2', marginBottom: 12, fontFamily: 'monospace' }}>
                                 {credentialModal.email}
                             </div>
 
@@ -1601,7 +1601,7 @@ export default function StaffDirectoryPage() {
                                         navigator.clipboard.writeText(`BeBrilliant Staff Portal Login:\nEmail: ${credentialModal.email}\nPassword: ${credentialModal.pass}\nURL: ${window.location.origin}/login`)
                                         setToast({ msg: 'Credentials copied to clipboard!', ok: true })
                                     }}
-                                    style={{ background: 'transparent', border: 'none', color: '#004B93', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700 }}
+                                    style={{ background: 'transparent', border: 'none', color: '#0868B2', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700 }}
                                 >
                                     <Copy size={14} /> Copy
                                 </button>

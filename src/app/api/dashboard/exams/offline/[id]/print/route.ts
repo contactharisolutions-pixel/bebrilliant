@@ -116,7 +116,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 font-size: 11px;
                 font-weight: 900;
                 letter-spacing: 3px;
-                color: #004B93;
+                color: #0868B2;
                 text-transform: uppercase;
                 margin-bottom: 6px;
             }
@@ -172,13 +172,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             /* GENERAL INSTRUCTIONS */
             .instructions {
                 background: #F8FAFC;
-                border-left: 4px solid #004B93;
+                border-left: 4px solid #0868B2;
                 padding: 12px 18px;
                 font-size: 12px;
                 margin-bottom: 30px;
             }
             .instructions strong {
-                color: #004B93;
+                color: #0868B2;
                 text-transform: uppercase;
                 font-size: 11px;
                 letter-spacing: 1px;
@@ -258,7 +258,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             }
             .opt-letter {
                 font-weight: 800;
-                color: #004B93;
+                color: #0868B2;
             }
 
             /* ANSWER KEY / SOLUTION BLOCKS */
@@ -273,7 +273,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             .sol-card {
                 margin: 12px 0 0 35px;
                 padding: 14px 18px;
-                background: #EFF6FF;
+                background: #E5F3FB;
                 border-left: 4px solid #0284C7;
                 border-radius: 4px;
                 font-size: 13px;

@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer'
+﻿import nodemailer from 'nodemailer'
 import { supabaseAdmin } from './supabase/admin'
 
 interface SendMailConfig {
@@ -91,13 +91,13 @@ export async function sendWelcomeEmail({
 
     const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #18181b;">
-      <h2 style="color: #672AEA;">Welcome to BrightBoard!</h2>
+      <h2 style="color: #7C3AED;">Welcome to BrightBoard!</h2>
       <p>Hi ${firstName},</p>
       <p>Your <strong>${roleDisplay}</strong> account has been successfully created.</p>
       ${passwordSection}
       <p style="margin-top: 24px;">
         <a href="${process.env.NEXT_PUBLIC_SITE_URL}/auth/login" 
-           style="background: #672AEA; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+           style="background: #7C3AED; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
           Log In to Your Account
         </a>
       </p>
@@ -131,7 +131,7 @@ export async function sendTenantCreatedEmail({
     
     const html = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b; background-color: #ffffff; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px;">
-      <h2 style="color: #004B93; font-size: 22px; font-weight: 800; border-bottom: 2px solid #004B93; padding-bottom: 12px; margin-top: 0;">Welcome to BeBrilliant!</h2>
+      <h2 style="color: #0868B2; font-size: 22px; font-weight: 800; border-bottom: 2px solid #0868B2; padding-bottom: 12px; margin-top: 0;">Welcome to BeBrilliant!</h2>
       <p style="font-size: 15px; line-height: 1.6; color: #475569;">Hi ${adminFirstName},</p>
       <p style="font-size: 15px; line-height: 1.6; color: #475569;">Your institution <strong>${tenantName}</strong> has been successfully provisioned on the BeBrilliant network.</p>
       
@@ -153,7 +153,7 @@ export async function sendTenantCreatedEmail({
 
       <div style="text-align: center; margin: 28px 0;">
         <a href="${onboardingLink}" 
-           style="background: #004B93; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 800; font-size: 14px; box-shadow: 0 4px 12px rgba(0,75,147,0.25);">
+           style="background: #0868B2; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 800; font-size: 14px; box-shadow: 0 4px 12px rgba(0,75,147,0.25);">
           Start Onboarding Setup
         </a>
       </div>
@@ -180,7 +180,7 @@ export async function sendTeacherApplicationReceivedEmail({
 }) {
     const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #18181b;">
-      <h2 style="color: #672AEA;">Application Received!</h2>
+      <h2 style="color: #7C3AED;">Application Received!</h2>
       <p>Hi ${firstName},</p>
       <p>We've received your application to join as a Teacher on BrightBoard.</p>
       <p>Your institution's administrator must review and approve your application before you can log in. We'll send you another email once your account has been activated.</p>

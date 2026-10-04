@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import Link from 'next/link'
@@ -111,8 +111,8 @@ export default function AIGeneratorPage() {
                                         'Custom difficulty weight controls (e.g. 40% Easy / 60% Hard)',
                                         'Topic-level concept tag filtering'
                                     ],
-                                    color: '#2563EB',
-                                    bg: '#EFF6FF'
+                                    color: '#0868B2',
+                                    bg: '#E5F3FB'
                                 },
                                 {
                                     icon: FileText,
@@ -124,7 +124,7 @@ export default function AIGeneratorPage() {
                                         'Separate teacher answer key document',
                                         'Word (.docx) export for custom editing'
                                     ],
-                                    color: '#059669',
+                                    color: '#09834F',
                                     bg: '#ECFDF5'
                                 },
                                 {

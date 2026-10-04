@@ -9,74 +9,74 @@
 // ── Color Constants ─────────────────────────────────────────────────────────
 export const C = {
   // Brand
-  primaryBlue:       '#1E3A8A',   // Deep navy — brand primary
-  primaryBlueDark:   '#152A6E',   // Deeper navy
-  primaryBlueMid:    '#2563EB',   // Interactive / accent blue
-  primaryBlueLight:  '#EFF6FF',   // Accent blue bg (AI blocks)
-  brandGreen:        '#0CA35C',   // Official brand green
-  brandGreenLight:   '#DCFCE7',   // Brand green light bg
+  primaryBlue:       '#0868B2',   // Deep navy — brand primary
+  primaryBlueDark:   '#073B73',   // Deeper navy
+  primaryBlueMid:    '#0868B2',   // Interactive / accent blue
+  primaryBlueLight:  '#E5F3FB',   // Accent blue bg (AI blocks)
+  brandGreen:        '#09834F',   // Official brand green
+  brandGreenLight:   '#DCF7E7',   // Brand green light bg
 
   // Functional colors
-  success:           '#16A34A',   // Official success green
-  successDark:       '#15803D',
-  successBg:         '#DCFCE7',
+  success:           '#09834F',   // Official success green
+  successDark:       '#087347',
+  successBg:         '#DCF7E7',
   error:             '#DC2626',   // Official error red
   errorBg:           '#FEE2E2',
-  warning:           '#F59E0B',   // Official warning amber
-  warningDark:       '#D97706',
+  warning:           '#D97706',   // Official warning amber
+  warningDark:       '#B45309',
   warningBg:         '#FEF3C7',
 
   // Accent
-  accent:            '#2563EB',   // Interactive blue (same as primaryBlueMid)
-  purple:            '#672AEA',   // AI / premium purple (official)
+  accent:            '#0868B2',   // Interactive blue (same as primaryBlueMid)
+  purple:            '#7C3AED',   // AI / premium purple (official)
   purpleLight:       '#F5F3FF',
   gold:              '#FFD486',   // Soft gold — use only for badges/highlights
 
   // Text
-  textPrimary:       '#111827',   // Almost black
-  textSecondary:     '#6B7280',   // Secondary text
-  textMuted:         '#9CA3AF',   // Placeholder / disabled
+  textPrimary:       '#34445A',   // Almost black
+  textSecondary:     '#64748B',   // Secondary text
+  textMuted:         '#94A3B8',   // Placeholder / disabled
 
   // Backgrounds
   bg:                '#FFFFFF',   // Main background
-  bgAlt:             '#F7F8FA',   // Secondary bg (page body)
+  bgAlt:             '#F8FAFC',   // Secondary bg (page body)
   bgCard:            '#FFFFFF',   // Card bg
-  bgCard2:           '#F7F8FA',   // Subtle card variant
+  bgCard2:           '#F8FAFC',   // Subtle card variant
 
   // AI Blocks
-  aiBg:              '#EFF6FF',   // AI highlight block bg
-  aiBorder:          '#BFDBFE',   // AI highlight block border
+  aiBg:              '#E5F3FB',   // AI highlight block bg
+  aiBorder:          '#B6DCF2',   // AI highlight block border
 
   // Skeleton loaders
-  skeleton:          '#F3F4F6',
-  skeletonShine:     '#E5E7EB',
+  skeleton:          '#F1F5F9',
+  skeletonShine:     '#E2E8F0',
 
   // Borders
-  border:            '#E5E7EB',   // Official border
-  borderHover:       '#D1D5DB',   // Hover border
+  border:            '#E2E8F0',   // Official border
+  borderHover:       '#CBD5E1',   // Hover border
 
   // Role-based accents
-  roleStudent:       '#2563EB',   // Student — interactive blue
-  roleTeacher:       '#0CA35C',   // Teacher — brand green
-  roleAdmin:         '#672AEA',   // Admin/Owner — purple
-  roleParent:        '#F59E0B',   // Parent — warm amber
+  roleStudent:       '#0868B2',   // Student — interactive blue
+  roleTeacher:       '#09834F',   // Teacher — brand green
+  roleAdmin:         '#7C3AED',   // Admin/Owner — purple
+  roleParent:        '#D97706',   // Parent — warm amber
 } as const
 
 // ── Gradient ────────────────────────────────────────────────────────────────
 export const GRADIENT = {
-  brand: 'linear-gradient(135deg, #1E3A8A 0%, #0CA35C 100%)',
+  brand: 'linear-gradient(135deg, #0868B2 0%, #09834F 100%)',
   brandDir: '135deg' as const,
-  from: '#1E3A8A',
-  to: '#0CA35C',
+  from: '#0868B2',
+  to: '#09834F',
 }
 
 // ── Shadows ─────────────────────────────────────────────────────────────────
 export const SHADOW = {
-  card:    '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
-  md:      '0 4px 12px rgba(0,0,0,0.08)',
-  lg:      '0 10px 24px rgba(0,0,0,0.06)',
-  brand:   '0 10px 15px -3px rgba(30, 58, 138, 0.20)',
-  success: '0 4px 12px rgba(12, 163, 92, 0.20)',
+  card:    '0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04)',
+  md:      '0 4px 12px rgba(15, 23, 42, 0.08)',
+  lg:      '0 10px 24px rgba(15, 23, 42, 0.06)',
+  brand:   '0 10px 15px -3px rgba(8, 104, 178, 0.20)',
+  success: '0 4px 12px rgba(9, 131, 79, 0.20)',
   error:   '0 4px 12px rgba(220, 38, 38, 0.20)',
 }
 

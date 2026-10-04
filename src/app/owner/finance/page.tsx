@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -172,7 +172,7 @@ export default function TenantBalancesPage() {
 
                     {/* SUMMARY CARDS */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, marginBottom: 48 }}>
-                        <div style={{ padding: 32, borderRadius: 24, border: `1px solid ${P.border}`, background: 'linear-gradient(135deg, #1FAC63 0%, #15803d 100%)', color: '#fff' }}>
+                        <div style={{ padding: 32, borderRadius: 24, border: `1px solid ${P.border}`, background: 'linear-gradient(135deg, #09834F 0%, #087347 100%)', color: '#fff' }}>
                             <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.8 }}>Owner Net Earnings</div>
                             <div style={{ fontSize: 44, fontWeight: 1000, marginTop: 8 }}>Rs. {Number(stats.netProfit || 0).toLocaleString()}</div>
                             <div style={{ fontSize: 12, marginTop: 16, fontWeight: 600, opacity: 0.7 }}>Subscription revenue + commission on exams & wallets</div>

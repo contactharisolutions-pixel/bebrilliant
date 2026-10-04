@@ -217,9 +217,9 @@ export async function GET(request: NextRequest) {
 
         // 12. Student Score Distribution (Section 49)
         const scoreDistribution = [
-            { range: '90–100% (Distinction)', count: Math.round(totalEnrolledStudents * 0.10), percentage: 10, fill: '#10B981' },
-            { range: '80–89% (First Class with Merit)', count: Math.round(totalEnrolledStudents * 0.20), percentage: 20, fill: '#004B93' },
-            { range: '70–79% (First Class)', count: Math.round(totalEnrolledStudents * 0.26), percentage: 26, fill: '#3B82F6' },
+            { range: '90–100% (Distinction)', count: Math.round(totalEnrolledStudents * 0.10), percentage: 10, fill: '#09834F' },
+            { range: '80–89% (First Class with Merit)', count: Math.round(totalEnrolledStudents * 0.20), percentage: 20, fill: '#0868B2' },
+            { range: '70–79% (First Class)', count: Math.round(totalEnrolledStudents * 0.26), percentage: 26, fill: '#0868B2' },
             { range: '60–69% (Second Class)', count: Math.round(totalEnrolledStudents * 0.23), percentage: 23, fill: '#60A5FA' },
             { range: '50–59% (Pass Division)', count: Math.round(totalEnrolledStudents * 0.12), percentage: 12, fill: '#F59E0B' },
             { range: 'Below 50% (Remedial Focus)', count: Math.round(totalEnrolledStudents * 0.09), percentage: 9, fill: '#EF4444' }
