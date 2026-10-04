@@ -411,7 +411,7 @@ export default function SettingsPage() {
     } as DomainSettings;
 
     return (
-        <div className="w-full min-h-screen bg-[#F8FAFC] text-slate-900 font-sans pb-16">
+        <div className="w-full min-h-screen bg-[#EEF2F6] text-[#34445A] font-sans pb-16">
             {/* Non-blocking Notification Toast */}
             {toast && (
                 <div className={`fixed top-6 right-6 z-[20000] px-5 py-3.5 rounded-2xl shadow-xl border flex items-center gap-3 transition-all ${
@@ -423,12 +423,12 @@ export default function SettingsPage() {
             )}
 
             {/* ENTERPRISE ACADEMIC HEADER */}
-            <div className="relative w-full bg-white border-b border-[#E2E8F0]">
+            <div className="relative w-full bg-gradient-to-b from-white to-[#F0F4F8] border-b border-[#CBD5E1]/70 shadow-[0_4px_14px_rgba(166,178,196,0.18)]">
                 <div className="relative z-10 w-full px-6 py-6 sm:px-10 sm:py-8">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                         <div className="space-y-2.5">
                             <div className="flex flex-wrap items-center gap-3">
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-[#DCF7E7] text-[#09834F] border border-[#B7E8CC]">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider neu-badge-green">
                                     <span className="w-2 h-2 rounded-full bg-[#09834F]" />
                                     Governance Synchronized
                                 </span>
@@ -447,14 +447,14 @@ export default function SettingsPage() {
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={fetchData}
-                                className="px-4 py-2 bg-white hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#092746] border border-[#CBD5E1] rounded-lg text-xs font-semibold flex items-center gap-2 transition cursor-pointer shadow-xs"
+                                className="neu-btn px-4 py-2 text-xs flex items-center gap-2"
                             >
                                 <RefreshCcw size={14} /> Refresh
                             </button>
                             <button
                                 onClick={handleSaveAll}
                                 disabled={saving}
-                                className="px-5 py-2 bg-[#0868B2] hover:bg-[#07549A] disabled:bg-slate-400 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm transition cursor-pointer"
+                                className="neu-btn-primary px-5 py-2.5 text-xs flex items-center gap-2"
                             >
                                 {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
                                 Save All Changes
@@ -466,79 +466,79 @@ export default function SettingsPage() {
 
             {/* FULL WIDTH MAIN CONTENT WRAPPER */}
             <div className="w-full px-6 sm:px-10 py-6 space-y-8">
-                {/* 4 EXECUTIVE KPI METRICS (FULL WIDTH) */}
+                {/* 4 EXECUTIVE KPI METRICS (4-HUE VIBRANT DIFFERENTIATION) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {/* Card 1: Institution Identity */}
-                    <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-md transition">
+                    {/* Card 1: Institution Identity (Sapphire Blue) */}
+                    <div className="neu-card neu-kpi-blue p-5">
                         <div className="flex justify-between items-start mb-3">
-                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Institutional Identity</span>
-                            <div className="p-2 bg-blue-50 text-[#0868B2] rounded-xl">
+                            <span className="text-[11px] font-extrabold text-[#0868B2] uppercase tracking-wider">Institutional Identity</span>
+                            <div className="p-2 neu-well-blue rounded-xl">
                                 <Building2 size={18} />
                             </div>
                         </div>
-                        <div className="text-xl font-black text-slate-900 truncate">
+                        <div className="text-xl font-black text-[#092746] truncate">
                             {branding.name}
                         </div>
-                        <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 font-medium">
+                        <div className="mt-2 flex items-center gap-2 text-xs text-[#64748B] font-medium">
                             <Globe size={13} className="text-[#0868B2]" />
                             <span className="font-mono text-slate-700 font-semibold">{domains.subdomain}.bebrilliant.in</span>
                         </div>
                     </div>
 
-                    {/* Card 2: Security Governance */}
-                    <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-md transition">
+                    {/* Card 2: Security Governance (Emerald Mint) */}
+                    <div className="neu-card neu-kpi-green p-5">
                         <div className="flex justify-between items-start mb-3">
-                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Access Security Posture</span>
-                            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                            <span className="text-[11px] font-extrabold text-[#09834F] uppercase tracking-wider">Access Security Posture</span>
+                            <div className="p-2 neu-well-green rounded-xl">
                                 <ShieldCheck size={18} />
                             </div>
                         </div>
-                        <div className="text-xl font-black text-slate-900">
+                        <div className="text-xl font-black text-[#092746]">
                             {security.mfa_required ? 'MFA Enforced' : 'Standard 2FA Ready'}
                         </div>
-                        <div className="mt-2 flex items-center gap-2 text-xs text-emerald-600 font-semibold">
+                        <div className="mt-2 flex items-center gap-2 text-xs text-[#09834F] font-semibold">
                             <CheckCircle2 size={13} />
                             <span>{security.allow_social_login ? 'Google Workspace SSO Online' : 'Local Auth Only'}</span>
                         </div>
                     </div>
 
-                    {/* Card 3: Automation Status */}
-                    <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-md transition">
+                    {/* Card 3: Automation Status (Sunfire Amber) */}
+                    <div className="neu-card neu-kpi-amber p-5">
                         <div className="flex justify-between items-start mb-3">
-                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Operational Automations</span>
-                            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+                            <span className="text-[11px] font-extrabold text-[#D97706] uppercase tracking-wider">Operational Automations</span>
+                            <div className="p-2 neu-well-amber rounded-xl">
                                 <Zap size={18} />
                             </div>
                         </div>
-                        <div className="text-xl font-black text-slate-900">
+                        <div className="text-xl font-black text-[#092746]">
                             {[automation.notify_on_login, automation.attendance_sms_alert, automation.auto_generate_id_cards, automation.auto_archive_exams].filter(Boolean).length} Rules Active
                         </div>
-                        <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 font-medium">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                            <span>Attendance & login alerts enabled</span>
+                        <div className="mt-2 flex items-center gap-2 text-xs text-[#64748B] font-medium">
+                            <span className="w-2 h-2 rounded-full bg-[#D97706]" />
+                            <span>Attendance &amp; login alerts enabled</span>
                         </div>
                     </div>
 
-                    {/* Card 4: Domain & SSL */}
-                    <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-md transition">
+                    {/* Card 4: Domain & SSL (Amethyst Violet) */}
+                    <div className="neu-card neu-kpi-purple p-5">
                         <div className="flex justify-between items-start mb-3">
-                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Domain & SSL Protection</span>
-                            <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
+                            <span className="text-[11px] font-extrabold text-[#7C3AED] uppercase tracking-wider">Domain &amp; SSL Protection</span>
+                            <div className="p-2 neu-well-purple rounded-xl">
                                 <Lock size={18} />
                             </div>
                         </div>
-                        <div className="text-xl font-black text-slate-900">
+                        <div className="text-xl font-black text-[#092746]">
                             {domains.custom_domain ? 'Custom Route' : 'Wildcard SSL Active'}
                         </div>
-                        <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 font-medium">
-                            <CheckCheck size={13} className="text-emerald-500" />
+                        <div className="mt-2 flex items-center gap-2 text-xs text-[#64748B] font-medium">
+                            <CheckCheck size={13} className="text-[#09834F]" />
                             <span>256-Bit SHA-2 Encrypted</span>
                         </div>
                     </div>
                 </div>
 
                 {/* TAB NAVIGATION BAR (FULL WIDTH) */}
-                <div className="w-full border-b border-slate-200 pb-3 flex flex-wrap items-center gap-2.5">
+                <div className="w-full border-b border-slate-200/80 pb-3 flex flex-wrap items-center gap-2.5">
                     {[
                         { id: 'branding', label: 'Branding & Visual Identity', icon: Palette },
                         { id: 'contact', label: 'Campus, Location & Contact', icon: Building2 },

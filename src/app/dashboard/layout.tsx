@@ -413,11 +413,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           style={{
             width: 280,
             minWidth: 280,
-            background: "var(--color-bg-card)",
-            borderRight: "1px solid var(--color-border)",
+            background: "linear-gradient(180deg, #F0F4F8 0%, #EEF2F6 100%)",
+            borderRight: "1px solid rgba(255, 255, 255, 0.85)",
             display: "flex",
             flexDirection: "column",
-            boxShadow: "var(--shadow-card)",
+            boxShadow: "4px 0 16px rgba(166, 178, 196, 0.28)",
             zIndex: 20,
           }}
         >
@@ -632,18 +632,24 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                                 borderRadius: 10,
                                 textDecoration: "none",
                                 background: active
-                                  ? "#E5F3FB"
+                                  ? "#EEF2F6"
                                   : "transparent",
                                 color: active
                                   ? "#0868B2"
                                   : "#475569",
-                                border: active
-                                  ? "1px solid #B6DCF2"
-                                  : "1px solid transparent",
-                                fontWeight: active ? 700 : 500,
+                                boxShadow: active
+                                  ? "inset 3px 3px 6px rgba(166, 178, 196, 0.42), inset -3px -3px 6px rgba(255, 255, 255, 0.95)"
+                                  : "none",
+                                borderLeft: active
+                                  ? "3.5px solid #0868B2"
+                                  : "3.5px solid transparent",
+                                borderTop: active ? "1px solid rgba(226, 232, 240, 0.5)" : "1px solid transparent",
+                                borderRight: active ? "1px solid rgba(255, 255, 255, 0.8)" : "1px solid transparent",
+                                borderBottom: active ? "1px solid rgba(255, 255, 255, 0.8)" : "1px solid transparent",
+                                fontWeight: active ? 800 : 500,
                                 fontSize: 13,
-                                transition: "all 0.15s ease",
-                                marginBottom: 2,
+                                transition: "all 0.18s ease",
+                                marginBottom: 3,
                               }}
                               onMouseEnter={(e) => {
                                 if (!active) {
@@ -692,39 +698,33 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <div
             style={{
               padding: "16px 20px",
-              borderTop: "1px solid #E2E8F0",
-              background: "#FFFFFF",
+              borderTop: "1px solid rgba(226, 232, 240, 0.7)",
+              background: "transparent",
             }}
           >
             <button
               onClick={handleSignout}
+              className="neu-btn"
               style={{
                 width: "100%",
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: 10,
                 padding: "10px 14px",
-                borderRadius: 10,
-                border: "1px solid #E2E8F0",
-                background: "#FFFFFF",
-                color: "#475569",
+                borderRadius: 12,
                 fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "all 0.15s ease",
+                fontWeight: 700,
+                color: "#475569",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = "#FEF2F2";
                 (e.currentTarget as HTMLButtonElement).style.color = "#DC2626";
-                (e.currentTarget as HTMLButtonElement).style.borderColor = "#FCA5A5";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = "#FFFFFF";
                 (e.currentTarget as HTMLButtonElement).style.color = "#475569";
-                (e.currentTarget as HTMLButtonElement).style.borderColor = "#E2E8F0";
               }}
             >
-              <LogOut size={16} strokeWidth={2} /> Logout
+              <LogOut size={16} strokeWidth={2.2} /> Logout
             </button>
           </div>
         </aside>

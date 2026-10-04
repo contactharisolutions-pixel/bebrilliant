@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -116,8 +116,9 @@
   --brand-success-pale:     #F1FBF5;
 
   /* ── Backgrounds ────────────────────────────────────────────────────── */
-  --color-bg:              #F8FAFC;     /* App / page background */
-  --color-bg-alt:          #F8FAFC;     /* Secondary background (same) */
+  --color-bg:              #EEF2F6;     /* App / page background (Calibrated for Neumorphism) */
+  --color-bg-alt:          #EEF2F6;     /* Secondary background */
+  --color-canvas-neu:      #EEF2F6;     /* Neumorphic base canvas */
   --color-surface:         #FFFFFF;     /* Card / table surface */
   --color-bg-card:         #FFFFFF;     /* Alias for card surface */
   --color-bg-card2:        #F1F5F9;     /* Subtle card variant */
@@ -126,6 +127,18 @@
   --color-bg-success-tint: #F1FBF5;
   --color-bg-warning-tint: #FFFBEB;
   --color-bg-danger-tint:  #FEF2F2;
+
+  /* ── Neumorphic Soft UI Physics Tokens ──────────────────────────────── */
+  --neu-canvas:             #EEF2F6;
+  --neu-surface:            linear-gradient(145deg, #FFFFFF, #EDF2F7);
+  --neu-surface-flat:       #EEF2F6;
+  --neu-shadow-surface:     7px 7px 16px rgba(166, 178, 196, 0.42), -7px -7px 16px rgba(255, 255, 255, 0.95);
+  --neu-shadow-hover:       10px 10px 22px rgba(166, 178, 196, 0.50), -10px -10px 22px rgba(255, 255, 255, 1);
+  --neu-shadow-pressed:     inset 4px 4px 8px rgba(166, 178, 196, 0.50), inset -4px -4px 8px rgba(255, 255, 255, 0.90);
+  --neu-shadow-inset:       inset 3px 3px 6px rgba(166, 178, 196, 0.40), inset -3px -3px 6px rgba(255, 255, 255, 0.95);
+  --neu-shadow-sm:          4px 4px 10px rgba(166, 178, 196, 0.35), -4px -4px 10px rgba(255, 255, 255, 0.90);
+  --neu-border:             1px solid rgba(255, 255, 255, 0.7);
+  --neu-border-inset:       1px solid rgba(226, 232, 240, 0.6);
 
   /* ── Typography ─────────────────────────────────────────────────────── */
   --color-heading:          #092746;   /* H1 / dashboard titles / KPI values */
@@ -220,7 +233,7 @@
   --color-footer-link-hover:#72B9E6;
 
   /* ── shadcn/ui Semantic Tokens ──────────────────────────────────────── */
-  --background:             #F8FAFC;
+  --background:             #EEF2F6;
   --foreground:             #34445A;
   --card:                   #FFFFFF;
   --card-foreground:        #34445A;
@@ -561,7 +574,6 @@
 }
 
 /* ─── Auth Layout ────────────────────────────────────────────────────────────── */
-@layer components {
 .auth-layout {
   min-height: 100vh;
   display: grid;
@@ -1297,4 +1309,208 @@
   background: rgba(0,0,0,0.15);
   border-radius: 3px;
 }
-} /* end @layer components */
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   NEUMORPHIC SOFT UI SYSTEM (ENTERPRISE ACCESSIBLE)
+   Dual-shadow physics: Specular highlight (top-left) + ambient occlusion (bottom-right)
+   Strictly calibrated for #EEF2F6 mist canvas background.
+═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Floating Convex Surface (Cards) ── */
+.neu-card {
+  background: linear-gradient(145deg, #FFFFFF 0%, #EDF2F7 100%) !important;
+  border-radius: 16px;
+  box-shadow: 7px 7px 16px rgba(166, 178, 196, 0.42), -7px -7px 16px rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.75) !important;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neu-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 10px 10px 22px rgba(166, 178, 196, 0.52), -10px -10px 22px rgba(255, 255, 255, 1) !important;
+}
+
+.neu-card-flat {
+  background: #EEF2F6 !important;
+  border-radius: 16px;
+  box-shadow: 6px 6px 14px rgba(166, 178, 196, 0.38), -6px -6px 14px rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+}
+
+/* ── Debossed Concave Inset (Wells, Tracks, Inset Containers) ── */
+.neu-inset {
+  background: #EEF2F6 !important;
+  border-radius: 12px;
+  box-shadow: inset 3px 3px 6px rgba(166, 178, 196, 0.40), inset -3px -3px 6px rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(226, 232, 240, 0.6) !important;
+}
+
+.neu-inset-sm {
+  background: #EEF2F6 !important;
+  border-radius: 10px;
+  box-shadow: inset 2px 2px 4px rgba(166, 178, 196, 0.35), inset -2px -2px 4px rgba(255, 255, 255, 0.95) !important;
+}
+
+/* ── Neumorphic Floating Action Buttons ── */
+.neu-btn {
+  background: linear-gradient(145deg, #FFFFFF, #E6ECF2) !important;
+  border-radius: 12px;
+  box-shadow: 4px 4px 10px rgba(166, 178, 196, 0.40), -4px -4px 10px rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  color: #34445A;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neu-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 6px 6px 14px rgba(166, 178, 196, 0.48), -6px -6px 14px rgba(255, 255, 255, 1) !important;
+  color: #0868B2;
+}
+
+.neu-btn:active {
+  transform: translateY(1px);
+  box-shadow: inset 3px 3px 6px rgba(166, 178, 196, 0.50), inset -3px -3px 6px rgba(255, 255, 255, 0.90) !important;
+}
+
+/* ── Primary Vibrant Neumorphic Button ── */
+.neu-btn-primary {
+  background: linear-gradient(135deg, #0868B2 0%, #06528E 100%) !important;
+  color: #FFFFFF !important;
+  border-radius: 12px;
+  box-shadow: 5px 5px 14px rgba(8, 104, 178, 0.38), -4px -4px 10px rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neu-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 7px 7px 18px rgba(8, 104, 178, 0.48), -4px -4px 12px rgba(255, 255, 255, 0.95) !important;
+  filter: brightness(1.04);
+}
+
+.neu-btn-primary:active {
+  transform: translateY(1px);
+  box-shadow: inset 3px 3px 6px rgba(4, 52, 90, 0.65), inset -2px -2px 4px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* ── Neumorphic Form Inputs ── */
+.neu-input {
+  background: #EEF2F6 !important;
+  border-radius: 10px;
+  box-shadow: inset 2px 2px 5px rgba(166, 178, 196, 0.38), inset -2px -2px 5px rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(203, 213, 225, 0.6) !important;
+  color: #34445A !important;
+  transition: all 0.2s ease;
+}
+
+.neu-input:focus {
+  outline: none !important;
+  border-color: #0868B2 !important;
+  box-shadow: inset 2px 2px 5px rgba(8, 104, 178, 0.22), inset -2px -2px 5px rgba(255, 255, 255, 0.95), 0 0 0 2px rgba(8, 104, 178, 0.2) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   4 VIBRANT SEMANTIC HUES FOR CARD DIFFERENTIATION (ELIMINATES IDENTICAL CARDS)
+═══════════════════════════════════════════════════════════════════════════════ */
+
+/* 1. SAPPHIRE BLUE (Core / Formats / Architecture) */
+.neu-kpi-blue {
+  border-top: 3.5px solid #0868B2 !important;
+  background: linear-gradient(160deg, #F2F8FD 0%, #FFFFFF 35%, #EDF2F7 100%) !important;
+}
+.neu-well-blue {
+  background: #E5F3FB !important;
+  color: #0868B2 !important;
+  box-shadow: inset 2px 2px 5px rgba(8, 104, 178, 0.22), inset -2px -2px 5px #FFFFFF !important;
+  border: 1px solid rgba(8, 104, 178, 0.15) !important;
+}
+.neu-badge-blue {
+  background: #E5F3FB !important;
+  color: #0868B2 !important;
+  border: 1px solid #B6DCF2 !important;
+  box-shadow: 2px 2px 5px rgba(166, 178, 196, 0.25), -2px -2px 5px #FFFFFF !important;
+}
+
+/* 2. EMERALD MINT (Evaluation / Scanned / Success) */
+.neu-kpi-green {
+  border-top: 3.5px solid #09834F !important;
+  background: linear-gradient(160deg, #F0FAF4 0%, #FFFFFF 35%, #EDF2F7 100%) !important;
+}
+.neu-well-green {
+  background: #DCF7E7 !important;
+  color: #09834F !important;
+  box-shadow: inset 2px 2px 5px rgba(9, 131, 79, 0.22), inset -2px -2px 5px #FFFFFF !important;
+  border: 1px solid rgba(9, 131, 79, 0.15) !important;
+}
+.neu-badge-green {
+  background: #DCF7E7 !important;
+  color: #05603A !important;
+  border: 1px solid #B7E8CC !important;
+  box-shadow: 2px 2px 5px rgba(166, 178, 196, 0.25), -2px -2px 5px #FFFFFF !important;
+}
+
+/* 3. SUNFIRE AMBER (Accuracy / Benchmarks / Warnings) */
+.neu-kpi-amber {
+  border-top: 3.5px solid #D97706 !important;
+  background: linear-gradient(160deg, #FEFBF0 0%, #FFFFFF 35%, #EDF2F7 100%) !important;
+}
+.neu-well-amber {
+  background: #FEF3C7 !important;
+  color: #D97706 !important;
+  box-shadow: inset 2px 2px 5px rgba(217, 119, 6, 0.22), inset -2px -2px 5px #FFFFFF !important;
+  border: 1px solid rgba(217, 119, 6, 0.15) !important;
+}
+.neu-badge-amber {
+  background: #FEF3C7 !important;
+  color: #92400E !important;
+  border: 1px solid #FDE68A !important;
+  box-shadow: 2px 2px 5px rgba(166, 178, 196, 0.25), -2px -2px 5px #FFFFFF !important;
+}
+
+/* 4. AMETHYST VIOLET (Students / Rosters / Administration) */
+.neu-kpi-purple {
+  border-top: 3.5px solid #7C3AED !important;
+  background: linear-gradient(160deg, #F8F5FF 0%, #FFFFFF 35%, #EDF2F7 100%) !important;
+}
+.neu-well-purple {
+  background: #EDE9FE !important;
+  color: #7C3AED !important;
+  box-shadow: inset 2px 2px 5px rgba(124, 58, 237, 0.22), inset -2px -2px 5px #FFFFFF !important;
+  border: 1px solid rgba(124, 58, 237, 0.15) !important;
+}
+.neu-badge-purple {
+  background: #EDE9FE !important;
+  color: #5B21B6 !important;
+  border: 1px solid #DDD6FE !important;
+  box-shadow: 2px 2px 5px rgba(166, 178, 196, 0.25), -2px -2px 5px #FFFFFF !important;
+}
+
+/* ── Neumorphic Step Wizard & Progress Groove ── */
+.neu-progress-groove {
+  background: #E2E8F0 !important;
+  box-shadow: inset 2px 2px 5px rgba(166, 178, 196, 0.5), inset -2px -2px 5px rgba(255, 255, 255, 0.95) !important;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.neu-disc-active {
+  background: linear-gradient(145deg, #0868B2, #06528E) !important;
+  box-shadow: 4px 4px 10px rgba(8, 104, 178, 0.40), -3px -3px 8px rgba(255, 255, 255, 0.9) !important;
+  color: #FFFFFF !important;
+}
+
+.neu-disc-done {
+  background: linear-gradient(145deg, #09834F, #077042) !important;
+  box-shadow: 4px 4px 10px rgba(9, 131, 79, 0.40), -3px -3px 8px rgba(255, 255, 255, 0.9) !important;
+  color: #FFFFFF !important;
+}
+
+.neu-disc-idle {
+  background: linear-gradient(145deg, #FFFFFF, #E6ECF2) !important;
+  box-shadow: 3px 3px 8px rgba(166, 178, 196, 0.35), -3px -3px 8px rgba(255, 255, 255, 0.95) !important;
+  color: #64748B !important;
+}

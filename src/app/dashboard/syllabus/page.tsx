@@ -685,7 +685,7 @@ export default function SyllabusHubPage() {
     }
 
     return (
-        <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 via-slate-50/50 to-white text-slate-900 pb-24">
+        <div className="w-full min-h-screen bg-[#EEF2F6] text-[#092746] pb-24">
             {/* ── TOAST NOTIFICATION ───────────────────────────────────── */}
             {toast && (
                 <div
@@ -702,10 +702,10 @@ export default function SyllabusHubPage() {
 
             <div className="w-full px-4 sm:px-8 py-6 space-y-6">
                 {/* ── 1. ENTERPRISE ACADEMIC HEADER ──────────── */}
-                <div className="w-full rounded-xl border border-[#E2E8F0] bg-white p-6 sm:p-8 shadow-xs space-y-6">
+                <div className="w-full neu-card p-6 sm:p-8 space-y-6">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                            <span className="px-3.5 py-1.5 rounded-lg bg-[#E5F3FB] border border-[#B6DCF2] text-[#0868B2] text-xs font-bold tracking-wide flex items-center gap-2">
+                            <span className="px-3.5 py-1.5 rounded-lg neu-inset-sm text-[#0868B2] text-xs font-bold tracking-wide flex items-center gap-2">
                                 <Building2 className="w-3.5 h-3.5 text-[#0868B2]" />
                                 School Academic Curriculum Desk
                             </span>
@@ -733,7 +733,7 @@ export default function SyllabusHubPage() {
                             <button
                                 onClick={fetchData}
                                 disabled={loading}
-                                className="p-2 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#092746] border border-[#CBD5E1] transition-colors shadow-xs"
+                                className="p-2 rounded-lg neu-btn text-[#64748B] hover:text-[#092746] transition-colors"
                                 title="Refresh Curriculum Data"
                             >
                                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -741,7 +741,7 @@ export default function SyllabusHubPage() {
 
                             <button
                                 onClick={handleDownloadActiveSyllabus}
-                                className="px-3.5 py-2 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#092746] text-xs font-semibold border border-[#CBD5E1] flex items-center gap-2 transition-colors shadow-xs"
+                                className="px-3.5 py-2 rounded-lg neu-btn text-[#092746] text-xs font-semibold flex items-center gap-2 transition-colors"
                             >
                                 <Download className="w-4 h-4 text-[#0868B2]" />
                                 <span>Download Active Excel</span>
@@ -751,7 +751,7 @@ export default function SyllabusHubPage() {
                                 <button
                                     onClick={handleSyncAcademy}
                                     disabled={syncingAcademy || loading}
-                                    className="px-3.5 py-2 rounded-lg bg-[#E5F3FB] hover:bg-[#D5EBF8] text-[#0868B2] text-xs font-bold border border-[#B6DCF2] flex items-center gap-2 transition-all shadow-xs"
+                                    className="px-3.5 py-2 rounded-lg neu-btn text-[#0868B2] text-xs font-bold flex items-center gap-2 transition-all"
                                     title="Synchronize Classes and Subjects to School Academy & Faculty records"
                                 >
                                     <GraduationCap className={`w-4 h-4 text-[#0868B2] ${syncingAcademy ? 'animate-bounce' : ''}`} />
@@ -783,14 +783,14 @@ export default function SyllabusHubPage() {
                                         })
                                         setItemForm({ name: '', order_index: metrics.totalClasses + 1 })
                                     }}
-                                    className="px-4 py-2.5 rounded-lg bg-[#0868B2] hover:bg-[#07549A] text-white text-xs sm:text-sm font-bold shadow-sm flex items-center gap-2 transition-all"
+                                    className="px-4 py-2.5 rounded-lg neu-btn-primary text-xs sm:text-sm font-bold flex items-center gap-2 transition-all"
                                 >
                                     <PlusCircle className="w-4 h-4" />
                                     <span>+ Add Grade / Class</span>
                                 </button>
                             </div>
                         ) : (
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] text-[#64748B] text-xs font-semibold">
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg neu-inset-sm text-[#64748B] text-xs font-semibold">
                                 <ShieldCheck className="w-4 h-4 text-[#09834F]" />
                                 <span>Teacher View Mode</span>
                             </div>
@@ -821,72 +821,72 @@ export default function SyllabusHubPage() {
                     </div>
                 )}
 
-                {/* ── 2. EXECUTIVE LIVE KPIS ───────────────────────────── */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {/* Card 1: Active Board */}
-                    <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+                {/* ── 2. EXECUTIVE LIVE KPIS (4 Distinct Neumorphic Hues) ───────────────────────────── */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    {/* Card 1: Active Board (Sapphire Blue) */}
+                    <div className="p-5 neu-card neu-kpi-blue flex items-center justify-between">
                         <div className="space-y-1">
-                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                            <span className="text-[11px] font-black text-[#0868B2] uppercase tracking-wider">
                                 Active Curriculum Board
                             </span>
-                            <h3 className="text-lg font-bold text-slate-900 truncate max-w-[200px]" title={metrics.activeBoard}>
+                            <h3 className="text-lg font-black text-[#092746] truncate max-w-[200px]" title={metrics.activeBoard}>
                                 {metrics.activeBoard}
                             </h3>
-                            <div className="flex items-center gap-1.5 text-xs text-indigo-600 font-medium">
+                            <div className="flex items-center gap-1.5 text-xs text-[#0868B2] font-semibold">
                                 <CheckCircle className="w-3.5 h-3.5" />
                                 <span>{metrics.multiBoardEnabled ? 'Multi-Board Mode' : 'Single Active Board'}</span>
                             </div>
                         </div>
-                        <div className="p-3.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
-                            <Globe className="w-6 h-6" />
+                        <div className="p-3.5 neu-well-blue">
+                            <Globe className="w-6 h-6 text-[#0868B2]" />
                         </div>
                     </div>
 
-                    {/* Card 2: Classes & Grades */}
-                    <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+                    {/* Card 2: Classes & Grades (Amethyst Purple) */}
+                    <div className="p-5 neu-card neu-kpi-purple flex items-center justify-between">
                         <div className="space-y-1">
-                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                                Classes & Grades
+                            <span className="text-[11px] font-black text-[#7C3AED] uppercase tracking-wider">
+                                Classes &amp; Grades
                             </span>
-                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-                                {metrics.totalClasses} <span className="text-base font-semibold text-slate-500">Grades</span>
+                            <h3 className="text-2xl font-black text-[#092746] tracking-tight">
+                                {metrics.totalClasses} <span className="text-base font-semibold text-[#64748B]">Grades</span>
                             </h3>
-                            <p className="text-xs text-slate-500 font-medium">Standard academic standards</p>
+                            <p className="text-xs text-[#7C3AED] font-semibold">Standard academic standards</p>
                         </div>
-                        <div className="p-3.5 rounded-xl bg-purple-50 text-purple-600 border border-purple-100">
-                            <GraduationCap className="w-6 h-6" />
+                        <div className="p-3.5 neu-well-purple">
+                            <GraduationCap className="w-6 h-6 text-[#7C3AED]" />
                         </div>
                     </div>
 
-                    {/* Card 3: Subjects */}
-                    <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+                    {/* Card 3: Subjects (Emerald Green) */}
+                    <div className="p-5 neu-card neu-kpi-green flex items-center justify-between">
                         <div className="space-y-1">
-                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                            <span className="text-[11px] font-black text-[#09834F] uppercase tracking-wider">
                                 Course Subjects
                             </span>
-                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-                                {metrics.totalSubjects} <span className="text-base font-semibold text-slate-500">Subjects</span>
+                            <h3 className="text-2xl font-black text-[#092746] tracking-tight">
+                                {metrics.totalSubjects} <span className="text-base font-semibold text-[#64748B]">Subjects</span>
                             </h3>
-                            <p className="text-xs text-slate-500 font-medium">Languages, STEM & Humanities</p>
+                            <p className="text-xs text-[#09834F] font-semibold">Languages, STEM &amp; Humanities</p>
                         </div>
-                        <div className="p-3.5 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
-                            <BookOpen className="w-6 h-6" />
+                        <div className="p-3.5 neu-well-green">
+                            <BookOpen className="w-6 h-6 text-[#09834F]" />
                         </div>
                     </div>
 
-                    {/* Card 4: Chapters & Topics */}
-                    <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+                    {/* Card 4: Chapters & Topics (Sunfire Amber) */}
+                    <div className="p-5 neu-card neu-kpi-amber flex items-center justify-between">
                         <div className="space-y-1">
-                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                            <span className="text-[11px] font-black text-[#D97706] uppercase tracking-wider">
                                 Instructional Units
                             </span>
-                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-                                {metrics.totalChapters} <span className="text-base font-semibold text-slate-500">Chapters</span>
+                            <h3 className="text-2xl font-black text-[#092746] tracking-tight">
+                                {metrics.totalChapters} <span className="text-base font-semibold text-[#64748B]">Chapters</span>
                             </h3>
-                            <p className="text-xs text-slate-500 font-medium">Across {metrics.totalTopics} lesson topics</p>
+                            <p className="text-xs text-[#D97706] font-semibold">Across {metrics.totalTopics} lesson topics</p>
                         </div>
-                        <div className="p-3.5 rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
-                            <Layers className="w-6 h-6" />
+                        <div className="p-3.5 neu-well-amber">
+                            <Layers className="w-6 h-6 text-[#D97706]" />
                         </div>
                     </div>
                 </div>

@@ -777,7 +777,7 @@ export default function WalletPayouts() {
     }
 
     return (
-        <div className="w-full min-h-screen bg-[#F8FAFC] text-slate-900 font-sans pb-16">
+        <div className="w-full min-h-screen bg-[#EEF2F6] text-[#34445A] font-sans pb-16">
             {/* Non-blocking Notification Toast */}
             {toast && (
                 <div className={`fixed top-6 right-6 z-[20000] px-5 py-3.5 rounded-2xl shadow-xl border flex items-center gap-3 transition-all ${
@@ -789,12 +789,12 @@ export default function WalletPayouts() {
             )}
 
             {/* ENTERPRISE ACADEMIC HEADER */}
-            <div className="relative w-full bg-white border-b border-[#E2E8F0]">
+            <div className="relative w-full bg-gradient-to-b from-white to-[#F0F4F8] border-b border-[#CBD5E1]/70 shadow-[0_4px_14px_rgba(166,178,196,0.18)]">
                 <div className="relative z-10 w-full px-6 py-6 sm:px-10 sm:py-8">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                         <div className="space-y-2.5">
                             <div className="flex flex-wrap items-center gap-3">
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-[#DCF7E7] text-[#09834F] border border-[#B7E8CC]">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider neu-badge-green">
                                     <span className="w-2 h-2 rounded-full bg-[#09834F]" />
                                     Fee Treasury Active
                                 </span>
@@ -813,19 +813,19 @@ export default function WalletPayouts() {
                         <div className="flex flex-wrap items-center gap-3">
                             <button
                                 onClick={fetchData}
-                                className="px-4 py-2 bg-white hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#092746] border border-[#CBD5E1] rounded-lg text-xs font-semibold flex items-center gap-2 transition cursor-pointer shadow-xs"
+                                className="neu-btn px-4 py-2 text-xs flex items-center gap-2"
                             >
                                 <RefreshCcw size={14} /> Refresh
                             </button>
                             <button
                                 onClick={() => setShowManualFeeModal(true)}
-                                className="px-4 py-2 bg-white hover:bg-[#F8FAFC] text-[#092746] border border-[#CBD5E1] rounded-lg text-xs font-semibold flex items-center gap-2 transition cursor-pointer shadow-xs"
+                                className="neu-btn px-4 py-2 text-xs flex items-center gap-2"
                             >
                                 <Plus size={15} /> Record Offline Fee
                             </button>
                             <button
                                 onClick={() => setShowWithdrawalModal(true)}
-                                className="px-5 py-2 bg-[#0868B2] hover:bg-[#07549A] text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm transition cursor-pointer"
+                                className="neu-btn-primary px-5 py-2.5 text-xs flex items-center gap-2"
                             >
                                 <Landmark size={15} /> Request Withdrawal
                             </button>
@@ -836,91 +836,91 @@ export default function WalletPayouts() {
 
             {/* FULL WIDTH MAIN CONTENT WRAPPER */}
             <div className="w-full px-6 sm:px-10 py-6 space-y-8">
-                {/* 4 EXECUTIVE KPI METRICS (FULL WIDTH GRID) */}
+                {/* 4 EXECUTIVE KPI METRICS (4-HUE VIBRANT DIFFERENTIATION) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {/* Card 1: Available Balance */}
-                    <div className="bg-gradient-to-br from-[#0868B2] to-[#073B73] text-white p-6 rounded-3xl shadow-lg shadow-blue-900/15 relative overflow-hidden flex flex-col justify-between">
+                    {/* Card 1: Available Balance (Sapphire Blue) */}
+                    <div className="neu-card neu-kpi-blue p-6 flex flex-col justify-between">
                         <div>
                             <div className="flex justify-between items-start mb-3">
-                                <span className="text-[11px] font-bold text-white/70 uppercase tracking-wider">Available Balance</span>
-                                <div className="p-2 bg-white/10 text-white rounded-xl">
+                                <span className="text-[11px] font-extrabold text-[#0868B2] uppercase tracking-wider">Available Balance</span>
+                                <div className="p-2 neu-well-blue rounded-xl">
                                     <WalletCards size={18} />
                                 </div>
                             </div>
-                            <div className="text-3xl font-black tracking-tight">
+                            <div className="text-3xl font-black text-[#092746] tracking-tight">
                                 ₹{wallet.available_balance.toLocaleString()}
                             </div>
                         </div>
-                        <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-white/80">
+                        <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs text-[#64748B]">
                             <span>Ready for disbursement</span>
                             <button
                                 onClick={() => setShowWithdrawalModal(true)}
-                                className="font-bold underline hover:text-white flex items-center gap-1"
+                                className="font-bold text-[#0868B2] hover:underline flex items-center gap-1 cursor-pointer"
                             >
                                 Payout <ArrowRight size={12} />
                             </button>
                         </div>
                     </div>
 
-                    {/* Card 2: Total Net Collections */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                    {/* Card 2: Total Net Collections (Emerald Mint) */}
+                    <div className="neu-card neu-kpi-green p-6 flex flex-col justify-between">
                         <div>
                             <div className="flex justify-between items-start mb-3">
-                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Gross Collections</span>
-                                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                                <span className="text-[11px] font-extrabold text-[#09834F] uppercase tracking-wider">Gross Collections</span>
+                                <div className="p-2 neu-well-green rounded-xl">
                                     <ArrowUpRight size={18} />
                                 </div>
                             </div>
-                            <div className="text-3xl font-black text-slate-900 tracking-tight">
+                            <div className="text-3xl font-black text-[#09834F] tracking-tight">
                                 ₹{wallet.total_earnings.toLocaleString()}
                             </div>
                         </div>
-                        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2 text-xs text-emerald-600 font-semibold">
+                        <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center gap-2 text-xs text-[#09834F] font-semibold">
                             <CheckCircle2 size={14} />
                             <span>{collections.length} verified fee receipts</span>
                         </div>
                     </div>
 
-                    {/* Card 3: Settled to Bank */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                    {/* Card 3: Settled to Bank (Amethyst Violet) */}
+                    <div className="neu-card neu-kpi-purple p-6 flex flex-col justify-between">
                         <div>
                             <div className="flex justify-between items-start mb-3">
-                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Settled to Bank</span>
-                                <div className="p-2 bg-blue-50 text-[#0868B2] rounded-xl">
+                                <span className="text-[11px] font-extrabold text-[#7C3AED] uppercase tracking-wider">Settled to Bank</span>
+                                <div className="p-2 neu-well-purple rounded-xl">
                                     <Landmark size={18} />
                                 </div>
                             </div>
-                            <div className="text-3xl font-black text-slate-900 tracking-tight">
+                            <div className="text-3xl font-black text-[#092746] tracking-tight">
                                 ₹{wallet.withdrawn_amount.toLocaleString()}
                             </div>
                         </div>
-                        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-500 font-medium">
-                            <Building2 size={13} className="text-[#0868B2]" />
+                        <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center gap-2 text-xs text-[#64748B] font-medium">
+                            <Building2 size={13} className="text-[#7C3AED]" />
                             <span>HDFC Bank •••• 4281</span>
                         </div>
                     </div>
 
-                    {/* Card 4: Pending Settlement */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                    {/* Card 4: Pending Clearance (Sunfire Amber) */}
+                    <div className="neu-card neu-kpi-amber p-6 flex flex-col justify-between">
                         <div>
                             <div className="flex justify-between items-start mb-3">
-                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pending Clearance</span>
-                                <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+                                <span className="text-[11px] font-extrabold text-[#D97706] uppercase tracking-wider">Pending Clearance</span>
+                                <div className="p-2 neu-well-amber rounded-xl">
                                     <Clock size={18} />
                                 </div>
                             </div>
-                            <div className="text-3xl font-black text-slate-900 tracking-tight">
+                            <div className="text-3xl font-black text-[#092746] tracking-tight">
                                 ₹{wallet.pending_balance.toLocaleString()}
                             </div>
                         </div>
-                        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2 text-xs text-amber-600 font-semibold">
+                        <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center gap-2 text-xs text-[#D97706] font-semibold">
                             <span>Friday clearing cycle active</span>
                         </div>
                     </div>
                 </div>
 
                 {/* TAB NAVIGATION BAR (FULL WIDTH) */}
-                <div className="w-full border-b border-slate-200 pb-3 flex flex-wrap items-center gap-2.5">
+                <div className="w-full border-b border-slate-200/80 pb-3 flex flex-wrap items-center gap-2.5">
                     {[
                         { id: 'overview', label: 'Fee Overview & Balances', icon: Coins },
                         { id: 'collections', label: 'Inbound Collections & Fee Ledger', icon: Receipt, count: collections.length },

@@ -575,7 +575,7 @@ export default function OMRExamManager() {
     }
 
     return (
-        <div className="w-full min-h-screen bg-slate-50/60 font-sans pb-24">
+        <div className="w-full min-h-screen bg-[#EEF2F6] font-sans pb-24">
             {/* TOAST ALERT */}
             {toast && (
                 <div className={`fixed top-6 right-8 z-[10000] flex items-center gap-3 px-6 py-4 rounded-2xl border shadow-2xl backdrop-blur-md transition-all duration-300 ${
@@ -589,13 +589,13 @@ export default function OMRExamManager() {
             )}
 
             {/* ENTERPRISE ACADEMIC HEADER */}
-            <div className="w-full bg-white border-b border-[#E2E8F0]">
+            <div className="w-full bg-gradient-to-b from-white to-[#F0F4F8] border-b border-[#CBD5E1]/70 shadow-[0_4px_14px_rgba(166,178,196,0.18)]">
                 <div className="w-full px-4 sm:px-8 py-6 sm:py-8">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                         <div className="max-w-3xl space-y-2.5">
-                            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#E5F3FB] border border-[#B6DCF2]">
-                                <span className="w-2 h-2 rounded-full bg-[#0868B2]" />
-                                <span className="text-[11px] font-bold tracking-wider text-[#0868B2] uppercase">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full neu-badge-blue">
+                                <span className="w-2 h-2 rounded-full bg-[#0868B2] animate-pulse" />
+                                <span className="text-[11px] font-bold tracking-wider uppercase">
                                     School Exams &amp; Print Center
                                 </span>
                             </div>
@@ -615,21 +615,21 @@ export default function OMRExamManager() {
                         <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
                             <button
                                 onClick={handleStartNewExam}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#0868B2] hover:bg-[#07549A] text-white font-bold text-xs sm:text-sm shadow-sm transition-all cursor-pointer"
+                                className="neu-btn-primary flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm"
                             >
                                 <PlusCircle size={16} />
                                 <span>+ Start New OMR Exam</span>
                             </button>
                             <button
                                 onClick={() => goToStep(4)}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#092746] font-semibold text-xs sm:text-sm border border-[#CBD5E1] shadow-xs transition-all cursor-pointer"
+                                className="neu-btn flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm"
                             >
                                 <UploadCloud size={16} className="text-[#0868B2]" />
                                 <span>Upload Scans</span>
                             </button>
                             <button
                                 onClick={fetchData}
-                                className="p-2.5 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#092746] border border-[#CBD5E1] transition-all cursor-pointer shadow-xs"
+                                className="neu-btn p-2.5"
                                 title="Refresh data"
                             >
                                 <RefreshCw size={16} />
@@ -642,63 +642,67 @@ export default function OMRExamManager() {
             {/* MAIN FULL-WIDTH WORKSPACE */}
             <div className="w-full px-4 sm:px-8 py-6 space-y-6">
 
-                {/* 4 EXECUTIVE KPIS */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-xs flex items-center gap-3.5 hover:shadow-sm transition-shadow">
-                        <div className="w-12 h-12 rounded-xl bg-[#E5F3FB] border border-[#B6DCF2] flex items-center justify-center text-[#0868B2] shrink-0">
-                            <Target size={22} />
+                {/* 4 EXECUTIVE KPIS WITH VIBRANT SEMANTIC DIFFERENTIATION */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    {/* KPI 1: SAPPHIRE BLUE (Core Formats) */}
+                    <div className="neu-card neu-kpi-blue p-5 flex items-center gap-4">
+                        <div className="w-13 h-13 rounded-2xl neu-well-blue flex items-center justify-center shrink-0">
+                            <Target size={24} />
                         </div>
                         <div className="min-w-0">
-                            <div className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">OMR Sheet Formats</div>
-                            <div className="text-xl font-black text-[#092746] mt-0.5">{metrics.totalTemplates || 4} Formats</div>
-                            <div className="text-[10px] font-semibold text-[#0868B2] bg-[#E5F3FB] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
+                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#0868B2]">OMR Sheet Formats</div>
+                            <div className="text-2xl font-black text-[#092746] mt-0.5">{metrics.totalTemplates || 4} Formats</div>
+                            <div className="text-[10px] font-bold neu-badge-blue px-2.5 py-0.5 rounded-full mt-1.5 inline-flex items-center gap-1">
                                 <CheckCircle size={11} /> Ready to Print
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-xs flex items-center gap-3.5 hover:shadow-sm transition-shadow">
-                        <div className="w-12 h-12 rounded-xl bg-[#DCF7E7] border border-[#B7E8CC] flex items-center justify-center text-[#09834F] shrink-0">
-                            <UploadCloud size={22} />
+                    {/* KPI 2: EMERALD MINT (Scanned / Grading) */}
+                    <div className="neu-card neu-kpi-green p-5 flex items-center gap-4">
+                        <div className="w-13 h-13 rounded-2xl neu-well-green flex items-center justify-center shrink-0">
+                            <UploadCloud size={24} />
                         </div>
                         <div className="min-w-0">
-                            <div className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">Answer Sheets Checked</div>
-                            <div className="text-xl font-black text-[#092746] mt-0.5">{metrics.totalScanned} Sheets</div>
-                            <div className="text-[10px] font-semibold text-[#09834F] bg-[#DCF7E7] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
+                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#09834F]">Answer Sheets Checked</div>
+                            <div className="text-2xl font-black text-[#092746] mt-0.5">{metrics.totalScanned} Sheets</div>
+                            <div className="text-[10px] font-bold neu-badge-green px-2.5 py-0.5 rounded-full mt-1.5 inline-flex items-center gap-1">
                                 <ArrowUpRight size={11} /> Auto Checked
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-xs flex items-center gap-3.5 hover:shadow-sm transition-shadow">
-                        <div className="w-12 h-12 rounded-xl bg-[#DCF7E7] border border-[#B7E8CC] flex items-center justify-center text-[#09834F] shrink-0">
-                            <Shield size={22} />
+                    {/* KPI 3: SUNFIRE AMBER (Accuracy Rate) */}
+                    <div className="neu-card neu-kpi-amber p-5 flex items-center gap-4">
+                        <div className="w-13 h-13 rounded-2xl neu-well-amber flex items-center justify-center shrink-0">
+                            <Shield size={24} />
                         </div>
                         <div className="min-w-0">
-                            <div className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">Accuracy Rate</div>
-                            <div className="text-xl font-black text-[#092746] mt-0.5">{metrics.successRate}</div>
-                            <div className="text-[10px] font-semibold text-[#09834F] bg-[#DCF7E7] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
+                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#D97706]">Accuracy Rate</div>
+                            <div className="text-2xl font-black text-[#092746] mt-0.5">{metrics.successRate}</div>
+                            <div className="text-[10px] font-bold neu-badge-amber px-2.5 py-0.5 rounded-full mt-1.5 inline-flex items-center gap-1">
                                 <Check size={11} /> Verified Accurate
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-xs flex items-center gap-3.5 hover:shadow-sm transition-shadow">
-                        <div className="w-12 h-12 rounded-xl bg-[#E5F3FB] border border-[#B6DCF2] flex items-center justify-center text-[#0868B2] shrink-0">
-                            <Award size={22} />
+                    {/* KPI 4: AMETHYST VIOLET (Students Scored) */}
+                    <div className="neu-card neu-kpi-purple p-5 flex items-center gap-4">
+                        <div className="w-13 h-13 rounded-2xl neu-well-purple flex items-center justify-center shrink-0">
+                            <Award size={24} />
                         </div>
                         <div className="min-w-0">
-                            <div className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">Students Scored</div>
-                            <div className="text-xl font-black text-[#092746] mt-0.5">{metrics.totalEvaluated} Scored</div>
-                            <div className="text-[10px] font-semibold text-[#0868B2] bg-[#E5F3FB] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
+                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#7C3AED]">Students Scored</div>
+                            <div className="text-2xl font-black text-[#092746] mt-0.5">{metrics.totalEvaluated} Scored</div>
+                            <div className="text-[10px] font-bold neu-badge-purple px-2.5 py-0.5 rounded-full mt-1.5 inline-flex items-center gap-1">
                                 <Users size={11} /> Marks Saved
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* ── 5-STEP WORKSPACE PROGRESS BAR ─── */}
-                <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-3 sm:p-4 shadow-sm">
+                {/* ── 5-STEP NEUMORPHIC WORKSPACE PROGRESS BAR ─── */}
+                <div className="w-full neu-card p-4 sm:p-5">
                     <div className="flex items-center justify-between gap-1 sm:gap-2">
                         {[
                             { step: 1, label: '1. Setup & Format', sub: 'Scope & OMR Layout', icon: Target },
@@ -714,29 +718,29 @@ export default function OMRExamManager() {
                                 <div key={s.step} className="flex items-center flex-1 min-w-0">
                                     <button
                                         onClick={() => goToStep(s.step)}
-                                        className={`flex flex-col items-center gap-1 flex-1 px-2 py-2 rounded-xl transition-all cursor-pointer ${
-                                            isActive ? 'bg-[#0868B2]/5' : 'hover:bg-slate-50'
+                                        className={`flex flex-col items-center gap-1.5 flex-1 px-2 py-2 rounded-xl transition-all cursor-pointer ${
+                                            isActive ? 'neu-inset' : 'hover:opacity-85'
                                         }`}
                                     >
-                                        <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-black text-xs sm:text-sm border-2 transition-all ${
+                                        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black text-xs sm:text-sm transition-all ${
                                             isDone
-                                                ? 'bg-emerald-500 border-emerald-500 text-white'
+                                                ? 'neu-disc-done'
                                                 : isActive
-                                                ? 'bg-[#0868B2] border-[#0868B2] text-white shadow-md shadow-sky-950/20'
-                                                : 'bg-white border-slate-200 text-slate-400'
+                                                ? 'neu-disc-active'
+                                                : 'neu-disc-idle'
                                         }`}>
-                                            {isDone ? <Check size={16} /> : <Icon size={15} />}
+                                            {isDone ? <Check size={16} strokeWidth={3} /> : <Icon size={16} strokeWidth={2.2} />}
                                         </div>
                                         <div className="text-center">
                                             <div className={`text-[11px] font-black leading-tight ${
-                                                isActive ? 'text-[#0868B2]' : isDone ? 'text-emerald-700' : 'text-slate-500'
+                                                isActive ? 'text-[#0868B2]' : isDone ? 'text-[#09834F]' : 'text-slate-500'
                                             }`}>{s.label}</div>
                                             <div className="text-[10px] text-slate-400 font-medium hidden md:block">{s.sub}</div>
                                         </div>
                                     </button>
                                     {idx < 4 && (
-                                        <div className={`h-0.5 w-3 sm:w-6 lg:w-8 shrink-0 mx-0.5 rounded-full transition-all ${
-                                            isDone ? 'bg-emerald-400' : 'bg-slate-200'
+                                        <div className={`neu-progress-groove h-1.5 w-3 sm:w-6 lg:w-8 shrink-0 mx-0.5 ${
+                                            isDone ? '!bg-[#09834F]' : ''
                                         }`} />
                                     )}
                                 </div>

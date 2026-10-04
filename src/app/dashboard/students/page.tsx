@@ -365,18 +365,18 @@ export default function StudentDirectoryPage() {
 
     if (loading && !students.length) {
         return (
-            <div className="w-full min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
-                <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-4 shadow-sm">
-                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+            <div className="w-full min-h-screen bg-[#EEF2F6] flex flex-col items-center justify-center p-6">
+                <div className="w-16 h-16 rounded-2xl neu-well-blue flex items-center justify-center mb-4 shadow-sm">
+                    <Loader2 className="w-8 h-8 text-[#0868B2] animate-spin" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Loading Student Directory</h3>
-                <p className="text-sm text-slate-500 font-medium mt-1">Fetching student profiles, classes, and academic records...</p>
+                <h3 className="text-xl font-bold text-[#092746] tracking-tight">Loading Student Directory</h3>
+                <p className="text-sm text-[#64748B] font-medium mt-1">Fetching student profiles, classes, and academic records...</p>
             </div>
         )
     }
 
     return (
-        <div className="w-full px-4 sm:px-8 py-6 pb-24 bg-slate-50/60 min-h-screen text-slate-800 antialiased">
+        <div className="w-full px-4 sm:px-8 py-6 pb-24 bg-[#EEF2F6] min-h-screen text-[#34445A] antialiased">
             {/* ── TOAST NOTIFICATION ────────────────────────────────── */}
             {toast && (
                 <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg border text-sm font-semibold transition-all animate-slideDown ${
@@ -390,10 +390,10 @@ export default function StudentDirectoryPage() {
             )}
 
             {/* ── ENTERPRISE ACADEMIC HEADER ────────────────────── */}
-            <div className="w-full bg-white rounded-xl border border-[#E2E8F0] p-6 sm:p-8 mb-8 shadow-xs">
+            <div className="w-full neu-card p-6 sm:p-8 mb-8">
                 <div className="max-w-4xl">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E5F3FB] border border-[#B6DCF2] text-[#0868B2] text-xs font-bold uppercase tracking-wider mb-3">
-                        <GraduationCap className="w-3.5 h-3.5" />
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full neu-badge-blue text-xs font-bold uppercase tracking-wider mb-3">
+                        <GraduationCap className="w-3.5 h-3.5 text-[#0868B2]" />
                         Student Directory &amp; Academic Admissions Hub
                     </div>
                     <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#092746] mb-2">
@@ -406,21 +406,21 @@ export default function StudentDirectoryPage() {
                     <div className="mt-6 flex flex-wrap items-center gap-3">
                         <button
                             onClick={() => setActiveTab('add')}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0868B2] hover:bg-[#07549A] text-white text-xs sm:text-sm font-bold shadow-sm transition-all"
+                            className="neu-btn-primary inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm"
                         >
                             <UserPlus className="w-4 h-4 text-white" />
                             Add New Student
                         </button>
                         <button
                             onClick={() => setActiveTab('bulk')}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#092746] border border-[#CBD5E1] text-xs sm:text-sm font-semibold transition-all shadow-xs"
+                            className="neu-btn inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm"
                         >
                             <UploadCloud className="w-4 h-4 text-[#0868B2]" />
                             Bulk Roster Import
                         </button>
                         <button
                             onClick={exportRosterCSV}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#092746] border border-[#CBD5E1] text-xs sm:text-sm font-semibold transition-all shadow-xs"
+                            className="neu-btn inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm"
                         >
                             <Download className="w-4 h-4 text-[#09834F]" />
                             Export Roster (CSV)
@@ -428,7 +428,7 @@ export default function StudentDirectoryPage() {
                         <button
                             onClick={() => fetchStudentsData(true)}
                             disabled={refreshing}
-                            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-white hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#092746] border border-[#CBD5E1] text-xs sm:text-sm font-medium transition-all shadow-xs"
+                            className="neu-btn inline-flex items-center gap-2 px-3.5 py-2.5 text-xs sm:text-sm"
                         >
                             <RefreshCcw className={`w-3.5 h-3.5 text-[#0868B2] ${refreshing ? 'animate-spin' : ''}`} />
                             {refreshing ? 'Refreshing...' : 'Sync'}
@@ -437,75 +437,75 @@ export default function StudentDirectoryPage() {
                 </div>
             </div>
 
-            {/* ── TOP KPI METRIC CARDS ─────────────────────────────────── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-8">
-                {/* 1. Total Enrolled Students */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:border-blue-300 transition-all">
+            {/* ── TOP KPI METRIC CARDS (4-HUE VIBRANT DIFFERENTIATION) ─────────────────────────────────── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+                {/* 1. Total Enrolled Students (Sapphire Blue) */}
+                <div className="neu-card neu-kpi-blue p-5 flex flex-col justify-between">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Enrolled</span>
-                        <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                            <Users className="w-5 h-5" />
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#0868B2]">Total Enrolled</span>
+                        <div className="w-11 h-11 rounded-xl neu-well-blue flex items-center justify-center font-bold">
+                            <Users className="w-5 h-5 text-[#0868B2]" />
                         </div>
                     </div>
                     <div className="mt-3">
-                        <div className="text-3xl font-black text-slate-900 tracking-tight">
+                        <div className="text-3xl font-black text-[#092746] tracking-tight">
                             {stats.total_students || students.length}
                         </div>
-                        <div className="mt-1 text-xs text-slate-500 font-medium">
+                        <div className="mt-1 text-xs text-[#64748B] font-medium">
                             Students registered in your school
                         </div>
                     </div>
                 </div>
 
-                {/* 2. Cohort Average Marks */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:border-emerald-300 transition-all">
+                {/* 2. Cohort Average Marks (Emerald Mint) */}
+                <div className="neu-card neu-kpi-green p-5 flex flex-col justify-between">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Average Marks</span>
-                        <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                            <BarChart3 className="w-5 h-5" />
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#09834F]">Average Marks</span>
+                        <div className="w-11 h-11 rounded-xl neu-well-green flex items-center justify-center font-bold">
+                            <BarChart3 className="w-5 h-5 text-[#09834F]" />
                         </div>
                     </div>
                     <div className="mt-3">
-                        <div className="text-3xl font-black text-emerald-700 tracking-tight">
+                        <div className="text-3xl font-black text-[#09834F] tracking-tight">
                             {stats.cohort_average_marks > 0 ? `${stats.cohort_average_marks}%` : '88.1%'}
                         </div>
-                        <div className="mt-1 text-xs text-slate-500 font-medium">
+                        <div className="mt-1 text-xs text-[#64748B] font-medium">
                             Evaluated score average across all exams
                         </div>
                     </div>
                 </div>
 
-                {/* 3. Active Status */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:border-amber-300 transition-all">
+                {/* 3. Active Status (Sunfire Amber) */}
+                <div className="neu-card neu-kpi-amber p-5 flex flex-col justify-between">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Active Students</span>
-                        <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-                            <ShieldCheck className="w-5 h-5" />
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#D97706]">Active Students</span>
+                        <div className="w-11 h-11 rounded-xl neu-well-amber flex items-center justify-center font-bold">
+                            <ShieldCheck className="w-5 h-5 text-[#D97706]" />
                         </div>
                     </div>
                     <div className="mt-3">
-                        <div className="text-3xl font-black text-slate-900 tracking-tight">
+                        <div className="text-3xl font-black text-[#092746] tracking-tight">
                             {stats.active_students || students.filter(s => s.is_active).length}
                         </div>
-                        <div className="mt-1 text-xs text-slate-500 font-medium">
+                        <div className="mt-1 text-xs text-[#64748B] font-medium">
                             Active accounts with portal access
                         </div>
                     </div>
                 </div>
 
-                {/* 4. Top Performing Grade */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:border-purple-300 transition-all">
+                {/* 4. Top Performing Grade (Amethyst Violet) */}
+                <div className="neu-card neu-kpi-purple p-5 flex flex-col justify-between">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Top Performing Class</span>
-                        <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-                            <School className="w-5 h-5" />
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#7C3AED]">Top Performing Class</span>
+                        <div className="w-11 h-11 rounded-xl neu-well-purple flex items-center justify-center font-bold">
+                            <School className="w-5 h-5 text-[#7C3AED]" />
                         </div>
                     </div>
                     <div className="mt-3">
-                        <div className="text-xl font-black text-slate-900 tracking-tight truncate">
+                        <div className="text-2xl font-black text-[#092746] tracking-tight truncate">
                             {stats.top_class || 'Grade 10'}
                         </div>
-                        <div className="mt-1 text-xs text-slate-500 font-medium">
+                        <div className="mt-1 text-xs text-[#64748B] font-medium">
                             Best performing class in test scores
                         </div>
                     </div>

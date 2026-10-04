@@ -1646,26 +1646,26 @@ export default function OfflinePaperManager() {
                                 Create, customize, and print school examination papers with matching answer keys and answer sheets.
                             </p>
                             <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-[#64748B] pt-1">
-                                <span className="flex items-center gap-1.5"><Shield size={14} className="text-[#09834F]" /> School Watermark & QR Code</span>
+                                <span className="flex items-center gap-1.5"><Shield size={14} className="text-[#09834F]" /> School Watermark &amp; QR Code</span>
                                 <span className="flex items-center gap-1.5"><Zap size={14} className="text-[#D97706]" /> Multiple Sets (A, B, C, D)</span>
-                                <span className="flex items-center gap-1.5"><Globe size={14} className="text-[#0868B2]" /> English & Regional Languages</span>
+                                <span className="flex items-center gap-1.5"><Globe size={14} className="text-[#0868B2]" /> English &amp; Regional Languages</span>
                             </div>
                         </div>
 
                         <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
                             <button
                                 onClick={() => setIsCreateModalOpen(true)}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0868B2] hover:bg-[#07549A] active:bg-[#073B73] text-white font-bold text-sm shadow-sm transition-all"
+                                className="neu-btn-primary flex items-center gap-2 px-5 py-2.5 text-sm"
                             >
                                 <PlusCircle size={17} />
                                 <span>Create New Exam Paper</span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('packaging')}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white hover:bg-[#F2F9FD] text-[#0868B2] border border-[#B6DCF2] font-bold text-sm transition-all"
+                                className="neu-btn flex items-center gap-2 px-4 py-2.5 text-sm text-[#0868B2]"
                             >
                                 <Printer size={17} className="text-[#0868B2]" />
-                                <span>Print & Download Center</span>
+                                <span>Print &amp; Download Center</span>
                             </button>
                             <button
                                 onClick={() => {
@@ -1673,7 +1673,7 @@ export default function OfflinePaperManager() {
                                     fetchBlueprintContext()
                                     fetchQuestionSets()
                                 }}
-                                className="p-2.5 rounded-lg bg-white hover:bg-[#F2F9FD] text-[#64748B] hover:text-[#0868B2] border border-[#E2E8F0] transition-all"
+                                className="neu-btn p-2.5"
                                 title="Refresh data"
                             >
                                 <RefreshCw size={17} />
@@ -1684,66 +1684,70 @@ export default function OfflinePaperManager() {
             </div>
 
             {/* MAIN WORKSPACE */}
-            <div className="w-full px-4 sm:px-8 py-6 relative space-y-6 bg-[#F8FAFC]">
+            <div className="w-full px-4 sm:px-8 py-6 relative space-y-6 bg-[#EEF2F6]">
 
-                {/* 4 SUMMARY KPI CARDS (Section 20-21 Standards) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    <div className="bg-white rounded-xl p-5 border border-[#E2E8F0] shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 rounded-xl bg-[#E5F3FB] border border-[#B6DCF2] flex items-center justify-center text-[#0868B2] shrink-0">
+                {/* 4 SUMMARY KPI CARDS (4-HUE VIBRANT DIFFERENTIATION) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    {/* KPI 1: SAPPHIRE BLUE */}
+                    <div className="neu-card neu-kpi-blue p-5 flex items-center gap-4">
+                        <div className="w-13 h-13 rounded-2xl neu-well-blue flex items-center justify-center shrink-0">
                             <FileText size={24} />
                         </div>
                         <div className="min-w-0">
-                            <div className="text-xs font-bold uppercase tracking-wider text-[#64748B]">Exam Papers Created</div>
+                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#0868B2]">Exam Papers Created</div>
                             <div className="text-2xl font-black text-[#092746] mt-0.5">{metrics.totalPapers} Papers</div>
-                            <div className="text-[11px] font-semibold text-[#09834F] bg-[#DCF7E7] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
-                                <CheckCircle size={12} /> Ready for Examination
+                            <div className="text-[10px] font-bold neu-badge-blue px-2.5 py-0.5 rounded-full mt-1.5 inline-flex items-center gap-1">
+                                <CheckCircle size={11} /> Ready for Examination
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-5 border border-[#E2E8F0] shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 rounded-xl bg-[#E5F3FB] border border-[#B6DCF2] flex items-center justify-center text-[#0868B2] shrink-0">
+                    {/* KPI 2: EMERALD MINT */}
+                    <div className="neu-card neu-kpi-green p-5 flex items-center gap-4">
+                        <div className="w-13 h-13 rounded-2xl neu-well-green flex items-center justify-center shrink-0">
                             <Printer size={24} />
                         </div>
                         <div className="min-w-0">
-                            <div className="text-xs font-bold uppercase tracking-wider text-[#64748B]">Printed Papers</div>
+                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#09834F]">Printed Papers</div>
                             <div className="text-2xl font-black text-[#092746] mt-0.5">{metrics.printedAssets} Copies</div>
-                            <div className="text-[11px] font-semibold text-[#09834F] bg-[#DCF7E7] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
-                                <ArrowUpRight size={12} /> Ready for Exam Hall
+                            <div className="text-[10px] font-bold neu-badge-green px-2.5 py-0.5 rounded-full mt-1.5 inline-flex items-center gap-1">
+                                <ArrowUpRight size={11} /> Ready for Exam Hall
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-5 border border-[#E2E8F0] shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 rounded-xl bg-[#DCF7E7] border border-[#B7E8CC] flex items-center justify-center text-[#09834F] shrink-0">
+                    {/* KPI 3: SUNFIRE AMBER */}
+                    <div className="neu-card neu-kpi-amber p-5 flex items-center gap-4">
+                        <div className="w-13 h-13 rounded-2xl neu-well-amber flex items-center justify-center shrink-0">
                             <Target size={24} />
                         </div>
                         <div className="min-w-0">
-                            <div className="text-xs font-bold uppercase tracking-wider text-[#64748B]">Question Banks</div>
+                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#D97706]">Question Banks</div>
                             <div className="text-2xl font-black text-[#092746] mt-0.5">{questionSets.length} Sets</div>
-                            <div className="text-[11px] font-semibold text-[#09834F] bg-[#DCF7E7] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
-                                <Check size={12} /> {totalQuestionsInSets} Questions Stored
+                            <div className="text-[10px] font-bold neu-badge-amber px-2.5 py-0.5 rounded-full mt-1.5 inline-flex items-center gap-1">
+                                <Check size={11} /> {totalQuestionsInSets} Questions Stored
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-5 border border-[#E2E8F0] shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 rounded-xl bg-[#FEF3C7] border border-[#FDE68A] flex items-center justify-center text-[#D97706] shrink-0">
+                    {/* KPI 4: AMETHYST VIOLET */}
+                    <div className="neu-card neu-kpi-purple p-5 flex items-center gap-4">
+                        <div className="w-13 h-13 rounded-2xl neu-well-purple flex items-center justify-center shrink-0">
                             <Shield size={24} />
                         </div>
                         <div className="min-w-0">
-                            <div className="text-xs font-bold uppercase tracking-wider text-[#64748B]">Paper Patterns</div>
+                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#7C3AED]">Paper Patterns</div>
                             <div className="text-2xl font-black text-[#092746] mt-0.5">{displayPatterns.length} Patterns</div>
-                            <div className="text-[11px] font-semibold text-[#0868B2] bg-[#E5F3FB] px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
-                                <BookOpen size={12} /> Board &amp; School Patterns
+                            <div className="text-[10px] font-bold neu-badge-purple px-2.5 py-0.5 rounded-full mt-1.5 inline-flex items-center gap-1">
+                                <BookOpen size={11} /> Board &amp; School Patterns
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* ── STEP PROGRESS BAR ─────────────────────────────────── */}
-                <div className="w-full bg-white rounded-xl border border-[#E2E8F0] shadow-sm p-4">
-                    <div className="flex items-center gap-0">
+                {/* ── STEP PROGRESS BAR (NEUMORPHIC) ─────────────────────────────────── */}
+                <div className="w-full neu-card p-4 sm:p-5">
+                    <div className="flex items-center gap-1 sm:gap-2">
                         {[
                             { step: 1, label: 'Setup', sub: 'Class & Subject', icon: BookOpen },
                             { step: 2, label: 'Question Bank', sub: 'Build Questions', icon: Database },
@@ -1758,29 +1762,29 @@ export default function OfflinePaperManager() {
                                 <div key={s.step} className="flex items-center flex-1 min-w-0">
                                     <button
                                         onClick={() => goToStep(s.step)}
-                                        className={`flex flex-col items-center gap-1 flex-1 px-2 py-2 rounded-xl transition-all ${
-                                            isActive ? 'bg-[#E5F3FB]' : 'hover:bg-[#F2F9FD]'
+                                        className={`flex flex-col items-center gap-1.5 flex-1 px-2 py-2 rounded-xl transition-all cursor-pointer ${
+                                            isActive ? 'neu-inset' : 'hover:opacity-85'
                                         }`}
                                     >
-                                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-all ${
+                                        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
                                             isDone
-                                                ? 'bg-[#09834F] border-[#09834F] text-white'
+                                                ? 'neu-disc-done'
                                                 : isActive
-                                                ? 'bg-[#0868B2] border-[#0868B2] text-white shadow-sm'
-                                                : 'bg-white border-[#E2E8F0] text-[#94A3B8]'
+                                                ? 'neu-disc-active'
+                                                : 'neu-disc-idle'
                                         }`}>
-                                            {isDone ? <Check size={16} /> : <Icon size={15} />}
+                                            {isDone ? <Check size={16} strokeWidth={3} /> : <Icon size={16} strokeWidth={2.2} />}
                                         </div>
                                         <div className="text-center">
-                                            <div className={`text-[11px] font-bold leading-tight ${
+                                            <div className={`text-[11px] font-black leading-tight ${
                                                 isActive ? 'text-[#0868B2]' : isDone ? 'text-[#09834F]' : 'text-[#64748B]'
                                             }`}>{s.label}</div>
                                             <div className="text-[10px] text-[#94A3B8] font-medium hidden sm:block">{s.sub}</div>
                                         </div>
                                     </button>
                                     {idx < 4 && (
-                                        <div className={`h-0.5 w-4 sm:w-8 shrink-0 mx-1 rounded-full transition-all ${
-                                            isDone ? 'bg-[#09834F]' : 'bg-[#E2E8F0]'
+                                        <div className={`neu-progress-groove h-1.5 w-4 sm:w-8 shrink-0 mx-1 ${
+                                            isDone ? '!bg-[#09834F]' : ''
                                         }`} />
                                     )}
                                 </div>
